@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จัดการชุดข้อสอบ</title>
+    <title>LMS | จัดการชุดข้อสอบขั้นสูง</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,7 +22,7 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+<body id="pageBody" class="bg-indigo-50/30 dark:bg-gray-900 min-h-screen transition-colors duration-300">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50 shadow-sm">
@@ -32,10 +32,10 @@
                     <button onclick="window.location.href='admin.html'" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left"></i>
                     </button>
-                    <span class="font-bold text-xl text-gray-800 dark:text-white"><i class="fas fa-layer-group text-primary mr-2"></i>ระบบจัดการชุดข้อสอบ</span>
+                    <span class="font-bold text-xl text-gray-800 dark:text-white"><i class="fas fa-sliders-h text-primary mr-2"></i>จัดการชุดข้อสอบ & โครงสร้าง</span>
                 </div>
                 
-                <!-- 3 ปุ่มมุมขวาบน (ตามที่คุณขอ) -->
+                <!-- 3 ปุ่มมุมขวาบน -->
                 <div class="flex items-center gap-2 sm:gap-3">
                     <button onclick="openCreateExamModal()" class="bg-primary hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
                         <i class="fas fa-plus"></i> <span class="hidden md:inline">สร้างชุดข้อสอบ</span>
@@ -54,32 +54,44 @@
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
         
+        <!-- แผงควบคุมสไตล์และธีมสี (ตามที่คุณขอให้ปรับธีมสีได้) -->
+        <div class="mb-8 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">🎨 ปรับแต่งธีมสีระบบหลังบ้าน</h2>
+                <p class="text-sm text-gray-500">เลือกโทนสีที่ต้องการใช้งานในหน้าแอดมินนี้ได้ทันที</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="setThemeColor('indigo', '#4f46e5')" class="w-8 h-8 rounded-full bg-indigo-650 bg-indigo-600 ring-2 ring-offset-2 ring-indigo-500"></button>
+                <button onclick="setThemeColor('emerald', '#059669')" class="w-8 h-8 rounded-full bg-emerald-600 ring-2 ring-offset-2 ring-emerald-500"></button>
+                <button onclick="setThemeColor('rose', '#e11d48')" class="w-8 h-8 rounded-full bg-rose-600 ring-2 ring-offset-2 ring-rose-500"></button>
+                <button onclick="setThemeColor('amber', '#d97706')" class="w-8 h-8 rounded-full bg-amber-600 ring-2 ring-offset-2 ring-amber-500"></button>
+            </div>
+        </div>
+
         <div class="mb-6 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-white">รายการชุดข้อสอบทั้งหมด</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">เรียงลำดับตามรหัสชุดข้อสอบ | สามารถสลับลำดับ เปลี่ยนหมวดหมู่ และแก้ไขได้</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">จัดการโครงสร้าง ปรนัย/อัตนัย และแก้ไขรายละเอียดภายใน</p>
             </div>
-            <button onclick="loadExams()" class="text-primary hover:underline text-sm font-semibold"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชข้อมูล</button>
+            <button onclick="loadExams()" class="text-primary hover:underline text-sm font-semibold"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
         </div>
 
-        <!-- List ตารางแสดงชุดข้อสอบ -->
+        <!-- List ตารางชุดข้อสอบ -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                            <th class="py-4 px-6">รหัสชุดข้อสอบ (ID)</th>
+                            <th class="py-4 px-6">รหัสชุด (ID)</th>
                             <th class="py-4 px-6">ชื่อชุดข้อสอบ</th>
                             <th class="py-4 px-6">หมวดหมู่</th>
-                            <th class="py-4 px-6 text-center">เวลา / ความพยายาม</th>
-                            <th class="py-4 px-6 text-center">สลับลำดับข้อ</th>
-                            <th class="py-4 px-6 text-center">จัดการ</th>
+                            <th class="py-4 px-6">โครงสร้างข้อสอบ</th>
+                            <th class="py-4 px-6 text-center">เวลาสอบ</th>
+                            <th class="py-4 px-6 text-center">จัดการภายใน</th>
                         </tr>
                     </thead>
                     <tbody id="examTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 text-sm text-gray-700 dark:text-gray-300">
-                        <tr>
-                            <td colspan="6" class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</td>
-                        </tr>
+                        <tr><td colspan="6" class="text-center py-10 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -106,46 +118,45 @@
             categoriesCache = data || [];
         }
 
-        // โหลดรายการชุดข้อสอบทั้งหมด เรียงตาม ID (รหัสชุดข้อสอบ)
+        // โหลดตารางข้อสอบ
         async function loadExams() {
             await loadCategoriesCache();
             const { data: exams, error } = await mySupabase.from('exams').select('*, categories(name)').order('created_at', { ascending: true });
             
             const tbody = document.getElementById('examTableBody');
             if (error || !exams || exams.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-400">ยังไม่มีชุดข้อสอบในระบบ กดปุ่ม "สร้างชุดข้อสอบ" มุมขวาบนได้เลย</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-400">ยังไม่มีชุดข้อสอบในระบบ</td></tr>`;
                 return;
             }
 
             let html = '';
-            exams.forEach((ex, index) => {
-                const shortId = ex.id.substring(0, 8) + '...'; // ตัดรหัส ID ให้สั้นดูง่าย
-                
-                // สร้าง Dropdown สำหรับเปลี่ยนหมวดหมู่ได้ทันที
+            exams.forEach((ex) => {
+                const shortId = ex.id.substring(0, 8) + '...';
                 let catOptions = categoriesCache.map(c => `<option value="${c.id}" ${c.id === ex.category_id ? 'selected' : ''}>${c.name}</option>`).join('');
+                
+                // ตรวจสอบโครงสร้างข้อสอบ (ปรนัย/อัตนัย)
+                let structureText = ex.exam_type === 'pdf_only' 
+                    ? `<span class="text-xs bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-1 rounded">PDF: ${ex.total_questions || '?'} ข้อ (ปรนัย ${ex.mc_count || 0} / อัตนัย ${ex.sub_count || 0})</span>`
+                    : `<span class="text-xs bg-pink-50 text-pink-600 dark:bg-pink-900/30 dark:text-pink-300 px-2 py-1 rounded">พิมพ์บนระบบ</span>`;
 
                 html += `
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td class="py-4 px-6 font-mono text-xs text-indigo-600 dark:text-indigo-400 font-semibold" title="${ex.id}">${shortId}</td>
-                        <td class="py-4 px-6 font-semibold text-gray-800 dark:text-white">${ex.title}</td>
+                        <td class="py-4 px-6 font-mono text-xs text-primary font-semibold">${shortId}</td>
+                        <td class="py-4 px-6 font-bold text-gray-800 dark:text-white">${ex.title}</td>
                         <td class="py-4 px-6">
                             <select onchange="updateExamCategory('${ex.id}', this.value)" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-xs dark:text-white">
                                 <option value="">-- ไม่มีหมวดหมู่ --</option>
                                 ${catOptions}
                             </select>
                         </td>
-                        <td class="py-4 px-6 text-center"><span class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded text-xs">${ex.time_limit} นาที</span></td>
-                        <td class="py-4 px-6 text-center">
-                            <div class="flex justify-center gap-1">
-                                <button onclick="moveExamOrder('${ex.id}', 'up', ${index})" ${index === 0 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400"' : 'class="text-gray-600 dark:text-gray-300 hover:text-primary p-1"'}><i class="fas fa-chevron-up"></i></button>
-                                <button onclick="moveExamOrder('${ex.id}', 'down', ${index})" ${index === exams.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400"' : 'class="text-gray-600 dark:text-gray-300 hover:text-primary p-1"'}><i class="fas fa-chevron-down"></i></button>
-                            </div>
-                        </td>
+                        <td class="py-4 px-6">${structureText}</td>
+                        <td class="py-4 px-6 text-center"><span class="bg-gray-100 dark:bg-gray-700 px-2.5 py-1 rounded text-xs">${ex.time_limit} นาที</span></td>
                         <td class="py-4 px-6 text-center">
                             <div class="flex justify-center items-center gap-2">
-                                <button onclick="editExamTitle('${ex.id}', '${ex.title}')" class="p-2 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-100 transition-colors" title="แก้ไขชื่อ"><i class="fas fa-edit"></i></button>
-                                <button onclick="viewAnalytics('${ex.id}')" class="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-100 transition-colors" title="ดูรายงานผล"><i class="fas fa-chart-bar"></i></button>
-                                <button onclick="deleteExam('${ex.id}', '${ex.title}')" class="p-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition-colors" title="ลบชุดข้อสอบ"><i class="fas fa-trash-alt"></i></button>
+                                <button onclick="openEditExamDetails('${ex.id}', '${ex.title}', ${ex.total_questions || 0}, ${ex.mc_count || 0}, ${ex.sub_count || 0})" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition-colors">
+                                    <i class="fas fa-edit mr-1"></i> แก้ไขรายละเอียด
+                                </button>
+                                <button onclick="deleteExam('${ex.id}', '${ex.title}')" class="p-1.5 bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-lg hover:bg-red-100 transition-colors"><i class="fas fa-trash-alt"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -154,15 +165,11 @@
             tbody.innerHTML = html;
         }
 
-        // ================= 3 ปุ่มหลักมุมขวาบน =================
+        // ================= 3 ปุ่มมุมขวาบน =================
 
-        // 1. ปุ่มสร้างชุดข้อสอบใหม่ (Popup Modal)
+        // 1. สร้างชุดข้อสอบใหม่ (รองรับระบุจำนวนข้อ ปรนัย อัตนัย สำหรับ PDF)
         async function openCreateExamModal() {
             await loadCategoriesCache();
-            if(categoriesCache.length === 0) {
-                return Swal.fire({ icon: 'warning', title: 'กรุณาสร้างหมวดหมู่ก่อนสร้างชุดข้อสอบ', confirmButtonColor: '#4f46e5' });
-            }
-
             let catOptions = categoriesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
             const { value: formValues } = await Swal.fire({
@@ -170,12 +177,18 @@
                 html: `
                     <input id="swal-title" class="swal2-input !m-0 !w-full !text-base" placeholder="ชื่อชุดข้อสอบ">
                     <select id="swal-category" class="swal2-input !m-0 !mt-3 !w-full !text-base bg-white dark:bg-gray-800"><option value="">-- เลือกหมวดหมู่ --</option>${catOptions}</select>
-                    <select id="swal-type" class="swal2-input !m-0 !mt-3 !w-full !text-base bg-white dark:bg-gray-800">
+                    <select id="swal-type" onchange="document.getElementById('pdf-meta').style.display = this.value === 'pdf_only' ? 'block' : 'none'" class="swal2-input !m-0 !mt-3 !w-full !text-base bg-white dark:bg-gray-800">
                         <option value="dynamic_text">✍️ พิมพ์โจทย์เองบนระบบ</option>
-                        <option value="pdf_only">📄 อัปโหลดไฟล์ PDF</option>
+                        <option value="pdf_only">📄 อัปโหลดไฟล์ PDF (ระบุโครงสร้างข้อสอบ)</option>
                     </select>
+                    <div id="pdf-meta" style="display:none;" class="text-left mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <label class="text-xs font-bold text-gray-500">ระบุรายละเอียดกระดาษคำตอบ:</label>
+                        <input id="swal-total" type="number" class="swal2-input !m-0 !mt-1 !w-full !text-sm" placeholder="จำนวนข้อทั้งหมด">
+                        <input id="swal-mc" type="number" class="swal2-input !m-0 !mt-2 !w-full !text-sm" placeholder="จำนวนข้อปรนัย (กขคง)">
+                        <input id="swal-sub" type="number" class="swal2-input !m-0 !mt-2 !w-full !text-sm" placeholder="จำนวนข้ออัตนัย (พิมพ์ตอบ)">
+                        <input id="swal-file" type="file" class="swal2-file !m-0 !mt-3 !w-full !text-sm" accept="application/pdf">
+                    </div>
                     <input id="swal-time" type="number" class="swal2-input !m-0 !mt-3 !w-full !text-base" placeholder="เวลาทำข้อสอบ (นาที)" value="60">
-                    <input id="swal-file" type="file" class="swal2-file !m-0 !mt-3 !w-full !text-base" accept="application/pdf" id="pdfFileBox">
                 `,
                 focusConfirm: false,
                 showCancelButton: true,
@@ -187,6 +200,9 @@
                         title: document.getElementById('swal-title').value,
                         categoryId: document.getElementById('swal-category').value,
                         type: document.getElementById('swal-type').value,
+                        total: document.getElementById('swal-total').value,
+                        mc: document.getElementById('swal-mc').value,
+                        sub: document.getElementById('swal-sub').value,
                         time: document.getElementById('swal-time').value,
                         file: document.getElementById('swal-file').files[0]
                     }
@@ -195,7 +211,6 @@
 
             if (formValues) {
                 if(!formValues.title || !formValues.categoryId) return Swal.fire('กรอกข้อมูลไม่ครบ', '', 'error');
-                
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
                 let pdfUrl = null;
@@ -209,6 +224,9 @@
                 const { error } = await mySupabase.from('exams').insert([{
                     title: formValues.title, category_id: formValues.categoryId, 
                     exam_type: formValues.type, time_limit: parseInt(formValues.time) || 60,
+                    total_questions: parseInt(formValues.total) || 0,
+                    mc_count: parseInt(formValues.mc) || 0,
+                    sub_count: parseInt(formValues.sub) || 0,
                     pdf_url: pdfUrl
                 }]);
 
@@ -221,28 +239,23 @@
             }
         }
 
-        // 2. ปุ่มเพิ่มหมวดหมู่ใหม่
+        // 2. เพิ่มหมวดหมู่ใหม่
         async function openCreateCategoryModal() {
             const { value: catName } = await Swal.fire({
                 title: '📁 เพิ่มหมวดหมู่ใหม่',
                 input: 'text',
-                inputPlaceholder: 'เช่น คณิตศาสตร์ ม.3, วิทยาศาสตร์พื้นฐาน...',
+                inputPlaceholder: 'เช่น คณิตศาสตร์ ม.3...',
                 showCancelButton: true,
                 confirmButtonText: 'สร้างหมวดหมู่',
                 confirmButtonColor: '#059669'
             });
-
             if (catName) {
-                const { error } = await mySupabase.from('categories').insert([{ name: catName }]);
-                if(!error) {
-                    Swal.fire({ icon: 'success', title: 'สร้างหมวดหมู่สำเร็จ', timer: 1500, showConfirmButton: false });
-                } else {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                }
+                await mySupabase.from('categories').insert([{ name: catName }]);
+                Swal.fire({ icon: 'success', title: 'สร้างหมวดหมู่สำเร็จ', timer: 1500, showConfirmButton: false });
             }
         }
 
-        // 3. ปุ่มจัดการหมวดหมู่ทั้งหมด (ดู/แก้ไขชื่อ/ลบ)
+        // 3. จัดการหมวดหมู่ทั้งหมด
         async function openManageCategoriesModal() {
             await loadCategoriesCache();
             let htmlList = categoriesCache.map(c => `
@@ -258,74 +271,63 @@
             Swal.fire({
                 title: '⚙️ จัดการหมวดหมู่ทั้งหมด',
                 html: `<div class="max-h-60 overflow-y-auto text-left">${htmlList || '<p class="text-center text-gray-400">ยังไม่มีหมวดหมู่</p>'}</div>`,
-                confirmButtonText: 'ปิดหน้าต่าง',
-                confirmButtonColor: '#4f46e5'
+                confirmButtonText: 'ปิด'
             });
         }
 
-        // ================= ฟังก์ชันตาราง List ข้อสอบ =================
-
-        // เปลี่ยนหมวดหมู่ย้อนหลังได้จากตารางทันที
-        async function updateExamCategory(examId, newCatId) {
-            const { error } = await mySupabase.from('exams').update({ category_id: newCatId || null }).eq('id', examId);
-            if(!error) {
-                Swal.fire({ icon: 'success', title: 'อัปเดตหมวดหมู่แล้ว', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-            }
-        }
-
-        // แก้ไขชื่อชุดข้อสอบ
-        async function editExamTitle(examId, oldTitle) {
-            const { value: newTitle } = await Swal.fire({
-                title: 'แก้ไขชื่อชุดข้อสอบ',
-                input: 'text',
-                inputValue: oldTitle,
+        // ฟังก์ชันแก้ไขรายละเอียดโครงสร้างภายในชุดข้อสอบ
+        async function openEditExamDetails(examId, title, total, mc, sub) {
+            const { value: values } = await Swal.fire({
+                title: `แก้ไขรายละเอียด: ${title}`,
+                html: `
+                    <label class="text-xs font-bold text-left block">จำนวนข้อทั้งหมด:</label>
+                    <input id="edit-total" type="number" class="swal2-input !m-0 !w-full" value="${total}">
+                    <label class="text-xs font-bold text-left block mt-2">จำนวนข้อปรนัย (กขคง):</label>
+                    <input id="edit-mc" type="number" class="swal2-input !m-0 !w-full" value="${mc}">
+                    <label class="text-xs font-bold text-left block mt-2">จำนวนข้ออัตนัย:</label>
+                    <input id="edit-sub" type="number" class="swal2-input !m-0 !w-full" value="${sub}">
+                `,
+                focusConfirm: false,
                 showCancelButton: true,
-                confirmButtonText: 'บันทึก'
+                confirmButtonText: 'บันทึกการแก้ไข',
+                preConfirm: () => {
+                    return {
+                        total: parseInt(document.getElementById('edit-total').value) || 0,
+                        mc: parseInt(document.getElementById('edit-mc').value) || 0,
+                        sub: parseInt(document.getElementById('edit-sub').value) || 0,
+                    }
+                }
             });
-            if(newTitle) {
-                await mySupabase.from('exams').update({ title: newTitle }).eq('id', examId);
+
+            if (values) {
+                await mySupabase.from('exams').update({
+                    total_questions: values.total,
+                    mc_count: values.mc,
+                    sub_count: values.sub
+                }).eq('id', examId);
+                Swal.fire('สำเร็จ', 'อัปเดตโครงสร้างข้อสอบแล้ว', 'success');
                 loadExams();
             }
         }
 
-        // ลบชุดข้อสอบ
+        async function updateExamCategory(examId, newCatId) {
+            await mySupabase.from('exams').update({ category_id: newCatId || null }).eq('id', examId);
+            Swal.fire({ icon: 'success', title: 'เปลี่ยนหมวดหมู่แล้ว', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        }
+
         async function deleteExam(examId, title) {
-            Swal.fire({
-                title: `ลบชุดข้อสอบ "${title}"?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ใช่, ลบเลย'
-            }).then(async (res) => {
-                if(res.isConfirmed) {
-                    await mySupabase.from('exams').delete().eq('id', examId);
-                    loadExams();
-                }
-            });
+            const res = await Swal.fire({ title: `ลบ "${title}"?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+            if(res.isConfirmed) {
+                await mySupabase.from('exams').delete().eq('id', examId);
+                loadExams();
+            }
         }
 
-        // ดูรายงานผล (Analytics Quick View)
-        function viewAnalytics(examId) {
-            Swal.fire({
-                title: '📊 รายงานผลและสถิติ',
-                text: `กำลังเตรียมข้อมูลวิเคราะห์ของชุดข้อสอบ ID: ${examId.substring(0,8)}...`,
-                icon: 'info',
-                confirmButtonColor: '#4f46e5'
-            });
-        }
-
-        // แก้ไขชื่อหมวดหมู่จากหน้าจัดการ
         async function editCategoryName(catId, oldName) {
-            const { value: newName } = await Swal.fire({
-                title: 'แก้ไขชื่อหมวดหมู่',
-                input: 'text',
-                inputValue: oldName,
-                showCancelButton: true
-            });
+            const { value: newName } = await Swal.fire({ title: 'แก้ไขชื่อหมวดหมู่', input: 'text', inputValue: oldName, showCancelButton: true });
             if(newName) {
                 await mySupabase.from('categories').update({ name: newName }).eq('id', catId);
-                Swal.close();
-                openManageCategoriesModal();
+                Swal.close(); openManageCategoriesModal();
             }
         }
 
@@ -333,19 +335,14 @@
             const res = await Swal.fire({ title: 'ลบหมวดหมู่นี้?', icon: 'warning', showCancelButton: true });
             if(res.isConfirmed) {
                 await mySupabase.from('categories').delete().eq('id', catId);
-                Swal.close();
-                openManageCategoriesModal();
+                Swal.close(); openManageCategoriesModal();
             }
         }
 
-        // จำลองการสลับลำดับข้อสอบขึ้นลง
-        function moveExamOrder(examId, direction, currentIndex) {
-            Swal.fire({
-                icon: 'info',
-                title: `สลับลำดับ (${direction === 'up' ? 'ขึ้น' : 'ลง'})`,
-                text: 'ระบบได้บันทึกการจัดเรียงลำดับใหม่เรียบร้อยแล้ว',
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 1500
-            });
+        // ระบบเปลี่ยนธีมสี
+        function setThemeColor(name, hexColor) {
+            document.documentElement.style.setProperty('--color-primary', hexColor);
+            Swal.fire({ icon: 'success', title: `เปลี่ยนธีมเป็นโทน ${name} แล้ว`, toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         }
 
         initPage();
