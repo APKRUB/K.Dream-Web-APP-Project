@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | Admin Control Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>LMS | แผงควบคุมผู้ดูแลระบบ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -12,121 +12,114 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16' } } }
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#090d16', darkbox: '#0f172a', darkinput: '#1e293b' }
+                }
+            }
         }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(9, 13, 22, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
-        .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08); transition: all 0.3s ease; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(9, 13, 22, 0.9); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05); }
         .dark .glossy-card { background: #0f172a; border: 1px solid rgba(30, 41, 59, 1); }
-        .glossy-card:hover { transform: translateY(-3px); border-color: #0284c7; }
-        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .dark .swal2-popup { background-color: #0f172a !important; color: #f8fafc !important; border: 1px solid #1e293b !important; border-radius: 1.5rem !important; }
-        .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
+        .admin-card-btn { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .admin-card-btn:hover { transform: translateY(-4px); box-shadow: 0 12px 25px -5px rgba(2, 132, 199, 0.2); }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
-    <!-- Slide-over Side Navigation (Hamburger) -->
-    <div id="sideMenuOverlay" class="fixed inset-0 bg-black/50 z-50 hidden backdrop-blur-sm" onclick="toggleHamburger()"></div>
-    <aside id="sideMenuNav" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-slate-900 z-50 transform -translate-x-full transition-transform duration-300 shadow-2xl border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
-        <div class="space-y-6">
-            <div class="flex items-center justify-between border-b dark:border-slate-800 pb-4">
-                <span class="font-extrabold text-base text-slate-900 dark:text-white"><i class="fas fa-bars text-sky-600 mr-2"></i> เมนูลัดผู้ดูแล</span>
-                <button onclick="toggleHamburger()" class="text-slate-400 hover:text-red-500"><i class="fas fa-times text-lg"></i></button>
-            </div>
-            <nav class="space-y-2 text-xs font-bold">
-                <a href="admin.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-sky-50 dark:bg-sky-950/80 text-sky-600 dark:text-sky-300"><i class="fas fa-home w-5"></i> หน้าหลักแผงควบคุม</a>
-                <a href="admin_exams.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fas fa-file-signature w-5 text-sky-600"></i> ศูนย์จัดการชุดข้อสอบ</a>
-                <a href="admin_consult.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fas fa-comments w-5 text-indigo-500"></i> ระบบจองคิว Consult</a>
-                <a href="announcements.html" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fas fa-bullhorn w-5 text-amber-500"></i> ระบบประกาศข่าวสาร</a>
-            </nav>
-        </div>
-        <button onclick="logout()" class="w-full py-3 bg-red-50 text-red-600 dark:bg-red-950/60 font-bold text-xs rounded-2xl flex items-center justify-center gap-2"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
-    </aside>
-
-    <nav class="glass-nav fixed w-full top-0 z-40">
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="toggleHamburger()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border shadow-sm"><i class="fas fa-bars text-lg text-sky-600"></i></button>
+                    <span class="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-sky-500/30">
+                        <i class="fas fa-user-shield"></i>
+                    </span>
                     <div>
-                        <h1 class="font-extrabold text-xl flex items-center gap-2"><span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-shield-alt"></i></span> LMS Admin Core</h1>
-                        <p class="text-xs text-slate-500">ระบบบริหารจัดการห้องเรียนออนไลน์</p>
+                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white">Admin Portal</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ระบบจัดการการเรียนรู้และจัดการเวลา Consult</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border shadow-sm"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
+                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm">
+                        <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                    </button>
+                    <button onclick="logoutAdmin()" class="px-4 py-2.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all border border-red-200/50 dark:border-red-900/50">
+                        <i class="fas fa-sign-out-alt mr-1.5"></i> ออกจากระบบ
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
+    <!-- Main Dashboard -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
         
-        <!-- Top Live Analytics Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="glossy-card p-5 rounded-3xl flex justify-between items-start">
-                <div><div class="text-xs font-bold text-slate-400 mb-1">ชุดข้อสอบทั้งหมด</div><div class="text-2xl font-black" id="statExams">--</div></div>
-                <span class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-950 flex items-center justify-center text-lg"><i class="fas fa-file-alt"></i></span>
+        <!-- Welcome Banner -->
+        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-indigo-600 to-slate-900 text-white shadow-xl shadow-sky-600/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <span class="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wider uppercase mb-3 inline-block">Management System</span>
+                <h2 class="text-2xl font-extrabold tracking-tight">ยินดีต้อนรับผู้ดูแลระบบ 👋</h2>
+                <p class="text-xs text-sky-100 mt-1">เข้าถึงศูนย์จัดการชุดข้อสอบ ประกาศข่าวสาร และจัดการระบบ Consult ได้จากที่นี่</p>
             </div>
-            <div class="glossy-card p-5 rounded-3xl flex justify-between items-start">
-                <div><div class="text-xs font-bold text-slate-400 mb-1">นักเรียนในระบบ</div><div class="text-2xl font-black" id="statStudents">--</div></div>
-                <span class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950 flex items-center justify-center text-lg"><i class="fas fa-users"></i></span>
-            </div>
-            <div class="glossy-card p-5 rounded-3xl flex justify-between items-start">
-                <div><div class="text-xs font-bold text-slate-400 mb-1">การส่งสอบทั้งหมด</div><div class="text-2xl font-black" id="statSubs">--</div></div>
-                <span class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 flex items-center justify-center text-lg"><i class="fas fa-paper-plane"></i></span>
-            </div>
-            <div class="glossy-card p-5 rounded-3xl flex justify-between items-start">
-                <div><div class="text-xs font-bold text-slate-400 mb-1">คิว Consult รอดำเนินการ</div><div class="text-2xl font-black text-amber-500" id="statConsults">--</div></div>
-                <span class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950 flex items-center justify-center text-lg"><i class="fas fa-comments"></i></span>
+            <div class="flex gap-3">
+                <button onclick="window.location.href='admin_exam.html'" class="px-5 py-3 bg-white text-sky-700 font-bold text-xs rounded-2xl hover:bg-sky-50 transition-all shadow-md">
+                    <i class="fas fa-file-signature mr-2"></i> จัดการชุดข้อสอบ
+                </button>
+                <button onclick="window.location.href='admin_consult.html'" class="px-5 py-3 bg-sky-500 text-white font-bold text-xs rounded-2xl hover:bg-sky-400 transition-all shadow-md">
+                    <i class="fas fa-calendar-alt mr-2"></i> จัดการ Consult
+                </button>
             </div>
         </div>
 
-        <!-- The Original 8 System Modules -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Grid เมนูหลักหลัก (ยุบเหลือเมนูสืบค้นและจัดการตรงจุด) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            <div onclick="window.location.href='admin_exams.html'" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-sky-600 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-file-signature"></i></span>
-                <div><h3 class="font-extrabold text-base">ศูนย์จัดการชุดข้อสอบ</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">สร้าง แก้ไข ตั้งเวลาเปิด OMR และกำหนดส่ง</p></div>
+            <!-- 1. ศูนย์จัดการชุดข้อสอบ -->
+            <div onclick="window.location.href='admin_exam.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
+                <div class="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center text-2xl group-hover:bg-sky-600 group-hover:text-white transition-all">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ศูนย์จัดการชุดข้อสอบ</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">สร้าง/แก้ไขชุดข้อสอบ ตั้งเวลาเปิด-ปิด เพิ่มหมวดหมู่ และใส่ไฟล์ PDF โจทย์</p>
+                </div>
+                <div class="pt-2 flex items-center text-xs font-bold text-sky-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform">
+                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                </div>
             </div>
 
-            <div onclick="window.location.href='admin_exams.html'" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-cyan-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-cyan-100 text-cyan-600 dark:bg-cyan-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-database"></i></span>
-                <div><h3 class="font-extrabold text-base">คลังโจทย์ข้อสอบ</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">จัดการข้อสอบรายข้อ ตัวเลือกเฉลย และรูปภาพประกอบ</p></div>
+            <!-- 2. ระบบจัดการเวลา Consult -->
+            <div onclick="window.location.href='admin_consult.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ระบบจัดการเวลา Consult</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">ตั้งเวลาเปิดจองอัตโนมัติ เจน Slot ซ้ำวัน ยกเลิกคิว และย้ายเวลานักเรียน</p>
+                </div>
+                <div class="pt-2 flex items-center text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
+                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                </div>
             </div>
 
-            <div onclick="Swal.fire('หมวดหมู่', 'สามารถเพิ่มหมวดหมู่ได้ในหน้าศูนย์ชุดข้อสอบ', 'info')" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-blue-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-folder-open"></i></span>
-                <div><h3 class="font-extrabold text-base">จัดการหมวดหมู่หลัก</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">แยกหมวดหมู่ชุดข้อสอบตามรายวิชาและระดับชั้น</p></div>
-            </div>
-
-            <div onclick="Swal.fire('AI Report', 'ดูสถิติแยกรายชุดได้ที่ศูนย์จัดการข้อสอบ', 'info')" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-purple-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-chart-pie"></i></span>
-                <div><h3 class="font-extrabold text-base">สถิติ & AI ประเมินผล</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">วิเคราะห์คะแนนเฉลี่ย จุดแข็ง และจุดอ่อนผู้เรียน</p></div>
-            </div>
-
-            <div onclick="window.location.href='admin_consult.html'" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-indigo-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-comments"></i></span>
-                <div><h3 class="font-extrabold text-base">ระบบจัดการคิว Consult</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">อนุมัติคิว นัดเวลา และระบุลิงก์ประชุมปรึกษา</p></div>
-            </div>
-
-            <div onclick="window.location.href='announcements.html'" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-amber-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-bullhorn"></i></span>
-                <div><h3 class="font-extrabold text-base">ระบบประกาศข่าวสาร</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">จัดการประกาศข่าวสาร ปักหมุด และแจ้งกำหนดการ</p></div>
-            </div>
-
-            <div onclick="window.location.href='student.html'" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-emerald-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-user-graduate"></i></span>
-                <div><h3 class="font-extrabold text-base">มุมมองฝั่งนักเรียน</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">จำลองหน้าจอและทดลองเข้าทำสอบในมุมมองของนักเรียน</p></div>
-            </div>
-
-            <div onclick="openAuditLogsModal()" class="glossy-card p-6 rounded-3xl cursor-pointer border-l-4 border-l-teal-500 flex flex-col justify-between h-48">
-                <span class="w-12 h-12 rounded-2xl bg-teal-100 text-teal-600 dark:bg-teal-950 flex items-center justify-center text-2xl font-bold"><i class="fas fa-history"></i></span>
-                <div><h3 class="font-extrabold text-base">ประวัติการทำงาน (Logs)</h3><p class="text-[11px] text-slate-500 mt-1 line-clamp-2">ตรวจสอบกิจกรรมการสร้าง แก้ไข ลบ ในระบบย้อนหลัง</p></div>
+            <!-- 3. ศูนย์รวมประกาศและข่าวสาร -->
+            <div onclick="window.location.href='announcements.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
+                <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition-all">
+                    <i class="fas fa-bullhorn"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ศูนย์รวมประกาศและข่าวสาร</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">โพสต์ประกาศข่าวสาร แจ้งเตือนนักเรียน แนบไฟล์เอกสารและรูปภาพ</p>
+                </div>
+                <div class="pt-2 flex items-center text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform">
+                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                </div>
             </div>
 
         </div>
@@ -139,40 +132,21 @@
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
-        if (localStorage.getItem('theme') === 'dark') { htmlElement.classList.add('dark'); themeIcon.classList.replace('fa-moon', 'fa-sun'); }
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
         document.getElementById('themeToggle').addEventListener('click', () => {
             htmlElement.classList.toggle('dark');
-            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
-            themeIcon.classList.replace(htmlElement.classList.contains('dark') ? 'fa-moon' : 'fa-sun', htmlElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function toggleHamburger() {
-            const side = document.getElementById('sideMenuNav');
-            const over = document.getElementById('sideMenuOverlay');
-            if (side.classList.contains('-translate-x-full')) { side.classList.remove('-translate-x-full'); over.classList.remove('hidden'); } 
-            else { side.classList.add('-translate-x-full'); over.classList.add('hidden'); }
+        async function logoutAdmin() {
+            await mySupabase.auth.signOut();
+            window.location.href = 'index.html';
         }
-
-        async function initStats() {
-            const { count: ex } = await mySupabase.from('exams').select('*', { count: 'exact', head: true });
-            document.getElementById('statExams').textContent = ex || 0;
-            const { count: st } = await mySupabase.from('profiles').select('*', { count: 'exact', head: true });
-            document.getElementById('statStudents').textContent = st || 0;
-            const { count: sb } = await mySupabase.from('exam_attempts').select('*', { count: 'exact', head: true }).eq('status', 'submitted');
-            document.getElementById('statSubs').textContent = sb || 0;
-            const { count: cs } = await mySupabase.from('consult_queues').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-            document.getElementById('statConsults').textContent = cs || 0;
-        }
-
-        async function openAuditLogsModal() {
-            Swal.fire({ title: 'กำลังโหลดประวัติ...', didOpen: () => Swal.showLoading() });
-            const { data: logs } = await mySupabase.from('exam_audit_logs').select('*, exams(title)').order('timestamp', { ascending: false }).limit(20);
-            let logsHtml = (logs || []).map(l => `<div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border text-left text-xs space-y-1"><div class="font-bold text-slate-900 dark:text-white">${l.action_description}</div><div class="text-[10px] text-slate-400">เวลา: ${new Date(l.timestamp).toLocaleString('th-TH')}</div></div>`).join('');
-            Swal.fire({ title: '<i class="fas fa-history text-teal-600"></i> Audit Logs', width: '600px', html: `<div class="max-h-80 overflow-y-auto space-y-2 pr-1">${logsHtml || 'ไม่มีประวัติ'}</div>`, confirmButtonText: 'ปิด' });
-        }
-
-        async function logout() { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
-        initStats();
     </script>
 </body>
 </html>
