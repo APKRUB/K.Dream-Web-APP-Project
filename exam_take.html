@@ -15,7 +15,6 @@
     <style>
         body { font-family: 'Prompt', sans-serif; user-select: none; }
         .watermark { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: 0.08; display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; font-size: 18px; font-weight: bold; color: #000; }
-        .strikethrough { text-decoration: line-through; opacity: 0.4; }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
@@ -23,7 +22,6 @@
 
     <div id="watermarkOverlay" class="watermark"></div>
 
-    <!-- Header / Time Bar -->
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 fixed w-full top-0 z-40 px-6 py-3 shadow-sm">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
@@ -31,13 +29,11 @@
                 <div id="progressBarText" class="text-xs text-slate-500 dark:text-slate-400">ความคืบหน้า: 0% (0/0 ข้อ)</div>
             </div>
 
-            <!-- สวิตช์สลับมุมมองสำหรับแบบพิมพ์ลงระบบ -->
             <div id="onlineViewToggleBtn" class="hidden flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl gap-1 text-xs">
                 <button id="modeSliderBtn" onclick="toggleOnlineViewMode('slider')" class="px-3 py-1.5 rounded-lg font-bold bg-white dark:bg-slate-800 text-primary shadow-sm">ทีละข้อ (Slider)</button>
                 <button id="modeScrollBtn" onclick="toggleOnlineViewMode('scroll')" class="px-3 py-1.5 rounded-lg font-bold text-slate-500 hover:text-primary">เลื่อนยาว (Scroll)</button>
             </div>
 
-            <!-- Time Bar -->
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <div class="flex-1 md:w-64 bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden">
                     <div id="timeProgressBar" class="bg-primary h-full w-full transition-all duration-1000"></div>
@@ -49,9 +45,7 @@
 
     <main class="max-w-6xl mx-auto w-full pt-28 pb-32 px-4 flex-1">
         
-        <!-- Online Form Mode (1 ข้อ/หน้า หรือ หน้ายาว) -->
         <div id="onlineFormCard" class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl space-y-6 relative border border-slate-200 dark:border-slate-700">
-            <!-- Single Slider View Container -->
             <div id="singleSliderContainer" class="space-y-6">
                 <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-700">
                     <span id="qNumberBadge" class="px-4 py-1.5 bg-blue-50 text-primary dark:bg-blue-950/80 dark:text-blue-300 font-bold rounded-xl text-sm">ข้อที่ 1</span>
@@ -62,11 +56,9 @@
                 <div id="qOptionsContainer" class="space-y-3 pt-2"></div>
             </div>
 
-            <!-- Scroll View Container -->
             <div id="scrollViewContainer" class="hidden space-y-8"></div>
         </div>
 
-        <!-- PDF Mode Layout (สลับฝั่งเลย์เอาต์ได้) -->
         <div id="pdfCard" class="hidden space-y-4">
             <div class="flex justify-end">
                 <button onclick="swapPdfLayout()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md"><i class="fas fa-exchange-alt mr-1"></i> สลับฝั่งเลย์เอาต์ (PDF / กระดาษคำตอบ)</button>
@@ -83,7 +75,6 @@
         </div>
     </main>
 
-    <!-- Bottom Footer Nav -->
     <footer class="fixed bottom-0 w-full bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-6 py-4 z-40 shadow-2xl">
         <div class="max-w-6xl mx-auto flex justify-between items-center gap-4">
             <button id="prevBtn" onclick="navigateQuestion(-1)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-2xl transition-all"><i class="fas fa-chevron-left mr-1"></i> ย้อนกลับ</button>
@@ -369,14 +360,26 @@
         }
 
         async function submitExam() {
-            Swal.fire({ title: 'กำลังบันทึกคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังประมวลผลและคำนวณคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             let totalScore = 0, maxScore = 0;
             currentQuestions.forEach(q => {
                 maxScore += q.points;
                 const ans = userAnswers[q.id];
+                
                 if (q.question_type === 'mcq' && ans && ans.selected_option_index === q.correct_option_index) {
                     totalScore += q.points;
+                } else if (q.question_type === 'subjective' && ans && ans.subjective_answer) {
+                    // คำนวณคะแนนอัตนัยอัตโนมัติกรณีเลือกตรวจแบบ Exact / Contains
+                    const studentAns = ans.subjective_answer.trim().toLowerCase();
+                    if (q.subjective_grading_type === 'exact' && q.acceptable_keywords) {
+                        const keywords = q.acceptable_keywords.split(',').map(k => k.trim().toLowerCase());
+                        if (keywords.includes(studentAns)) totalScore += q.points;
+                    } else if (q.subjective_grading_type === 'contains' && q.acceptable_keywords) {
+                        const keywords = q.acceptable_keywords.split(',').map(k => k.trim().toLowerCase());
+                        const isMatch = keywords.some(kw => studentAns.includes(kw));
+                        if (isMatch) totalScore += q.points;
+                    }
                 }
             });
 
