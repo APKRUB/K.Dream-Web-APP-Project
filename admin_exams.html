@@ -298,22 +298,28 @@
                 showCancelButton: true,
                 confirmButtonText: 'สร้างชุดข้อสอบ',
                 cancelButtonText: 'ยกเลิก',
-                preConfirm: () => {
-                    return {
-                        title: document.getElementById('exTitle').value,
-                        code: document.getElementById('exCode').value,
-                        category_id: document.getElementById('exCat').value || null,
-                        exam_type: document.getElementById('exType').value,
-                        start_time: document.getElementById('exStart').value ? new Date(document.getElementById('exStart').value).toISOString() : null,
-                        end_time: document.getElementById('exEnd').value ? new Date(document.getElementById('exEnd').value).toISOString() : null,
-                        time_limit: parseInt(document.getElementById('exTime').value),
-                        attempts_allowed: parseInt(document.getElementById('exAttempts').value),
-                        status: document.getElementById('exStatus').value,
-                        ranking_mode: document.getElementById('exRankMode').value,
-                        description: document.getElementById('exDesc').value,
-                        student_preview_info: document.getElementById('exStudentInfo').value
-                    }
-                }
+                // ค้นหาฟังก์ชัน openCreateExamModal() แล้วแก้ตรง preConfirm:
+preConfirm: () => {
+    const catInput = document.getElementById('exCat').value;
+    
+    // ตรวจสอบอย่างละเอียด: ถ้าเป็นค่าว่าง, "null", หรือไม่มีเลือก ให้ส่งเป็น null เท่านั้น
+    const cleanCategoryId = (catInput && catInput.trim() !== '' && catInput !== 'null') ? catInput : null;
+
+    return {
+        title: document.getElementById('exTitle').value,
+        code: document.getElementById('exCode').value,
+        category_id: cleanCategoryId, // ส่งค่าที่เคลียร์แล้ว
+        exam_type: document.getElementById('exType').value,
+        start_time: document.getElementById('exStart').value ? new Date(document.getElementById('exStart').value).toISOString() : null,
+        end_time: document.getElementById('exEnd').value ? new Date(document.getElementById('exEnd').value).toISOString() : null,
+        time_limit: parseInt(document.getElementById('exTime').value),
+        attempts_allowed: parseInt(document.getElementById('exAttempts').value),
+        status: document.getElementById('exStatus').value,
+        ranking_mode: document.getElementById('exRankMode').value,
+        description: document.getElementById('exDesc').value,
+        student_preview_info: document.getElementById('exStudentInfo').value
+    }
+}
             });
 
             if (form) {
