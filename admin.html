@@ -133,10 +133,9 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
         
-        <!-- Widget คิว Consult (จะแสดงต่อเมื่อมีคิวปัจจุบัน หรือคิวภายใน 24 ชม. ข้างหน้าเท่านั้น) -->
+        <!-- Widget คิว Consult (Realtime) -->
         <div id="consultLiveWidget" class="hidden glossy-card p-6 rounded-3xl border-2 border-indigo-500/50 relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="absolute -left-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
             <div class="flex items-center gap-4">
@@ -157,7 +156,6 @@
             </div>
         </div>
 
-        <!-- Welcome Banner -->
         <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-primary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden">
             <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
             <div>
@@ -169,7 +167,6 @@
             </div>
         </div>
 
-        <!-- เมนูหลัก -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div onclick="window.location.href='admin_upload.html'" class="glossy-card p-7 rounded-3xl cursor-pointer group">
                 <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-file-signature"></i></div>
@@ -242,12 +239,23 @@
             document.getElementById('welcomeMsg').textContent = `ยินดีต้อนรับ, คุณครู${profile.full_name || ''}`;
             fetchNotifications();
             loadLiveConsultWidget();
+            setupRealtimeConsult();
             setInterval(loadLiveConsultWidget, 30000);
+        }
+
+        // True Realtime Subscription สำหรับ Admin Dashboard
+        function setupRealtimeConsult() {
+            mySupabase
+                .channel('admin_consult_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, payload => {
+                    loadLiveConsultWidget();
+                })
+                .subscribe();
         }
 
         async function loadLiveConsultWidget() {
             const now = new Date();
-            const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000); // ล่วงหน้า 1 วัน
+            const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
             
             const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').eq('status', 'booked').gt('end_time', now.toISOString()).order('start_time', { ascending: true });
 
@@ -272,7 +280,6 @@
                 }
             }
 
-            // ถ้าไม่มีคิวปัจจุบัน และไม่มีคิวภายใน 24 ชม. ข้างหน้า ให้ซ่อน Widget
             if (!current && !upcoming) {
                 widget.classList.add('hidden');
                 return;
