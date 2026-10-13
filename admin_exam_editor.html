@@ -26,7 +26,12 @@
         .dark .glass-nav { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(51, 65, 85, 0.8); }
         .glossy-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .dark .glossy-card { background: rgba(30, 41, 59, 0.98); border: 1px solid rgba(51, 65, 85, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+        
+        /* แก้ไขสี SweetAlert2 Pop-up */
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #1e293b !important; color: #f8fafc !important; border: 1px solid #334155 !important; border-radius: 1.5rem !important; }
+        .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
+        .dark .swal2-input, .dark .swal2-select, .dark .swal2-textarea { background-color: #0f172a !important; color: #f8fafc !important; border-color: #475569 !important; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -42,7 +47,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="openPreviewModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-1.5"><i class="fas fa-eye"></i> Preview ตัวอย่าง</button>
+                    <button onclick="openPreviewModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-1.5"><i class="fas fa-eye"></i> Preview แบบนักเรียน (100%)</button>
                     <button onclick="addSectionModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-1.5"><i class="fas fa-folder-plus"></i> เพิ่มหมวดวิชา</button>
                     <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
                 </div>
@@ -64,7 +69,7 @@
             </div>
         </div>
 
-        <!-- แผงแสดงหมวดหมู่ย่อย (Sections Management Panel) -->
+        <!-- แผงแสดงหมวดหมู่ย่อย (Sections) -->
         <div id="sectionsCard" class="glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-indigo-500">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-layer-group text-indigo-500"></i> หมวดวิชาย่อยย่อยภายในชุดนี้ (Sections)</h3>
@@ -376,7 +381,6 @@
             }
         }
 
-        // Modal เพิ่มโจทย์รายข้อ (รองรับการตรวจอัตนัยอัตโนมัติ/ตรวจเอง)
         async function addNewQuestionModal() {
             let sectionOpts = currentSections.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
 
@@ -524,31 +528,85 @@
             loadData();
         }
 
+        // Preview จำลองมุมมองทำข้อสอบของนักเรียน 100%
         function openPreviewModal() {
             if (currentQuestions.length === 0) { Swal.fire('ไม่มีข้อมูล', 'กรุณาเพิ่มข้อสอบก่อนกด Preview', 'warning'); return; }
 
-            let previewHtml = currentQuestions.map(q => `
-                <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left text-xs space-y-2">
-                    <div class="font-bold text-slate-900 dark:text-white">ข้อที่ ${q.question_number}. ${q.question_text || ''}</div>
-                    ${q.question_image ? `<img src="${q.question_image}" class="max-h-36 rounded-lg">` : ''}
-                    ${q.question_type === 'mcq' ? `
-                        <div class="grid grid-cols-2 gap-2 pt-1">
-                            ${(q.exam_options || []).map((opt, i) => `
-                                <div class="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
-                                    <div>${String.fromCharCode(65 + i)}. ${opt.option_text || ''}</div>
-                                    ${opt.option_image ? `<img src="${opt.option_image}" class="max-h-20 rounded mt-1">` : ''}
-                                </div>
-                            `).join('')}
+            const isPdf = currentExam.exam_type === 'pdf';
+
+            let previewBody = '';
+
+            if (isPdf) {
+                previewBody = `
+                    <div class="space-y-3 text-left">
+                        <div class="p-3 bg-blue-50 dark:bg-slate-800 rounded-xl border border-blue-200 dark:border-slate-700 text-xs text-blue-600 dark:text-blue-300 font-bold flex justify-between items-center">
+                            <span><i class="fas fa-file-pdf mr-1"></i> โหมดสอบ PDF + กระดาษคำตอบฝน OMR</span>
+                            <span class="text-[10px] bg-blue-200 dark:bg-blue-900 px-2 py-0.5 rounded">นักเรียนสามารถสลับฝั่งเลย์เอาต์ได้</span>
                         </div>
-                    ` : '<div class="italic text-slate-400">[ ช่องสำหรับให้นักเรียนพิมพ์เขียนตอบ ]</div>'}
-                </div>
-            `).join('');
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-96">
+                            <div class="bg-slate-200 dark:bg-slate-900 rounded-2xl flex items-center justify-center text-slate-500 font-bold text-xs p-4 border border-slate-300 dark:border-slate-700">
+                                ${currentExam.pdf_url ? `<iframe src="${currentExam.pdf_url}" class="w-full h-full rounded-xl"></iframe>` : '[ ตัวอย่างหน้าจอแสดงไฟล์ PDF โจทย์ ]'}
+                            </div>
+                            <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 overflow-y-auto max-h-96">
+                                <h5 class="font-bold text-xs text-slate-900 dark:text-slate-100 pb-2 border-b">กระดาษคำตอบ OMR จำลอง</h5>
+                                ${currentQuestions.map(q => {
+                                    if (q.question_type === 'mcq') {
+                                        const bubbles = (q.exam_options || []).map((_, i) => `<span class="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-200 hover:bg-primary hover:text-white cursor-pointer">${String.fromCharCode(65 + i)}</span>`).join('');
+                                        return `<div class="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs"><span class="font-bold text-slate-900 dark:text-white">ข้อ ${q.question_number}</span><div class="flex gap-1">${bubbles}</div></div>`;
+                                    } else {
+                                        return `<div class="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border text-xs space-y-1"><span class="font-bold text-slate-900 dark:text-white">ข้อ ${q.question_number} (อัตนัย)</span><textarea class="w-full p-2 bg-white dark:bg-slate-900 border rounded text-[11px]" placeholder="นักเรียนจะพิมพ์ตอบที่นี่..." disabled></textarea></div>`;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const firstQ = currentQuestions[0];
+                previewBody = `
+                    <div class="space-y-4 text-left">
+                        <!-- Top Header Student Sim -->
+                        <div class="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-900 dark:text-white">${currentExam.title}</h4>
+                                <div class="text-[11px] text-slate-500">ความคืบหน้า: 0% (0/${currentQuestions.length} ข้อ)</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-xl text-xs font-mono font-bold">⏱️ 59:59 นาที</span>
+                            </div>
+                        </div>
+
+                        <!-- Card Question Student Sim -->
+                        <div class="p-6 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 shadow-sm">
+                            <div class="flex justify-between items-center pb-2 border-b dark:border-slate-700">
+                                <span class="px-3 py-1 bg-blue-50 text-primary dark:bg-blue-950/80 dark:text-blue-300 font-bold rounded-xl text-xs">ข้อที่ 1 จาก ${currentQuestions.length}</span>
+                                <span class="text-xs text-amber-500 font-bold"><i class="fas fa-flag mr-1"></i> ปักธง</span>
+                            </div>
+                            <div class="font-semibold text-sm text-slate-900 dark:text-white">${firstQ.question_text || ''}</div>
+                            ${firstQ.question_image ? `<img src="${firstQ.question_image}" class="max-h-40 rounded-xl">` : ''}
+
+                            ${firstQ.question_type === 'mcq' ? `
+                                <div class="space-y-2 pt-2">
+                                    ${(firstQ.exam_options || []).map((opt, i) => `
+                                        <div class="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-primary cursor-pointer flex items-center gap-3 transition-all">
+                                            <span class="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200">${String.fromCharCode(65 + i)}</span>
+                                            <span class="text-xs text-slate-800 dark:text-slate-200">${opt.option_text || ''}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <textarea class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-2xl text-xs h-24 text-slate-900 dark:text-slate-100" placeholder="ช่องสำหรับให้นักเรียนพิมพ์ตอบ..."></textarea>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }
 
             Swal.fire({
-                title: `<i class="fas fa-eye text-emerald-500"></i> Preview ตัวอย่างข้อสอบ: ${currentExam.title}`,
-                width: '750px',
-                html: `<div class="max-h-96 overflow-y-auto space-y-3 pr-1">${previewHtml}</div>`,
-                confirmButtonText: 'ปิดตัวอย่าง'
+                title: `<i class="fas fa-eye text-emerald-500"></i> ตัวอย่างหน้าจอที่นักเรียนเห็น 100%`,
+                width: '850px',
+                html: previewBody,
+                confirmButtonText: 'ปิดหน้าต่าง Preview'
             });
         }
 
