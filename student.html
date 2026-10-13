@@ -3,27 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์การเรียนรู้นักเรียน</title>
+    <title>LMS | ศูนย์นักเรียน</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { 
-                extend: { 
-                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16' } 
-                } 
-            }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16' } } } }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(9, 13, 22, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .dark .glass-nav { background: rgba(9, 13, 22, 0.95); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
         .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08); }
         .dark .glossy-card { background: #0f172a; border: 1px solid rgba(30, 41, 59, 1); }
     </style>
@@ -34,49 +26,36 @@
         <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <span class="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-bold text-lg"><i class="fas fa-graduation-cap"></i></span>
-                <div>
-                    <h1 class="font-extrabold text-xl text-slate-900 dark:text-white">Student Hub</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">ระบบเข้าทำสอบและนัด Consult</p>
-                </div>
+                <div><h1 class="font-extrabold text-xl">Student Hub</h1><p class="text-xs text-slate-500">ระบบสอบและนัด Consult</p></div>
             </div>
-
             <div class="flex items-center gap-3">
-                <!-- ปุ่มจองคิว Consult -->
-                <button onclick="openBookingConsultModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-2">
-                    <i class="fas fa-comments"></i> 📅 จองคิว Consult
-                </button>
-
-                <!-- ปุ่ม Log out สำหรับนักเรียน -->
-                <button onclick="logoutStudent()" class="px-4 py-2.5 bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-300 rounded-2xl font-bold text-xs border border-red-200 dark:border-red-900 flex items-center gap-1.5">
-                    <i class="fas fa-sign-out-alt"></i> Log out
-                </button>
+                <button onclick="window.location.href='announcements.html'" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-xs"><i class="fas fa-bullhorn"></i> ประกาศ</button>
+                <button onclick="openBookingConsult()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs"><i class="fas fa-comments"></i> นัด Consult</button>
+                <button onclick="logoutStudent()" class="px-4 py-2.5 bg-red-50 text-red-600 rounded-2xl font-bold text-xs border border-red-200"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 pt-32 pb-20 space-y-8">
-        
-        <!-- Welcome Banner -->
-        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-700 to-indigo-800 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-extrabold">ยินดีต้อนรับนักเรียน! 👋</h2>
-                <p class="text-xs text-sky-100 mt-1">เลือกชุดข้อสอบ หรือกดนัดหมาย Consult ปรึกษาคุณครูเพิ่มเติมได้เลย</p>
+        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 to-indigo-800 text-white flex justify-between items-center">
+            <div><h2 class="text-2xl font-extrabold">ยินดีต้อนรับนักเรียน! 👋</h2><p class="text-xs text-sky-100">เลือกชุดข้อสอบ หรือจองคิวที่ปรึกษาได้เลย</p></div>
+        </div>
+
+        <!-- 24h Countdown Section -->
+        <div id="upcomingSec" class="hidden space-y-4">
+            <h3 class="font-extrabold text-base text-amber-600 flex items-center gap-2"><i class="fas fa-clock animate-bounce"></i> ข้อสอบกำลังจะเปิดใน 24 ชั่วโมง</h3>
+            <div id="upcomingGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
+
+        <div class="glossy-card p-6 rounded-3xl space-y-6">
+            <div class="flex justify-between items-center pb-4 border-b">
+                <h3 class="font-extrabold text-lg"><i class="fas fa-pencil-alt text-sky-600"></i> ข้อสอบของคุณ</h3>
+                <div class="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl">
+                    <button id="tabPending" onclick="switchTab('pending')" class="px-5 py-2 rounded-lg text-xs font-bold bg-white text-sky-600 shadow-sm">ยังไม่ได้ทำ</button>
+                    <button id="tabDone" onclick="switchTab('done')" class="px-5 py-2 rounded-lg text-xs font-bold text-slate-500">ทำเสร็จแล้ว</button>
+                </div>
             </div>
-            <button onclick="window.location.href='student_exams.html'" class="px-6 py-3 bg-white text-sky-700 font-bold text-xs rounded-2xl shadow-lg">
-                ดูคลังข้อสอบทั้งหมด
-            </button>
-        </div>
-
-        <!-- ข้อสอบที่กำลังจะเปิดภายใน 24 ชั่วโมง -->
-        <div id="upcomingSectionStudent" class="hidden space-y-4">
-            <h3 class="font-extrabold text-base text-amber-600 dark:text-amber-400 flex items-center gap-2"><i class="fas fa-clock animate-bounce"></i> ข้อสอบที่กำลังจะเปิดใน 24 ชั่วโมง</h3>
-            <div id="upcomingGridStudent" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-        </div>
-
-        <!-- ข้อสอบสดพร้อมทำ -->
-        <div class="glossy-card p-8 rounded-3xl space-y-6">
-            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-pencil-alt text-sky-600"></i> ข้อสอบพร้อมเข้าทำสอบ</h3>
-            <div id="studentExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="examGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
     </main>
 
@@ -85,78 +64,55 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function initPage() {
-            const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
-            const now = new Date();
-            const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        let activeTab = 'pending'; let allPublicExams = []; let doneExamIds = [];
 
-            const upcoming = (exams || []).filter(e => e.status === 'countdown' && e.start_time && new Date(e.start_time) > now && new Date(e.start_time) <= oneDayLater);
-            const active = (exams || []).filter(e => e.status === 'public');
+        async function initPage() {
+            const { data: { session } } = await mySupabase.auth.getSession();
+            if (session) {
+                const { data: att } = await mySupabase.from('exam_attempts').select('exam_id').eq('student_id', session.user.id).eq('status', 'submitted');
+                doneExamIds = (att || []).map(a => a.exam_id);
+            }
+            const { data } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
+            
+            const now = new Date(); const oneDay = new Date(now.getTime() + 24*60*60*1000);
+            const upcoming = (data || []).filter(e => e.status === 'countdown' && e.start_time && new Date(e.start_time) > now && new Date(e.start_time) <= oneDay);
+            allPublicExams = (data || []).filter(e => e.status === 'public');
 
             if (upcoming.length > 0) {
-                document.getElementById('upcomingSectionStudent').classList.remove('hidden');
-                document.getElementById('upcomingGridStudent').innerHTML = upcoming.map(e => `
-                    <div class="p-5 bg-amber-50 dark:bg-slate-800 rounded-3xl border border-amber-300 dark:border-amber-700 space-y-2 text-xs">
-                        <div class="font-bold text-amber-700 dark:text-amber-300">${e.title}</div>
-                        <div class="text-[11px] text-slate-500">⏳ เปิดใน: ${new Date(e.start_time).toLocaleString('th-TH')}</div>
-                    </div>
-                `).join('');
+                document.getElementById('upcomingSec').classList.remove('hidden');
+                document.getElementById('upcomingGrid').innerHTML = upcoming.map(e => `<div class="p-5 bg-amber-50 dark:bg-slate-800 rounded-3xl border border-amber-300 text-xs"><div class="font-bold text-amber-700 dark:text-amber-300">${e.title}</div><div class="text-[11px] text-slate-500 mt-2">⏳ เปิด: ${new Date(e.start_time).toLocaleString('th-TH')}</div></div>`).join('');
             }
-
-            document.getElementById('studentExamsGrid').innerHTML = active.map(e => `
-                <div class="glossy-card p-6 rounded-3xl space-y-4 flex flex-col justify-between">
-                    <div>
-                        <div class="font-bold text-base text-slate-900 dark:text-white mb-2">${e.title}</div>
-                        <div class="text-xs text-slate-500 mb-4">เวลาทำสอบ: ${e.time_limit} นาที</div>
-                    </div>
-                    <button onclick="window.location.href='exam_take.html?id=${e.id}'" class="w-full py-3 bg-sky-600 text-white font-bold text-xs rounded-2xl shadow-md">เริ่มทำข้อสอบ</button>
-                </div>
-            `).join('');
+            renderExams();
         }
 
-        async function openBookingConsultModal() {
+        function switchTab(t) { activeTab = t; 
+            document.getElementById('tabPending').className = t === 'pending' ? "px-5 py-2 rounded-lg text-xs font-bold bg-white text-sky-600 shadow-sm" : "px-5 py-2 rounded-lg text-xs font-bold text-slate-500";
+            document.getElementById('tabDone').className = t === 'done' ? "px-5 py-2 rounded-lg text-xs font-bold bg-white text-sky-600 shadow-sm" : "px-5 py-2 rounded-lg text-xs font-bold text-slate-500";
+            renderExams();
+        }
+
+        function renderExams() {
+            const isDone = activeTab === 'done';
+            const ex = allPublicExams.filter(e => isDone ? doneExamIds.includes(e.id) : !doneExamIds.includes(e.id));
+            const grid = document.getElementById('examGrid');
+            if (ex.length === 0) { grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">ไม่มีข้อสอบ</div>`; return; }
+            grid.innerHTML = ex.map(e => `
+                <div class="glossy-card p-6 rounded-3xl flex flex-col justify-between">
+                    <div><h4 class="font-bold text-base mb-2">${e.title}</h4><div class="text-xs text-slate-500 mb-4">เวลา: ${e.time_limit} นาที | ส่ง: ${e.end_time ? new Date(e.end_time).toLocaleDateString('th-TH') : 'ไม่มี'}</div></div>
+                    <button onclick="window.location.href='${isDone ? `exam_result.html?exam_id=${e.id}` : `exam_take.html?id=${e.id}`}'" class="w-full py-3 ${isDone ? 'bg-slate-200 text-slate-800' : 'bg-sky-600 text-white'} font-bold text-xs rounded-xl">${isDone ? 'ดูผลวิเคราะห์ AI' : 'เริ่มทำข้อสอบ'}</button>
+                </div>`).join('');
+        }
+
+        async function openBookingConsult() {
             const { value: form } = await Swal.fire({
-                title: '<i class="fas fa-comments text-indigo-600"></i> จองคิว Consult ปรึกษาคุณครู',
-                html: `
-                    <div class="space-y-3 text-left text-xs">
-                        <div>
-                            <label class="block font-bold mb-1">ชื่อ-นามสกุล *</label>
-                            <input id="csName" class="w-full px-3 py-2 border rounded-xl" placeholder="เช่น ด.ช. ปารย์ชวัล">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">หัวข้อที่ต้องการปรึกษา *</label>
-                            <input id="csTopic" class="w-full px-3 py-2 border rounded-xl" placeholder="เช่น สอบถามเรื่องการคำนวณข้อสอบฟิสิกส์">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">วัน/เวลาที่สะดวกนัด *</label>
-                            <input type="datetime-local" id="csTime" class="w-full px-3 py-2 border rounded-xl">
-                        </div>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันส่งเรื่องจองคิว',
-                preConfirm: () => ({
-                    student_name: document.getElementById('csName').value,
-                    topic: document.getElementById('csTopic').value,
-                    appointment_time: document.getElementById('csTime').value
-                })
+                title: '📅 นัดหมาย Consult',
+                html: `<div class="space-y-3 text-left text-xs"><input id="csName" class="w-full px-3 py-2 border rounded-xl" placeholder="ชื่อ-นามสกุล *"><input id="csTopic" class="w-full px-3 py-2 border rounded-xl" placeholder="หัวข้อที่ต้องการปรึกษา *"><input type="datetime-local" id="csTime" class="w-full px-3 py-2 border rounded-xl"></div>`,
+                showCancelButton: true, confirmButtonText: 'จองคิว',
+                preConfirm: () => ({ student_name: document.getElementById('csName').value, topic: document.getElementById('csTopic').value, appointment_time: document.getElementById('csTime').value })
             });
-
-            if (form && form.student_name) {
-                await mySupabase.from('consult_queues').insert([{
-                    student_name: form.student_name,
-                    topic: form.topic,
-                    appointment_time: new Date(form.appointment_time).toISOString()
-                }]);
-                Swal.fire({ icon: 'success', title: 'ส่งเรื่องจองคิวเรียบร้อย!', timer: 1200, showConfirmButton: false });
-            }
+            if (form && form.student_name) { await mySupabase.from('consult_queues').insert([form]); Swal.fire('สำเร็จ', 'ส่งคำร้องจองคิวแล้วรอครูอนุมัติ', 'success'); }
         }
-
-        async function logoutStudent() {
-            await mySupabase.auth.signOut();
-            window.location.href = 'index.html';
-        }
-
+        async function logoutStudent() { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
         initPage();
     </script>
 </body>
