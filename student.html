@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ระบบสอบ | สำหรับนักเรียน</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .exam-card { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 id="welcomeMsg">กำลังโหลดข้อมูล...</h2>
+        <button id="logoutBtn" style="background: #ff4444; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">ออกจากระบบ</button>
+    </div>
+    
+    <hr>
+    
+    <h3>รายการข้อสอบของคุณ</h3>
+    <!-- พื้นที่สำหรับเฟส 3 ดึงข้อสอบมาแสดง -->
+    <div id="examList">
+        <p>กำลังโหลดรายการข้อสอบ...</p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://your-project-url.supabase.co';
+        const SUPABASE_KEY = 'your-anon-key';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function initPage() {
+            // 1. เช็คว่ามี Session การล็อกอินหรือไม่
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // 2. ดึงข้อมูล Role จาก profiles
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, role')
+                .eq('id', session.user.id)
+                .single();
+
+            // 3. ป้องกันคนที่มีสิทธิ์ครู/แอดมิน เข้าหน้านี้
+            if (profile.role !== 'student') {
+                window.location.href = 'admin.html';
+                return;
+            }
+
+            // 4. แสดงชื่อนักเรียน
+            document.getElementById('welcomeMsg').textContent = `ยินดีต้อนรับ, ${profile.full_name}`;
+            
+            // หมายเหตุ: โค้ดดึงรายการข้อสอบจะถูกเพิ่มในเฟส 3
+            document.getElementById('examList').innerHTML = '<p>ยังไม่มีข้อสอบในขณะนี้</p>';
+        }
+
+        // ระบบออกจากระบบ
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabase.auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        initPage();
+    </script>
+</body>
+</html>
