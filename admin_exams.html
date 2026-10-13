@@ -227,111 +227,128 @@
         }
 
         // Modal เพิ่มชุดข้อสอบใหม่
-        async function openCreateExamModal() {
-            let categoryOptions = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+async function openCreateExamModal() {
+    // โหลดหมวดหมู่ล่าสุดก่อนเปิด Modal ทุกครั้ง
+    await fetchCategories();
 
-            const { value: form } = await Swal.fire({
-                title: '<i class="fas fa-plus text-primary"></i> เพิ่มชุดข้อสอบใหม่',
-                width: '700px',
-                html: `
-                    <div class="grid grid-cols-2 gap-3 text-left text-xs">
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block font-bold mb-1">ชื่อชุดข้อสอบ *</label>
-                            <input id="exTitle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น สรุปชีววิทยา ม.3">
-                        </div>
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="block font-bold mb-1">รหัสวิชา/ข้อสอบ *</label>
-                            <input id="exCode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น BIO301">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">หมวดหมู่หลัก</label>
-                            <select id="exCat" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl"><option value="">-- ไม่เลือก --</option>${categoryOptions}</select>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">ประเภทข้อสอบ *</label>
-                            <select id="exType" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                                <option value="online_form">พิมพ์ลงระบบ (1 ข้อ/หน้า)</option>
-                                <option value="pdf">PDF + กระดาษคำตอบจำลอง</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">วัน/เวลาเปิดรับงาน</label>
-                            <input type="datetime-local" id="exStart" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">วัน/เวลากำหนดส่ง (ระบุหรือไม่ก็ได้)</label>
-                            <input type="datetime-local" id="exEnd" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">เวลาทำสอบ (นาที)</label>
-                            <input type="number" id="exTime" value="60" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">จำนวนครั้งที่ทำได้ (Attempt)</label>
-                            <input type="number" id="exAttempts" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">สถานะ</label>
-                            <select id="exStatus" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                                <option value="draft">Draft (ร่าง)</option>
-                                <option value="public">Public (เปิดสอบทันที)</option>
-                                <option value="countdown">Countdown (นับถอยหลัง)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">การแสดง Ranking / คะแนน</label>
-                            <select id="exRankMode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                                <option value="immediate">แสดงทันทีหลังทำเสร็จ</option>
-                                <option value="delay">รอกำหนดเวลา (วัน)</option>
-                            </select>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block font-bold mb-1">รายละเอียดทั่วไป</label>
-                            <textarea id="exDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำอธิบายสำหรับครู..."></textarea>
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block font-bold mb-1">ข้อมูลเบื้องต้นที่ให้นักเรียนเห็น</label>
-                            <textarea id="exStudentInfo" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำแนะนำการทำข้อสอบสำหรับนักเรียน..."></textarea>
-                        </div>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'สร้างชุดข้อสอบ',
-                cancelButtonText: 'ยกเลิก',
-                // ค้นหาฟังก์ชัน openCreateExamModal() แล้วแก้ตรง preConfirm:
-preConfirm: () => {
-    const catInput = document.getElementById('exCat').value;
-    
-    // ตรวจสอบอย่างละเอียด: ถ้าเป็นค่าว่าง, "null", หรือไม่มีเลือก ให้ส่งเป็น null เท่านั้น
-    const cleanCategoryId = (catInput && catInput.trim() !== '' && catInput !== 'null') ? catInput : null;
+    let categoryOptions = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-    return {
-        title: document.getElementById('exTitle').value,
-        code: document.getElementById('exCode').value,
-        category_id: cleanCategoryId, // ส่งค่าที่เคลียร์แล้ว
-        exam_type: document.getElementById('exType').value,
-        start_time: document.getElementById('exStart').value ? new Date(document.getElementById('exStart').value).toISOString() : null,
-        end_time: document.getElementById('exEnd').value ? new Date(document.getElementById('exEnd').value).toISOString() : null,
-        time_limit: parseInt(document.getElementById('exTime').value),
-        attempts_allowed: parseInt(document.getElementById('exAttempts').value),
-        status: document.getElementById('exStatus').value,
-        ranking_mode: document.getElementById('exRankMode').value,
-        description: document.getElementById('exDesc').value,
-        student_preview_info: document.getElementById('exStudentInfo').value
+    const { value: form } = await Swal.fire({
+        title: '<i class="fas fa-plus text-primary"></i> เพิ่มชุดข้อสอบใหม่',
+        width: '700px',
+        html: `
+            <div class="grid grid-cols-2 gap-3 text-left text-xs">
+                <div class="col-span-2 sm:col-span-1">
+                    <label class="block font-bold mb-1">ชื่อชุดข้อสอบ *</label>
+                    <input id="exTitle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น สรุปชีววิทยา ม.3">
+                </div>
+                <div class="col-span-2 sm:col-span-1">
+                    <label class="block font-bold mb-1">รหัสวิชา/ข้อสอบ *</label>
+                    <input id="exCode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น BIO301">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">หมวดหมู่หลัก</label>
+                    <select id="exCat" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        <option value="">-- ไม่เลือก --</option>
+                        ${categoryOptions}
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">ประเภทข้อสอบ *</label>
+                    <select id="exType" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        <option value="online_form">พิมพ์ลงระบบ (1 ข้อ/หน้า)</option>
+                        <option value="pdf">PDF + กระดาษคำตอบจำลอง</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">วัน/เวลาเปิดรับงาน</label>
+                    <input type="datetime-local" id="exStart" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">วัน/เวลากำหนดส่ง (ระบุหรือไม่ก็ได้)</label>
+                    <input type="datetime-local" id="exEnd" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">เวลาทำสอบ (นาที)</label>
+                    <input type="number" id="exTime" value="60" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">จำนวนครั้งที่ทำได้ (Attempt)</label>
+                    <input type="number" id="exAttempts" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">สถานะ</label>
+                    <select id="exStatus" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        <option value="draft">Draft (ร่าง)</option>
+                        <option value="public">Public (เปิดสอบทันที)</option>
+                        <option value="countdown">Countdown (นับถอยหลัง)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">การแสดง Ranking / คะแนน</label>
+                    <select id="exRankMode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        <option value="immediate">แสดงทันทีหลังทำเสร็จ</option>
+                        <option value="delay">รอกำหนดเวลา (วัน)</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block font-bold mb-1">รายละเอียดทั่วไป</label>
+                    <textarea id="exDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำอธิบายสำหรับครู..."></textarea>
+                </div>
+                <div class="col-span-2">
+                    <label class="block font-bold mb-1">ข้อมูลเบื้องต้นที่ให้นักเรียนเห็น</label>
+                    <textarea id="exStudentInfo" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำแนะนำการทำข้อสอบสำหรับนักเรียน..."></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'สร้างชุดข้อสอบ',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => {
+            const title = document.getElementById('exTitle').value;
+            const code = document.getElementById('exCode').value;
+            const catVal = document.getElementById('exCat').value;
+
+            if (!title || !code) {
+                Swal.showValidationMessage('กรุณากรอกชื่อและรหัสข้อสอบ');
+                return false;
+            }
+
+            // สร้าง Payload โดยไม่ใส่ category_id ไว้ตั้งแต่แรก
+            const payload = {
+                title: title,
+                code: code,
+                exam_type: document.getElementById('exType').value,
+                start_time: document.getElementById('exStart').value ? new Date(document.getElementById('exStart').value).toISOString() : null,
+                end_time: document.getElementById('exEnd').value ? new Date(document.getElementById('exEnd').value).toISOString() : null,
+                time_limit: parseInt(document.getElementById('exTime').value) || 60,
+                attempts_allowed: parseInt(document.getElementById('exAttempts').value) || 1,
+                status: document.getElementById('exStatus').value,
+                ranking_mode: document.getElementById('exRankMode').value,
+                description: document.getElementById('exDesc').value,
+                student_preview_info: document.getElementById('exStudentInfo').value
+            };
+
+            // แนบ category_id เฉพาะเมื่อมีการเลือกหมวดหมู่ที่เป็น ID จริงๆ เท่านั้น
+            if (catVal && catVal.trim() !== '' && catVal !== 'null') {
+                payload.category_id = catVal.trim();
+            }
+
+            return payload;
+        }
+    });
+
+    if (form) {
+        const { data, error } = await mySupabase.from('exams').insert([form]).select().single();
+        if (!error) {
+            await mySupabase.from('exam_audit_logs').insert([{ exam_id: data.id, action_description: 'สร้างชุดข้อสอบใหม่' }]);
+            Swal.fire({ icon: 'success', title: 'สร้างชุดข้อสอบสำเร็จ!', timer: 1200, showConfirmButton: false });
+            fetchExams();
+        } else {
+            Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+        }
     }
 }
-            });
-
-            if (form) {
-                if (!form.title || !form.code) { Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อและรหัสข้อสอบ', 'warning'); return; }
-                const { data, error } = await mySupabase.from('exams').insert([form]).select().single();
-                if (!error) {
-                    await mySupabase.from('exam_audit_logs').insert([{ exam_id: data.id, action_description: 'สร้างชุดข้อสอบใหม่' }]);
-                    Swal.fire({ icon: 'success', title: 'สร้างชุดข้อสอบสำเร็จ!', timer: 1200, showConfirmButton: false });
-                    fetchExams();
-                } else { Swal.fire('เกิดข้อผิดพลาด', error.message, 'error'); }
-            }
-        }
 
         // Modal สถิติและ AI วิเคราะห์ผลประเมิน + ดาวน์โหลด Excel
         async function openAnalyticsModal(examId, title) {
