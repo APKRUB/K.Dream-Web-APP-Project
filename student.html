@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์รวมการเรียนรู้ของนักเรียน</title>
+    <title>LMS | ศูนย์การเรียนรู้นักเรียน</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +15,7 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#2563eb', darkbg: '#0f172a', darkbox: '#1e293b' } 
+                    colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16' } 
                 } 
             }
         }
@@ -23,78 +23,60 @@
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(51, 65, 85, 0.8); }
-        .glossy-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-        .dark .glossy-card { background: rgba(30, 41, 59, 0.98); border: 1px solid rgba(51, 65, 85, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+        .dark .glass-nav { background: rgba(9, 13, 22, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08); }
+        .dark .glossy-card { background: #0f172a; border: 1px solid rgba(30, 41, 59, 1); }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md"><i class="fas fa-graduation-cap"></i></span>
-                    <div>
-                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white">Student Hub</h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">ระบบเข้าสอบและคลังการเรียนรู้นักเรียน</p>
-                    </div>
+        <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-bold text-lg"><i class="fas fa-graduation-cap"></i></span>
+                <div>
+                    <h1 class="font-extrabold text-xl text-slate-900 dark:text-white">Student Hub</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">ระบบเข้าทำสอบและนัด Consult</p>
                 </div>
+            </div>
 
-                <div class="flex items-center gap-3">
-                    <!-- Notification Bell สำหรับนักเรียน -->
-                    <div class="relative">
-                        <button onclick="toggleNotifDropdown()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 relative">
-                            <i class="fas fa-bell text-lg"></i>
-                            <span id="studNotifBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center border-2 border-white dark:border-darkbg">0</span>
-                        </button>
-                        <div id="studNotifDropdown" class="hidden absolute right-0 mt-3 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-700 font-bold text-xs flex justify-between items-center">
-                                <span><i class="fas fa-bell text-primary mr-1"></i> แจ้งเตือนข้อสอบของคุณ</span>
-                            </div>
-                            <div id="studNotifList" class="max-h-64 overflow-y-auto divide-y dark:divide-slate-700"></div>
-                        </div>
-                    </div>
+            <div class="flex items-center gap-3">
+                <!-- ปุ่มจองคิว Consult -->
+                <button onclick="openBookingConsultModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-2">
+                    <i class="fas fa-comments"></i> 📅 จองคิว Consult
+                </button>
 
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
-                </div>
+                <!-- ปุ่ม Log out สำหรับนักเรียน -->
+                <button onclick="logoutStudent()" class="px-4 py-2.5 bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-300 rounded-2xl font-bold text-xs border border-red-200 dark:border-red-900 flex items-center gap-1.5">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 pt-32 pb-20 space-y-8">
         
-        <!-- Welcome Student Banner -->
-        <div class="p-8 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="space-y-2 z-10">
-                <span class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm">LMS Examination Portal</span>
-                <h2 class="text-2xl font-extrabold" id="studentGreetingName">ยินดีต้อนรับนักเรียน! 👋</h2>
-                <p class="text-xs text-blue-100">เลือกชุดข้อสอบที่เปิดให้บริการ และตรวจสอบรายงาน AI วิเคราะห์ผลสอบของคุณได้ที่นี่</p>
+        <!-- Welcome Banner -->
+        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-700 to-indigo-800 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-extrabold">ยินดีต้อนรับนักเรียน! 👋</h2>
+                <p class="text-xs text-sky-100 mt-1">เลือกชุดข้อสอบ หรือกดนัดหมาย Consult ปรึกษาคุณครูเพิ่มเติมได้เลย</p>
             </div>
-            <button onclick="window.location.href='student_exams.html'" class="z-10 px-6 py-3 bg-white text-blue-600 hover:bg-blue-50 font-bold text-xs rounded-2xl shadow-lg transition-all flex items-center gap-2">
-                <i class="fas fa-external-link-alt"></i> เปิดหน้าชุดข้อสอบฉบับเต็ม
+            <button onclick="window.location.href='student_exams.html'" class="px-6 py-3 bg-white text-sky-700 font-bold text-xs rounded-2xl shadow-lg">
+                ดูคลังข้อสอบทั้งหมด
             </button>
-            <i class="fas fa-book-open absolute -right-6 -bottom-6 text-9xl text-white/10 pointer-events-none"></i>
         </div>
 
-        <!-- ดึงรายการข้อสอบขึ้นมาแสดงสดในหน้านี้ได้เลย (Appear Exams Directly) -->
-        <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
-                <div>
-                    <h3 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-pencil-alt text-primary"></i> รายการชุดข้อสอบของคุณ</h3>
-                    <p class="text-xs text-slate-500">ข้อสอบทั้งหมดที่ครูเปิดให้บริการหรือทำเสร็จแล้ว</p>
-                </div>
+        <!-- ข้อสอบที่กำลังจะเปิดภายใน 24 ชั่วโมง -->
+        <div id="upcomingSectionStudent" class="hidden space-y-4">
+            <h3 class="font-extrabold text-base text-amber-600 dark:text-amber-400 flex items-center gap-2"><i class="fas fa-clock animate-bounce"></i> ข้อสอบที่กำลังจะเปิดใน 24 ชั่วโมง</h3>
+            <div id="upcomingGridStudent" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+        </div>
 
-                <div class="bg-slate-200 dark:bg-slate-800 p-1.5 rounded-2xl flex gap-1">
-                    <button id="tabPendingBtn" onclick="switchTab('pending')" class="px-5 py-2 rounded-xl font-bold text-xs bg-white dark:bg-slate-700 text-primary shadow-sm"><i class="fas fa-edit mr-1"></i> ยังไม่ได้ทำ</button>
-                    <button id="tabDoneBtn" onclick="switchTab('completed')" class="px-5 py-2 rounded-xl font-bold text-xs text-slate-500 hover:text-primary"><i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว</button>
-                </div>
-            </div>
-
-            <!-- Container แสดงการ์ดข้อสอบสด -->
-            <div id="examsDirectDisplayGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="col-span-full text-center py-12 text-slate-400 text-sm">กำลังโหลดชุดข้อสอบ...</div>
-            </div>
+        <!-- ข้อสอบสดพร้อมทำ -->
+        <div class="glossy-card p-8 rounded-3xl space-y-6">
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-pencil-alt text-sky-600"></i> ข้อสอบพร้อมเข้าทำสอบ</h3>
+            <div id="studentExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
     </main>
 
@@ -103,114 +85,76 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let activeTab = 'pending';
-        let allPublicExams = [];
-        let studentCompletedExamIds = [];
-
-        const htmlElement = document.documentElement;
-        const themeIcon = document.getElementById('themeIcon');
-        if (localStorage.getItem('theme') === 'dark') { htmlElement.classList.add('dark'); themeIcon.classList.replace('fa-moon', 'fa-sun'); }
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            htmlElement.classList.toggle('dark');
-            const isDark = htmlElement.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
-        });
-
         async function initPage() {
-            const { data: { session } } = await mySupabase.auth.getSession();
-            if (session) {
-                const { data: profile } = await mySupabase.from('profiles').select('full_name').eq('id', session.user.id).single();
-                if (profile?.full_name) {
-                    document.getElementById('studentGreetingName').textContent = `ยินดีต้อนรับ, ${profile.full_name}! 👋`;
-                }
+            const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
+            const now = new Date();
+            const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-                const { data: attempts } = await mySupabase.from('exam_attempts').select('exam_id').eq('student_id', session.user.id).eq('status', 'submitted');
-                studentCompletedExamIds = (attempts || []).map(a => a.exam_id);
+            const upcoming = (exams || []).filter(e => e.status === 'countdown' && e.start_time && new Date(e.start_time) > now && new Date(e.start_time) <= oneDayLater);
+            const active = (exams || []).filter(e => e.status === 'public');
+
+            if (upcoming.length > 0) {
+                document.getElementById('upcomingSectionStudent').classList.remove('hidden');
+                document.getElementById('upcomingGridStudent').innerHTML = upcoming.map(e => `
+                    <div class="p-5 bg-amber-50 dark:bg-slate-800 rounded-3xl border border-amber-300 dark:border-amber-700 space-y-2 text-xs">
+                        <div class="font-bold text-amber-700 dark:text-amber-300">${e.title}</div>
+                        <div class="text-[11px] text-slate-500">⏳ เปิดใน: ${new Date(e.start_time).toLocaleString('th-TH')}</div>
+                    </div>
+                `).join('');
             }
 
-            await fetchExamsAndNotifications();
-        }
-
-        async function fetchExamsAndNotifications() {
-            const { data: exams } = await mySupabase.from('exams').select('*, exam_categories(name), exam_questions(id)').eq('status', 'public').order('created_at', { ascending: false });
-            allPublicExams = exams || [];
-            renderDirectExams();
-
-            // โหลดแจ้งเตือนฝั่งนักเรียน
-            const { data: notifs } = await mySupabase.from('system_notifications').select('*').or('role_target.eq.student,role_target.eq.all').order('created_at', { ascending: false }).limit(10);
-            const badge = document.getElementById('studNotifBadge');
-            const list = document.getElementById('studNotifList');
-            const unread = (notifs || []).filter(n => !n.is_read).length;
-
-            if (unread > 0) { badge.textContent = unread; badge.classList.remove('hidden'); }
-            else { badge.classList.add('hidden'); }
-
-            if (!notifs || notifs.length === 0) {
-                list.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">ไม่มีแจ้งเตือนใหม่</div>`;
-                return;
-            }
-
-            list.innerHTML = notifs.map(n => `
-                <div class="p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer text-xs" onclick="window.location.href='${n.link_url || 'student_exams.html'}'">
-                    <div class="font-bold text-slate-900 dark:text-white mb-0.5">${n.title}</div>
-                    <div class="text-slate-500 dark:text-slate-400 font-normal text-[11px]">${n.message}</div>
+            document.getElementById('studentExamsGrid').innerHTML = active.map(e => `
+                <div class="glossy-card p-6 rounded-3xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="font-bold text-base text-slate-900 dark:text-white mb-2">${e.title}</div>
+                        <div class="text-xs text-slate-500 mb-4">เวลาทำสอบ: ${e.time_limit} นาที</div>
+                    </div>
+                    <button onclick="window.location.href='exam_take.html?id=${e.id}'" class="w-full py-3 bg-sky-600 text-white font-bold text-xs rounded-2xl shadow-md">เริ่มทำข้อสอบ</button>
                 </div>
             `).join('');
         }
 
-        function toggleNotifDropdown() {
-            document.getElementById('studNotifDropdown').classList.toggle('hidden');
-        }
-
-        function switchTab(tab) {
-            activeTab = tab;
-            const pBtn = document.getElementById('tabPendingBtn');
-            const dBtn = document.getElementById('tabDoneBtn');
-            if (tab === 'pending') {
-                pBtn.className = "px-5 py-2 rounded-xl font-bold text-xs bg-white dark:bg-slate-700 text-primary shadow-sm";
-                dBtn.className = "px-5 py-2 rounded-xl font-bold text-xs text-slate-500 hover:text-primary";
-            } else {
-                dBtn.className = "px-5 py-2 rounded-xl font-bold text-xs bg-white dark:bg-slate-700 text-primary shadow-sm";
-                pBtn.className = "px-5 py-2 rounded-xl font-bold text-xs text-slate-500 hover:text-primary";
-            }
-            renderDirectExams();
-        }
-
-        function renderDirectExams() {
-            const container = document.getElementById('examsDirectDisplayGrid');
-            const isCompleted = activeTab === 'completed';
-
-            const filtered = allPublicExams.filter(e => isCompleted ? studentCompletedExamIds.includes(e.id) : !studentCompletedExamIds.includes(e.id));
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-sm">ไม่มีชุดข้อสอบในหมวดนี้</div>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map(e => `
-                <div class="glossy-card p-6 rounded-3xl relative flex flex-col justify-between hover:border-primary transition-all">
-                    <div>
-                        <div class="flex justify-between items-start gap-2 mb-2">
-                            <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-2.5 py-1 rounded-lg"><i class="fas fa-folder mr-1"></i>${e.exam_categories?.name || 'ทั่วไป'}</span>
-                            <span class="text-xs font-mono font-bold text-slate-400">#${e.code}</span>
+        async function openBookingConsultModal() {
+            const { value: form } = await Swal.fire({
+                title: '<i class="fas fa-comments text-indigo-600"></i> จองคิว Consult ปรึกษาคุณครู',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อ-นามสกุล *</label>
+                            <input id="csName" class="w-full px-3 py-2 border rounded-xl" placeholder="เช่น ด.ช. ปารย์ชวัล">
                         </div>
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white mb-2 truncate">${e.title}</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">${e.student_preview_info || 'ปฏิบัติตามกติการะบบสอบอย่างเคร่งครัด'}</p>
-
-                        <!-- 3 ข้อมูลสำคัญ -->
-                        <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/90 rounded-2xl text-center text-[11px] mb-6 border border-slate-200 dark:border-slate-700">
-                            <div><div class="text-slate-400">จำนวน</div><div class="font-bold text-primary">${e.exam_questions?.length || 0} ข้อ</div></div>
-                            <div><div class="text-slate-400">เวลา</div><div class="font-bold text-emerald-600">${e.time_limit} นาที</div></div>
-                            <div><div class="text-slate-400">กำหนดส่ง</div><div class="font-bold text-amber-600 truncate">${e.end_time ? new Date(e.end_time).toLocaleDateString('th-TH') : 'ไม่มี'}</div></div>
+                        <div>
+                            <label class="block font-bold mb-1">หัวข้อที่ต้องการปรึกษา *</label>
+                            <input id="csTopic" class="w-full px-3 py-2 border rounded-xl" placeholder="เช่น สอบถามเรื่องการคำนวณข้อสอบฟิสิกส์">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">วัน/เวลาที่สะดวกนัด *</label>
+                            <input type="datetime-local" id="csTime" class="w-full px-3 py-2 border rounded-xl">
                         </div>
                     </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันส่งเรื่องจองคิว',
+                preConfirm: () => ({
+                    student_name: document.getElementById('csName').value,
+                    topic: document.getElementById('csTopic').value,
+                    appointment_time: document.getElementById('csTime').value
+                })
+            });
 
-                    <button onclick="window.location.href='${isCompleted ? `exam_result.html?exam_id=${e.id}` : `exam_take.html?id=${e.id}`}'" class="w-full py-3 ${isCompleted ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-primary text-white hover:bg-blue-700'} font-bold text-xs rounded-xl shadow-md transition-all">
-                        ${isCompleted ? 'ดูผลสอบ & AI วิเคราะห์' : 'เริ่มทำข้อสอบทันที'}
-                    </button>
-                </div>
-            `).join('');
+            if (form && form.student_name) {
+                await mySupabase.from('consult_queues').insert([{
+                    student_name: form.student_name,
+                    topic: form.topic,
+                    appointment_time: new Date(form.appointment_time).toISOString()
+                }]);
+                Swal.fire({ icon: 'success', title: 'ส่งเรื่องจองคิวเรียบร้อย!', timer: 1200, showConfirmButton: false });
+            }
+        }
+
+        async function logoutStudent() {
+            await mySupabase.auth.signOut();
+            window.location.href = 'index.html';
         }
 
         initPage();
