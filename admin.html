@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ระบบจัดการหลังบ้าน (Admin)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>LMS | ศูนย์ควบคุมระบบ (Admin)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -16,73 +16,99 @@
         }
     </script>
     <style>
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
-        .dark .glass-nav { background: rgba(17, 24, 39, 0.8); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(229, 231, 235, 1); }
+        .dark .glass-nav { background: rgba(17, 24, 39, 0.85); border-bottom: 1px solid rgba(55, 65, 81, 1); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
+    <nav class="glass-nav fixed w-full top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-2">
-                    <div class="p-2 bg-gray-800 dark:bg-white text-white dark:text-gray-800 rounded-lg"><i class="fas fa-shield-alt"></i></div>
-                    <span class="font-semibold text-xl dark:text-white">Admin Panel</span>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl flex items-center justify-center font-bold">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <span class="font-bold text-xl text-gray-800 dark:text-white">Admin Command Center</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span id="welcomeMsg" class="hidden sm:block text-gray-600 dark:text-gray-300">กำลังโหลด...</span>
-                    <button id="themeToggle" class="text-gray-500 dark:text-gray-300 hover:text-primary transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
-                    <button id="logoutBtn" class="bg-gray-800 dark:bg-gray-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-sm"><i class="fas fa-sign-out-alt mr-2"></i>ออกจากระบบ</button>
+                
+                <div class="flex items-center gap-3">
+                    <!-- ปุ่มประกาศ Announcement (ตามที่คุณขอ) -->
+                    <button onclick="openAnnouncementModal()" class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-bullhorn"></i> <span class="hidden sm:inline">ประกาศแจ้งเตือน</span>
+                    </button>
+
+                    <!-- กระดิ่งแจ้งเตือนมุมขวาบน (ตามที่คุณขอ) -->
+                    <button onclick="showNotifications()" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                    </button>
+
+                    <!-- ปุ่มสลับธีม -->
+                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 transition-colors shadow-sm">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+
+                    <!-- ปุ่มออกจากระบบ -->
+                    <button id="logoutBtn" class="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-        <div class="mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ศูนย์ควบคุมระบบ (Dashboard)</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">จัดการข้อสอบ ตรวจคำตอบ และติดตามพฤติกรรมนักเรียน</p>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
+        <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white" id="welcomeMsg">ยินดีต้อนรับ, ผู้ดูแลระบบ</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">จัดการข้อสอบ ตรวจคำตอบ และควบคุมระบบภาพรวม</p>
+            </div>
+            <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 rounded-xl font-semibold text-sm">
+                <i class="fas fa-circle text-green-500 mr-1 text-xs"></i> ระบบออนไลน์ปกติ
+            </div>
         </div>
 
         <!-- เมนูหลัก (Grid) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <!-- เมนู 1 -->
-            <div onclick="window.location.href='admin_upload.html'" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-primary transition-all cursor-pointer group">
-                <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i class="fas fa-plus-circle text-2xl text-primary"></i>
+            <!-- เมนู 1: จัดการข้อสอบ (ลิงก์ไปหน้า admin_upload.html) -->
+            <div onclick="window.location.href='admin_upload.html'" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-primary transition-all cursor-pointer group">
+                <div class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-file-signature text-2xl text-primary"></i>
                 </div>
-                <h3 class="font-semibold text-lg text-gray-800 dark:text-white">สร้างชุดข้อสอบ</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">อัปโหลด PDF หรือสร้างโจทย์เอง</p>
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white">จัดการชุดข้อสอบ</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">สร้างข้อสอบ, หมวดหมู่, สลับลำดับ และ PDF</p>
             </div>
 
             <!-- เมนู 2 -->
-            <div onclick="devAlert('ระบบตรวจข้อสอบอัตนัย')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-pink-500 transition-all cursor-pointer group">
-                <div class="w-14 h-14 bg-pink-50 dark:bg-pink-900/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div onclick="devAlert('ระบบตรวจข้อสอบอัตนัย')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-pink-500 transition-all cursor-pointer group">
+                <div class="w-14 h-14 bg-pink-50 dark:bg-pink-900/50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <i class="fas fa-tasks text-2xl text-pink-500"></i>
                 </div>
-                <h3 class="font-semibold text-lg text-gray-800 dark:text-white">ตรวจข้อสอบอัตนัย</h3>
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white">ตรวจข้อสอบอัตนัย</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ให้คะแนนข้อที่ต้องตรวจด้วยตนเอง</p>
             </div>
 
             <!-- เมนู 3 -->
-            <div onclick="devAlert('ระบบจัดการนักเรียน')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-green-500 transition-all cursor-pointer group">
-                <div class="w-14 h-14 bg-green-50 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div onclick="devAlert('ระบบจัดการนักเรียน')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-green-500 transition-all cursor-pointer group">
+                <div class="w-14 h-14 bg-green-50 dark:bg-green-900/50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <i class="fas fa-users text-2xl text-green-500"></i>
                 </div>
-                <h3 class="font-semibold text-lg text-gray-800 dark:text-white">จัดการนักเรียน</h3>
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white">จัดการนักเรียน</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ดูคะแนนและจัดการรหัสผ่าน</p>
             </div>
 
             <!-- เมนู 4 -->
-            <div onclick="devAlert('ระบบ Audit Log')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:border-red-500 transition-all cursor-pointer group">
-                <div class="w-14 h-14 bg-red-50 dark:bg-red-900/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div onclick="devAlert('ระบบ Audit Log')" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl hover:border-red-500 transition-all cursor-pointer group">
+                <div class="w-14 h-14 bg-red-50 dark:bg-red-900/50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
                 </div>
-                <h3 class="font-semibold text-lg text-gray-800 dark:text-white">Audit Log (กันโกง)</h3>
+                <h3 class="font-bold text-lg text-gray-800 dark:text-white">Audit Log (กันโกง)</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">ตรวจสอบประวัติการสลับแท็บ/ทุจริต</p>
             </div>
 
@@ -90,7 +116,6 @@
     </main>
 
     <script>
-        // ระบบ Theme
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -104,42 +129,60 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ระบบ Supabase
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const allowedRoles = ['admin', 'teacher', 'exam_creator'];
 
         async function initPage() {
             const { data: { session } } = await mySupabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
-
             const { data: profile } = await mySupabase.from('profiles').select('full_name, role').eq('id', session.user.id).single();
-            if (!profile || !allowedRoles.includes(profile.role)) { 
-                window.location.href = 'student.html'; 
-                return; 
+            if (!profile || !['admin', 'teacher', 'exam_creator'].includes(profile.role)) { 
+                window.location.href = 'student.html'; return; 
             }
-
-            // แสดงชื่อและ Badge สิทธิ์ (เช่น Admin สีแดง, Teacher สีฟ้า)
-            let roleBadge = '';
-            if(profile.role === 'admin') roleBadge = '<span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Admin</span>';
-            else roleBadge = '<span class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Teacher</span>';
-            
-            document.getElementById('welcomeMsg').innerHTML = `คุณ: <span class="font-semibold text-gray-800 dark:text-white">${profile.full_name || 'ผู้ดูแลระบบ'}</span> ${roleBadge}`;
+            document.getElementById('welcomeMsg').textContent = `ยินดีต้อนรับ, คุณครู${profile.full_name || 'ผู้ดูแลระบบ'}`;
         }
 
-        // ปุ่มออกจากระบบ
+        // เปิด Modal โพสต์ประกาศจากหน้าหลัก
+        async function openAnnouncementModal() {
+            const { value: text } = await Swal.fire({
+                title: '📢 โพสต์ประกาศแจ้งเตือน',
+                input: 'textarea',
+                inputPlaceholder: 'พิมพ์ข้อความประกาศที่นี่...',
+                showCancelButton: true,
+                confirmButtonText: 'โพสต์ประกาศ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#2563eb'
+            });
+
+            if (text) {
+                const { data: { session } } = await mySupabase.auth.getSession();
+                const { error } = await mySupabase.from('announcements').insert([{ author_id: session.user.id, content: text }]);
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'โพสต์ประกาศเรียบร้อยแล้ว!', timer: 1500, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message });
+                }
+            }
+        }
+
+        // กดกระดิ่งแจ้งเตือน
+        function showNotifications() {
+            Swal.fire({
+                title: '🔔 การแจ้งเตือนระบบ',
+                html: '<p class="text-gray-500">ไม่มีการแจ้งเตือนใหม่ในขณะนี้</p>',
+                confirmButtonColor: '#4f46e5'
+            });
+        }
+
         document.getElementById('logoutBtn').addEventListener('click', () => {
             Swal.fire({
                 title: 'ออกจากระบบ?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#1f2937',
+                confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ออกจากระบบ',
-                cancelButtonText: 'ยกเลิก',
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+                confirmButtonText: 'ใช่, ออกจากระบบ'
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     await mySupabase.auth.signOut();
@@ -148,16 +191,8 @@
             });
         });
 
-        // ฟังก์ชันจำลองคลิกปุ่มที่ยังไม่ได้ทำ (เด้ง Pop-up บอกว่ากำลังพัฒนา)
-        function devAlert(featureName) {
-            Swal.fire({
-                icon: 'info',
-                title: 'กำลังพัฒนา',
-                text: `${featureName} จะถูกเพิ่มเข้ามาในเฟสถัดไปครับ!`,
-                confirmButtonColor: '#4f46e5',
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-            });
+        function devAlert(name) {
+            Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: `${name} จะเปิดให้บริการเร็วๆ นี้` });
         }
 
         initPage();
