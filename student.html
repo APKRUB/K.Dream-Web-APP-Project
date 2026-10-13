@@ -169,7 +169,21 @@
                 document.getElementById('welcomeMsg').textContent = `สวัสดี, ${profile.full_name || 'นักเรียน'}`;
                 loadExams();
                 fetchNotifications();
+                setupStudentConsultRealtime();
             } catch (err) { console.error("Init Error:", err); }
+        }
+
+        // True Realtime สำหรับนักเรียน (อัปเดต Modal จองอัตโนมัติ)
+        function setupStudentConsultRealtime() {
+            mySupabase
+                .channel('student_consult_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, payload => {
+                    const swalContainer = document.querySelector('.swal2-container');
+                    if (swalContainer) {
+                        openConsultModal();
+                    }
+                })
+                .subscribe();
         }
 
         async function loadExams() {
@@ -192,7 +206,7 @@
         }
 
         function startExam(examId) {
-            Swal.fire({ title: 'พร้อมเริ่มทำข้อสอบ?', icon: 'question', showCancelButton: true, confirmButtonColor: '#2563eb', confirmButtonText: 'เริ่มสอบเลย' }).then((res) => {
+            Swal.fire({ title: 'พร้อมเริ่มทำข้อสอบ?', icon: 'question', showCancelButton: true, confirmButtonColor: '#2563eb' }).then((res) => {
                 if(res.isConfirmed) window.location.href = `exam.html?id=${examId}`;
             });
         }
@@ -226,7 +240,6 @@
                     htmlContent = `<div class="text-center py-8 space-y-4"><h4 class="font-bold text-base text-gray-900 dark:text-white">คุณได้จองเวลา Consult แล้ว</h4><p class="text-sm font-semibold text-primary mt-1">${slotText}</p></div>`;
                 } else {
                     const nowIso = new Date().toISOString();
-                    // ดึงเฉพาะ Slot ที่ยังไม่หมดอายุและสถานะ available
                     const { data: slots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').gt('end_time', nowIso).order('start_time', { ascending: true });
                     
                     if (!slots || slots.length === 0) {
