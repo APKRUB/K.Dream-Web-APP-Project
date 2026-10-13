@@ -40,33 +40,26 @@
 </head>
 <body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100">
 
-    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm">
-                        <i class="fas fa-arrow-left text-lg"></i>
-                    </button>
+                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fas fa-arrow-left text-lg"></i></button>
                     <div>
                         <h1 class="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2">
                             <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">ตั้งค่ารอบเวลาเปิดจอง เลือกวันทำซ้ำ และจัดการสถานะการจอง</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ตั้งค่ารอบเวลาเปิดจอง (เวลาประเทศไทย GMT+7)</p>
                     </div>
                 </div>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
-                    <i class="fas fa-moon text-lg" id="themeIcon"></i>
-                </button>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
         
-        <!-- Status & Countdown Banner -->
         <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-indigo-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -75,56 +68,35 @@
                 </h2>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="countdownInfo">กำลังตรวจสอบเวลาเปิดระบบ...</p>
             </div>
-            <div class="flex gap-3">
-                <button onclick="toggleSystemStatus()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">
-                    เปลี่ยนสถานะเปิด-ปิด
-                </button>
+            <div>
+                <button onclick="toggleSystemStatus()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">เปลี่ยนสถานะเปิด-ปิด</button>
             </div>
         </div>
 
-        <!-- Grid Settings & Generator -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- ฝั่งซ้าย: ตั้งค่า Countdown & ควบคุม -->
             <div class="lg:col-span-5 glossy-card p-8 rounded-3xl space-y-6">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิดระบบ (Countdown)
-                </h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิดระบบ (Countdown)</h3>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">กำหนดวันและเวลาเปิดรับจอง</label>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">กำหนดวันและเวลาเปิด (เวลาไทย)</label>
                     <input type="datetime-local" id="openAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary outline-none">
                 </div>
-                <button onclick="saveCountdownTime()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">
-                    บันทึกเวลาเปิดอัตโนมัติ
-                </button>
+                <button onclick="saveCountdownTime()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">บันทึกเวลาเปิดอัตโนมัติ</button>
 
                 <div class="pt-6 border-t border-gray-200 dark:border-gray-800">
-                    <button onclick="resetAllQuotas()" class="w-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 py-3.5 rounded-2xl font-bold text-sm transition-all border border-red-200/50 dark:border-red-900/50">
-                        <i class="fas fa-redo mr-2"></i> รีเซ็ตโควต้านักเรียนทุกคน
-                    </button>
+                    <button onclick="resetAllQuotas()" class="w-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 py-3.5 rounded-2xl font-bold text-sm transition-all border border-red-200/50 dark:border-red-900/50"><i class="fas fa-redo mr-2"></i> รีเซ็ตโควต้านักเรียนทุกคน</button>
                 </div>
             </div>
 
-            <!-- ฝั่งขวา: สร้าง Slot อัตโนมัติ (เลือกวันในสัปดาห์ได้) -->
             <div class="lg:col-span-7 glossy-card p-8 rounded-3xl space-y-5">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ (เลือกวันทำซ้ำได้)
-                </h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ (เวลาไทย GMT+7)</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ตั้งแต่วันที่</label>
-                        <input type="date" id="genStartDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ถึงวันที่</label>
-                        <input type="date" id="genEndDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
-                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ตั้งแต่วันที่</label><input type="date" id="genStartDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ถึงวันที่</label><input type="date" id="genEndDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
                 </div>
 
-                <!-- เลือกวันในสัปดาห์ที่ต้องการ Repeat -->
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">เลือกวันที่ต้องการให้สร้างซ้ำ (Repeat Days)</label>
-                    <div class="flex flex-wrap gap-2" id="repeatDaysContainer">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">เลือกวันซ้ำ (Repeat Days)</label>
+                    <div class="flex flex-wrap gap-2">
                         <label class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-darkinput text-xs font-bold cursor-pointer border border-gray-200 dark:border-gray-700"><input type="checkbox" value="1" checked class="mr-1 day-checkbox"> จ.</label>
                         <label class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-darkinput text-xs font-bold cursor-pointer border border-gray-200 dark:border-gray-700"><input type="checkbox" value="2" checked class="mr-1 day-checkbox"> อ.</label>
                         <label class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-darkinput text-xs font-bold cursor-pointer border border-gray-200 dark:border-gray-700"><input type="checkbox" value="3" checked class="mr-1 day-checkbox"> พ.</label>
@@ -136,46 +108,29 @@
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">เริ่มเวลา</label>
-                        <input type="time" id="genStartTime" value="09:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">สิ้นสุดเวลา</label>
-                        <input type="time" id="genEndTime" value="16:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ช่วงละ (นาที)</label>
-                        <input type="number" id="genDuration" value="30" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
-                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">เริ่มเวลา</label><input type="time" id="genStartTime" value="09:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">สิ้นสุดเวลา</label><input type="time" id="genEndTime" value="16:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ช่วงละ (นาที)</label><input type="number" id="genDuration" value="30" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
                 </div>
-                <button onclick="generateSlots()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">
-                    สร้างช่วงเวลา (Slots) ตามวันที่เลือก
-                </button>
+                <button onclick="generateSlots()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">สร้าง Slot อัตโนมัติ</button>
             </div>
-
         </div>
 
-        <!-- รายการ Slot ทั้งหมด -->
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-list text-indigo-500"></i> รายการ Slot เวลา Consult ทั้งหมด
-                </h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-indigo-500"></i> รายการ Slot (แสดงเฉพาะที่ยังไม่หมดอายุ)</h3>
                 <button onclick="loadSlots()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชข้อมูล</button>
             </div>
             <div id="slotsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-96 overflow-y-auto">
                 <div class="text-center py-8 text-gray-400 text-sm">กำลังโหลดข้อมูล Slot...</div>
             </div>
         </div>
-
     </main>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let currentSetting = null;
 
         const htmlElement = document.documentElement;
@@ -194,9 +149,6 @@
         async function initPage() {
             const { data: { session } } = await mySupabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
-            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
-            if (!profile || !['admin', 'teacher', 'exam_creator'].includes(profile.role)) { window.location.href = 'student.html'; return; }
-
             loadSettings();
             loadSlots();
         }
@@ -204,7 +156,6 @@
         async function loadSettings() {
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
             currentSetting = data;
-            
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
             const countdownInfo = document.getElementById('countdownInfo');
@@ -216,12 +167,13 @@
             } else {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500';
                 statusText.textContent = 'ปิดรับจอง';
-                
                 if (data.open_at) {
-                    document.getElementById('openAtInput').value = data.open_at.slice(0, 16);
-                    startCountdown(new Date(data.open_at));
+                    // แปลงเวลาให้ถูกต้องตาม UTC -> แสดงผลไทย
+                    const localDt = new Date(data.open_at);
+                    document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                    startCountdown(localDt);
                 } else {
-                    countdownInfo.textContent = 'ระบบยังไม่เปิดในขณะนี้ (ยังไม่ได้กำหนดเวลาเปิด)';
+                    countdownInfo.textContent = 'ระบบยังไม่เปิดในขณะนี้';
                 }
             }
         }
@@ -231,10 +183,7 @@
             setInterval(() => {
                 const now = new Date();
                 const diff = openDate - now;
-                if (diff <= 0) {
-                    countdownInfo.textContent = 'ถึงเวลาเปิดระบบแล้ว!';
-                    return;
-                }
+                if (diff <= 0) { countdownInfo.textContent = 'ถึงเวลาเปิดระบบแล้ว!'; return; }
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -251,7 +200,13 @@
 
         async function saveCountdownTime() {
             const val = document.getElementById('openAtInput').value;
-            await mySupabase.from('consult_settings').update({ open_at: val ? val : null }).eq('id', 1);
+            if (!val) {
+                await mySupabase.from('consult_settings').update({ open_at: null }).eq('id', 1);
+            } else {
+                // บันทึกแบบระบุ ISO String ตามเวลาไทย
+                const isoStr = new Date(val).toISOString();
+                await mySupabase.from('consult_settings').update({ open_at: isoStr }).eq('id', 1);
+            }
             Swal.fire({ icon: 'success', title: 'บันทึกเวลา Countdown สำเร็จ', timer: 1200, showConfirmButton: false });
             loadSettings();
         }
@@ -262,23 +217,20 @@
             const startTime = document.getElementById('genStartTime').value;
             const endTime = document.getElementById('genEndTime').value;
             const durationMin = parseInt(document.getElementById('genDuration').value);
-            
-            // ดึงวันที่เลือกติ๊ก (0 = อาทิตย์, 1 = จันทร์, ..., 6 = เสาร์)
             const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => parseInt(cb.value));
 
             if (!startDate || !endDate || !startTime || !endTime || !durationMin || selectedDays.length === 0) {
-                Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกวันที่ เวลา และเลือกวันในสัปดาห์อย่างน้อย 1 วัน', 'warning');
+                Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
                 return;
             }
 
-            Swal.fire({ title: 'กำลังสร้าง Slot อัตโนมัติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังสร้าง Slot...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            let currentDay = new Date(startDate);
-            let lastDay = new Date(endDate);
+            let currentDay = new Date(startDate + 'T00:00:00+07:00');
+            let lastDay = new Date(endDate + 'T00:00:00+07:00');
             let slotsToInsert = [];
 
             while (currentDay <= lastDay) {
-                // เช็คว่าวันนี้ตรงกับวันที่เลือก repeat ไว้ไหม
                 if (selectedDays.includes(currentDay.getDay())) {
                     let [startH, startM] = startTime.split(':').map(Number);
                     let [endH, endM] = endTime.split(':').map(Number);
@@ -313,16 +265,18 @@
                     Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
                 }
             } else {
-                Swal.fire('ไม่พบช่วงเวลาในวันที่เลือก', 'กรุณาตรวจสอบช่วงวันที่และวันในสัปดาห์อีกครั้ง', 'warning');
+                Swal.fire('ไม่พบช่วงเวลา', 'กรุณาตรวจสอบวันที่', 'warning');
             }
         }
 
         async function loadSlots() {
-            const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').order('start_time', { ascending: true });
+            const nowIso = new Date().toISOString();
+            // ดึงเฉพาะ Slot ที่ยังไม่หมดเวลา (end_time มากกว่าปัจจุบัน)
+            const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').gt('end_time', nowIso).order('start_time', { ascending: true });
             const list = document.getElementById('slotsList');
 
             if (!slots || slots.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">ยังไม่มี Slot เวลา Consult ในระบบ</div>`;
+                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">ไม่มี Slot เวลา Consult ที่ใช้งานอยู่ในขณะนี้</div>`;
                 return;
             }
 
@@ -334,7 +288,7 @@
                 return `
                     <div class="py-3 flex justify-between items-center text-sm">
                         <div>
-                            <span class="font-bold text-gray-900 dark:text-white"><i class="far fa-clock mr-1 text-indigo-500"></i> ${startStr} - ${endStr}</span>
+                            <span class="font-bold text-gray-900 dark:text-white"><i class="far fa-clock mr-1 text-indigo-500"></i> ${startStr} - ${endStr} น.</span>
                             <div class="text-xs text-gray-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
                         </div>
                         <div class="flex gap-2">
@@ -346,26 +300,12 @@
             }).join('');
         }
 
-        // ฟังก์ชันให้คุณครูกดยกเลิกการจองของนักเรียน (กรณีติดธุระ/เปลี่ยนเวลา)
         async function cancelStudentBooking(slotId, studentId) {
-            const res = await Swal.fire({
-                title: 'ยกเลิกการจองของนักเรียน?',
-                text: 'การกระทำนี้จะคืนสถานะให้ Slot นี้กลับมาว่าง และปลดล็อกโควตาให้นักเรียนไปจองเวลาอื่นได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#f59e0b',
-                confirmButtonText: 'ใช่, ยกเลิกการจอง',
-                cancelButtonText: 'ปิด'
-            });
-
+            const res = await Swal.fire({ title: 'ยกเลิกการจองของนักเรียน?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#f59e0b' });
             if (res.isConfirmed) {
-                // 1. อัปเดต Slot กลับเป็น available
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', slotId);
-                // 2. เคลียร์โควต้านักเรียนคนนั้นให้กลับมาจองได้
-                if (studentId) {
-                    await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId);
-                }
-                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จ', timer: 1200, showConfirmButton: false });
+                if (studentId) { await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId); }
+                Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ', timer: 1200, showConfirmButton: false });
                 loadSlots();
             }
         }
@@ -376,13 +316,7 @@
         }
 
         async function resetAllQuotas() {
-            const res = await Swal.fire({
-                title: 'รีเซ็ตโควต้านักเรียนทั้งหมด?',
-                text: 'นักเรียนทุกคนจะสามารถกลับมาจองใหม่ได้ (และสถานะ Slot จะถูกเคลียร์เป็นว่าง)',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444'
-            });
+            const res = await Swal.fire({ title: 'รีเซ็ตโควต้านักเรียนทั้งหมด?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
             if (res.isConfirmed) {
                 await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null });
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null });
