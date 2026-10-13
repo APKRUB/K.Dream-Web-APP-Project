@@ -1,51 +1,202 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="light">
 <head>
     <meta charset="UTF-8">
-    <title>เข้าสู่ระบบ | LMS</title>
-    <!-- โหลด Supabase SDK -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS Platform | เข้าสู่ระบบ</title>
+    
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome (สำหรับไอคอน) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tailwind CSS (ผ่าน CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SweetAlert2 (สำหรับ Pop-up แจ้งเตือนสวยๆ) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- ตั้งค่า Tailwind -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4f46e5',
+                        secondary: '#ec4899',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* เอฟเฟกต์กระจกฝ้า (Glassmorphism) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Animation สำหรับพื้นหลัง */
+        .bg-animate {
+            background-size: 200% 200%;
+            animation: gradientMove 10s ease infinite;
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ปรับฟอนต์ของ SweetAlert ให้เข้ากับเว็บ */
+        div:where(.swal2-container) {
+            font-family: 'Prompt', sans-serif;
+        }
+    </style>
 </head>
-<body>
-    <h2>เข้าสู่ระบบ</h2>
-    <form id="loginForm">
-        <input type="email" id="email" placeholder="อีเมล" required><br><br>
-        <input type="password" id="password" placeholder="รหัสผ่าน" required><br><br>
-        <button type="button" id="loginBtn">Log In</button>
-    </form>
-    <p id="errorMsg" style="color: red;"></p>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 min-h-screen flex items-center justify-center transition-colors duration-500 bg-animate relative overflow-hidden">
+    
+    <!-- วงกลมแสงตกแต่งฉากหลัง -->
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 dark:opacity-40 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary opacity-20 dark:opacity-40 rounded-full blur-3xl"></div>
+
+    <!-- ปุ่มสลับธีม (ซ้ายบน) -->
+    <button id="themeToggle" class="absolute top-5 right-5 p-3 rounded-full glass-panel text-gray-800 dark:text-gray-200 hover:scale-110 transition-transform shadow-lg z-10">
+        <i class="fas fa-moon text-xl" id="themeIcon"></i>
+    </button>
+
+    <!-- กล่อง Login -->
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl z-10 mx-4">
+        <div class="text-center mb-8">
+            <div class="inline-block p-4 rounded-2xl bg-gradient-to-tr from-primary to-secondary text-white mb-4 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                <i class="fas fa-graduation-cap text-3xl"></i>
+            </div>
+            <h2 class="text-3xl font-semibold text-gray-800 dark:text-white tracking-wide">เข้าสู่ระบบ</h2>
+            <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Learning Management System</p>
+        </div>
+
+        <form id="loginForm" class="space-y-6">
+            <!-- ช่องใส่อีเมล -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fas fa-envelope text-gray-400"></i>
+                </div>
+                <input type="email" id="email" class="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary dark:text-white transition-all shadow-sm" placeholder="อีเมลของคุณ" required>
+            </div>
+
+            <!-- ช่องใส่รหัสผ่าน -->
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fas fa-lock text-gray-400"></i>
+                </div>
+                <input type="password" id="password" class="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary dark:text-white transition-all shadow-sm" placeholder="รหัสผ่าน" required>
+            </div>
+
+            <!-- ปุ่ม Login -->
+            <button type="button" id="loginBtn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:from-indigo-600 hover:to-pink-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex justify-center items-center gap-2 mt-4">
+                <span>เข้าสู่ระบบ</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
 
     <script>
+        // ==========================
+        // 1. ระบบจัดการ Dark / Light Mode
+        // ==========================
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        // เช็คว่าผู้ใช้เคยเลือกธีมไหนไว้ในเครื่อง
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+
+        // เมื่อกดปุ่มพระจันทร์/พระอาทิตย์
+        themeToggleBtn.addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        });
+
+        // ==========================
+        // 2. ระบบ Login ด้วย Supabase
+        // ==========================
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        
-        // 🚨 เปลี่ยนชื่อตัวแปรเป็น mySupabase เพื่อหนี Error การตั้งชื่อซ้ำ
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('errorMsg');
             
+            // เช็คช่องว่าง
             if (!email || !password) {
-                errorMsg.textContent = "กรุณากรอกอีเมลและรหัสผ่านให้ครบ";
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกอีเมลและรหัสผ่านให้ครบ',
+                    confirmButtonColor: '#4f46e5',
+                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+                });
                 return;
             }
-            
-            errorMsg.textContent = "กำลังตรวจสอบ...";
 
-            // ใช้ mySupabase ในการล็อกอิน
+            // แสดง Pop-up โหลดหมุนๆ
+            Swal.fire({
+                title: 'กำลังตรวจสอบ...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // ส่งข้อมูลไปตรวจ
             const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({
                 email: email,
                 password: password,
             });
 
             if (authError) {
-                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบไม่สำเร็จ',
+                    text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+                    confirmButtonColor: '#4f46e5',
+                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+                });
                 return;
             }
 
-            // ใช้ mySupabase ดึงฐานข้อมูล
+            // ดึงข้อมูล Profile
             const userId = authData.user.id;
             const { data: profileData, error: profileError } = await mySupabase
                 .from('profiles')
@@ -54,15 +205,39 @@
                 .single();
 
             if (profileError || !profileData) {
-                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูล Profile ของคุณในระบบ";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่พบข้อมูล Profile ของคุณ กรุณาติดต่อแอดมิน',
+                    confirmButtonColor: '#4f46e5',
+                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+                });
                 return;
             }
 
-            const role = profileData.role;
-            if (role === 'admin' || role === 'teacher' || role === 'exam_creator') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'student.html';
+            // ถ้าผ่านทั้งหมด แสดง Pop-up สำเร็จแล้วพาวาร์ปไปหน้าหลัก
+            Swal.fire({
+                icon: 'success',
+                title: 'เข้าสู่ระบบสำเร็จ!',
+                showConfirmButton: false,
+                timer: 1500,
+                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+            }).then(() => {
+                const role = profileData.role;
+                if (role === 'admin' || role === 'teacher' || role === 'exam_creator') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'student.html';
+                }
+            });
+        });
+        
+        // เพิ่มฟังก์ชัน: กดปุ่ม Enter ในช่องรหัสผ่านเพื่อ Login ได้เลย
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
             }
         });
     </script>
