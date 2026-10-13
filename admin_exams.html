@@ -27,7 +27,12 @@
         .dark .glass-nav { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(51, 65, 85, 0.8); }
         .glossy-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         .dark .glossy-card { background: rgba(30, 41, 59, 0.98); border: 1px solid rgba(51, 65, 85, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+        
+        /* แก้ไขสี SweetAlert2 Pop-up ไม่ให้กลืนกับพื้นหลังใน Dark Mode */
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #1e293b !important; color: #f8fafc !important; border: 1px solid #334155 !important; border-radius: 1.5rem !important; }
+        .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
+        .dark .swal2-input, .dark .swal2-select, .dark .swal2-textarea { background-color: #0f172a !important; color: #f8fafc !important; border-color: #475569 !important; }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -42,7 +47,7 @@
                             <span class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-file-signature"></i></span>
                             ศูนย์จัดการชุดข้อสอบ
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">สร้าง แก้ไข ตั้งค่ากำหนดส่ง และวิเคราะห์สถิติประเมินผล</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">สร้าง ตั้งค่ากำหนดส่ง ตรวจข้อสอบอัตนัย และวิเคราะห์สถิติ</p>
                     </div>
                 </div>
 
@@ -217,8 +222,8 @@
                             <button onclick="openEditExamModal('${exam.id}')" class="py-2.5 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors"><i class="fas fa-cog mr-1"></i> ตั้งค่าชุด</button>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
+                            <button onclick="window.location.href='admin_exam_grading.html?exam_id=${exam.id}'" class="py-2 bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-300 rounded-xl font-bold text-xs hover:bg-purple-100 transition-colors"><i class="fas fa-user-check mr-1"></i> ตรวจอัตนัย</button>
                             <button onclick="openAnalyticsModal('${exam.id}', '${exam.title}')" class="py-2 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 rounded-xl font-bold text-xs hover:bg-indigo-100 transition-colors"><i class="fas fa-chart-line mr-1"></i> สถิติ & AI</button>
-                            <button onclick="deleteExamSet('${exam.id}', '${exam.title}')" class="py-2 bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 rounded-xl font-bold text-xs hover:bg-red-100 transition-colors"><i class="fas fa-trash mr-1"></i> ลบชุดสอบ</button>
                         </div>
                     </div>
                 </div>
@@ -241,6 +246,13 @@
                     }
                 }
             });
+        }
+
+        function formatForDateTimeInput(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+            return d.toISOString().slice(0, 16);
         }
 
         async function openCreateExamModal() {
@@ -274,26 +286,26 @@
                         
                         <div>
                             <label class="block font-bold mb-1">สถานะข้อสอบ *</label>
-                            <select id="exStatus" onchange="toggleStatusInputs()" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
+                            <select id="exStatus" onchange="toggleStatusInputs('create')" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
                                 <option value="public">Publish (เปิดสอบทันที)</option>
                                 <option value="countdown">Countdown (ตั้งเวลาเปิด)</option>
                                 <option value="draft">Draft (แบบร่าง)</option>
                             </select>
                         </div>
 
-                        <div id="countdownTimeContainer" class="hidden">
+                        <div id="countdownTimeContainer_create" class="hidden">
                             <label class="block font-bold mb-1 text-amber-600 dark:text-amber-400">วัน/เวลาเปิดสอบ (Countdown)</label>
                             <input type="datetime-local" id="exStart" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
                         </div>
 
                         <div class="col-span-2 pt-2 border-t border-slate-200 dark:border-slate-700">
                             <label class="flex items-center gap-2 font-bold cursor-pointer">
-                                <input type="checkbox" id="hasDueDate" onchange="toggleDueDateInput()" class="w-4 h-4 text-primary rounded">
+                                <input type="checkbox" id="hasDueDate_create" onchange="toggleDueDateInput('create')" class="w-4 h-4 text-primary rounded">
                                 <span>มีวันกำหนดส่ง (Due Date) หรือไม่?</span>
                             </label>
                         </div>
 
-                        <div id="dueDateTimeContainer" class="hidden col-span-2">
+                        <div id="dueDateTimeContainer_create" class="hidden col-span-2">
                             <label class="block font-bold mb-1 text-red-500">วัน/เวลากำหนดส่ง (Due Date)</label>
                             <input type="datetime-local" id="exEnd" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
                         </div>
@@ -328,7 +340,7 @@
                     const code = document.getElementById('exCode').value;
                     const catVal = document.getElementById('exCat').value;
                     const status = document.getElementById('exStatus').value;
-                    const hasDueDate = document.getElementById('hasDueDate').checked;
+                    const hasDueDate = document.getElementById('hasDueDate_create').checked;
 
                     if (!title || !code) { Swal.showValidationMessage('กรุณากรอกชื่อและรหัสข้อสอบ'); return false; }
 
@@ -357,28 +369,17 @@
             }
         }
 
-        function toggleStatusInputs() {
-            const status = document.getElementById('exStatus').value;
-            const container = document.getElementById('countdownTimeContainer');
-            if (status === 'countdown') container.classList.remove('hidden');
-            else container.classList.add('hidden');
-        }
-
-        function toggleDueDateInput() {
-            const checked = document.getElementById('hasDueDate').checked;
-            const container = document.getElementById('dueDateTimeContainer');
-            if (checked) container.classList.remove('hidden');
-            else container.classList.add('hidden');
-        }
-
+        // Modal แก้ไขข้อมูลชุดข้อสอบ (ปรับ UI ให้ทันสมัยตรงกับสร้างชุดข้อสอบ 100%)
         async function openEditExamModal(examId) {
             const exam = allExams.find(e => e.id === examId);
             if (!exam) return;
+            await fetchCategories();
 
             let categoryOptions = allCategories.map(c => `<option value="${c.id}" ${exam.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            const hasDueDate = !!exam.end_time;
 
             const { value: form } = await Swal.fire({
-                title: '<i class="fas fa-cog text-primary"></i> แก้ไขข้อมูลชุดข้อสอบ',
+                title: '<i class="fas fa-cog text-primary"></i> ตั้งค่าชุดข้อสอบ',
                 width: '700px',
                 html: `
                     <div class="grid grid-cols-2 gap-3 text-left text-xs text-slate-900 dark:text-slate-100">
@@ -395,13 +396,39 @@
                             <select id="editCat" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100"><option value="">-- ไม่เลือก --</option>${categoryOptions}</select>
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">สถานะข้อสอบ</label>
-                            <select id="editStatus" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
-                                <option value="public" ${exam.status === 'public' ? 'selected' : ''}>Publish</option>
-                                <option value="countdown" ${exam.status === 'countdown' ? 'selected' : ''}>Countdown</option>
-                                <option value="draft" ${exam.status === 'draft' ? 'selected' : ''}>Draft</option>
+                            <label class="block font-bold mb-1">ประเภทข้อสอบ</label>
+                            <select id="editType" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
+                                <option value="online_form" ${exam.exam_type === 'online_form' ? 'selected' : ''}>พิมพ์ลงระบบ (Web-based)</option>
+                                <option value="pdf" ${exam.exam_type === 'pdf' ? 'selected' : ''}>PDF + กระดาษคำตอบจำลอง</option>
                             </select>
                         </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">สถานะข้อสอบ *</label>
+                            <select id="editStatus" onchange="toggleStatusInputs('edit')" class="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
+                                <option value="public" ${exam.status === 'public' ? 'selected' : ''}>Publish (เปิดสอบทันที)</option>
+                                <option value="countdown" ${exam.status === 'countdown' ? 'selected' : ''}>Countdown (ตั้งเวลาเปิด)</option>
+                                <option value="draft" ${exam.status === 'draft' ? 'selected' : ''}>Draft (แบบร่าง)</option>
+                            </select>
+                        </div>
+
+                        <div id="countdownTimeContainer_edit" class="${exam.status === 'countdown' ? '' : 'hidden'}">
+                            <label class="block font-bold mb-1 text-amber-600 dark:text-amber-400">วัน/เวลาเปิดสอบ (Countdown)</label>
+                            <input type="datetime-local" id="editStart" value="${formatForDateTimeInput(exam.start_time)}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
+                        </div>
+
+                        <div class="col-span-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                            <label class="flex items-center gap-2 font-bold cursor-pointer">
+                                <input type="checkbox" id="hasDueDate_edit" onchange="toggleDueDateInput('edit')" ${hasDueDate ? 'checked' : ''} class="w-4 h-4 text-primary rounded">
+                                <span>มีวันกำหนดส่ง (Due Date) หรือไม่?</span>
+                            </label>
+                        </div>
+
+                        <div id="dueDateTimeContainer_edit" class="${hasDueDate ? '' : 'hidden'} col-span-2">
+                            <label class="block font-bold mb-1 text-red-500">วัน/เวลากำหนดส่ง (Due Date)</label>
+                            <input type="datetime-local" id="editEnd" value="${formatForDateTimeInput(exam.end_time)}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
+                        </div>
+
                         <div>
                             <label class="block font-bold mb-1">เวลาทำสอบ (นาที)</label>
                             <input type="number" id="editTime" value="${exam.time_limit || 60}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
@@ -410,6 +437,14 @@
                             <label class="block font-bold mb-1">โควต้าทำได้ (ครั้ง)</label>
                             <input type="number" id="editAttempts" value="${exam.attempts_allowed || 1}" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-900 dark:text-slate-100">
                         </div>
+
+                        <div class="col-span-2">
+                            <label class="flex items-center gap-2 font-bold cursor-pointer">
+                                <input type="checkbox" id="editShuffleOpts" ${exam.shuffle_options ? 'checked' : ''} class="w-4 h-4 text-primary rounded">
+                                <span>สลับลำดับตัวเลือก (Shuffle Options) ทุกครั้งที่เข้าสอบ</span>
+                            </label>
+                        </div>
+
                         <div class="col-span-2">
                             <label class="block font-bold mb-1">ข้อมูลเบื้องต้นที่ให้นักเรียนเห็น</label>
                             <textarea id="editStudentInfo" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl h-16 text-slate-900 dark:text-slate-100">${exam.student_preview_info || ''}</textarea>
@@ -418,14 +453,22 @@
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'บันทึกการแก้ไข',
+                cancelButtonText: 'ยกเลิก',
                 preConfirm: () => {
                     const catVal = document.getElementById('editCat').value;
+                    const status = document.getElementById('editStatus').value;
+                    const hasDue = document.getElementById('hasDueDate_edit').checked;
+
                     const payload = {
                         title: document.getElementById('editTitle').value,
                         code: document.getElementById('editCode').value,
-                        status: document.getElementById('editStatus').value,
+                        exam_type: document.getElementById('editType').value,
+                        status: status,
+                        start_time: status === 'countdown' && document.getElementById('editStart').value ? new Date(document.getElementById('editStart').value).toISOString() : null,
+                        end_time: hasDue && document.getElementById('editEnd').value ? new Date(document.getElementById('editEnd').value).toISOString() : null,
                         time_limit: parseInt(document.getElementById('editTime').value) || 60,
                         attempts_allowed: parseInt(document.getElementById('editAttempts').value) || 1,
+                        shuffle_options: document.getElementById('editShuffleOpts').checked,
                         student_preview_info: document.getElementById('editStudentInfo').value
                     };
                     if (catVal && catVal.trim() !== '') payload.category_id = catVal;
@@ -440,6 +483,20 @@
                 Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ!', timer: 1200, showConfirmButton: false });
                 fetchExams();
             }
+        }
+
+        function toggleStatusInputs(prefix) {
+            const status = document.getElementById(`${prefix}Status`).value;
+            const container = document.getElementById(`countdownTimeContainer_${prefix}`);
+            if (status === 'countdown') container.classList.remove('hidden');
+            else container.classList.add('hidden');
+        }
+
+        function toggleDueDateInput(prefix) {
+            const checked = document.getElementById(`hasDueDate_${prefix}`).checked;
+            const container = document.getElementById(`dueDateTimeContainer_${prefix}`);
+            if (checked) container.classList.remove('hidden');
+            else container.classList.add('hidden');
         }
 
         async function deleteExamSet(examId, title) {
@@ -459,7 +516,6 @@
             }
         }
 
-        // Modern Folder Grid สำหรับจัดการหมวดหมู่หลัก
         async function openCategoryModal() {
             let catOptions = allCategories.map(c => {
                 const count = allExams.filter(e => e.category_id === c.id).length;
