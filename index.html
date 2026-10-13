@@ -11,21 +11,27 @@
     <form id="loginForm">
         <input type="email" id="email" placeholder="อีเมล" required><br><br>
         <input type="password" id="password" placeholder="รหัสผ่าน" required><br><br>
-        <button type="submit">Log In</button>
+        <!-- เปลี่ยน type เป็น button และใส่ id -->
+        <button type="button" id="loginBtn">Log In</button>
     </form>
     <p id="errorMsg" style="color: red;"></p>
 
     <script>
-        // ใส่ URL และ Anon Key จากตั้งค่า Supabase ของคุณ
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // เปลี่ยนมาดักจับการ click ที่ปุ่มโดยตรง
+        document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
+            
+            // เช็คว่ากรอกข้อมูลครบไหม
+            if (!email || !password) {
+                errorMsg.textContent = "กรุณากรอกอีเมลและรหัสผ่านให้ครบ";
+                return;
+            }
             
             errorMsg.textContent = "กำลังตรวจสอบ...";
 
@@ -36,7 +42,7 @@
             });
 
             if (authError) {
-                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง (" + authError.message + ")";
                 return;
             }
 
@@ -49,7 +55,7 @@
                 .single();
 
             if (profileError || !profileData) {
-                errorMsg.textContent = "ไม่พบข้อมูลโปรไฟล์ กรุณาติดต่อแอดมิน";
+                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูลโปรไฟล์ (ไม่เจอ UUID ในตาราง profiles)";
                 return;
             }
 
