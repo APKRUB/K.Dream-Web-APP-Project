@@ -40,42 +40,13 @@
         .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); }
         .btn-glow:active { transform: translateY(0); }
 
-        /* สไตล์ปุ่ม Edit / Delete แบบโมเดิร์นใหม่ */
-        .action-btn-edit {
-            background-color: rgba(59, 130, 246, 0.1);
-            color: #2563eb;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            transition: all 0.2s ease;
-        }
-        .dark .action-btn-edit {
-            background-color: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        .action-btn-edit:hover {
-            background-color: #2563eb;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
+        .action-btn-edit { background-color: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.2); transition: all 0.2s ease; }
+        .dark .action-btn-edit { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .action-btn-edit:hover { background-color: #2563eb; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
 
-        .action-btn-delete {
-            background-color: rgba(239, 68, 68, 0.1);
-            color: #dc2626;
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            transition: all 0.2s ease;
-        }
-        .dark .action-btn-delete {
-            background-color: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        .action-btn-delete:hover {
-            background-color: #dc2626;
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
+        .action-btn-delete { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s ease; }
+        .dark .action-btn-delete { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .action-btn-delete:hover { background-color: #dc2626; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
     </style>
 </head>
 <body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100 selection:bg-blue-500 selection:text-white">
@@ -117,7 +88,7 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight" id="formTitle">สร้างประกาศใหม่</h2>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">เนื้อหาจะถูกส่งตรงถึงหน้านักเรียนทันที</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">เนื้อหาและไฟล์แนบจะส่งถึงหน้านักเรียนทันที</p>
                     </div>
                 </div>
 
@@ -129,7 +100,12 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">เนื้อหาประกาศ <span class="text-red-500">*</span></label>
-                        <textarea id="annContent" required rows="6" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl dark:text-white focus:border-primary focus:ring-2 focus:ring-blue-500/20 outline-none text-sm resize-none transition-all shadow-sm leading-relaxed"></textarea>
+                        <textarea id="annContent" required rows="5" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl dark:text-white focus:border-primary focus:ring-2 focus:ring-blue-500/20 outline-none text-sm resize-none transition-all shadow-sm leading-relaxed"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">แนบไฟล์ / รูปภาพ (สูงสุด 5 ไฟล์)</label>
+                        <input type="file" id="annFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" class="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-primary hover:file:bg-blue-100 dark:file:bg-slate-800 dark:file:text-blue-400 cursor-pointer">
+                        <p class="text-[11px] text-gray-400 mt-1">รองรับรูปภาพ, PDF, เอกสาร (เลือกได้หลายไฟล์พร้อมกัน)</p>
                     </div>
 
                     <div class="flex gap-3 pt-2">
@@ -242,6 +218,20 @@
                 });
                 const titleText = a.title || 'ประกาศจากทางโรงเรียน';
 
+                // เรนเดอร์ไฟล์แนบ (ถ้ามี)
+                let attachmentsHtml = '';
+                if (a.attachments && a.attachments.length > 0) {
+                    let filesList = a.attachments.map((url, idx) => {
+                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                        if (isImage) {
+                            return `<a href="${url}" target="_blank" class="block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity"><img src="${url}" class="w-full h-32 object-cover" alt="attachment"></a>`;
+                        } else {
+                            return `<a href="${url}" target="_blank" class="flex items-center gap-2 p-3 bg-white dark:bg-darkinput rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-semibold text-primary dark:text-blue-400 hover:underline"><i class="fas fa-file-arrow-down text-base"></i> ไฟล์แนบที่ ${idx + 1}</a>`;
+                        }
+                    }).join('');
+                    attachmentsHtml = `<div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">${filesList}</div>`;
+                }
+
                 return `
                     <div class="modern-card p-7 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-gray-200/80 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700/50 transition-all relative overflow-hidden group">
                         <div class="absolute top-0 left-0 w-2.5 h-full bg-gradient-to-b from-blue-500 to-indigo-600"></div>
@@ -263,6 +253,7 @@
                         </div>
                         <div class="pl-3">
                             <div class="text-gray-700 dark:text-gray-200 text-sm whitespace-pre-line leading-relaxed bg-slate-50/80 dark:bg-darkinput/60 p-5 rounded-2xl border border-gray-200/50 dark:border-gray-800/80 shadow-inner">${a.content}</div>
+                            ${attachmentsHtml}
                         </div>
                     </div>
                 `;
@@ -274,18 +265,44 @@
             const editId = document.getElementById('editAnnouncementId').value;
             const title = document.getElementById('annTitle').value;
             const content = document.getElementById('annContent').value;
+            const fileInput = document.getElementById('annFiles');
 
-            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            if (fileInput.files.length > 5) {
+                Swal.fire('จำกัดจำนวนไฟล์', 'คุณสามารถแนบไฟล์ได้สูงสุดไม่เกิน 5 ไฟล์ครับ', 'warning');
+                return;
+            }
+
+            Swal.fire({ title: 'กำลังอัปโหลดและบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            let attachmentUrls = [];
+            // ถ้ามีการอัปโหลดไฟล์ใหม่
+            if (fileInput.files.length > 0) {
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    const file = fileInput.files[i];
+                    const fileName = `announcement_${Date.now()}_${i}_${file.name}`;
+                    const { error: uploadError } = await mySupabase.storage.from('lms_files').upload(fileName, file);
+                    if (!uploadError) {
+                        const { data } = mySupabase.storage.from('lms_files').getPublicUrl(fileName);
+                        if (data) attachmentUrls.push(data.publicUrl);
+                    }
+                }
+            }
+
+            let payload = { title, content };
+            if (attachmentUrls.length > 0) {
+                payload.attachments = attachmentUrls;
+            }
 
             if (editId) {
-                const { error } = await mySupabase.from('announcements').update({ title, content }).eq('id', editId);
+                const { error } = await mySupabase.from('announcements').update(payload).eq('id', editId);
                 if (!error) {
                     Swal.fire({ icon: 'success', title: 'แก้ไขประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
                 } else {
                     Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
                 }
             } else {
-                const { error } = await mySupabase.from('announcements').insert([{ author_id: currentUser.id, title, content }]);
+                payload.author_id = currentUser.id;
+                const { error } = await mySupabase.from('announcements').insert([payload]);
                 if (!error) {
                     await mySupabase.from('notifications').insert([{ type: 'announcement', message: `${title}: ${content.substring(0, 50)}...` }]);
                     Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
