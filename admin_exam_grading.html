@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | ระบบตรวจข้อสอบอัตนัย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#2563eb', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } } } }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(31, 41, 55, 0.8); }
+        .glossy-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.8); }
+        .dark .glossy-card { background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.08); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-gray-800 dark:text-gray-100">
+
+    <nav class="glass-nav fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
+                    <div>
+                        <h1 class="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-tasks"></i></span>
+                            ระบบตรวจข้อสอบอัตนัย
+                        </h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ตรวจข้อเขียนของนักเรียน ให้คะแนนย่อย และส่งข้อความติชม</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- รายชื่อนักเรียนที่ส่งข้อสอบอัตนัย -->
+            <div class="lg:col-span-5 glossy-card p-6 rounded-3xl space-y-4">
+                <h3 class="font-bold text-base text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-user-check text-purple-500"></i> รายการส่งข้อสอบรอการตรวจ</h3>
+                <div id="attemptsList" class="space-y-3 max-h-[600px] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-xs">กำลังโหลดข้อมูล...</div>
+                </div>
+            </div>
+
+            <!-- พื้นที่ให้คะแนนข้อสอบอัตนัย -->
+            <div class="lg:col-span-7 glossy-card p-8 rounded-3xl space-y-6" id="gradingArea">
+                <div class="text-center py-16 text-gray-400">
+                    <i class="fas fa-clipboard-check text-4xl mb-3 text-purple-400"></i>
+                    <p class="text-sm">เลือกรายการนักเรียนทางซ้ายมือเพื่อเริ่มการตรวจข้อสอบ</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let selectedAttemptId = null;
+
+        async function initPage() {
+            await loadSubmittedAttempts();
+        }
+
+        async function loadSubmittedAttempts() {
+            const { data: attempts } = await mySupabase
+                .from('exam_attempts')
+                .select('*, exams(title), profiles(full_name)')
+                .order('submit_time', { ascending: false });
+
+            const list = document.getElementById('attemptsList');
+            if (!attempts || attempts.length === 0) {
+                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">ไม่มีรายการส่งข้อสอบในระบบ</div>`;
+                return;
+            }
+
+            list.innerHTML = attempts.map(a => `
+                <div onclick="selectAttemptForGrading('${a.id}')" class="p-4 rounded-2xl border ${selectedAttemptId === a.id ? 'bg-purple-50 border-purple-500 dark:bg-purple-950/40' : 'bg-slate-50 dark:bg-darkinput border-gray-200 dark:border-gray-700'} cursor-pointer transition-all hover:border-purple-400">
+                    <div class="font-bold text-sm text-gray-900 dark:text-white">${a.profiles?.full_name || 'นักเรียน'}</div>
+                    <div class="text-xs text-purple-600 font-semibold mt-0.5">${a.exams?.title || 'ข้อสอบ'}</div>
+                    <div class="text-[11px] text-gray-400 mt-2 flex justify-between">
+                        <span>สถานะ: ${a.status === 'graded' ? '<span class="text-emerald-500 font-bold">ตรวจแล้ว</span>' : '<span class="text-amber-500 font-bold">รอตรวจ</span>'}</span>
+                        <span>คะแนนเดิม: ${a.score}/${a.max_score}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectAttemptForGrading(attemptId) {
+            selectedAttemptId = attemptId;
+            loadSubmittedAttempts();
+
+            const { data: attempt } = await mySupabase.from('exam_attempts').select('*, exams(*), profiles(*)').eq('id', attemptId).single();
+            const { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).eq('question_type', 'subjective').order('question_number');
+            const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId);
+
+            const ansMap = {};
+            (answers || []).forEach(a => ansMap[a.question_id] = a);
+
+            const gradingArea = document.getElementById('gradingArea');
+
+            if (!questions || questions.length === 0) {
+                gradingArea.innerHTML = `<div class="text-center py-12 text-gray-400 text-sm">ชุดข้อสอบนี้ไม่มีข้อสอบประเภทอัตนัย (เขียนตอบ)</div>`;
+                return;
+            }
+
+            let html = `
+                <div class="border-b dark:border-gray-800 pb-4 mb-4 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-white">ตรวจข้อสอบ: ${attempt.profiles?.full_name || 'นักเรียน'}</h3>
+                        <p class="text-xs text-gray-400">${attempt.exams?.title}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-600 font-bold text-xs rounded-xl">คะแนนปัจจุบัน: ${attempt.score} คะแนน</span>
+                </div>
+
+                <div class="space-y-6 max-h-[450px] overflow-y-auto pr-2">
+            `;
+
+            questions.forEach(q => {
+                const userAns = ansMap[q.id] || {};
+                html += `
+                    <div class="p-5 bg-slate-50 dark:bg-darkinput rounded-2xl border space-y-3 text-xs">
+                        <div class="flex justify-between font-bold text-sm">
+                            <span>ข้อที่ ${q.question_number}: ${q.question_text || ''}</span>
+                            <span class="text-purple-600">คะแนนเต็ม: ${q.points}</span>
+                        </div>
+                        <div class="p-3 bg-white dark:bg-darkbox rounded-xl border text-gray-700 dark:text-gray-200">
+                            <div class="font-bold text-[11px] text-gray-400 mb-1">คำตอบของนักเรียน:</div>
+                            ${userAns.subjective_answer || '<span class="italic text-gray-400">ไม่ได้พิมพ์คำตอบ</span>'}
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <div>
+                                <label class="block font-bold text-gray-500 mb-1">คะแนนที่ได้</label>
+                                <input type="number" id="score_${q.id}" value="${userAns.score_obtained || 0}" max="${q.points}" min="0" step="0.5" class="w-full px-3 py-2 bg-white dark:bg-darkbox border rounded-xl font-bold text-emerald-600">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                </div>
+                <div class="pt-4 border-t dark:border-gray-800 flex justify-end gap-3">
+                    <button onclick="saveGrading('${attempt.id}', '${attempt.student_id}')" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all">
+                        <i class="fas fa-save mr-1"></i> บันทึกผลการตรวจคะแนน
+                    </button>
+                </div>
+            `;
+
+            gradingArea.innerHTML = html;
+        }
+
+        async function saveGrading(attemptId, studentId) {
+            Swal.fire({ title: 'กำลังบันทึกคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const { data: attempt } = await mySupabase.from('exam_attempts').select('*').eq('id', attemptId).single();
+            const { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id);
+
+            let newTotalScore = 0;
+
+            for (let q of questions) {
+                if (q.question_type === 'mcq') {
+                    const { data: ans } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId).eq('question_id', q.id).single();
+                    if (ans && ans.selected_option_index === q.correct_option_index) {
+                        newTotalScore += q.points;
+                    }
+                } else if (q.question_type === 'subjective') {
+                    const inputElem = document.getElementById(`score_${q.id}`);
+                    if (inputElem) {
+                        const scoreObtained = parseFloat(inputElem.value) || 0;
+                        newTotalScore += scoreObtained;
+
+                        await mySupabase.from('exam_answers').upsert({
+                            attempt_id: attemptId,
+                            question_id: q.id,
+                            score_obtained: scoreObtained,
+                            is_correct: scoreObtained > 0
+                        });
+                    }
+                }
+            }
+
+            // Update exam_attempts
+            await mySupabase.from('exam_attempts').update({
+                score: newTotalScore,
+                status: 'graded'
+            }).eq('id', attemptId);
+
+            // Send notification to student
+            await mySupabase.from('notifications').insert([{
+                user_id: studentId,
+                type: 'system',
+                message: 'คุณครูได้ตรวจข้อสอบอัตนัยของคุณเรียบร้อยแล้ว สามารถเข้ามาเช็คคะแนนและเฉลยได้ทันที',
+                is_read: false
+            }]);
+
+            Swal.fire({ icon: 'success', title: 'บันทึกคะแนนและแจ้งเตือนนักเรียนสำเร็จ!', timer: 1500, showConfirmButton: false });
+            loadSubmittedAttempts();
+            selectAttemptForGrading(attemptId);
+        }
+
+        initPage();
+    </script>
+</body>
+</html>
