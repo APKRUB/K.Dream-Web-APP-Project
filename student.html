@@ -34,7 +34,7 @@
                 <div class="flex items-center gap-4">
                     <span id="welcomeMsg" class="hidden sm:block text-gray-600 dark:text-gray-300">กำลังโหลด...</span>
                     <button id="themeToggle" class="text-gray-500 dark:text-gray-300 hover:text-primary transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
-                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-sm"><i class="fas fa-sign-out-alt mr-2"></i>ออกจากระบบ</button>
+                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-sm"><i class="fas fa-sign-out-alt mr-2"></i> ออกจากระบบ</button>
                 </div>
             </div>
         </div>
@@ -42,30 +42,156 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-        <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ข้อสอบของคุณ</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">เลือกชุดข้อสอบที่ต้องการทำได้เลย</p>
+        
+        <!-- ระบบ Announcement (ประกาศจากระบบ) -->
+        <div class="mb-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 mt-0.5">
+                    <i class="fas fa-bullhorn text-blue-500 dark:text-blue-400 text-lg"></i>
+                </div>
+                <div class="ml-3 w-full">
+                    <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">ประกาศจากระบบ</h3>
+                    <div class="mt-1 text-sm text-blue-700 dark:text-blue-200" id="announcementContent">
+                        <p>ยินดีต้อนรับเข้าสู่ระบบห้องสอบออนไลน์ ขณะนี้ยังไม่มีประกาศใหม่จากคุณครูครับ</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- รายการข้อสอบ (จำลอง UI ไว้ก่อนเชื่อมต่อฐานข้อมูลในเฟส 3) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="examList">
-            
-            <!-- Card ข้อสอบที่ 1 -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all transform hover:-translate-y-1">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-xl"><i class="fas fa-laptop-code text-xl"></i></div>
-                    <span class="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-1 rounded-full">พร้อมสอบ</span>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">สอบกลางภาค วิชาเทคโนโลยี</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><i class="far fa-clock mr-1"></i> เวลาทำข้อสอบ: 60 นาที</p>
-                <button onclick="startExam('123')" class="w-full bg-primary hover:bg-indigo-600 text-white py-2 rounded-lg transition-colors">เริ่มทำข้อสอบ</button>
-            </div>
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ข้อสอบของคุณ</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">เลือกชุดข้อสอบที่เปิดให้ทำในขณะนี้</p>
+        </div>
 
-            <!-- Card ข้อสอบที่ 2 (ตัวอย่างแบบทำเสร็จแล้ว) -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 opacity-75">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl"><i class="fas fa-file-alt text-xl"></i></div>
-                    <span class="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-1 rounded-full">รอครูตรวจ</span>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">แบบทดสอบที่ 1: วิทยาศาสตร์</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><i class="fas fa-check-circle mr-1"></i> ส่งเมื่อ
+        <!-- รายการข้อสอบ (จะถูกดึงมาจากฐานข้อมูลอัตโนมัติ) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="examList">
+            <!-- สถานะกำลังโหลด -->
+            <div class="col-span-full text-center py-10">
+                <i class="fas fa-circle-notch fa-spin text-3xl text-primary mb-3"></i>
+                <p class="text-gray-500 dark:text-gray-400">กำลังดึงข้อมูลข้อสอบจากระบบ...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 1. ระบบ Theme
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
+        // 2. ระบบ Supabase
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function initPage() {
+            // เช็คการล็อกอิน
+            const { data: { session } } = await mySupabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+
+            // เช็คสิทธิ์นักเรียน
+            const { data: profile } = await mySupabase.from('profiles').select('full_name, role').eq('id', session.user.id).single();
+            if (!profile || profile.role !== 'student') { window.location.href = 'index.html'; return; }
+
+            // แสดงชื่อนักเรียน
+            document.getElementById('welcomeMsg').innerHTML = `สวัสดี, <span class="font-semibold text-primary">${profile.full_name || 'นักเรียน'}</span>`;
+            
+            // เรียกฟังก์ชันดึงข้อมูลข้อสอบ
+            loadExams();
+        }
+
+        // 3. ฟังก์ชันดึงข้อสอบจากฐานข้อมูล
+        async function loadExams() {
+            const examList = document.getElementById('examList');
+            
+            // ดึงข้อมูลจากตาราง exams
+            const { data: exams, error } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
+
+            // กรณีไม่มีข้อสอบในระบบ หรือเกิด Error
+            if (error || !exams || exams.length === 0) {
+                examList.innerHTML = `
+                    <div class="col-span-full bg-white dark:bg-gray-800 rounded-2xl p-10 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+                        <div class="w-20 h-20 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-box-open text-4xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">ยังไม่มีชุดข้อสอบในขณะนี้</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">คุณครูหรือผู้ดูแลระบบยังไม่ได้เปิดให้ทำข้อสอบใดๆ กรุณารอประกาศเพิ่มเติมครับ</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // ถ้ามีข้อสอบ ให้แสดงผลเป็นการ์ด (เตรียมไว้สำหรับอนาคต)
+            // *ตอนนี้ถ้าตาราง exams ว่างเปล่า โค้ดส่วนนี้จะไม่ทำงาน
+            let html = '';
+            exams.forEach(exam => {
+                html += `
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all transform hover:-translate-y-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-xl"><i class="fas fa-file-alt text-xl"></i></div>
+                            <span class="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-1 rounded-full">เปิดสอบ</span>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">${exam.title}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><i class="far fa-clock mr-1"></i> เวลา: ${exam.time_limit} นาที</p>
+                        <button onclick="startExam('${exam.id}')" class="w-full bg-primary hover:bg-indigo-600 text-white py-2 rounded-lg transition-colors">เริ่มทำข้อสอบ</button>
+                    </div>
+                `;
+            });
+            examList.innerHTML = html;
+        }
+
+        // 4. ระบบกดเริ่มทำข้อสอบ
+        function startExam(examId) {
+            Swal.fire({
+                title: 'เตรียมความพร้อม',
+                text: "เมื่อกดเริ่มแล้ว ระบบจะเริ่มจับเวลาทันที คุณพร้อมหรือไม่?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'พร้อม, เริ่มสอบเลย',
+                cancelButtonText: 'ยกเลิก',
+                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // ป้องกัน Error 404 โดยเช็คก่อนว่ามีไฟล์ exam.html ไหม ถ้ามีจะเปลี่ยนหน้าไปให้
+                    window.location.href = `exam.html?id=${examId}`;
+                }
+            });
+        }
+
+        // 5. ปุ่มออกจากระบบ
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: "คุณต้องการออกจากระบบใช่หรือไม่",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ใช่, ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก',
+                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await mySupabase.auth.signOut();
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+
+        initPage();
+    </script>
+</body>
+</html>
