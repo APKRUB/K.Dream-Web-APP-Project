@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | จัดการเวลา Consult</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
+                    colors: { primary: '#2563eb', lightbg: '#f8fafc', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } 
+                } 
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(31, 41, 55, 0.8); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .glossy-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+        }
+        .dark .glossy-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100">
+
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-lg"></i>
+                    </button>
+                    <div>
+                        <h1 class="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
+                            ระบบจัดการเวลา Consult
+                        </h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ตั้งค่ารอบเวลาเปิดจองและสร้าง Slot ให้นักเรียน</p>
+                    </div>
+                </div>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
+                    <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+        
+        <!-- Status & Countdown Banner -->
+        <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-indigo-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span id="statusIndicator" class="w-3 h-3 rounded-full bg-amber-500"></span>
+                    สถานะระบบ: <span id="statusText">กำลังโหลด...</span>
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="countdownInfo">กำลังตรวจสอบเวลาเปิดระบบ...</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="toggleBtn" onclick="toggleSystemStatus()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">
+                    เปลี่ยนสถานะเปิด-ปิด
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid Settings & Generator -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- ฝั่งซ้าย: ตั้งค่า Countdown & ควบคุม -->
+            <div class="lg:col-span-5 glossy-card p-8 rounded-3xl space-y-6">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิดระบบ (Countdown)
+                </h3>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">กำหนดวันและเวลาเปิดรับจอง</label>
+                    <input type="datetime-local" id="openAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary outline-none">
+                </div>
+                <button onclick="saveCountdownTime()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">
+                    บันทึกเวลาเปิดอัตโนมัติ
+                </button>
+
+                <div class="pt-6 border-t border-gray-200 dark:border-gray-800">
+                    <button onclick="resetAllQuotas()" class="w-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 py-3.5 rounded-2xl font-bold text-sm transition-all border border-red-200/50 dark:border-red-900/50">
+                        <i class="fas fa-redo mr-2"></i> รีเซ็ตโควต้านักเรียนทุกคน
+                    </button>
+                </div>
+            </div>
+
+            <!-- ฝั่งขวา: สร้าง Slot อัตโนมัติ (Recurring Generator) -->
+            <div class="lg:col-span-7 glossy-card p-8 rounded-3xl space-y-5">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ (Recurring Event)
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ตั้งแต่วันที่</label>
+                        <input type="date" id="genStartDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ถึงวันที่</label>
+                        <input type="date" id="genEndDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">เริ่มเวลา</label>
+                        <input type="time" id="genStartTime" value="09:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">สิ้นสุดเวลา</label>
+                        <input type="time" id="genEndTime" value="16:00" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ช่วงละ (นาที)</label>
+                        <input type="number" id="genDuration" value="30" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm">
+                    </div>
+                </div>
+                <button onclick="generateSlots()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">
+                    สร้างช่วงเวลา (Slots) อัตโนมัติ
+                </button>
+            </div>
+
+        </div>
+
+        <!-- รายการ Slot ทั้งหมด -->
+        <div class="glossy-card p-8 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-list text-indigo-500"></i> รายการ Slot เวลา Consult ทั้งหมด
+                </h3>
+                <button onclick="loadSlots()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชข้อมูล</button>
+            </div>
+            <div id="slotsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-96 overflow-y-auto">
+                <div class="text-center py-8 text-gray-400 text-sm">กำลังโหลดข้อมูล Slot...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentSetting = null;
+
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
+        async function initPage() {
+            const { data: { session } } = await mySupabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
+            if (!profile || !['admin', 'teacher', 'exam_creator'].includes(profile.role)) { window.location.href = 'student.html'; return; }
+
+            loadSettings();
+            loadSlots();
+        }
+
+        async function loadSettings() {
+            const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
+            currentSetting = data;
+            
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const countdownInfo = document.getElementById('countdownInfo');
+
+            if (data.is_open) {
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
+                statusText.textContent = 'เปิดรับจอง Consult แล้ว';
+                countdownInfo.textContent = 'ระบบเปิดให้มนุษย์/นักเรียนเข้ามาเลือกจอง Slot เวลาได้ทันที';
+            } else {
+                statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500';
+                statusText.textContent = 'ปิดรับจอง';
+                
+                if (data.open_at) {
+                    document.getElementById('openAtInput').value = data.open_at.slice(0, 16);
+                    startCountdown(new Date(data.open_at));
+                } else {
+                    countdownInfo.textContent = 'ระบบยังไม่เปิดในขณะนี้ (ยังไม่ได้กำหนดเวลาเปิด)';
+                }
+            }
+        }
+
+        function startCountdown(openDate) {
+            const countdownInfo = document.getElementById('countdownInfo');
+            setInterval(() => {
+                const now = new Date();
+                const diff = openDate - now;
+                if (diff <= 0) {
+                    countdownInfo.textContent = 'ถึงเวลาเปิดระบบแล้ว!';
+                    return;
+                }
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                countdownInfo.textContent = `⏳ นับถอยหลังเปิดระบบอีก: ${hours} ชม. ${minutes} นาที ${seconds} วินาที`;
+            }, 1000);
+        }
+
+        async function toggleSystemStatus() {
+            const newStatus = !currentSetting.is_open;
+            await mySupabase.from('consult_settings').update({ is_open: newStatus }).eq('id', 1);
+            Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบแล้ว' : 'ปิดระบบแล้ว', timer: 1200, showConfirmButton: false });
+            loadSettings();
+        }
+
+        async function saveCountdownTime() {
+            const val = document.getElementById('openAtInput').value;
+            await mySupabase.from('consult_settings').update({ open_at: val ? val : null }).eq('id', 1);
+            Swal.fire({ icon: 'success', title: 'บันทึกเวลา Countdown สำเร็จ', timer: 1200, showConfirmButton: false });
+            loadSettings();
+        }
+
+        async function generateSlots() {
+            const startDate = document.getElementById('genStartDate').value;
+            const endDate = document.getElementById('genEndDate').value;
+            const startTime = document.getElementById('genStartTime').value;
+            const endTime = document.getElementById('genEndTime').value;
+            const durationMin = parseInt(document.getElementById('genDuration').value);
+
+            if (!startDate || !endDate || !startTime || !endTime || !durationMin) {
+                Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลการสร้าง Slot ให้ครบถ้วน', 'warning');
+                return;
+            }
+
+            Swal.fire({ title: 'กำลังสร้าง Slot...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            let currentDay = new Date(startDate);
+            let lastDay = new Date(endDate);
+            let slotsToInsert = [];
+
+            while (currentDay <= lastDay) {
+                let [startH, startM] = startTime.split(':').map(Number);
+                let [endH, endM] = endTime.split(':').map(Number);
+
+                let slotStart = new Date(currentDay);
+                slotStart.setHours(startH, startM, 0, 0);
+
+                let dayEnd = new Date(currentDay);
+                dayEnd.setHours(endH, endM, 0, 0);
+
+                while (slotStart < dayEnd) {
+                    let slotEnd = new Date(slotStart.getTime() + durationMin * 60000);
+                    if (slotEnd > dayEnd) break;
+
+                    slotsToInsert.push({
+                        start_time: slotStart.toISOString(),
+                        end_time: slotEnd.toISOString(),
+                        status: 'available'
+                    });
+                    slotStart = slotEnd;
+                }
+                currentDay.setDate(currentDay.getDate() + 1);
+            }
+
+            if (slotsToInsert.length > 0) {
+                const { error } = await mySupabase.from('consult_slots').insert(slotsToInsert);
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: `สร้างสำเร็จ ${slotsToInsert.length} ช่วงเวลา!`, timer: 1500, showConfirmButton: false });
+                    loadSlots();
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            } else {
+                Swal.fire('ไม่พบช่วงเวลา', 'กรุณาตรวจสอบเวลาเริ่มต้นและสิ้นสุด', 'warning');
+            }
+        }
+
+        async function loadSlots() {
+            const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').order('start_time', { ascending: true });
+            const list = document.getElementById('slotsList');
+
+            if (!slots || slots.length === 0) {
+                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">ยังไม่มี Slot เวลา Consult ในระบบ</div>`;
+                return;
+            }
+
+            list.innerHTML = slots.map(s => {
+                const startStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                const isBooked = s.status === 'booked';
+
+                return `
+                    <div class="py-3 flex justify-between items-center text-sm">
+                        <div>
+                            <span class="font-bold text-gray-900 dark:text-white"><i class="far fa-clock mr-1 text-indigo-500"></i> ${startStr} - ${endStr}</span>
+                            <div class="text-xs text-gray-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
+                        </div>
+                        <button onclick="deleteSlot('${s.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">ลบ</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function deleteSlot(id) {
+            await mySupabase.from('consult_slots').delete().eq('id', id);
+            loadSlots();
+        }
+
+        async function resetAllQuotas() {
+            const res = await Swal.fire({
+                title: 'รีเซ็ตโควต้านักเรียนทั้งหมด?',
+                text: 'นักเรียนทุกคนจะสามารถกลับมาจองใหม่ได้ (และสถานะ Slot จะถูกเคลียร์เป็นว่าง)',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444'
+            });
+            if (res.isConfirmed) {
+                await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null });
+                await mySupabase.from('consult_slots').update({ status: 'available', student_id: null });
+                Swal.fire({ icon: 'success', title: 'รีเซ็ตสำเร็จ', timer: 1200, showConfirmButton: false });
+                loadSlots();
+            }
+        }
+
+        initPage();
+    </script>
+</body>
+</html>
