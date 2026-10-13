@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS | จัดการเนื้อหาและข้อสอบ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -12,125 +12,171 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#4f46e5', secondary: '#ec4899' } } }
+            theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#4f46e5', secondary: '#ec4899', surface: '#ffffff' } } }
         }
     </script>
     <style>
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
-        .dark .glass-nav { background: rgba(17, 24, 39, 0.8); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
+        .dark .glass-nav { background: rgba(17, 24, 39, 0.7); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         
-        /* สไตล์สำหรับซ่อน/แสดง Tab */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Animation สำหรับการเปลี่ยนหน้าต่าง */
+        .tab-content { display: none; opacity: 0; transform: translateY(15px); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .tab-content.active { display: block; opacity: 1; transform: translateY(0); }
         
-        .tab-btn.active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: 600; }
-        .dark .tab-btn.active { border-bottom: 2px solid #818cf8; color: #818cf8; }
+        /* สไตล์ปุ่มเมนูแคปซูล */
+        .pill-menu { background: #f3f4f6; padding: 6px; border-radius: 100px; display: inline-flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .dark .pill-menu { background: #1f2937; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .pill-btn { padding: 10px 24px; border-radius: 100px; font-weight: 500; transition: all 0.3s ease; color: #6b7280; display: flex; align-items: center; gap: 8px; }
+        .dark .pill-btn { color: #9ca3af; }
+        .pill-btn:hover { color: #4f46e5; }
+        .pill-btn.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="glass-nav fixed w-full top-0 z-50 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-4">
-                    <a href="admin.html" class="text-gray-500 hover:text-primary transition-colors"><i class="fas fa-arrow-left text-xl"></i></a>
-                    <span class="font-semibold text-xl dark:text-white">จัดการเนื้อหาระบบ</span>
+                    <button onclick="window.location.href='admin.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-primary hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span class="font-bold text-xl text-gray-800 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">ระบบสร้างข้อสอบ & ประกาศ</span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button id="themeToggle" class="text-gray-500 dark:text-gray-300 hover:text-primary transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
+                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-300 hover:text-primary transition-colors shadow-sm">
+                        <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-4 pt-24 pb-12">
+    <main class="max-w-4xl mx-auto px-4 pt-28 pb-16">
         
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-            <button onclick="switchTab('tab-category')" class="tab-btn active px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">1. หมวดหมู่</button>
-            <button onclick="switchTab('tab-exam')" class="tab-btn px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">2. ชุดข้อสอบ</button>
-            <button onclick="switchTab('tab-announcement')" class="tab-btn px-4 py-3 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">3. ประกาศแจ้งเตือน</button>
-        </div>
-
-        <!-- ==================== Tab 1: หมวดหมู่ ==================== -->
-        <div id="tab-category" class="tab-content active bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4"><i class="fas fa-tags text-primary mr-2"></i>สร้างหมวดหมู่ใหม่</h2>
-            <div class="flex gap-4">
-                <input type="text" id="catName" placeholder="เช่น วิทยาศาสตร์ ม.3" class="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg dark:text-white focus:outline-none focus:ring-2 focus:ring-primary">
-                <button onclick="addCategory()" class="bg-primary hover:bg-indigo-600 text-white px-6 py-2 rounded-lg transition-colors">บันทึก</button>
-            </div>
-            <div class="mt-6">
-                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">หมวดหมู่ที่มีอยู่ในระบบ</h3>
-                <ul id="catList" class="space-y-2 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
-                    <li>กำลังโหลด...</li>
-                </ul>
+        <!-- Modern Pill Navigation -->
+        <div class="flex justify-center mb-10">
+            <div class="pill-menu w-full sm:w-auto overflow-x-auto whitespace-nowrap scrollbar-hide">
+                <button onclick="switchTab('tab-category', this)" class="pill-btn active"><i class="fas fa-layer-group"></i> หมวดหมู่</button>
+                <button onclick="switchTab('tab-exam', this)" class="pill-btn"><i class="fas fa-file-signature"></i> สร้างชุดข้อสอบ</button>
+                <button onclick="switchTab('tab-announcement', this)" class="pill-btn"><i class="fas fa-bullhorn"></i> โพสต์ประกาศ</button>
             </div>
         </div>
 
-        <!-- ==================== Tab 2: ชุดข้อสอบ ==================== -->
-        <div id="tab-exam" class="tab-content bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4"><i class="fas fa-file-alt text-primary mr-2"></i>สร้างชุดข้อสอบ</h2>
-            <form id="examForm" class="space-y-4">
+        <!-- ==================== Tab 1: หมวดหมู่ (ดีไซน์ใหม่ + ลบได้) ==================== -->
+        <div id="tab-category" class="tab-content active">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center text-primary text-xl">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">จัดการหมวดหมู่ข้อสอบ</h2>
+                </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">ชื่อชุดข้อสอบ</label>
-                        <input type="text" id="exTitle" required class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">หมวดหมู่</label>
-                        <select id="exCategory" required class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg dark:text-white">
-                            <option value="">-- เลือกหมวดหมู่ --</option>
-                        </select>
+                <div class="flex flex-col sm:flex-row gap-4 mb-8">
+                    <input type="text" id="catName" placeholder="เพิ่มหมวดหมู่ใหม่ เช่น คณิตศาสตร์ ม.3..." class="flex-1 px-5 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all shadow-inner">
+                    <button onclick="addCategory()" class="bg-primary hover:bg-indigo-600 text-white px-8 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 whitespace-nowrap"><i class="fas fa-plus mr-2"></i> บันทึก</button>
+                </div>
+                
+                <hr class="border-gray-100 dark:border-gray-700 mb-6">
+                
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider">หมวดหมู่ทั้งหมดในระบบ</h3>
+                <!-- ลิสต์หมวดหมู่แบบใหม่ -->
+                <div id="catList" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-500 text-center col-span-full">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูล...
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">ประเภท</label>
-                        <select id="exType" onchange="togglePdfInput()" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg dark:text-white">
-                            <option value="dynamic_text">พิมพ์โจทย์เองบนระบบ</option>
-                            <option value="pdf_only">อัปโหลดไฟล์ PDF (กระดาษคำตอบ)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">เวลาทำข้อสอบ (นาที)</label>
-                        <input type="number" id="exTime" required min="1" value="60" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">จำนวนครั้งที่สอบได้</label>
-                        <input type="number" id="exAttempts" required min="1" value="1" class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border rounded-lg dark:text-white">
-                    </div>
-                </div>
-
-                <!-- ช่องอัปโหลด PDF (ซ่อนไว้ก่อน จะโชว์เมื่อเลือกประเภท PDF) -->
-                <div id="pdfUploadDiv" class="hidden p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                    <label class="block text-sm font-semibold text-indigo-700 dark:text-indigo-300 mb-2"><i class="fas fa-file-pdf mr-1"></i>อัปโหลดไฟล์ข้อสอบ (PDF)</label>
-                    <input type="file" id="exPdfFile" accept="application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
-                </div>
-
-                <div class="flex items-center mt-2">
-                    <input type="checkbox" id="exRandom" class="w-4 h-4 text-primary rounded border-gray-300">
-                    <label class="ml-2 text-sm text-gray-600 dark:text-gray-400">สลับข้อและตัวเลือกอัตโนมัติ (สำหรับแบบพิมพ์โจทย์เอง)</label>
-                </div>
-
-                <button type="button" onclick="createExam()" class="w-full bg-primary hover:bg-indigo-600 text-white py-3 rounded-xl font-medium transition-colors mt-4 shadow-md">บันทึกข้อสอบ</button>
-            </form>
+            </div>
         </div>
 
-        <!-- ==================== Tab 3: ประกาศ ==================== -->
-        <div id="tab-announcement" class="tab-content bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4"><i class="fas fa-bullhorn text-primary mr-2"></i>ประกาศแจ้งเตือนนักเรียน</h2>
-            <textarea id="annContent" rows="4" placeholder="พิมพ์ประกาศที่นี่... (นักเรียนจะเห็นทันที)" class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg dark:text-white focus:outline-none focus:ring-2 focus:ring-primary mb-3"></textarea>
-            
-            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1"><i class="fas fa-paperclip mr-1"></i>แนบรูปภาพหรือไฟล์ (ทางเลือก)</label>
-            <input type="file" id="annFile" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300 mb-4 dark:file:bg-gray-700 dark:file:text-white">
-            
-            <button onclick="postAnnouncement()" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-colors shadow-md">โพสต์ประกาศ</button>
+        <!-- ==================== Tab 2: ชุดข้อสอบ (ดีไซน์ใหม่) ==================== -->
+        <div id="tab-exam" class="tab-content">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-pink-900/50 flex items-center justify-center text-secondary text-xl">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">สร้างชุดข้อสอบใหม่</h2>
+                </div>
+                
+                <form id="examForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ชื่อชุดข้อสอบ</label>
+                            <input type="text" id="exTitle" placeholder="เช่น ข้อสอบปลายภาค วิชาวิทยาศาสตร์" required class="w-full px-5 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">จัดอยู่ในหมวดหมู่</label>
+                            <select id="exCategory" required class="w-full px-5 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all">
+                                <option value="">-- รอโหลดข้อมูล --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 dark:bg-gray-900/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">รูปแบบข้อสอบ</label>
+                            <select id="exType" onchange="togglePdfInput()" class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all">
+                                <option value="dynamic_text">พิมพ์โจทย์เองบนระบบ</option>
+                                <option value="pdf_only">อัปโหลดไฟล์ PDF (กระดาษคำตอบ)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">เวลาทำข้อสอบ (นาที)</label>
+                            <input type="number" id="exTime" required min="1" value="60" class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">จำนวนครั้งที่สอบได้</label>
+                            <input type="number" id="exAttempts" required min="1" value="1" class="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                        </div>
+                    </div>
+
+                    <!-- ช่องอัปโหลด PDF (ดีไซน์ใหม่) -->
+                    <div id="pdfUploadDiv" class="hidden p-6 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-800 text-center transition-all">
+                        <div class="mb-3 text-indigo-500 dark:text-indigo-400"><i class="fas fa-cloud-upload-alt text-4xl"></i></div>
+                        <label class="block text-base font-semibold text-indigo-800 dark:text-indigo-300 mb-1">อัปโหลดไฟล์ข้อสอบ (PDF)</label>
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 mb-4">รองรับเฉพาะไฟล์ .pdf ขนาดไม่เกิน 10MB</p>
+                        <input type="file" id="exPdfFile" accept="application/pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer mx-auto max-w-sm">
+                    </div>
+
+                    <div class="flex items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                        <input type="checkbox" id="exRandom" class="w-5 h-5 text-primary bg-white border-gray-300 rounded focus:ring-primary focus:ring-2 cursor-pointer">
+                        <label for="exRandom" class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">สลับข้อและตัวเลือกอัตโนมัติ (เฉพาะแบบพิมพ์โจทย์เอง)</label>
+                    </div>
+
+                    <button type="button" onclick="createExam()" class="w-full bg-gradient-to-r from-primary to-secondary hover:from-indigo-600 hover:to-pink-600 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 mt-6">
+                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูลข้อสอบ
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== Tab 3: ประกาศ (ดีไซน์ใหม่) ==================== -->
+        <div id="tab-announcement" class="tab-content">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl shadow-indigo-100/20 dark:shadow-none border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/50 flex items-center justify-center text-blue-500 text-xl">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white">ประกาศแจ้งเตือนนักเรียน</h2>
+                </div>
+                
+                <textarea id="annContent" rows="5" placeholder="พิมพ์เนื้อหาประกาศที่นี่... (ข้อความนี้จะแสดงที่หน้า Dashboard ของนักเรียนทันที)" class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-5 resize-none"></textarea>
+                
+                <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"><i class="fas fa-paperclip text-blue-500 mr-2"></i>แนบรูปภาพหรือไฟล์เอกสาร (ทางเลือก)</label>
+                    <input type="file" id="annFile" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer dark:file:bg-blue-900/50 dark:file:text-blue-300">
+                </div>
+                
+                <button onclick="postAnnouncement()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <i class="fas fa-paper-plane mr-2"></i> โพสต์ประกาศทันที
+                </button>
+            </div>
         </div>
 
     </main>
@@ -150,12 +196,28 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันสลับ Tab
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+        // ฟังก์ชันสลับ Tab (แก้ไขให้มี Animation และสลับปุ่ม Capsule สวยงาม)
+        function switchTab(tabId, btnElement) {
+            // ซ่อนเนื้อหาทั้งหมด
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+                setTimeout(() => el.style.display = 'none', 300); // รอ Animation จบ
+            });
+            
+            // ลบสถานะปุ่ม
+            document.querySelectorAll('.pill-btn').forEach(el => el.classList.remove('active'));
+            
+            // แสดงเนื้อหาใหม่
+            setTimeout(() => {
+                const activeTab = document.getElementById(tabId);
+                activeTab.style.display = 'block';
+                // บังคับให้เบราว์เซอร์วาด UI ใหม่ก่อนใส่คลาส active
+                void activeTab.offsetWidth; 
+                activeTab.classList.add('active');
+            }, 50);
+
+            // ไฮไลต์ปุ่มใหม่
+            btnElement.classList.add('active');
         }
 
         // ระบบ Supabase
@@ -168,16 +230,16 @@
             const { data: { session } } = await mySupabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             currentUserId = session.user.id;
-            loadCategories(); // โหลดหมวดหมู่ทันทีเมื่อเปิดหน้า
+            loadCategories(); 
         }
 
-        // ================= ฟังก์ชันหมวดหมู่ =================
+        // ================= ฟังก์ชันหมวดหมู่ (เพิ่มระบบลบ) =================
         async function addCategory() {
             const catName = document.getElementById('catName').value;
             if (!catName) return alert("กรุณาพิมพ์ชื่อหมวดหมู่");
             
             const { error } = await mySupabase.from('categories').insert([{ name: catName }]);
-            if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
+            if (error) { Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message }); return; }
             
             document.getElementById('catName').value = '';
             Swal.fire({ icon: 'success', title: 'สร้างหมวดหมู่สำเร็จ', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -187,20 +249,63 @@
         async function loadCategories() {
             const { data, error } = await mySupabase.from('categories').select('*').order('created_at', { ascending: false });
             if (!error && data) {
-                // อัปเดตใน List
                 const list = document.getElementById('catList');
-                list.innerHTML = data.map(c => `<li><i class="fas fa-caret-right text-primary mr-2"></i>${c.name}</li>`).join('');
+                if(data.length === 0) {
+                    list.innerHTML = '<div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-900 text-gray-500 text-center col-span-full">ยังไม่มีหมวดหมู่ในระบบ</div>';
+                } else {
+                    // วาดการ์ดหมวดหมู่พร้อมปุ่มลบ (รูปถังขยะ)
+                    list.innerHTML = data.map(c => `
+                        <div class="flex justify-between items-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                            <span class="font-medium text-gray-700 dark:text-gray-200"><i class="fas fa-folder-open text-primary mr-2"></i> ${c.name}</span>
+                            <button onclick="deleteCategory('${c.id}', '${c.name}')" class="w-8 h-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    `).join('');
+                }
                 
-                // อัปเดตใน Dropdown ของหน้าสร้างข้อสอบ
                 const select = document.getElementById('exCategory');
                 select.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' + data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             }
         }
 
-        // ================= ฟังก์ชันชุดข้อสอบ =================
+        // ฟังก์ชันลบหมวดหมู่
+        async function deleteCategory(id, name) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                html: `คุณต้องการลบหมวดหมู่ <b>${name}</b> ใช่หรือไม่?<br><span class="text-sm text-red-500">(ข้อสอบที่อยู่ในหมวดหมู่นี้จะไม่ถูกลบ แต่จะกลายเป็น 'ไม่มีหมวดหมู่')</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ใช่, ลบเลย',
+                cancelButtonText: 'ยกเลิก',
+                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
+                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const { error } = await mySupabase.from('categories').delete().eq('id', id);
+                    if (error) {
+                        Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: error.message });
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'ลบหมวดหมู่แล้ว', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                        loadCategories(); // โหลดใหม่
+                    }
+                }
+            });
+        }
+
+        // ================= ฟังก์ชันชุดข้อสอบ (เหมือนเดิม) =================
         function togglePdfInput() {
             const type = document.getElementById('exType').value;
-            document.getElementById('pdfUploadDiv').style.display = (type === 'pdf_only') ? 'block' : 'none';
+            const pdfDiv = document.getElementById('pdfUploadDiv');
+            if(type === 'pdf_only'){
+                pdfDiv.classList.remove('hidden');
+                pdfDiv.classList.add('block');
+            } else {
+                pdfDiv.classList.add('hidden');
+                pdfDiv.classList.remove('block');
+            }
         }
 
         async function createExam() {
@@ -212,15 +317,12 @@
             const isRandom = document.getElementById('exRandom').checked;
             
             if(!title || !categoryId || !timeLimit) {
-                return Swal.fire({ icon: 'warning', title: 'กรอกข้อมูลไม่ครบ' });
+                return Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณากรอกชื่อและเลือกหมวดหมู่ให้ครบถ้วน' });
             }
 
             let pdfUrl = null;
-            
-            // แสดง Pop-up โหลดหมุนๆ ระหว่างรออัปโหลด
-            Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            Swal.fire({ title: 'กำลังบันทึกและอัปโหลด...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-            // กรณีเลือกอัปโหลดไฟล์ PDF
             if (type === 'pdf_only') {
                 const fileInput = document.getElementById('exPdfFile');
                 if (fileInput.files.length === 0) {
@@ -231,19 +333,16 @@
                 const fileExt = file.name.split('.').pop();
                 const fileName = `exam_${Date.now()}.${fileExt}`;
                 
-                // อัปโหลดไปที่ Storage lms_files
                 const { data: uploadData, error: uploadError } = await mySupabase.storage.from('lms_files').upload(fileName, file);
                 
                 if (uploadError) {
                     Swal.close();
-                    return Swal.fire({ icon: 'error', title: 'อัปโหลดไฟล์ไม่สำเร็จ', text: uploadError.message });
+                    return Swal.fire({ icon: 'error', title: 'อัปโหลดไฟล์ไม่สำเร็จ (ติดสิทธิ์ RLS)', text: uploadError.message });
                 }
-                // เอาลิงก์ URL ของไฟล์มาเก็บไว้
                 const { data: publicUrlData } = mySupabase.storage.from('lms_files').getPublicUrl(fileName);
                 pdfUrl = publicUrlData.publicUrl;
             }
 
-            // บันทึกข้อมูลลงตาราง exams
             const { error: insertError } = await mySupabase.from('exams').insert([{
                 title: title, category_id: categoryId, exam_type: type, 
                 time_limit: parseInt(timeLimit), max_attempts: parseInt(attempts), 
@@ -253,25 +352,24 @@
             if (insertError) {
                 Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: insertError.message });
             } else {
-                Swal.fire({ icon: 'success', title: 'สร้างชุดข้อสอบเรียบร้อยแล้ว!' }).then(() => {
+                Swal.fire({ icon: 'success', title: 'สร้างชุดข้อสอบสำเร็จ!', confirmButtonColor: '#4f46e5' }).then(() => {
                     document.getElementById('examForm').reset();
                     togglePdfInput();
                 });
             }
         }
 
-        // ================= ฟังก์ชันประกาศ (Announcement) =================
+        // ================= ฟังก์ชันประกาศ =================
         async function postAnnouncement() {
             const content = document.getElementById('annContent').value;
             const fileInput = document.getElementById('annFile');
             
             if (!content) return Swal.fire({ icon: 'warning', title: 'กรุณาพิมพ์ข้อความประกาศ' });
 
-            Swal.fire({ title: 'กำลังโพสต์ประกาศ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            Swal.fire({ title: 'กำลังส่งประกาศขึ้นระบบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
             let fileUrl = null;
 
-            // ถ้ามีการแนบไฟล์
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 const fileName = `announcement_${Date.now()}_${file.name}`;
@@ -280,10 +378,12 @@
                 if (!uploadError) {
                     const { data: publicUrlData } = mySupabase.storage.from('lms_files').getPublicUrl(fileName);
                     fileUrl = publicUrlData.publicUrl;
+                } else {
+                    Swal.fire({ icon: 'error', title: 'อัปโหลดไฟล์แนบไม่สำเร็จ', text: uploadError.message });
+                    return;
                 }
             }
 
-            // บันทึกลงตาราง
             const { error: insertError } = await mySupabase.from('announcements').insert([{
                 author_id: currentUserId,
                 content: content,
@@ -293,7 +393,7 @@
             if (insertError) {
                 Swal.fire({ icon: 'error', title: 'โพสต์ไม่สำเร็จ', text: insertError.message });
             } else {
-                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศแล้ว!' }).then(() => {
+                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศแล้ว!', confirmButtonColor: '#2563eb' }).then(() => {
                     document.getElementById('annContent').value = '';
                     fileInput.value = '';
                 });
