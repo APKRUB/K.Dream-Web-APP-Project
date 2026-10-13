@@ -166,36 +166,9 @@
         }
 
         // ================= ระบบจัดการประกาศ (Announcement Hub) =================
-        async function openAnnouncementManager() {
-            // ดึงประวัติประกาศทั้งหมด
-            const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', { ascending: false });
-            
-            let historyHtml = (anns && anns.length > 0) ? anns.map(a => `
-                <div class="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg mb-2 flex justify-between items-start border border-gray-200 dark:border-gray-600">
-                    <div class="text-sm text-gray-800 dark:text-gray-200 text-left">${a.content} <br><span class="text-[10px] text-gray-400">${new Date(a.created_at).toLocaleString()}</span></div>
-                    <button onclick="deleteAnnouncement('${a.id}')" class="text-red-500 hover:text-red-700 p-1"><i class="fas fa-trash"></i></button>
-                </div>
-            `).join('') : '<div class="text-center text-gray-400 text-sm py-4">ยังไม่มีประวัติการประกาศ</div>';
-
-            Swal.fire({
-                title: '📢 ระบบประกาศแจ้งเตือน',
-                html: `
-                    <div class="text-left mb-4">
-                        <label class="font-semibold text-sm dark:text-gray-200">สร้างประกาศใหม่</label>
-                        <textarea id="swal-ann-content" class="w-full mt-1 p-3 border rounded-lg outline-none focus:border-primary dark:bg-slate-700 dark:border-gray-600 dark:text-white" rows="3" placeholder="พิมพ์ข้อความ..."></textarea>
-                        <button onclick="postNewAnnouncement()" class="mt-2 w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-blue-800">โพสต์ประกาศ</button>
-                    </div>
-                    <hr class="my-4 dark:border-gray-600">
-                    <div class="text-left">
-                        <label class="font-semibold text-sm dark:text-gray-200">ประวัติการประกาศ</label>
-                        <div class="mt-2 max-h-48 overflow-y-auto">${historyHtml}</div>
-                    </div>
-                `,
-                showConfirmButton: false,
-                showCloseButton: true,
-                width: '600px'
-            });
-        }
+        function openAnnouncementManager() {
+    window.location.href = 'announcements.html';
+}
 
         async function postNewAnnouncement() {
             const content = document.getElementById('swal-ann-content').value;
