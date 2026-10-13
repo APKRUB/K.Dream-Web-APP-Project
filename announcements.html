@@ -19,9 +19,9 @@
                         primary: '#2563eb', 
                         primaryHover: '#1d4ed8',
                         lightbg: '#f8fafc', 
-                        darkbg: '#030712',    /* โทนดำนิลพรีเมียม (Tailwind Gray 950) */
-                        darkbox: '#111827',   /* โทนกล่องการ์ดเข้ม (Gray 900) */
-                        darkinput: '#1f2937'  /* โทนช่องกรอกข้อมูล (Gray 800) */
+                        darkbg: '#030712',    
+                        darkbox: '#111827',   
+                        darkinput: '#1f2937'  
                     } 
                 } 
             }
@@ -39,6 +39,43 @@
         .btn-glow { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25); }
         .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); }
         .btn-glow:active { transform: translateY(0); }
+
+        /* สไตล์ปุ่ม Edit / Delete แบบโมเดิร์นใหม่ */
+        .action-btn-edit {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            transition: all 0.2s ease;
+        }
+        .dark .action-btn-edit {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .action-btn-edit:hover {
+            background-color: #2563eb;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .action-btn-delete {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            transition: all 0.2s ease;
+        }
+        .dark .action-btn-delete {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .action-btn-delete:hover {
+            background-color: #dc2626;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
     </style>
 </head>
 <body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100 selection:bg-blue-500 selection:text-white">
@@ -72,7 +109,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- ฝั่งซ้าย: ฟอร์มสร้าง/แก้ไขประกาศ (โมเดิร์นคลาสสิก) -->
+            <!-- ฝั่งซ้าย: ฟอร์มสร้าง/แก้ไขประกาศ -->
             <div id="creatorSection" class="lg:col-span-5 modern-card p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-gray-200/80 dark:border-gray-800 sticky top-28">
                 <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
                     <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">
@@ -215,8 +252,12 @@
                             </div>
                             ${isStaff ? `
                                 <div class="flex gap-2">
-                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 hover:bg-amber-100 flex items-center justify-center text-xs transition-all shadow-sm border border-amber-200/40 dark:border-amber-900/40" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                                    <button onclick="deleteAnnouncement('${a.id}')" class="w-9 h-9 rounded-xl bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 hover:bg-red-100 flex items-center justify-center text-xs transition-all shadow-sm border border-red-200/40 dark:border-red-900/40" title="ลบ"><i class="fas fa-trash"></i></button>
+                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="action-btn-edit px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm" title="แก้ไข">
+                                        <i class="fas fa-pen-to-square"></i> แก้ไข
+                                    </button>
+                                    <button onclick="deleteAnnouncement('${a.id}')" class="action-btn-delete px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm" title="ลบ">
+                                        <i class="fas fa-trash-can"></i> ลบ
+                                    </button>
                                 </div>
                             ` : ''}
                         </div>
