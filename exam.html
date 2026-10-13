@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ห้องสอบ | LMS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f6f9; padding: 20px; }
+        .exam-container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .timer { font-size: 1.5em; font-weight: bold; color: #e74c3c; }
+        .warning-box { display: none; background: #ffcccc; color: #cc0000; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="exam-container">
+        <div class="header-bar">
+            <h2 id="examTitle">กำลังโหลดข้อสอบ...</h2>
+            <div class="timer" id="timerDisplay">00:00</div>
+        </div>
+
+        <div id="warningBox" class="warning-box">
+            ⚠️ <b>คำเตือน:</b> ตรวจพบการสลับแท็บหรือย่อหน้าต่าง ระบบได้บันทึกพฤติกรรมนี้ไว้แล้ว
+        </div>
+
+        <!-- พื้นที่แสดงข้อสอบ -->
+        <div id="examContent">
+            <!-- ข้อสอบจะถูกดึงมาแสดงที่นี่ผ่าน JavaScript -->
+        </div>
+
+        <button id="submitBtn" style="margin-top: 20px; padding: 10px 20px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">ส่งข้อสอบ</button>
+    </div>
+
+    <script>
+        // นำ URL และ Key ของคุณมาใส่ตรงนี้
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let remainingTime = 3600; // สมมติเวลาสอบ 60 นาที (เป็นวินาที)
+        let timerInterval;
+        let cheatCount = 0; // ตัวนับจำนวนครั้งที่โกง
+
+        async function initExam() {
+            // 1. ตรวจสอบว่าล็อกอินอยู่หรือไม่
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // ในระบบจริง เราจะดึง ID ข้อสอบจาก URL (เช่น exam.html?id=123)
+            // ตอนนี้ใส่ข้อมูลจำลองไว้ก่อน
+            document.getElementById('examTitle').textContent = "ข้อสอบกลางภาค วิชาเทคโนโลยี";
+            document.getElementById('submitBtn').style.display = "block";
+            
+            document.getElementById('examContent').innerHTML = `
+                <p>1. ระบบฐานข้อมูลใดที่เรากำลังใช้งานอยู่?</p>
+                <input type="radio" name="q1" value="A"> Firebase<br>
+                <input type="radio" name="q1" value="B"> Supabase<br>
+                <input type="radio" name="q1" value="C"> MySQL<br>
+            `;
+
+            startTimer();
+        }
+
+        // ระบบจับเวลา
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                let minutes = Math.floor(remainingTime / 60);
+                let seconds = remainingTime % 60;
+                document.getElementById('timerDisplay').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    alert("หมดเวลาทำข้อสอบ! ระบบจะส่งคำตอบอัตโนมัติ");
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        // ระบบ Anti-Cheat (ดักจับการสลับแท็บ)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                cheatCount++;
+                document.getElementById('warningBox').style.display = "block";
+                
+                // TODO: ในเฟสถัดไป เราจะเขียนโค้ดส่งค่า cheatCount นี้ไปบันทึกลง Supabase (Audit Log)
+                console.log(`ตรวจพบการสลับแท็บครั้งที่: ${cheatCount}`);
+            }
+        });
+
+        // ฟังก์ชันส่งข้อสอบ
+        function submitExam() {
+            clearInterval(timerInterval);
+            alert("ส่งข้อสอบเรียบร้อยแล้ว!");
+            window.location.href = 'student.html';
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', submitExam);
+
+        initExam();
+    </script>
+</body>
+</html>
