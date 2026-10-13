@@ -34,12 +34,31 @@
                     <p id="examSubHeader" class="text-xs text-slate-500 dark:text-slate-400">กำลังโหลดข้อมูลข้อสอบ...</p>
                 </div>
             </div>
-            <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border"><i class="fas fa-moon" id="themeIcon"></i></button>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="openPreviewStudentModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all flex items-center gap-2">
+                    <i class="fas fa-eye"></i> Preview หน้าสอบนักเรียน
+                </button>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border"><i class="fas fa-moon" id="themeIcon"></i></button>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 pt-32 space-y-8">
         
+        <!-- แผงเครื่องมือสร้างกระดาษคำตอบอัตโนมัติ -->
+        <div class="glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-sky-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h3 class="font-bold text-base flex items-center gap-2 text-sky-600 dark:text-sky-400">
+                    <i class="fas fa-wand-magic-sparkles"></i> สร้างกระดาษคำตอบอัตโนมัติ (Auto Answer Sheet)
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">เจนข้อและตัวเลือก ก-ง อัตโนมัติ พร้อมกำหนดช่วงหมวดหมู่โจทย์ (เช่น ส่วนที่ 1 ข้อ 1-20, ส่วนที่ 2 ข้อ 21-40)</p>
+            </div>
+            <button onclick="openAutoAnswerSheetModal()" class="px-5 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 transition-all shrink-0">
+                <i class="fas fa-list-check mr-1"></i> ตั้งค่าเจนกระดาษคำตอบ
+            </button>
+        </div>
+
         <!-- แผงจัดการ PDF โจทย์ -->
         <div id="pdfUploadCard" class="glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-red-500">
             <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> ไฟล์โจทย์ PDF ข้อสอบ</h3>
@@ -56,7 +75,7 @@
         <!-- รายการโจทย์ข้อสอบทั้งหมด -->
         <div class="glossy-card p-8 rounded-3xl space-y-6">
             <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="font-bold text-lg"><i class="fas fa-list-ol text-primary mr-2"></i>รายการโจทย์ทั้งหมด</h3>
+                <h3 class="font-bold text-lg"><i class="fas fa-list-ol text-primary mr-2"></i>รายการโจทย์ / กระดาษคำตอบทั้งหมด</h3>
                 <button onclick="openQuestionModal()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มโจทย์ใหม่</button>
             </div>
             <div id="questionsListContainer" class="space-y-4">
@@ -86,6 +105,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('id');
 
+        let currentExamObj = null;
+        let loadedQuestionsList = [];
+
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -113,19 +135,20 @@
         async function loadExamHeader() {
             const { data } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (data) {
+                currentExamObj = data;
                 document.getElementById('examTitleHeader').textContent = `จัดการโจทย์: ${data.title}`;
-                document.getElementById('examSubHeader').textContent = `รหัสผ่าน: ${data.passcode || 'ไม่มี'} | เวลา: ${data.time_limit} นาที`;
+                document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | เวลา: ${data.time_limit} นาที`;
                 if (data.pdf_url) document.getElementById('pdfUrlInput').value = data.pdf_url;
             }
         }
 
-        // กู้คืนระบบโหลดรายการโจทย์ข้อสอบ + ตัวเลือก + เฉลย
         async function loadQuestions() {
-            const { data: questions, error } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
+            loadedQuestionsList = questions || [];
             const container = document.getElementById('questionsListContainer');
 
-            if (error || !questions || questions.length === 0) {
-                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">ยังไม่มีโจทย์ในชุดข้อสอบนี้ กดปุ่ม "เพิ่มโจทย์ใหม่" ด้านบนเพื่อเริ่มสร้างโจทย์</div>`;
+            if (!questions || questions.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">ยังไม่มีโจทย์ในชุดข้อสอบนี้ กดปุ่ม "สร้างกระดาษคำตอบอัตโนมัติ" หรือ "เพิ่มโจทย์ใหม่" เพื่อเริ่มสร้าง</div>`;
                 return;
             }
 
@@ -138,7 +161,7 @@
                 return `
                     <div class="p-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div class="space-y-2">
-                            <div class="font-bold text-base text-slate-900 dark:text-white">ข้อที่ ${q.question_number || (idx + 1)}: ${q.question_text || 'โจทย์แบบเลียนแบบ PDF'}</div>
+                            <div class="font-bold text-base text-slate-900 dark:text-white">ข้อที่ ${q.question_number || (idx + 1)}: ${q.question_text || 'โจทย์ในกระดาษคำตอบ'}</div>
                             <div class="flex flex-wrap gap-2 pt-1">${choicesList}</div>
                         </div>
                         <div class="flex gap-2 shrink-0">
@@ -148,6 +171,66 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // ปุ่ม 1: เจนกระดาษคำตอบอัตโนมัติแบบแบ่งหมวดหมู่ (ข้อ 1-20, ข้อ 21-40)
+        async function openAutoAnswerSheetModal() {
+            const { value: formValues } = await Swal.fire({
+                title: '⚡ เจนกระดาษคำตอบอัตโนมัติ',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <p class="text-slate-400">ระบุจำนวนข้อที่ต้องการสร้าง ระบบจะสร้างตัวเลือก ก-ง ให้อัตโนมัติทับคลังเดิม:</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold mb-1">เริ่มจากข้อที่</label>
+                                <input type="number" id="genStartNum" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800" value="1">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">ถึงข้อที่</label>
+                                <input type="number" id="genEndNum" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800" value="20">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อหมวดหมู่ย่อย (เช่น หมวด A, ฟิสิกส์คำนวณ)</label>
+                            <input id="genCategoryTag" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800" placeholder="หมวดหมู่ A (ข้อ 1-20)">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'เริ่มเจนกระดาษคำตอบ',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    const start = parseInt(document.getElementById('genStartNum').value) || 1;
+                    const end = parseInt(document.getElementById('genEndNum').value) || 20;
+                    const tag = document.getElementById('genCategoryTag').value || '';
+                    if (start > end) { Swal.showValidationMessage('ข้อเริ่มต้นต้องน้อยกว่าข้อสุดท้าย'); return false; }
+                    return { start, end, tag };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังเจนกระดาษคำตอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const newQuestions = [];
+                for (let i = formValues.start; i <= formValues.end; i++) {
+                    newQuestions.push({
+                        exam_id: examId,
+                        question_number: i,
+                        question_text: formValues.tag ? `[${formValues.tag}] ข้อที่ ${i}` : `ข้อที่ ${i}`,
+                        options: ['ก', 'ข', 'ค', 'ง'],
+                        correct_answer: '0'
+                    });
+                }
+
+                await mySupabase.from('questions').insert(newQuestions);
+                Swal.fire({ icon: 'success', title: `สร้างกระดาษคำตอบ ${newQuestions.length} ข้อ เรียบร้อย!`, timer: 1200, showConfirmButton: false });
+                loadQuestions();
+            }
+        }
+
+        // ปุ่ม 2: Preview หน้าสอบของนักเรียนจริง
+        function openPreviewStudentModal() {
+            window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
 
         async function openQuestionModal(qData = null) {
