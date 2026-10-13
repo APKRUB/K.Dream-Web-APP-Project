@@ -50,7 +50,7 @@
                             <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">ตั้งค่ารอบเวลาเปิดจอง (เวลาประเทศไทย GMT+7)</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ดูรายชื่อการจองรายคนและย้ายเวลา</p>
                     </div>
                 </div>
                 <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
@@ -73,6 +73,17 @@
             </div>
         </div>
 
+        <!-- ตารางรายชื่อนักเรียนที่จอง Consult (รายคน + ย้ายเวลาได้) -->
+        <div class="glossy-card p-8 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-indigo-500"></i> รายชื่อนักเรียนที่จอง Consult แล้ว</h3>
+                <button onclick="loadBookedStudents()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชรายชื่อ</button>
+            </div>
+            <div id="bookedStudentsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-80 overflow-y-auto">
+                <div class="text-center py-6 text-gray-400 text-sm">กำลังโหลดรายชื่อนักเรียนจอง...</div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-5 glossy-card p-8 rounded-3xl space-y-6">
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิดระบบ (Countdown)</h3>
@@ -88,7 +99,7 @@
             </div>
 
             <div class="lg:col-span-7 glossy-card p-8 rounded-3xl space-y-5">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ (เวลาไทย GMT+7)</h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ตั้งแต่วันที่</label><input type="date" id="genStartDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
                     <div><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5">ถึงวันที่</label><input type="date" id="genEndDate" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm"></div>
@@ -118,7 +129,7 @@
 
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-indigo-500"></i> รายการ Slot (แสดงเฉพาะที่ยังไม่หมดอายุ)</h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-indigo-500"></i> รายการ Slot ทั้งหมด</h3>
                 <button onclick="loadSlots()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชข้อมูล</button>
             </div>
             <div id="slotsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-96 overflow-y-auto">
@@ -151,6 +162,7 @@
             if (!session) { window.location.href = 'index.html'; return; }
             loadSettings();
             loadSlots();
+            loadBookedStudents();
         }
 
         async function loadSettings() {
@@ -168,7 +180,6 @@
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500';
                 statusText.textContent = 'ปิดรับจอง';
                 if (data.open_at) {
-                    // แปลงเวลาให้ถูกต้องตาม UTC -> แสดงผลไทย
                     const localDt = new Date(data.open_at);
                     document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
                     startCountdown(localDt);
@@ -203,7 +214,6 @@
             if (!val) {
                 await mySupabase.from('consult_settings').update({ open_at: null }).eq('id', 1);
             } else {
-                // บันทึกแบบระบุ ISO String ตามเวลาไทย
                 const isoStr = new Date(val).toISOString();
                 await mySupabase.from('consult_settings').update({ open_at: isoStr }).eq('id', 1);
             }
@@ -269,14 +279,86 @@
             }
         }
 
+        async function loadBookedStudents() {
+            const nowIso = new Date().toISOString();
+            const { data: bookedSlots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').eq('status', 'booked').gt('end_time', nowIso).order('start_time', { ascending: true });
+            const list = document.getElementById('bookedStudentsList');
+
+            if (!bookedSlots || bookedSlots.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-gray-400 text-sm">ยังไม่มีนักเรียนจองคิว Consult ในขณะนี้</div>`;
+                return;
+            }
+
+            list.innerHTML = bookedSlots.map(s => {
+                const startStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                return `
+                    py-3 flex justify-between items-center text-sm">
+                        <div>
+                            <span class="font-bold text-gray-900 dark:text-white"><i class="fas fa-user-graduate mr-1.5 text-indigo-500"></i> ${s.profiles?.full_name || 'นักเรียน'}</span>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">⏰ เวลาเดิม: ${startStr} - ${endStr} น.</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}', '${s.start_time}')" class="px-3.5 py-1.5 bg-blue-50 text-primary dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">ย้ายเวลา</button>
+                            <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ฟังก์ชันให้คุณครูกดย้ายเวลา (Reschedule) ให้กับนักเรียนรายคน
+        async function openRescheduleModal(oldSlotId, studentId, currentStart) {
+            const nowIso = new Date().toISOString();
+            // ดึง Slot ว่างอื่นๆ ที่ยังไม่หมดเวลา
+            const { data: availableSlots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').gt('end_time', nowIso).order('start_time', { ascending: true });
+
+            if (!availableSlots || availableSlots.length === 0) {
+                Swal.fire('ไม่พบ Slot ว่าง', 'กรุณาสร้าง Slot ว่างใหม่ก่อนย้ายเวลา', 'warning');
+                return;
+            }
+
+            let optionsHtml = availableSlots.map(s => {
+                const sStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                const eStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                return `<option value="${s.id}">${sStr} - ${eStr} น.</option>`;
+            }).join('');
+
+            const { value: newSlotId } = await Swal.fire({
+                title: 'ย้ายเวลา Consult',
+                html: `
+                    <p class="text-xs text-gray-500 mb-3">เลือกช่วงเวลาใหม่ที่ต้องการย้ายให้มนุษย์/นักเรียนคนนี้:</p>
+                    <select id="newSlotSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border dark:border-gray-700 rounded-xl text-sm">${optionsHtml}</select>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันย้ายเวลา',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => document.getElementById('newSlotSelect').value
+            });
+
+            if (newSlotId) {
+                Swal.fire({ title: 'กำลังย้ายเวลา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // 1. คืนสถานะ Slot เก่าให้ว่าง
+                await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', oldSlotId);
+                // 2. จอง Slot ใหม่ให้เด็กคนนี้
+                await mySupabase.from('consult_slots').update({ status: 'booked', student_id: studentId }).eq('id', newSlotId);
+                // 3. อัปเดต booked_slot_id ใน consult_quotas
+                await mySupabase.from('consult_quotas').update({ booked_slot_id: newSlotId }).eq('student_id', studentId);
+
+                Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1500, showConfirmButton: false });
+                loadSlots();
+                loadBookedStudents();
+            }
+        }
+
         async function loadSlots() {
             const nowIso = new Date().toISOString();
-            // ดึงเฉพาะ Slot ที่ยังไม่หมดเวลา (end_time มากกว่าปัจจุบัน)
             const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').gt('end_time', nowIso).order('start_time', { ascending: true });
             const list = document.getElementById('slotsList');
 
             if (!slots || slots.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">ไม่มี Slot เวลา Consult ที่ใช้งานอยู่ในขณะนี้</div>`;
+                list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">ไม่มี Slot เวลา Consult ในระบบ</div>`;
                 return;
             }
 
@@ -292,8 +374,8 @@
                             <div class="text-xs text-gray-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
                         </div>
                         <div class="flex gap-2">
-                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>` : ''}
-                            <button onclick="deleteSlot('${s.id}')" class="px-3 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">ลบ</button>
+                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>` : ''}
+                            <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">ลบ</button>
                         </div>
                     </div>
                 `;
@@ -307,12 +389,14 @@
                 if (studentId) { await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId); }
                 Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ', timer: 1200, showConfirmButton: false });
                 loadSlots();
+                loadBookedStudents();
             }
         }
 
         async function deleteSlot(id) {
             await mySupabase.from('consult_slots').delete().eq('id', id);
             loadSlots();
+            loadBookedStudents();
         }
 
         async function resetAllQuotas() {
@@ -322,6 +406,7 @@
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null });
                 Swal.fire({ icon: 'success', title: 'รีเซ็ตสำเร็จ', timer: 1200, showConfirmButton: false });
                 loadSlots();
+                loadBookedStudents();
             }
         }
 
