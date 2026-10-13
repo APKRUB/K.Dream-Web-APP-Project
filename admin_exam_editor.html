@@ -3,56 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | เครื่องมือจัดการตัวข้อสอบ</title>
+    <title>LMS | เครื่องมือจัดการโจทย์และกระดาษคำตอบ</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#2563eb', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } } } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
+                    colors: { primary: '#2563eb', darkbg: '#0f172a', darkbox: '#1e293b', darkinput: '#334155' } 
+                } 
+            }
+        }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(31, 41, 55, 0.8); }
-        .glossy-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.8); }
-        .dark .glossy-card { background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(51, 65, 85, 0.8); }
+        .glossy-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .dark .glossy-card { background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(51, 65, 85, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-gray-800 dark:text-gray-100">
+<body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-800 dark:text-slate-100 transition-colors duration-300">
 
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='admin_exams.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
+                    <button onclick="window.location.href='admin_exams.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 hover:bg-primary hover:text-white transition-all text-slate-700 dark:text-slate-200"><i class="fas fa-arrow-left text-lg"></i></button>
                     <div>
-                        <h1 id="examTitleHeader" class="font-extrabold text-xl text-gray-900 dark:text-white">เครื่องมือจัดการตัวข้อสอบ</h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">สร้าง Section, ข้อสอบ, และตั้งค่าคำตอบ</p>
+                        <h1 id="examTitleHeader" class="font-extrabold text-xl text-slate-900 dark:text-white">เครื่องมือจัดการข้อสอบ</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">สร้างกระดาษคำตอบ PDF, โจทย์พิมพ์ลงระบบ และหมวดวิชาย่อย</p>
                     </div>
                 </div>
-                <button onclick="addSection()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md"><i class="fas fa-folder-plus mr-1"></i> เพิ่ม Section / หมวดวิชาย่อย</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="openPreviewModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-1.5"><i class="fas fa-eye"></i> Preview ดูตัวอย่าง</button>
+                    <button onclick="addSectionModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md flex items-center gap-1.5"><i class="fas fa-folder-plus"></i> เพิ่มหมวดวิชาย่อย (Section)</button>
+                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
+                </div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
-        <!-- PDF Upload Form (กรณีเลือกข้อสอบประเภท PDF) -->
+        
+        <!-- แผง PDF + ตัวสร้างกระดาษคำตอบอัตโนมัติ (แสดงเฉพาะข้อสอบประเภท PDF) -->
         <div id="pdfUploadCard" class="hidden glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-red-500">
-            <h3 class="font-bold text-base text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> ไฟล์โจทย์ PDF</h3>
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> ตั้งค่าไฟล์โจทย์ PDF และกระดาษคำตอบ</h3>
+                <button onclick="bulkGeneratePdfAnswerSheet()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-md"><i class="fas fa-magic mr-1"></i> สร้างกระดาษคำตอบอัตโนมัติ (Bulk)</button>
+            </div>
             <div class="flex gap-3">
-                <input type="text" id="pdfUrlInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs" placeholder="วาง URL ไฟล์ PDF โจทย์ข้อสอบ...">
+                <input type="text" id="pdfUrlInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white outline-none" placeholder="วาง URL ไฟล์ PDF โจทย์ข้อสอบ...">
                 <button onclick="savePdfUrl()" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs">บันทึก URL PDF</button>
             </div>
-            <p class="text-[11px] text-gray-400">* กรณีข้อสอบ PDF คุณสามารถสร้างกระดาษคำตอบจำลองกำกับด้านล่างได้เลย</p>
         </div>
 
-        <!-- รายการ Section & Questions -->
-        <div id="sectionsContainer" class="space-y-6"></div>
+        <!-- รายการข้อสอบทั้งหมด -->
+        <div class="glossy-card p-8 rounded-3xl space-y-6">
+            <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-list-ol text-primary"></i> รายการโจทย์ / กระดาษคำตอบ</h3>
+                <button onclick="addNewQuestionModal()" class="px-5 py-2.5 bg-primary hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-blue-500/20"><i class="fas fa-plus mr-1"></i> เพิ่มโจทย์รายข้อ</button>
+            </div>
 
-        <div class="text-center pt-4">
-            <button onclick="addNewQuestionModal()" class="px-8 py-3.5 bg-primary hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-all"><i class="fas fa-plus mr-2"></i> เพิ่มข้อสอบใหม่</button>
+            <div id="questionsListContainer" class="space-y-4">
+                <div class="text-center py-12 text-slate-400 text-sm">กำลังโหลดข้อมูลข้อสอบ...</div>
+            </div>
         </div>
     </main>
 
@@ -66,6 +86,16 @@
         let currentExam = null;
         let currentSections = [];
         let currentQuestions = [];
+
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') { htmlElement.classList.add('dark'); themeIcon.classList.replace('fa-moon', 'fa-sun'); }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
 
         async function initPage() {
             if (!examId) { window.location.href = 'admin_exams.html'; return; }
@@ -93,117 +123,205 @@
             
             currentSections = sections || [];
             currentQuestions = questions || [];
-            renderSectionsAndQuestions();
+            renderQuestions();
         }
 
-        function renderSectionsAndQuestions() {
-            const container = document.getElementById('sectionsContainer');
+        function renderQuestions() {
+            const container = document.getElementById('questionsListContainer');
             if (currentQuestions.length === 0) {
-                container.innerHTML = `<div class="glossy-card p-12 text-center text-gray-400 rounded-3xl">ยังไม่มีข้อสอบในชุดนี้ กดปุ่ม "เพิ่มข้อสอบใหม่" ด้านล่างเพื่อเริ่มต้น</div>`;
+                container.innerHTML = `<div class="p-12 text-center text-slate-400 text-sm">ยังไม่มีข้อสอบในชุดนี้ กดปุ่ม "เพิ่มโจทย์รายข้อ" หรือ "สร้างกระดาษคำตอบอัตโนมัติ" ด้านบนได้เลยครับ</div>`;
                 return;
             }
 
-            // ถ้าไม่มี section ให้แสดงรายการตรงๆ
-            let html = currentQuestions.map(q => `
-                <div class="glossy-card p-6 rounded-3xl space-y-3 relative">
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-xl bg-primary text-white font-bold flex items-center justify-center text-xs">ข้อ ${q.question_number}</span>
-                            <span class="text-xs bg-slate-100 dark:bg-darkinput px-2.5 py-1 rounded-lg font-semibold">${q.question_type === 'mcq' ? 'ปรนัย (ช้อยส์)' : 'อัตนัย (เขียนตอบ)'}</span>
-                            <span class="text-xs text-amber-500 font-bold">${q.points} คะแนน</span>
+            container.innerHTML = currentQuestions.map(q => {
+                const section = currentSections.find(s => s.id === q.section_id);
+                const secBadge = section ? `<span class="bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 px-2.5 py-1 rounded-lg font-bold text-[10px]"><i class="fas fa-folder mr-1"></i>${section.title}</span>` : '';
+
+                return `
+                    <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-xl bg-primary text-white font-bold flex items-center justify-center text-xs">ข้อ ${q.question_number}</span>
+                                ${secBadge}
+                                <span class="text-xs bg-slate-200 dark:bg-slate-700 px-2.5 py-1 rounded-lg font-semibold">${q.question_type === 'mcq' ? 'ปรนัย (ช้อยส์)' : 'อัตนัย (เขียนตอบ)'}</span>
+                                <span class="text-xs text-amber-500 font-bold">${q.points} คะแนน</span>
+                            </div>
+                            <button onclick="deleteQuestion('${q.id}')" class="text-red-500 hover:underline text-xs font-bold"><i class="fas fa-trash"></i> ลบ</button>
                         </div>
-                        <button onclick="deleteQuestion('${q.id}')" class="text-red-500 hover:underline text-xs"><i class="fas fa-trash"></i> ลบข้อนี้</button>
+
+                        <div class="text-sm font-semibold text-slate-900 dark:text-white">${q.question_text || '(ไม่มีข้อความโจทย์ - ตอบในกระดาษคำตอบ PDF)'}</div>
+                        ${q.question_image ? `<img src="${q.question_image}" class="max-h-40 rounded-xl border border-slate-300">` : ''}
+
+                        ${q.question_type === 'mcq' ? `
+                            <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+                                ${(q.exam_options || []).map((opt, i) => `
+                                    <div class="p-2.5 rounded-xl border ${q.correct_option_index === i ? 'bg-emerald-50 border-emerald-400 dark:bg-emerald-950/40 text-emerald-600 font-bold' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}">
+                                        <div class="flex justify-between items-center">
+                                            <span>${String.fromCharCode(65 + i)}. ${opt.option_text || ''} ${q.correct_option_index === i ? '✓ (เฉลย)' : ''}</span>
+                                            ${opt.option_image ? `<i class="fas fa-image text-slate-400" title="มีรูปภาพตัวเลือก"></i>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
-                    
-                    <div class="text-sm font-semibold text-gray-900 dark:text-white">${q.question_text || '(ไม่มีโจทย์ข้อความ)'}</div>
-                    ${q.question_image ? `<img src="${q.question_image}" class="max-h-40 rounded-xl border">` : ''}
-
-                    ${q.question_type === 'mcq' ? `
-                        <div class="grid grid-cols-2 gap-2 text-xs pt-2">
-                            ${(q.exam_options || []).map((opt, i) => `
-                                <div class="p-2.5 rounded-xl border ${q.correct_option_index === i ? 'bg-emerald-50 border-emerald-400 dark:bg-emerald-950/40 font-bold text-emerald-600' : 'bg-slate-50 dark:bg-darkinput'}">
-                                    ${String.fromCharCode(65 + i)}. ${opt.option_text || ''} ${q.correct_option_index === i ? '✓ (เฉลย)' : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : '<div class="text-xs text-gray-400 italic bg-slate-50 dark:bg-darkinput p-3 rounded-xl">คำตอบอัตนัย: คุณครูตรวจเองรายคนในระบบหลังสอบเสร็จ</div>'}
-                </div>
-            `).join('');
-
-            container.innerHTML = html;
+                `;
+            }).join('');
         }
 
-        async function addSection() {
-            const { value: title } = await Swal.fire({ title: 'เพิ่ม Section / หมวดวิชาย่อย', input: 'text', inputPlaceholder: 'เช่น ฟิสิกส์ - การเคลื่อนที่', showCancelButton: true });
-            if (title) {
-                await mySupabase.from('exam_sections').insert([{ exam_id: examId, title }]);
-                loadData();
-            }
-        }
-
-        async function addNewQuestionModal() {
-            const nextNum = currentQuestions.length + 1;
+        // ตัวสร้างกระดาษคำตอบ PDF อัตโนมัติ (Bulk Generator)
+        async function bulkGeneratePdfAnswerSheet() {
             const { value: form } = await Swal.fire({
-                title: `เพิ่มข้อสอบ ข้อที่ ${nextNum}`,
-                width: '650px',
+                title: 'สร้างกระดาษคำตอบ PDF อัตโนมัติ',
                 html: `
-                    <div class="space-y-3 text-left text-xs">
+                    <div class="space-y-3 text-left text-xs text-slate-800 dark:text-slate-100">
                         <div>
-                            <label class="block font-bold mb-1">ประเภทข้อ</label>
-                            <select id="qType" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl" onchange="toggleOptionsArea()">
-                                <option value="mcq">ปรนัย (4 ตัวเลือก)</option>
-                                <option value="subjective">อัตนัย (พิมพ์เขียนตอบ)</option>
-                            </select>
+                            <label class="block font-bold mb-1">จำนวนข้อสอบที่ต้องการสร้าง</label>
+                            <input type="number" id="bulkCount" value="20" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">โจทย์คำถาม</label>
-                            <textarea id="qText" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-20"></textarea>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">URL รูปภาพประกอบโจทย์ (ถ้ามี)</label>
-                            <input id="qImg" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="https://...">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">คะแนนประจำข้อนี้</label>
-                            <input type="number" id="qPoints" value="1.0" step="0.5" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
-                        </div>
-
-                        <div id="optionsArea" class="space-y-2 border-t pt-3">
-                            <label class="block font-bold text-primary">ตัวเลือกและเฉลยข้อถูก</label>
-                            <div class="flex gap-2 items-center"><input type="radio" name="correctOpt" value="0" checked><input id="opt0" class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="ตัวเลือก A"></div>
-                            <div class="flex gap-2 items-center"><input type="radio" name="correctOpt" value="1"><input id="opt1" class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="ตัวเลือก B"></div>
-                            <div class="flex gap-2 items-center"><input type="radio" name="correctOpt" value="2"><input id="opt2" class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="ตัวเลือก C"></div>
-                            <div class="flex gap-2 items-center"><input type="radio" name="correctOpt" value="3"><input id="opt3" class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="ตัวเลือก D"></div>
+                            <label class="block font-bold mb-1">คะแนนประจำแต่ละข้อ</label>
+                            <input type="number" id="bulkPoints" value="1.0" step="0.5" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
                         </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'บันทึกข้อสอบ',
+                confirmButtonText: 'สร้างรวดเดียว',
+                preConfirm: () => ({
+                    count: parseInt(document.getElementById('bulkCount').value) || 20,
+                    points: parseFloat(document.getElementById('bulkPoints').value) || 1.0
+                })
+            });
+
+            if (form) {
+                Swal.fire({ title: 'กำลังสร้างกระดาษคำตอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const startNum = currentQuestions.length + 1;
+
+                for (let i = 0; i < form.count; i++) {
+                    const qNum = startNum + i;
+                    const { data: qData } = await mySupabase.from('exam_questions').insert([{
+                        exam_id: examId,
+                        question_number: qNum,
+                        question_type: 'mcq',
+                        points: form.points,
+                        correct_option_index: 0
+                    }]).select().single();
+
+                    if (qData) {
+                        const optInserts = ['A', 'B', 'C', 'D'].map((txt, idx) => ({
+                            question_id: qData.id,
+                            option_text: txt,
+                            option_index: idx
+                        }));
+                        await mySupabase.from('exam_options').insert(optInserts);
+                    }
+                }
+                Swal.fire({ icon: 'success', title: `สร้างกระดาษคำตอบ ${form.count} ข้อสำเร็จ!`, timer: 1200, showConfirmButton: false });
+                loadData();
+            }
+        }
+
+        // Modal เพิ่มหมวดวิชาย่อย (Section)
+        async function addSectionModal() {
+            const { value: form } = await Swal.fire({
+                title: 'เพิ่มหมวดวิชาย่อย (Section)',
+                html: `
+                    <div class="space-y-3 text-left text-xs text-slate-800 dark:text-slate-100">
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อหมวดวิชาย่อย *</label>
+                            <input id="secTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น ฟิสิกส์ - การเคลื่อนที่">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึก Section',
+                preConfirm: () => document.getElementById('secTitle').value
+            });
+
+            if (form) {
+                await mySupabase.from('exam_sections').insert([{ exam_id: examId, title: form }]);
+                loadData();
+            }
+        }
+
+        // Modal เพิ่มโจทย์รายข้อ (รองรับภาพตัวเลือก A, B, C, D)
+        async function addNewQuestionModal() {
+            let sectionOpts = currentSections.map(s => `<option value="${s.id}">${s.title}</option>`).join('');
+
+            const { value: form } = await Swal.fire({
+                title: 'เพิ่มโจทย์ข้อสอบใหม่',
+                width: '650px',
+                html: `
+                    <div class="space-y-3 text-left text-xs text-slate-800 dark:text-slate-100">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดวิชาย่อย (Section)</label>
+                                <select id="qSection" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl"><option value="">-- ไม่ระบุ --</option>${sectionOpts}</select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">ประเภทข้อ</label>
+                                <select id="qType" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                                    <option value="mcq">ปรนัย (4 ตัวเลือก)</option>
+                                    <option value="subjective">อัตนัย (พิมพ์เขียนตอบ)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">ข้อความโจทย์คำถาม</label>
+                            <textarea id="qText" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16"></textarea>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">URL รูปภาพโจทย์ (ถ้ามี)</label>
+                            <input id="qImg" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="https://...">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">คะแนนประจำข้อ</label>
+                            <input type="number" id="qPoints" value="1.0" step="0.5" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        </div>
+
+                        <!-- ตัวเลือก A, B, C, D พร้อมรูปภาพ -->
+                        <div class="space-y-2 border-t dark:border-slate-700 pt-3">
+                            <label class="block font-bold text-primary">ตัวเลือกและรูปภาพตัวเลือก</label>
+                            ${['A', 'B', 'C', 'D'].map((char, i) => `
+                                <div class="p-2.5 bg-slate-50 dark:bg-darkinput rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5">
+                                    <div class="flex items-center gap-2 font-bold">
+                                        <input type="radio" name="correctOpt" value="${i}" ${i === 0 ? 'checked' : ''}>
+                                        <span>ตัวเลือก ${char}</span>
+                                    </div>
+                                    <input id="optTxt_${i}" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border rounded-lg" placeholder="ข้อความตัวเลือก ${char}">
+                                    <input id="optImg_${i}" class="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border rounded-lg text-[11px]" placeholder="URL รูปภาพตัวเลือก ${char} (ถ้ามี)">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกโจทย์',
                 preConfirm: () => {
                     const qType = document.getElementById('qType').value;
-                    const qText = document.getElementById('qText').value;
-                    const qImg = document.getElementById('qImg').value;
-                    const qPoints = parseFloat(document.getElementById('qPoints').value);
-
-                    let options = [];
-                    let correctIdx = 0;
-                    if (qType === 'mcq') {
-                        const selectedRadio = document.querySelector('input[name="correctOpt"]:checked');
-                        correctIdx = selectedRadio ? parseInt(selectedRadio.value) : 0;
-                        options = [
-                            document.getElementById('opt0').value,
-                            document.getElementById('opt1').value,
-                            document.getElementById('opt2').value,
-                            document.getElementById('opt3').value
-                        ];
+                    const selectedRadio = document.querySelector('input[name="correctOpt"]:checked');
+                    
+                    return {
+                        section_id: document.getElementById('qSection').value || null,
+                        qType,
+                        qText: document.getElementById('qText').value,
+                        qImg: document.getElementById('qImg').value,
+                        qPoints: parseFloat(document.getElementById('qPoints').value) || 1.0,
+                        correctIdx: selectedRadio ? parseInt(selectedRadio.value) : 0,
+                        options: [0, 1, 2, 3].map(i => ({
+                            text: document.getElementById(`optTxt_${i}`).value,
+                            img: document.getElementById(`optImg_${i}`).value
+                        }))
                     }
-                    return { qType, qText, qImg, qPoints, options, correctIdx };
                 }
             });
 
             if (form) {
-                const { data: qData, error } = await mySupabase.from('exam_questions').insert([{
+                const nextNum = currentQuestions.length + 1;
+                const { data: qData } = await mySupabase.from('exam_questions').insert([{
                     exam_id: examId,
+                    section_id: form.section_id,
                     question_number: nextNum,
                     question_text: form.qText,
                     question_image: form.qImg || null,
@@ -213,15 +331,14 @@
                 }]).select().single();
 
                 if (qData && form.qType === 'mcq') {
-                    const optInserts = form.options.map((txt, i) => ({
+                    const optInserts = form.options.map((opt, i) => ({
                         question_id: qData.id,
-                        option_text: txt,
+                        option_text: opt.text,
+                        option_image: opt.img || null,
                         option_index: i
                     }));
                     await mySupabase.from('exam_options').insert(optInserts);
                 }
-
-                await mySupabase.from('exam_audit_logs').insert([{ exam_id: examId, action_description: `เพิ่มข้อสอบใหม่ ข้อที่ ${nextNum}` }]);
                 loadData();
             }
         }
@@ -229,6 +346,35 @@
         async function deleteQuestion(id) {
             await mySupabase.from('exam_questions').delete().eq('id', id);
             loadData();
+        }
+
+        // Preview ดูตัวอย่างข้อสอบเสมือนจริง
+        function openPreviewModal() {
+            if (currentQuestions.length === 0) { Swal.fire('ไม่มีข้อมูล', 'กรุณาเพิ่มข้อสอบก่อนกด Preview', 'warning'); return; }
+
+            let previewHtml = currentQuestions.map(q => `
+                <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left text-xs space-y-2">
+                    <div class="font-bold text-slate-900 dark:text-white">ข้อที่ ${q.question_number}. ${q.question_text || ''}</div>
+                    ${q.question_image ? `<img src="${q.question_image}" class="max-h-36 rounded-lg">` : ''}
+                    ${q.question_type === 'mcq' ? `
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            ${(q.exam_options || []).map((opt, i) => `
+                                <div class="p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    <div>${String.fromCharCode(65 + i)}. ${opt.option_text || ''}</div>
+                                    ${opt.option_image ? `<img src="${opt.option_image}" class="max-h-20 rounded mt-1">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<div class="italic text-slate-400">[ ช่องสำหรับให้นักเรียนพิมพ์เขียนตอบ ]</div>'}
+                </div>
+            `).join('');
+
+            Swal.fire({
+                title: `<i class="fas fa-eye text-emerald-500"></i> Preview ตัวอย่างข้อสอบ: ${currentExam.title}`,
+                width: '750px',
+                html: `<div class="max-h-96 overflow-y-auto space-y-3 pr-1">${previewHtml}</div>`,
+                confirmButtonText: 'ปิดตัวอย่าง'
+            });
         }
 
         initPage();
