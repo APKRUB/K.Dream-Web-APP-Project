@@ -10,37 +10,15 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { 
-                extend: { 
-                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { 
-                        primary: '#1d4ed8',   // Blue 700 (น้ำเงินเข้ม)
-                        secondary: '#3b82f6', // Blue 500 (ฟ้าสว่าง)
-                        lightbg: '#f8fafc',   // Slate 50 (ขาวอมฟ้า)
-                        darkbg: '#0f172a',    // Slate 900 (กรมท่าเข้ม สำหรับโหมดมืด)
-                        darkbox: '#1e293b'    // Slate 800 (กล่องโหมดมืด)
-                    } 
-                } 
-            }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#1d4ed8', secondary: '#3b82f6', lightbg: '#f8fafc', darkbg: '#0f172a', darkbox: '#1e293b' } } } }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        /* สไตล์กระจกที่เน้นความขาวใส */
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(226, 232, 240, 1); }
         .dark .glass-nav { background: rgba(15, 23, 42, 0.85); border-bottom: 1px solid rgba(30, 41, 59, 1); }
-        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        
-        /* Kanban Board Styles (ธีมน้ำเงิน-ฟ้า) */
         .kanban-col { min-height: 200px; transition: background 0.2s; }
         .kanban-col.drag-over { background: rgba(59, 130, 246, 0.05); border: 2px dashed #3b82f6; }
-        .exam-card { cursor: grab; }
-        .exam-card:active { cursor: grabbing; opacity: 0.8; transform: scale(0.98); }
-
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
     </style>
@@ -52,43 +30,13 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='admin.html'" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
+                    <button onclick="window.location.href='admin.html'" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fas fa-arrow-left"></i></button>
                     <span class="font-bold text-xl text-gray-800 dark:text-white"><i class="fas fa-layer-group text-primary mr-2"></i>จัดการชุดข้อสอบ</span>
                 </div>
-                
-                <!-- เครื่องมือมุมขวา -->
                 <div class="flex items-center gap-3">
-                    
-                    <!-- Notification Bell -->
-                    <div class="relative">
-                        <button onclick="toggleNotifications()" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700">
-                            <i class="fas fa-bell"></i>
-                            <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-darkbox"></span>
-                        </button>
-                        <!-- Dropdown แจ้งเตือน -->
-                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-darkbox rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                            <div class="p-4 border-b border-gray-100 dark:border-gray-700 font-bold text-gray-800 dark:text-white flex justify-between items-center">
-                                การแจ้งเตือน <button class="text-xs text-primary font-normal hover:underline">อ่านทั้งหมด</button>
-                            </div>
-                            <div id="notifList" class="max-h-64 overflow-y-auto p-2 text-sm text-gray-600 dark:text-gray-400">
-                                <div class="text-center py-4">กำลังโหลด...</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Theme Toggle (สลับมืด/สว่าง) -->
-                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                    </button>
-
-                    <button onclick="openManageCategoriesModal()" class="bg-white dark:bg-darkbox text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors">
-                        <i class="fas fa-folder"></i> <span class="hidden md:inline">หมวดหมู่</span>
-                    </button>
-                    <button onclick="openCreateExamModal()" class="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md flex items-center gap-2 transition-colors">
-                        <i class="fas fa-plus"></i> <span class="hidden md:inline">สร้างข้อสอบ</span>
-                    </button>
+                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm"><i class="fas fa-moon" id="themeIcon"></i></button>
+                    <button onclick="openManageCategoriesModal()" class="bg-white dark:bg-darkbox text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm flex items-center gap-2"><i class="fas fa-folder"></i> <span class="hidden md:inline">หมวดหมู่</span></button>
+                    <button onclick="openCreateExamModal()" class="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md flex items-center gap-2"><i class="fas fa-plus"></i> <span class="hidden md:inline">สร้างข้อสอบ</span></button>
                 </div>
             </div>
         </div>
@@ -96,21 +44,17 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
-        
         <div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-darkbox p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 border-l-4 border-l-primary">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-white">โครงสร้างและกระดาษคำตอบ</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">กำหนดโครงสร้างจำนวนข้อ ปรนัย/อัตนัย ลากเพื่อเปลี่ยนหมวดหมู่ และเผยแพร่</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">กำหนดโครงสร้าง พิมพ์โจทย์ และระบุเฉลย</p>
             </div>
-            
-            <!-- สวิตช์สลับมุมมอง -->
             <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
                 <button onclick="switchView('table')" id="btnViewTable" class="px-4 py-1.5 rounded-md text-sm font-semibold bg-white dark:bg-slate-600 shadow-sm text-gray-800 dark:text-white"><i class="fas fa-list mr-1"></i> ตาราง</button>
                 <button onclick="switchView('board')" id="btnViewBoard" class="px-4 py-1.5 rounded-md text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400"><i class="fas fa-columns mr-1"></i> บอร์ด</button>
             </div>
         </div>
 
-        <!-- วิวตาราง (Table View) -->
         <div id="tableView" class="bg-white dark:bg-darkbox rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -118,32 +62,25 @@
                         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-500 uppercase tracking-wider">
                             <th class="py-4 px-6">ID</th>
                             <th class="py-4 px-6">ชื่อชุดข้อสอบ</th>
-                            <th class="py-4 px-6">หมวดหมู่</th>
-                            <th class="py-4 px-6 text-center">โครงสร้าง (ข้อ)</th>
-                            <th class="py-4 px-6 text-center">เวลา / สถานะ</th>
-                            <th class="py-4 px-6 text-center">กระดาษคำตอบ</th>
+                            <th class="py-4 px-6">รูปแบบ</th>
+                            <th class="py-4 px-6 text-center">ปรนัย/อัตนัย</th>
+                            <th class="py-4 px-6 text-center">สถานะ</th>
+                            <th class="py-4 px-6 text-center">จัดการโจทย์/เฉลย</th>
                         </tr>
                     </thead>
-                    <tbody id="examTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                        <!-- Render from JS -->
-                    </tbody>
+                    <tbody id="examTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 text-sm"></tbody>
                 </table>
             </div>
         </div>
-
-        <!-- วิวบอร์ด Kanban (Board View) - ซ่อนเป็นค่าเริ่มต้น -->
-        <div id="boardView" class="hidden flex gap-6 overflow-x-auto pb-4 items-start">
-            <!-- Render from JS -->
-        </div>
-
+        <div id="boardView" class="hidden flex gap-6 overflow-x-auto pb-4 items-start"></div>
     </main>
 
     <!-- Custom Modal: สร้าง/แก้ไข ชุดข้อสอบ -->
     <div id="customModalOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-                <h3 class="text-xl font-bold text-gray-800 dark:text-white" id="modalTitle"><i class="fas fa-file-alt text-primary mr-2"></i> ข้อมูลชุดข้อสอบ</h3>
-                <button onclick="closeCustomModal()" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white"><i class="fas fa-file-alt text-primary mr-2"></i> ข้อมูลชุดข้อสอบ</h3>
+                <button onclick="closeCustomModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
             <div class="p-6 max-h-[70vh] overflow-y-auto space-y-5">
                 <input type="hidden" id="formExamId">
@@ -161,6 +98,13 @@
                         <input type="number" id="formTime" value="60" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
                 </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300">รูปแบบข้อสอบ <span class="text-red-500">*</span></label>
+                    <select id="formType" onchange="toggleFormType()" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary outline-none font-semibold text-primary">
+                        <option value="dynamic_text">✍️ พิมพ์โจทย์เองบนระบบ (สร้างคำถามทีละข้อ)</option>
+                        <option value="pdf_only">📄 อัปโหลดไฟล์ PDF (ใช้ไฟล์เดียวสอบทั้งชุด)</option>
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-1 text-gray-700 dark:text-gray-300 text-blue-600 dark:text-blue-400">จำนวนข้อ ปรนัย</label>
@@ -171,44 +115,35 @@
                         <input type="number" id="formEssay" value="0" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <div>
-                        <label class="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 dark:text-white">
-                            <input type="checkbox" id="formPublish" class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"> เผยแพร่นักเรียน
-                        </label>
-                    </div>
-                    <div>
-                        <label class="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 dark:text-white">
-                            <input type="checkbox" id="formRanking" class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"> โชว์ Ranking
-                        </label>
-                    </div>
-                </div>
-                <div>
+                <div id="formPdfWrapper" class="hidden">
                     <label class="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">ไฟล์โจทย์ (PDF)</label>
-                    <input type="file" id="formPdf" accept="application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100 dark:file:bg-slate-700 dark:file:text-white">
+                    <input type="file" id="formPdf" accept="application/pdf" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-primary">
+                </div>
+                <div class="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <label class="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 dark:text-white"><input type="checkbox" id="formPublish" class="w-4 h-4 text-primary rounded"> เผยแพร่นักเรียน</label>
+                    <label class="flex items-center gap-2 text-sm font-semibold cursor-pointer text-gray-700 dark:text-white"><input type="checkbox" id="formRanking" class="w-4 h-4 text-primary rounded"> โชว์ Ranking</label>
                 </div>
             </div>
             <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-                <button onclick="closeCustomModal()" class="px-6 py-2 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">ยกเลิก</button>
-                <button onclick="saveExamData()" class="bg-primary hover:bg-blue-800 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-colors">บันทึกข้อมูล</button>
+                <button onclick="closeCustomModal()" class="px-6 py-2 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700">ยกเลิก</button>
+                <button onclick="saveExamData()" class="bg-primary hover:bg-blue-800 text-white px-6 py-2 rounded-xl font-bold shadow-md">บันทึกข้อมูล</button>
             </div>
         </div>
     </div>
 
-    <!-- Custom Modal: Answer Key Builder (กระดาษคำตอบ) -->
+    <!-- Custom Modal: Answer Key & Question Editor (อัปเกรดให้พิมพ์โจทย์ได้) -->
     <div id="answerKeyModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-darkbox rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-blue-50 dark:bg-slate-800/80 flex justify-between items-center">
+        <div class="bg-white dark:bg-darkbox rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-blue-50 dark:bg-slate-800/80 flex justify-between items-center shrink-0">
                 <div>
-                    <h3 class="text-xl font-bold text-primary dark:text-blue-400"><i class="fas fa-check-square mr-2"></i> สร้างกระดาษคำตอบ & เฉลย</h3>
+                    <h3 class="text-xl font-bold text-primary dark:text-blue-400" id="akTitle"><i class="fas fa-edit mr-2"></i> จัดการโจทย์และเฉลย</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" id="akSubtitle">ชุดข้อสอบ: ...</p>
                 </div>
                 <button onclick="closeAnswerKeyModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
             
-            <!-- ตั้งค่า Option ปรนัย -->
-            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"><i class="fas fa-list-ol text-secondary mr-2"></i>ตั้งค่าตัวเลือกปรนัย</span>
+            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300" id="akTypeIndicator">ประเภท: ...</span>
                 <select id="mcqOptionsCount" onchange="renderAnswerKeyEditor()" class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none">
                     <option value="4">4 ตัวเลือก (ก, ข, ค, ง)</option>
                     <option value="5">5 ตัวเลือก (ก, ข, ค, ง, จ)</option>
@@ -216,167 +151,102 @@
             </div>
             
             <div class="p-6 overflow-y-auto flex-1 bg-white dark:bg-darkbox">
-                <div id="akContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div id="akContainer" class="flex flex-col gap-6">
                     <!-- Rendered by JS -->
                 </div>
             </div>
             
-            <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-                <button onclick="closeAnswerKeyModal()" class="px-6 py-2 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">ยกเลิก</button>
-                <button onclick="saveAnswerKeys()" class="bg-primary hover:bg-blue-800 text-white px-8 py-2 rounded-xl font-bold shadow-md transition-colors"><i class="fas fa-save mr-2"></i> บันทึกเฉลย</button>
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 shrink-0">
+                <button onclick="closeAnswerKeyModal()" class="px-6 py-2 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700">ยกเลิก</button>
+                <button onclick="saveAnswerKeys()" class="bg-primary hover:bg-blue-800 text-white px-8 py-2 rounded-xl font-bold shadow-md"><i class="fas fa-save mr-2"></i> บันทึกข้อมูล</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Setup & Config
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUserId = '';
         let categoriesCache = [];
         let examsCache = [];
         let currentView = 'table';
-        let currentEditExamId = null;
+        let currentEditExam = null;
 
-        // Theme Toggle (Dark/Light Only - โทนน้ำเงินขาว)
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
-        if (localStorage.getItem('theme') === 'dark') {
-            htmlElement.classList.add('dark');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
+        if (localStorage.getItem('theme') === 'dark') { htmlElement.classList.add('dark'); themeIcon.classList.replace('fa-moon', 'fa-sun'); }
         document.getElementById('themeToggle').addEventListener('click', () => {
             htmlElement.classList.toggle('dark');
-            const isDark = htmlElement.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+            themeIcon.classList.replace(htmlElement.classList.contains('dark') ? 'fa-moon' : 'fa-sun', htmlElement.classList.contains('dark') ? 'fa-sun' : 'fa-moon');
         });
 
-        // Initialize Page
         async function initPage() {
-            const { data: { session } } = await mySupabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
-            currentUserId = session.user.id;
-            
             await loadCategoriesCache();
             await loadExams();
-            fetchNotifications();
         }
 
         async function loadCategoriesCache() {
             const { data } = await mySupabase.from('categories').select('*').order('name');
             categoriesCache = data || [];
-            const catSelect = document.getElementById('formCategory');
-            catSelect.innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' + categoriesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('formCategory').innerHTML = '<option value="">-- เลือกหมวดหมู่ --</option>' + categoriesCache.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
         async function loadExams() {
-            const { data, error } = await mySupabase.from('exams').select('*, categories(name)').order('created_at', { ascending: false });
-            if(!error) examsCache = data || [];
+            const { data } = await mySupabase.from('exams').select('*, categories(name)').order('created_at', { ascending: false });
+            examsCache = data || [];
             renderExams();
         }
 
-        // ================= View Management (Table vs Board) =================
         function switchView(view) {
             currentView = view;
             document.getElementById('tableView').style.display = view === 'table' ? 'block' : 'none';
             document.getElementById('boardView').style.display = view === 'board' ? 'flex' : 'none';
-            
-            const btnTable = document.getElementById('btnViewTable');
-            const btnBoard = document.getElementById('btnViewBoard');
-            
-            if(view === 'table') {
-                btnTable.className = "px-4 py-1.5 rounded-md text-sm font-semibold bg-white dark:bg-slate-600 shadow-sm text-gray-800 dark:text-white";
-                btnBoard.className = "px-4 py-1.5 rounded-md text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400";
-            } else {
-                btnBoard.className = "px-4 py-1.5 rounded-md text-sm font-semibold bg-white dark:bg-slate-600 shadow-sm text-gray-800 dark:text-white";
-                btnTable.className = "px-4 py-1.5 rounded-md text-sm font-semibold text-gray-500 hover:text-gray-800 dark:text-gray-400";
-            }
+            document.getElementById('btnViewTable').className = `px-4 py-1.5 rounded-md text-sm font-semibold ${view === 'table' ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-800 dark:text-white' : 'text-gray-500'}`;
+            document.getElementById('btnViewBoard').className = `px-4 py-1.5 rounded-md text-sm font-semibold ${view === 'board' ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-800 dark:text-white' : 'text-gray-500'}`;
             renderExams();
         }
 
         function renderExams() {
-            if(currentView === 'table') renderTable();
-            else renderKanban();
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('examTableBody');
-            if (examsCache.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-400">ยังไม่มีชุดข้อสอบในระบบ</td></tr>`;
-                return;
-            }
-            let html = '';
-            examsCache.forEach(ex => {
-                const isPub = ex.is_published ? '<span class="text-green-600 dark:text-green-400 font-medium"><i class="fas fa-check-circle"></i> เผยแพร่</span>' : '<span class="text-gray-400 font-medium"><i class="fas fa-lock"></i> แบบร่าง</span>';
-                let catOptions = categoriesCache.map(c => `<option value="${c.id}" ${c.id === ex.category_id ? 'selected' : ''}>${c.name}</option>`).join('');
-                
-                html += `
+            if(currentView === 'table') {
+                const tbody = document.getElementById('examTableBody');
+                tbody.innerHTML = examsCache.map(ex => `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors dark:text-gray-300">
                         <td class="py-3 px-6 font-mono text-xs text-primary font-semibold">${ex.id.substring(0,6)}</td>
                         <td class="py-3 px-6 font-semibold">${ex.title}</td>
-                        <td class="py-3 px-6">
-                            <select onchange="updateExamCategory('${ex.id}', this.value)" class="bg-white dark:bg-slate-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs outline-none">
-                                <option value="">-- ไม่ระบุ --</option>${catOptions}
-                            </select>
-                        </td>
-                        <td class="py-3 px-6 text-center text-xs">
-                            <span class="text-blue-600 dark:text-blue-400 font-semibold">ปรนัย: ${ex.mcq_count||0}</span> | 
-                            <span class="text-sky-600 dark:text-sky-400 font-semibold">อัตนัย: ${ex.essay_count||0}</span>
-                        </td>
-                        <td class="py-3 px-6 text-center text-xs">${ex.time_limit} นาที<br>${isPub}</td>
+                        <td class="py-3 px-6 text-xs">${ex.exam_type === 'dynamic_text' ? '✍️ พิมพ์โจทย์เอง' : '📄 ไฟล์ PDF'}</td>
+                        <td class="py-3 px-6 text-center text-xs">ปรนัย: ${ex.mcq_count||0} | อัตนัย: ${ex.essay_count||0}</td>
+                        <td class="py-3 px-6 text-center text-xs">${ex.time_limit} น.<br>${ex.is_published ? '<span class="text-green-500">เผยแพร่</span>' : '<span class="text-gray-400">แบบร่าง</span>'}</td>
                         <td class="py-3 px-6 text-center flex justify-center gap-2 items-center">
-                            <button onclick="openAnswerKeyModal('${ex.id}')" class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-800/60 rounded-md text-xs font-bold transition-colors shadow-sm"><i class="fas fa-tasks mr-1"></i> เฉลย</button>
-                            <button onclick="editExam('${ex.id}')" class="p-1.5 text-gray-400 hover:text-primary transition-colors" title="แก้ไขโครงสร้าง"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteExam('${ex.id}')" class="p-1.5 text-gray-400 hover:text-red-500 transition-colors" title="ลบ"><i class="fas fa-trash"></i></button>
+                            <button onclick="openAnswerKeyModal('${ex.id}')" class="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/40 dark:text-blue-300 rounded-md text-xs font-bold shadow-sm"><i class="fas fa-edit mr-1"></i> จัดการโจทย์/เฉลย</button>
+                            <button onclick="editExam('${ex.id}')" class="p-1.5 text-gray-400 hover:text-primary" title="ตั้งค่า"><i class="fas fa-cog"></i></button>
+                            <button onclick="deleteExam('${ex.id}')" class="p-1.5 text-gray-400 hover:text-red-500" title="ลบ"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-        }
-
-        // Kanban Board Render (Drag & Drop)
-        function renderKanban() {
-            const board = document.getElementById('boardView');
-            let html = '';
-            const cols = [{id: null, name: 'ไม่ได้จัดหมวดหมู่'}, ...categoriesCache];
-            
-            cols.forEach(cat => {
-                const colExams = examsCache.filter(e => e.category_id === cat.id);
-                let cards = colExams.map(ex => `
-                    <div class="exam-card bg-white dark:bg-darkbox p-4 rounded-xl shadow border border-gray-200 dark:border-gray-700 mb-3" draggable="true" ondragstart="drag(event, '${ex.id}')">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="text-[10px] text-gray-400 font-mono bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">ID: ${ex.id.substring(0,6)}</div>
-                            <span class="${ex.is_published ? 'text-green-500' : 'text-gray-400'}"><i class="fas ${ex.is_published ? 'fa-check-circle' : 'fa-lock'}"></i></span>
-                        </div>
-                        <h4 class="font-bold text-gray-800 dark:text-white text-sm leading-tight mb-3">${ex.title}</h4>
-                        <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400"><i class="far fa-clock"></i> ${ex.time_limit} น.</span>
-                            <div class="flex gap-2">
-                                <button onclick="editExam('${ex.id}')" class="text-gray-400 hover:text-primary"><i class="fas fa-edit"></i></button>
-                                <button onclick="openAnswerKeyModal('${ex.id}')" class="text-primary hover:text-blue-800 font-semibold text-xs"><i class="fas fa-tasks"></i> เฉลย</button>
+                `).join('');
+            } else {
+                const board = document.getElementById('boardView');
+                const cols = [{id: null, name: 'ไม่ได้จัดหมวดหมู่'}, ...categoriesCache];
+                board.innerHTML = cols.map(cat => {
+                    const colExams = examsCache.filter(e => e.category_id === cat.id);
+                    let cards = colExams.map(ex => `
+                        <div class="bg-white dark:bg-darkbox p-4 rounded-xl shadow border border-gray-200 dark:border-gray-700 mb-3" draggable="true" ondragstart="drag(event, '${ex.id}')">
+                            <h4 class="font-bold text-gray-800 dark:text-white text-sm mb-2">${ex.title}</h4>
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-xs text-gray-500"><i class="far fa-clock"></i> ${ex.time_limit} น.</span>
+                                <button onclick="openAnswerKeyModal('${ex.id}')" class="text-primary font-semibold text-xs"><i class="fas fa-edit"></i> จัดการโจทย์</button>
                             </div>
                         </div>
-                    </div>
-                `).join('');
-
-                html += `
-                    <div class="kanban-col min-w-[280px] w-72 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col" ondrop="drop(event, '${cat.id}')" ondragover="allowDrop(event)">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-gray-700 dark:text-gray-200 text-sm">${cat.name}</h3>
-                            <span class="bg-white dark:bg-darkbox text-primary text-xs px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">${colExams.length}</span>
-                        </div>
+                    `).join('');
+                    return `<div class="kanban-col min-w-[280px] w-72 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col" ondrop="drop(event, '${cat.id}')" ondragover="allowDrop(event)">
+                        <h3 class="font-bold text-gray-700 dark:text-gray-200 text-sm mb-4">${cat.name} (${colExams.length})</h3>
                         <div class="flex-1">${cards}</div>
-                    </div>
-                `;
-            });
-            board.innerHTML = html;
+                    </div>`;
+                }).join('');
+            }
         }
 
-        // HTML5 Drag & Drop API
         function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function drag(ev, id) { ev.dataTransfer.setData("examId", id); }
         async function drop(ev, newCatId) {
@@ -384,7 +254,6 @@
             document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
             const examId = ev.dataTransfer.getData("examId");
             const catValue = newCatId === 'null' ? null : newCatId;
-            
             const exam = examsCache.find(e => e.id === examId);
             if(exam && exam.category_id !== catValue) {
                 exam.category_id = catValue;
@@ -393,95 +262,79 @@
             }
         }
 
-        // ================= Exam Modal =================
+        // ================= Form & Setup =================
+        function toggleFormType() {
+            document.getElementById('formPdfWrapper').style.display = document.getElementById('formType').value === 'pdf_only' ? 'block' : 'none';
+        }
         function openCreateExamModal() {
             document.getElementById('formExamId').value = '';
             document.getElementById('formTitle').value = '';
             document.getElementById('formCategory').value = '';
-            document.getElementById('formPublish').checked = false;
-            document.getElementById('formRanking').checked = false;
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-file-alt text-primary mr-2"></i> สร้างชุดข้อสอบใหม่';
+            document.getElementById('formType').value = 'dynamic_text';
+            toggleFormType();
             document.getElementById('customModalOverlay').classList.remove('hidden');
         }
-
         function editExam(id) {
             const ex = examsCache.find(e => e.id === id);
-            if(!ex) return;
             document.getElementById('formExamId').value = ex.id;
             document.getElementById('formTitle').value = ex.title;
             document.getElementById('formCategory').value = ex.category_id || '';
+            document.getElementById('formType').value = ex.exam_type || 'dynamic_text';
             document.getElementById('formMcq').value = ex.mcq_count || 0;
             document.getElementById('formEssay').value = ex.essay_count || 0;
             document.getElementById('formTime').value = ex.time_limit || 60;
             document.getElementById('formPublish').checked = ex.is_published;
-            document.getElementById('formRanking').checked = ex.show_ranking;
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-primary mr-2"></i> แก้ไขชุดข้อสอบ';
+            toggleFormType();
             document.getElementById('customModalOverlay').classList.remove('hidden');
         }
-
         function closeCustomModal() { document.getElementById('customModalOverlay').classList.add('hidden'); }
-
+        
         async function saveExamData() {
             const id = document.getElementById('formExamId').value;
             const data = {
                 title: document.getElementById('formTitle').value,
                 category_id: document.getElementById('formCategory').value || null,
+                exam_type: document.getElementById('formType').value,
                 mcq_count: parseInt(document.getElementById('formMcq').value) || 0,
                 essay_count: parseInt(document.getElementById('formEssay').value) || 0,
                 time_limit: parseInt(document.getElementById('formTime').value) || 60,
-                is_published: document.getElementById('formPublish').checked,
-                show_ranking: document.getElementById('formRanking').checked
+                is_published: document.getElementById('formPublish').checked
             };
             if(!data.title) return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาใส่ชื่อชุดข้อสอบ', 'warning');
-            
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             
-            const fileInput = document.getElementById('formPdf');
-            if(fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const fileName = `exam_${Date.now()}.pdf`;
-                await mySupabase.storage.from('lms_files').upload(fileName, file);
-                data.pdf_url = mySupabase.storage.from('lms_files').getPublicUrl(fileName).data.publicUrl;
+            if(data.exam_type === 'pdf_only') {
+                const file = document.getElementById('formPdf').files[0];
+                if(file) {
+                    const fileName = `exam_${Date.now()}.pdf`;
+                    await mySupabase.storage.from('lms_files').upload(fileName, file);
+                    data.pdf_url = mySupabase.storage.from('lms_files').getPublicUrl(fileName).data.publicUrl;
+                }
             }
-
-            if(id) {
-                await mySupabase.from('exams').update(data).eq('id', id);
-            } else {
-                await mySupabase.from('exams').insert([data]);
-            }
-            
-            Swal.close();
-            closeCustomModal();
-            loadExams();
+            if(id) await mySupabase.from('exams').update(data).eq('id', id);
+            else await mySupabase.from('exams').insert([data]);
+            Swal.close(); closeCustomModal(); loadExams();
         }
 
         async function deleteExam(id) {
-            const res = await Swal.fire({ title: 'ลบชุดข้อสอบนี้?', text: "ข้อมูลและกระดาษคำตอบจะหายไปทั้งหมด", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-            if(res.isConfirmed) {
-                await mySupabase.from('exams').delete().eq('id', id);
-                loadExams();
-            }
+            const res = await Swal.fire({ title: 'ลบชุดข้อสอบนี้?', icon: 'warning', showCancelButton: true });
+            if(res.isConfirmed) { await mySupabase.from('exams').delete().eq('id', id); loadExams(); }
         }
 
-        async function updateExamCategory(examId, newCatId) {
-            await mySupabase.from('exams').update({ category_id: newCatId || null }).eq('id', examId);
-            loadExams();
-        }
-
-        // ================= Answer Key Builder (กระดาษคำตอบธีมฟ้า) =================
+        // ================= Question Editor (ใหม่ล่าสุด พิมพ์โจทย์ได้) =================
         let tempAnswerKeys = [];
         
         async function openAnswerKeyModal(examId) {
-            currentEditExamId = examId;
-            const ex = examsCache.find(e => e.id === examId);
-            document.getElementById('akSubtitle').innerText = `ชุด: ${ex.title}`;
+            currentEditExam = examsCache.find(e => e.id === examId);
+            document.getElementById('akSubtitle').innerText = `ชุด: ${currentEditExam.title}`;
+            document.getElementById('akTypeIndicator').innerHTML = currentEditExam.exam_type === 'dynamic_text' ? '<i class="fas fa-keyboard text-primary mr-2"></i> โหมดสร้างโจทย์และคำตอบ' : '<i class="fas fa-file-pdf text-red-500 mr-2"></i> โหมดกระดาษคำตอบ PDF';
             
-            const { data } = await mySupabase.from('answer_keys').select('*').eq('exam_id', examId);
+            const { data } = await mySupabase.from('answer_keys').select('*').eq('exam_id', examId).order('question_number');
             tempAnswerKeys = data || [];
             
             if(tempAnswerKeys.length === 0) {
-                for(let i=1; i<=ex.mcq_count; i++) tempAnswerKeys.push({ exam_id: examId, question_number: i, question_type: 'mcq', correct_answer: '' });
-                for(let i=1; i<=ex.essay_count; i++) tempAnswerKeys.push({ exam_id: examId, question_number: i, question_type: 'essay', requires_manual_grading: true });
+                for(let i=1; i<=currentEditExam.mcq_count; i++) tempAnswerKeys.push({ exam_id: examId, question_number: i, question_type: 'mcq', correct_answer: '' });
+                for(let i=1; i<=currentEditExam.essay_count; i++) tempAnswerKeys.push({ exam_id: examId, question_number: i, question_type: 'essay', requires_manual_grading: true });
             }
             
             renderAnswerKeyEditor();
@@ -490,120 +343,96 @@
 
         function closeAnswerKeyModal() { document.getElementById('answerKeyModal').classList.add('hidden'); }
 
+        function updateKeyData(qNum, type, field, value) {
+            let item = tempAnswerKeys.find(k => k.question_type === type && k.question_number === qNum);
+            if(item) item[field] = value;
+        }
+
         function renderAnswerKeyEditor() {
             const container = document.getElementById('akContainer');
             const optCount = parseInt(document.getElementById('mcqOptionsCount').value);
-            const choices = optCount === 5 ? ['ก','ข','ค','ง','จ'] : ['ก','ข','ค','ง'];
-            
+            const isDynamic = currentEditExam.exam_type === 'dynamic_text';
             let html = '';
             
             const mcqs = tempAnswerKeys.filter(k => k.question_type === 'mcq');
             if(mcqs.length > 0) {
-                html += `<div><h4 class="font-bold text-lg mb-4 text-blue-700 dark:text-blue-400 border-b border-blue-100 dark:border-slate-700 pb-2">ปรนัย (กขคง)</h4><div class="space-y-3">`;
+                html += `<div class="mb-8"><h4 class="font-bold text-lg mb-4 text-primary border-b border-gray-200 pb-2">ปรนัย (MCQ)</h4><div class="grid grid-cols-1 ${isDynamic ? '' : 'lg:grid-cols-2'} gap-4">`;
+                
                 mcqs.forEach(m => {
-                    let btnHtml = choices.map(ch => `
-                        <button onclick="setMCQAnswer(${m.question_number}, '${ch}')" class="w-9 h-9 rounded-full border-2 text-sm font-bold transition-all shadow-sm ${m.correct_answer === ch ? 'bg-primary border-primary text-white scale-110' : 'bg-white border-gray-200 text-gray-500 hover:border-primary hover:text-primary dark:bg-darkbox dark:border-gray-600 dark:text-gray-300'}">${ch}</button>
-                    `).join('');
-                    html += `<div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-gray-700"><span class="w-10 text-sm font-bold text-gray-700 dark:text-gray-200 text-right">ข้อ ${m.question_number}</span><div class="flex gap-2">${btnHtml}</div></div>`;
+                    if(isDynamic) {
+                        // โหมดพิมพ์โจทย์
+                        html += `
+                        <div class="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 p-5 rounded-xl">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="font-bold text-primary">ข้อที่ ${m.question_number}</span>
+                                <span class="text-sm font-semibold text-gray-500">เฉลย: 
+                                    <select onchange="updateKeyData(${m.question_number}, 'mcq', 'correct_answer', this.value)" class="ml-2 border rounded px-2 py-1 bg-white dark:bg-slate-700 outline-none text-primary font-bold">
+                                        <option value="">เลือก</option>
+                                        <option value="ก" ${m.correct_answer==='ก'?'selected':''}>ก</option>
+                                        <option value="ข" ${m.correct_answer==='ข'?'selected':''}>ข</option>
+                                        <option value="ค" ${m.correct_answer==='ค'?'selected':''}>ค</option>
+                                        <option value="ง" ${m.correct_answer==='ง'?'selected':''}>ง</option>
+                                        ${optCount===5 ? `<option value="จ" ${m.correct_answer==='จ'?'selected':''}>จ</option>` : ''}
+                                    </select>
+                                </span>
+                            </div>
+                            <textarea onchange="updateKeyData(${m.question_number}, 'mcq', 'question_text', this.value)" class="w-full p-3 border rounded-lg mb-3 dark:bg-slate-700 dark:border-gray-600 dark:text-white outline-none" rows="2" placeholder="พิมพ์โจทย์คำถาม...">${m.question_text||''}</textarea>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="flex items-center gap-2"><span class="w-6 text-center font-bold text-gray-500">ก.</span> <input onchange="updateKeyData(${m.question_number}, 'mcq', 'option_a', this.value)" type="text" class="w-full p-2 border rounded outline-none dark:bg-slate-700" value="${m.option_a||''}"></div>
+                                <div class="flex items-center gap-2"><span class="w-6 text-center font-bold text-gray-500">ข.</span> <input onchange="updateKeyData(${m.question_number}, 'mcq', 'option_b', this.value)" type="text" class="w-full p-2 border rounded outline-none dark:bg-slate-700" value="${m.option_b||''}"></div>
+                                <div class="flex items-center gap-2"><span class="w-6 text-center font-bold text-gray-500">ค.</span> <input onchange="updateKeyData(${m.question_number}, 'mcq', 'option_c', this.value)" type="text" class="w-full p-2 border rounded outline-none dark:bg-slate-700" value="${m.option_c||''}"></div>
+                                <div class="flex items-center gap-2"><span class="w-6 text-center font-bold text-gray-500">ง.</span> <input onchange="updateKeyData(${m.question_number}, 'mcq', 'option_d', this.value)" type="text" class="w-full p-2 border rounded outline-none dark:bg-slate-700" value="${m.option_d||''}"></div>
+                                ${optCount === 5 ? `<div class="flex items-center gap-2"><span class="w-6 text-center font-bold text-gray-500">จ.</span> <input onchange="updateKeyData(${m.question_number}, 'mcq', 'option_e', this.value)" type="text" class="w-full p-2 border rounded outline-none dark:bg-slate-700" value="${m.option_e||''}"></div>` : ''}
+                            </div>
+                        </div>`;
+                    } else {
+                        // โหมด PDF (แบบเก่า)
+                        const choices = optCount === 5 ? ['ก','ข','ค','ง','จ'] : ['ก','ข','ค','ง'];
+                        let btnHtml = choices.map(ch => `
+                            <button onclick="updateKeyData(${m.question_number}, 'mcq', 'correct_answer', '${ch}'); renderAnswerKeyEditor();" class="w-9 h-9 rounded-full border-2 text-sm font-bold transition-all shadow-sm ${m.correct_answer === ch ? 'bg-primary border-primary text-white scale-110' : 'bg-white border-gray-200 text-gray-500 hover:border-primary'}">${ch}</button>
+                        `).join('');
+                        html += `<div class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-gray-700"><span class="w-10 text-sm font-bold text-gray-700 dark:text-gray-200 text-right">ข้อ ${m.question_number}</span><div class="flex gap-2">${btnHtml}</div></div>`;
+                    }
                 });
                 html += `</div></div>`;
             }
 
             const essays = tempAnswerKeys.filter(k => k.question_type === 'essay');
             if(essays.length > 0) {
-                html += `<div><h4 class="font-bold text-lg mb-4 text-sky-600 dark:text-sky-400 border-b border-sky-100 dark:border-slate-700 pb-2">อัตนัย (พิมพ์ตอบ)</h4><div class="space-y-3">`;
+                html += `<div><h4 class="font-bold text-lg mb-4 text-sky-600 border-b border-gray-200 pb-2">อัตนัย (พิมพ์ตอบ)</h4><div class="space-y-4">`;
                 essays.forEach(e => {
-                    html += `
-                        <div class="p-4 bg-sky-50 dark:bg-slate-800/50 border border-sky-100 dark:border-gray-700 rounded-xl">
-                            <span class="text-sm font-bold text-sky-800 dark:text-sky-300 mb-2 block">อัตนัย ข้อที่ ${e.question_number}</span>
-                            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                                <input type="checkbox" onchange="toggleEssayGrading(${e.question_number}, this.checked)" ${e.requires_manual_grading ? 'checked' : ''} class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary">
-                                <span>ข้อนี้ต้องรอคุณครูตรวจและให้คะแนนเอง</span>
-                            </label>
-                        </div>
-                    `;
+                    if(isDynamic) {
+                        html += `
+                        <div class="p-5 bg-sky-50 dark:bg-slate-800 border border-sky-100 dark:border-gray-700 rounded-xl">
+                            <span class="font-bold text-sky-800 dark:text-sky-400 mb-2 block">ข้อ ${e.question_number}</span>
+                            <textarea onchange="updateKeyData(${e.question_number}, 'essay', 'question_text', this.value)" class="w-full p-3 border rounded-lg mb-2 dark:bg-slate-700 dark:text-white outline-none" rows="2" placeholder="พิมพ์โจทย์อัตนัย...">${e.question_text||''}</textarea>
+                            <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"><input type="checkbox" onchange="updateKeyData(${e.question_number}, 'essay', 'requires_manual_grading', this.checked)" ${e.requires_manual_grading ? 'checked' : ''} class="w-4 h-4 text-primary"> รอครูตรวจและให้คะแนนเอง</label>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="p-4 bg-sky-50 dark:bg-slate-800 border border-sky-100 dark:border-gray-700 rounded-xl">
+                            <span class="text-sm font-bold text-sky-800 dark:text-sky-300 mb-2 block">ข้อ ${e.question_number}</span>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" onchange="updateKeyData(${e.question_number}, 'essay', 'requires_manual_grading', this.checked)" ${e.requires_manual_grading ? 'checked' : ''} class="w-4 h-4 text-primary"> รอครูตรวจ</label>
+                        </div>`;
+                    }
                 });
                 html += `</div></div>`;
             }
             container.innerHTML = html;
         }
 
-        function setMCQAnswer(qNum, ans) {
-            let item = tempAnswerKeys.find(k => k.question_type === 'mcq' && k.question_number === qNum);
-            if(item) { item.correct_answer = ans; item.options_count = parseInt(document.getElementById('mcqOptionsCount').value); renderAnswerKeyEditor(); }
-        }
-
-        function toggleEssayGrading(qNum, isChecked) {
-            let item = tempAnswerKeys.find(k => k.question_type === 'essay' && k.question_number === qNum);
-            if(item) item.requires_manual_grading = isChecked;
-        }
-
         async function saveAnswerKeys() {
-            Swal.fire({ title: 'กำลังบันทึกเฉลย...', didOpen: () => Swal.showLoading() });
-            await mySupabase.from('answer_keys').delete().eq('exam_id', currentEditExamId);
+            Swal.fire({ title: 'กำลังบันทึกโจทย์และเฉลย...', didOpen: () => Swal.showLoading() });
+            
+            // อัปเดต options_count ให้ทุกข้อปรนัยก่อนเซฟ
+            const optCount = parseInt(document.getElementById('mcqOptionsCount').value);
+            tempAnswerKeys.forEach(k => { if(k.question_type === 'mcq') k.options_count = optCount; });
+
+            await mySupabase.from('answer_keys').delete().eq('exam_id', currentEditExam.id);
             await mySupabase.from('answer_keys').insert(tempAnswerKeys);
-            Swal.fire({ icon: 'success', title: 'บันทึกเฉลยเรียบร้อย', timer: 1500, showConfirmButton: false });
+            
+            Swal.fire({ icon: 'success', title: 'บันทึกเรียบร้อย', timer: 1500, showConfirmButton: false });
             closeAnswerKeyModal();
-        }
-
-        // ================= Notifications =================
-        function toggleNotifications() {
-            const drop = document.getElementById('notifDropdown');
-            drop.classList.toggle('hidden');
-            if(!drop.classList.contains('hidden')) document.getElementById('notifBadge').classList.add('hidden');
-        }
-
-        async function fetchNotifications() {
-            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5);
-            const list = document.getElementById('notifList');
-            if(!data || data.length === 0) {
-                list.innerHTML = '<div class="text-center py-4">ไม่มีการแจ้งเตือนใหม่</div>';
-                return;
-            }
-            document.getElementById('notifBadge').classList.remove('hidden');
-            list.innerHTML = data.map(n => `
-                <div class="p-3 border-b dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-sm cursor-pointer transition-colors">
-                    <div class="font-bold text-primary dark:text-blue-400">${n.type === 'announcement' ? '<i class="fas fa-bullhorn"></i> ประกาศ' : '<i class="fas fa-bell"></i> แจ้งเตือน'}</div>
-                    <div class="mt-1">${n.message}</div>
-                </div>
-            `).join('');
-        }
-
-        // ================= จัดการหมวดหมู่ (ดู/แก้ไข/ลบ) =================
-        async function openManageCategoriesModal() {
-            await loadCategoriesCache();
-            let htmlList = categoriesCache.map(c => `
-                <div class="flex justify-between items-center bg-white dark:bg-slate-700 p-3 border dark:border-gray-600 rounded-xl mb-2 shadow-sm">
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">${c.name}</span>
-                    <div class="flex gap-2">
-                        <button onclick="editCategoryName('${c.id}', '${c.name}')" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-600 dark:hover:bg-slate-500 text-gray-700 dark:text-white rounded-lg text-xs font-semibold">แก้ไข</button>
-                        <button onclick="deleteCategoryAdmin('${c.id}')" class="px-3 py-1 bg-red-50 hover:bg-red-100 dark:bg-red-900/30 dark:hover:bg-red-800/50 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">ลบ</button>
-                    </div>
-                </div>
-            `).join('');
-
-            Swal.fire({
-                title: 'จัดการหมวดหมู่',
-                html: `<div class="max-h-60 overflow-y-auto text-left px-1">${htmlList || '<p class="text-center text-gray-400">ยังไม่มีหมวดหมู่</p>'}</div>`,
-                confirmButtonText: 'ปิดหน้าต่าง',
-                confirmButtonColor: '#1d4ed8'
-            });
-        }
-
-        async function editCategoryName(catId, oldName) {
-            const { value: newName } = await Swal.fire({ title: 'แก้ไขชื่อหมวดหมู่', input: 'text', inputValue: oldName, showCancelButton: true });
-            if(newName) {
-                await mySupabase.from('categories').update({ name: newName }).eq('id', catId);
-                Swal.close(); openManageCategoriesModal(); loadExams();
-            }
-        }
-
-        async function deleteCategoryAdmin(catId) {
-            const res = await Swal.fire({ title: 'ลบหมวดหมู่นี้?', icon: 'warning', showCancelButton: true });
-            if(res.isConfirmed) {
-                await mySupabase.from('categories').delete().eq('id', catId);
-                Swal.close(); openManageCategoriesModal(); loadExams();
-            }
         }
 
         initPage();
