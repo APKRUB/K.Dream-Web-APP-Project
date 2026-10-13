@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16' } } } }
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', darkbg: '#090d16' } } } }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
@@ -26,22 +26,22 @@
         <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <span class="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center font-bold text-lg"><i class="fas fa-graduation-cap"></i></span>
-                <div><h1 class="font-extrabold text-xl">Student Hub</h1><p class="text-xs text-slate-500">ระบบสอบและนัด Consult</p></div>
+                <div><h1 class="font-extrabold text-xl">Student Hub</h1><p class="text-xs text-slate-500">ศูนย์การเรียนรู้และจอง Consult</p></div>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="window.location.href='announcements.html'" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-xs"><i class="fas fa-bullhorn"></i> ประกาศ</button>
-                <button onclick="openBookingConsult()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs"><i class="fas fa-comments"></i> นัด Consult</button>
-                <button onclick="logoutStudent()" class="px-4 py-2.5 bg-red-50 text-red-600 rounded-2xl font-bold text-xs border border-red-200"><i class="fas fa-sign-out-alt"></i></button>
+                <button onclick="window.location.href='announcements.html'" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-xs"><i class="fas fa-bullhorn mr-1"></i> ประกาศ</button>
+                <button onclick="openBookingConsultModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-2xl font-bold text-xs"><i class="fas fa-comments mr-1"></i> เลือกจอง Slot Consult</button>
+                <button onclick="logoutStudent()" class="px-4 py-2.5 bg-red-50 text-red-600 rounded-2xl font-bold text-xs border border-red-200"><i class="fas fa-sign-out-alt"></i> Log out</button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 pt-32 pb-20 space-y-8">
         <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 to-indigo-800 text-white flex justify-between items-center">
-            <div><h2 class="text-2xl font-extrabold">ยินดีต้อนรับนักเรียน! 👋</h2><p class="text-xs text-sky-100">เลือกชุดข้อสอบ หรือจองคิวที่ปรึกษาได้เลย</p></div>
+            <div><h2 class="text-2xl font-extrabold">ยินดีต้อนรับนักเรียน! 👋</h2><p class="text-xs text-sky-100">เลือกชุดข้อสอบ หรือจอง Slot เวลาปรึกษาคุณครูได้ทันที</p></div>
         </div>
 
-        <!-- 24h Countdown Section -->
+        <!-- Section ข้อสอบที่จะเปิดใน 24 ชั่วโมง -->
         <div id="upcomingSec" class="hidden space-y-4">
             <h3 class="font-extrabold text-base text-amber-600 flex items-center gap-2"><i class="fas fa-clock animate-bounce"></i> ข้อสอบกำลังจะเปิดใน 24 ชั่วโมง</h3>
             <div id="upcomingGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
@@ -85,7 +85,8 @@
             renderExams();
         }
 
-        function switchTab(t) { activeTab = t; 
+        function switchTab(t) { 
+            activeTab = t; 
             document.getElementById('tabPending').className = t === 'pending' ? "px-5 py-2 rounded-lg text-xs font-bold bg-white text-sky-600 shadow-sm" : "px-5 py-2 rounded-lg text-xs font-bold text-slate-500";
             document.getElementById('tabDone').className = t === 'done' ? "px-5 py-2 rounded-lg text-xs font-bold bg-white text-sky-600 shadow-sm" : "px-5 py-2 rounded-lg text-xs font-bold text-slate-500";
             renderExams();
@@ -103,15 +104,54 @@
                 </div>`).join('');
         }
 
-        async function openBookingConsult() {
-            const { value: form } = await Swal.fire({
-                title: '📅 นัดหมาย Consult',
-                html: `<div class="space-y-3 text-left text-xs"><input id="csName" class="w-full px-3 py-2 border rounded-xl" placeholder="ชื่อ-นามสกุล *"><input id="csTopic" class="w-full px-3 py-2 border rounded-xl" placeholder="หัวข้อที่ต้องการปรึกษา *"><input type="datetime-local" id="csTime" class="w-full px-3 py-2 border rounded-xl"></div>`,
-                showCancelButton: true, confirmButtonText: 'จองคิว',
-                preConfirm: () => ({ student_name: document.getElementById('csName').value, topic: document.getElementById('csTopic').value, appointment_time: document.getElementById('csTime').value })
+        // ดึง Slot ว่างที่คุณครูสร้างไว้มาให้นักเรียนเลือกกดจอง
+        async function openBookingConsultModal() {
+            const { data: setting } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
+            const now = new Date();
+
+            if (!setting?.is_open || (setting.close_at && new Date(setting.close_at) <= now)) {
+                Swal.fire('ระบบปิดรับจอง', 'ขณะนี้ระบบ Consult ยังไม่เปิดรับจอง กรุณารอเวลาเปิดระบบจากคุณครู', 'info');
+                return;
+            }
+
+            const nowIso = now.toISOString();
+            const { data: availableSlots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').gt('end_time', nowIso).order('start_time', { ascending: true });
+
+            if (!availableSlots || availableSlots.length === 0) {
+                Swal.fire('ไม่มี Slot ว่าง', 'ขณะนี้ไม่มี Slot เวลาว่างให้เลือกจอง กรุณาติดต่อคุณครู', 'warning');
+                return;
+            }
+
+            let optionsHtml = availableSlots.map(s => {
+                const sStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                const eStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                return `<option value="${s.id}">${sStr} - ${eStr} น.</option>`;
+            }).join('');
+
+            const { value: slotId } = await Swal.fire({
+                title: '📅 เลือกจอง Slot เวลา Consult',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <label class="block font-bold">เลือกช่วงเวลาที่คุณต้องการปรึกษา:</label>
+                        <select id="slotSelect" class="w-full px-3 py-2 border rounded-xl">${optionsHtml}</select>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันการจอง',
+                preConfirm: () => document.getElementById('slotSelect').value
             });
-            if (form && form.student_name) { await mySupabase.from('consult_queues').insert([form]); Swal.fire('สำเร็จ', 'ส่งคำร้องจองคิวแล้วรอครูอนุมัติ', 'success'); }
+
+            if (slotId) {
+                const { data: { session } } = await mySupabase.auth.getSession();
+                if (!session) { Swal.fire('กรุณาเข้าสู่ระบบ', '', 'warning'); return; }
+
+                await mySupabase.from('consult_slots').update({ status: 'booked', student_id: session.user.id }).eq('id', slotId);
+                await mySupabase.from('consult_quotas').upsert({ student_id: session.user.id, has_booked: true, booked_slot_id: slotId });
+
+                Swal.fire({ icon: 'success', title: 'จอง Slot เวลาสำเร็จ!', timer: 1500, showConfirmButton: false });
+            }
         }
+
         async function logoutStudent() { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
         initPage();
     </script>
