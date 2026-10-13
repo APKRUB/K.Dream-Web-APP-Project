@@ -218,7 +218,6 @@
                 });
                 const titleText = a.title || 'ประกาศจากทางโรงเรียน';
 
-                // เรนเดอร์ไฟล์แนบ (ถ้ามี)
                 let attachmentsHtml = '';
                 if (a.attachments && a.attachments.length > 0) {
                     let filesList = a.attachments.map((url, idx) => {
@@ -275,14 +274,14 @@
             Swal.fire({ title: 'กำลังอัปโหลดและบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             let attachmentUrls = [];
-            // ถ้ามีการอัปโหลดไฟล์ใหม่
             if (fileInput.files.length > 0) {
                 for (let i = 0; i < fileInput.files.length; i++) {
                     const file = fileInput.files[i];
-                    const fileName = `announcement_${Date.now()}_${i}_${file.name}`;
-                    const { error: uploadError } = await mySupabase.storage.from('lms_files').upload(fileName, file);
+                    const fileName = `ann_${Date.now()}_${i}_${file.name}`;
+                    // อัปโหลดเข้า Bucket แยกสำหรับประกาศโดยเฉพาะ
+                    const { error: uploadError } = await mySupabase.storage.from('announcement_files').upload(fileName, file);
                     if (!uploadError) {
-                        const { data } = mySupabase.storage.from('lms_files').getPublicUrl(fileName);
+                        const { data } = mySupabase.storage.from('announcement_files').getPublicUrl(fileName);
                         if (data) attachmentUrls.push(data.publicUrl);
                     }
                 }
