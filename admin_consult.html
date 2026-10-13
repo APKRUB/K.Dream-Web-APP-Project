@@ -50,7 +50,7 @@
                             <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">ดูรายชื่อการจองรายคนและย้ายเวลา (Realtime)</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ควบคุมเปิด-ปิด, รายชื่อจองรายคน และประวัติการแก้ไข (Realtime)</p>
                     </div>
                 </div>
                 <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
@@ -60,20 +60,21 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
         
+        <!-- Status Banner -->
         <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-indigo-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <span id="statusIndicator" class="w-3 h-3 rounded-full bg-amber-500"></span>
                     สถานะระบบ: <span id="statusText">กำลังโหลด...</span>
                 </h2>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="countdownInfo">กำลังตรวจสอบเวลาเปิดระบบ...</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="countdownInfo">กำลังตรวจสอบเวลาเปิด-ปิดระบบ...</p>
             </div>
             <div>
                 <button onclick="toggleSystemStatus()" class="px-5 py-3 rounded-2xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/30 transition-all">เปลี่ยนสถานะเปิด-ปิด</button>
             </div>
         </div>
 
-        <!-- ตารางรายชื่อนักเรียนจอง Consult (Realtime) -->
+        <!-- ตารางรายชื่อนักเรียนจอง Consult -->
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-indigo-500"></i> รายชื่อนักเรียนที่จอง Consult แล้ว</h3>
@@ -85,19 +86,25 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- ฝั่งตั้งค่าเวลาเปิด-ปิด & ปิดรับอัตโนมัติ -->
             <div class="lg:col-span-5 glossy-card p-8 rounded-3xl space-y-6">
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิดระบบ (Countdown)</h3>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-indigo-500"></i> ตั้งเวลาเปิด-ปิดรับจองอัตโนมัติ</h3>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">กำหนดวันและเวลาเปิด (เวลาไทย)</label>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">เวลาเปิดรับจอง (Open At)</label>
                     <input type="datetime-local" id="openAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary outline-none">
                 </div>
-                <button onclick="saveCountdownTime()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">บันทึกเวลาเปิดอัตโนมัติ</button>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">เวลาปิดรับจองอัตโนมัติ (Close At)</label>
+                    <input type="datetime-local" id="closeAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary outline-none">
+                </div>
+                <button onclick="saveCountdownTime()" class="w-full bg-primary hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">บันทึกเวลาเปิด-ปิด</button>
 
                 <div class="pt-6 border-t border-gray-200 dark:border-gray-800">
                     <button onclick="resetAllQuotas()" class="w-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 py-3.5 rounded-2xl font-bold text-sm transition-all border border-red-200/50 dark:border-red-900/50"><i class="fas fa-redo mr-2"></i> รีเซ็ตโควต้านักเรียนทุกคน</button>
                 </div>
             </div>
 
+            <!-- ฝั่งสร้าง Slot อัตโนมัติ -->
             <div class="lg:col-span-7 glossy-card p-8 rounded-3xl space-y-5">
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-magic text-indigo-500"></i> สร้าง Slot อัตโนมัติ</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -136,6 +143,13 @@
                 <div class="text-center py-8 text-gray-400 text-sm">กำลังโหลดข้อมูล...</div>
             </div>
         </div>
+
+        <!-- ปุ่มเปิดดูประวัติการแก้ไข (Audit Logs) ด้านล่างสุด -->
+        <div class="text-center pt-6">
+            <button onclick="openHistoryModal()" class="px-6 py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-darkinput dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-2xl font-bold text-sm transition-all shadow-sm border border-gray-300 dark:border-gray-700">
+                <i class="fas fa-history mr-2 text-indigo-500"></i> ดูประวัติการแก้ไขและจัดการ Consult
+            </button>
+        </div>
     </main>
 
     <script>
@@ -166,7 +180,6 @@
             setupConsultRealtime();
         }
 
-        // True Realtime Subscription สำหรับหน้าจัดการ Consult
         function setupConsultRealtime() {
             mySupabase
                 .channel('consult_manager_realtime')
@@ -184,52 +197,51 @@
             const statusText = document.getElementById('statusText');
             const countdownInfo = document.getElementById('countdownInfo');
 
-            if (data.is_open) {
+            // เช็คว่าถึงเวลาปิดรับหรือยัง
+            const now = new Date();
+            if (data.close_at && new Date(data.close_at) <= now && data.is_open) {
+                await mySupabase.from('consult_settings').update({ is_open: false }).eq('id', 1);
+                currentSetting.is_open = false;
+            }
+
+            if (currentSetting.is_open) {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
                 statusText.textContent = 'เปิดรับจอง Consult แล้ว';
-                countdownInfo.textContent = 'ระบบเปิดให้นักเรียนเข้ามาเลือกจอง Slot เวลาได้ทันที';
+                countdownInfo.textContent = data.close_at ? `⏳ ระบบจะปิดรับจองอัตโนมัติใน: ${new Date(data.close_at).toLocaleString('th-TH')}` : 'ระบบเปิดให้นักเรียนเข้ามาเลือกจอง Slot เวลาได้ทันที';
             } else {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500';
                 statusText.textContent = 'ปิดรับจอง';
                 if (data.open_at) {
                     const localDt = new Date(data.open_at);
                     document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                    startCountdown(localDt);
-                } else {
-                    countdownInfo.textContent = 'ระบบยังไม่เปิดในขณะนี้';
                 }
+                if (data.close_at) {
+                    const closeDt = new Date(data.close_at);
+                    document.getElementById('closeAtInput').value = new Date(closeDt.getTime() - (closeDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                }
+                countdownInfo.textContent = 'ระบบปิดรับจองในขณะนี้';
             }
-        }
-
-        function startCountdown(openDate) {
-            const countdownInfo = document.getElementById('countdownInfo');
-            setInterval(() => {
-                const now = new Date();
-                const diff = openDate - now;
-                if (diff <= 0) { countdownInfo.textContent = 'ถึงเวลาเปิดระบบแล้ว!'; return; }
-                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                countdownInfo.textContent = `⏳ นับถอยหลังเปิดระบบอีก: ${hours} ชม. ${minutes} นาที ${seconds} วินาที`;
-            }, 1000);
         }
 
         async function toggleSystemStatus() {
             const newStatus = !currentSetting.is_open;
             await mySupabase.from('consult_settings').update({ is_open: newStatus }).eq('id', 1);
+            await logHistory(newStatus ? 'เปิดระบบรับจอง Consult' : 'ปิดระบบรับจอง Consult');
             Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบแล้ว' : 'ปิดระบบแล้ว', timer: 1200, showConfirmButton: false });
             loadSettings();
         }
 
         async function saveCountdownTime() {
-            const val = document.getElementById('openAtInput').value;
-            if (!val) {
-                await mySupabase.from('consult_settings').update({ open_at: null }).eq('id', 1);
-            } else {
-                const isoStr = new Date(val).toISOString();
-                await mySupabase.from('consult_settings').update({ open_at: isoStr }).eq('id', 1);
-            }
-            Swal.fire({ icon: 'success', title: 'บันทึกเวลา Countdown สำเร็จ', timer: 1200, showConfirmButton: false });
+            const openVal = document.getElementById('openAtInput').value;
+            const closeVal = document.getElementById('closeAtInput').value;
+            
+            await mySupabase.from('consult_settings').update({ 
+                open_at: openVal ? new Date(openVal).toISOString() : null,
+                close_at: closeVal ? new Date(closeVal).toISOString() : null
+            }).eq('id', 1);
+
+            await logHistory('อัปเดตเวลาเปิด-ปิดรับจองอัตโนมัติ');
+            Swal.fire({ icon: 'success', title: 'บันทึกเวลาเปิด-ปิดสำเร็จ', timer: 1200, showConfirmButton: false });
             loadSettings();
         }
 
@@ -281,6 +293,7 @@
             if (slotsToInsert.length > 0) {
                 const { error } = await mySupabase.from('consult_slots').insert(slotsToInsert);
                 if (!error) {
+                    await logHistory(`สร้าง Slot อัตโนมัติจำนวน ${slotsToInsert.length} ช่วงเวลา`);
                     Swal.fire({ icon: 'success', title: `สร้างสำเร็จ ${slotsToInsert.length} ช่วงเวลา!`, timer: 1500, showConfirmButton: false });
                 } else {
                     Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
@@ -311,7 +324,7 @@
                         </div>
                         <div class="flex gap-2">
                             <button onclick="openRescheduleModal('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-blue-50 text-primary dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">ย้ายเวลา</button>
-                            <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>
+                            <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>
                         </div>
                     </div>
                 `;
@@ -347,6 +360,8 @@
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', oldSlotId);
                 await mySupabase.from('consult_slots').update({ status: 'booked', student_id: studentId }).eq('id', newSlotId);
                 await mySupabase.from('consult_quotas').update({ booked_slot_id: newSlotId }).eq('student_id', studentId);
+                
+                await logHistory(`ย้ายเวลา Consult ของนักเรียน (${studentId}) ไปยัง Slot ใหม่`);
                 Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1200, showConfirmButton: false });
             }
         }
@@ -373,7 +388,7 @@
                             <div class="text-xs text-gray-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
                         </div>
                         <div class="flex gap-2">
-                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>` : ''}
+                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>` : ''}
                             <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">ลบ</button>
                         </div>
                     </div>
@@ -381,17 +396,54 @@
             }).join('');
         }
 
-        async function cancelStudentBooking(slotId, studentId) {
-            const res = await Swal.fire({ title: 'ยกเลิกการจองของนักเรียน?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#f59e0b' });
+        // ยืนยันก่อนยกเลิกการจอง พร้อมส่งแจ้งเตือนไปให้นักเรียน
+        async function cancelStudentBooking(slotId, studentId, studentName) {
+            const res = await Swal.fire({
+                title: 'ยืนยันยกเลิกการจอง?',
+                text: `คุณต้องการยกเลิกการจอง Consult ของ "${studentName || 'นักเรียน'}" ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'ใช่, ยกเลิกการจอง',
+                cancelButtonText: 'ปิด'
+            });
+
             if (res.isConfirmed) {
+                // 1. คืนสถานะ Slot เป็น available
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', slotId);
-                if (studentId) { await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId); }
-                Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ', timer: 1200, showConfirmButton: false });
+                // 2. เคลียร์โควต้านักเรียน
+                if (studentId) {
+                    await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId);
+                    // 3. ส่งแจ้งเตือน (Notification) ไปให้นักเรียนคนนั้น
+                    await mySupabase.from('notifications').insert([{
+                        user_id: studentId,
+                        type: 'system',
+                        message: 'อาจารย์ได้ทำการยกเลิกการจองเวลา Consult ของคุณแล้ว กรุณาตรวจสอบเวลาใหม่',
+                        is_read: false
+                    }]);
+                }
+                await logHistory(`ยกเลิกการจอง Consult ของนักเรียน: ${studentName || studentId}`);
+                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จและแจ้งเตือนนักเรียนแล้ว', timer: 1500, showConfirmButton: false });
             }
         }
 
+        // ยืนยันก่อนลบ Slot
         async function deleteSlot(id) {
-            await mySupabase.from('consult_slots').delete().eq('id', id);
+            const res = await Swal.fire({
+                title: 'ยืนยันลบช่วงเวลานี้?',
+                text: 'การลบจะไม่สามารถกู้คืนได้',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'ยืนยันลบ',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (res.isConfirmed) {
+                await mySupabase.from('consult_slots').delete().eq('id', id);
+                await logHistory(`ลบช่วงเวลา Slot ID: ${id}`);
+                Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
+            }
         }
 
         async function resetAllQuotas() {
@@ -399,8 +451,51 @@
             if (res.isConfirmed) {
                 await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null });
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null });
+                await logHistory('รีเซ็ตโควต้านักเรียนทั้งหมดในระบบ');
                 Swal.fire({ icon: 'success', title: 'รีเซ็ตสำเร็จ', timer: 1200, showConfirmButton: false });
             }
+        }
+
+        // ระบบบันทึกและแสดงประวัติการแก้ไข (Audit Logs Popup)
+        async function logHistory(actionText) {
+            try {
+                const { data: { session } } = await mySupabase.auth.getSession();
+                await mySupabase.from('consult_logs').insert([{
+                    admin_id: session?.user?.id,
+                    action: actionText,
+                    created_at: new Date().toISOString()
+                }]);
+            } catch (err) {
+                console.error("Log Error:", err);
+            }
+        }
+
+        async function openHistoryModal() {
+            Swal.fire({ title: 'กำลังโหลดประวัติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const { data: logs, error } = await mySupabase.from('consult_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(20);
+
+            if (error || !logs || logs.length === 0) {
+                Swal.fire({ title: 'ประวัติการแก้ไข', text: 'ยังไม่มีบันทึกประวัติการดำเนินการในระบบ', icon: 'info' });
+                return;
+            }
+
+            let logsHtml = logs.map(l => {
+                const timeStr = new Date(l.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                return `
+                    <div class="py-2.5 border-b dark:border-gray-800 text-left text-xs">
+                        <div class="font-bold text-gray-900 dark:text-white"><i class="fas fa-history text-indigo-500 mr-1.5"></i> ${l.action}</div>
+                        <div class="text-gray-400 mt-0.5">โดย: ${l.profiles?.full_name || 'ผู้ดูแลระบบ'} | เวลา: ${timeStr} น.</div>
+                    </div>
+                `;
+            }).join('');
+
+            Swal.fire({
+                title: '<i class="fas fa-clipboard-list text-indigo-600"></i> ประวัติการแก้ไขและจัดการ Consult',
+                html: `<div class="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800 pr-1">${logsHtml}</div>`,
+                width: '600px',
+                confirmButtonText: 'ปิดหน้าต่าง'
+            });
         }
 
         initPage();
