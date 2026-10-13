@@ -15,123 +15,105 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { 
-                        primary: '#2563eb', 
-                        primaryHover: '#1d4ed8',
-                        lightbg: '#f8fafc', 
-                        darkbg: '#030712',    
-                        darkbox: '#111827',   
-                        darkinput: '#1f2937'  
-                    } 
+                    colors: { primary: '#0284c7', darkbg: '#090d16', darkbox: '#0f172a', darkinput: '#1e293b' } 
                 } 
             }
         }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(31, 41, 55, 0.8); }
+        .glass-nav { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(9, 13, 22, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        
-        .modern-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .dark .modern-card { background: rgba(17, 24, 39, 0.95); }
-        
-        .btn-glow { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25); }
-        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); }
-        .btn-glow:active { transform: translateY(0); }
-
-        .action-btn-edit { background-color: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.2); transition: all 0.2s ease; }
-        .dark .action-btn-edit { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .action-btn-edit:hover { background-color: #2563eb; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
-
-        .action-btn-delete { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.2s ease; }
-        .dark .action-btn-delete { background-color: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .action-btn-delete:hover { background-color: #dc2626; color: #ffffff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+        .modern-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08); }
+        .dark .modern-card { background: #0f172a; border: 1px solid rgba(30, 41, 59, 1); }
+        .btn-glow { transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(2, 132, 199, 0.25); }
+        .btn-glow:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(2, 132, 199, 0.4); }
+        .action-btn-edit { background-color: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.2); }
+        .action-btn-edit:hover { background-color: #0284c7; color: #ffffff; }
+        .action-btn-delete { background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .action-btn-delete:hover { background-color: #dc2626; color: #ffffff; }
     </style>
 </head>
-<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100 selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
-    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-4">
-                    <button onclick="goBack()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm">
+                    <button onclick="goBack()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-primary hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-lg"></i>
                     </button>
                     <div>
-                        <h1 class="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2 tracking-tight">
-                            <span class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-md shadow-blue-500/30"><i class="fas fa-bullhorn"></i></span>
+                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-bullhorn"></i></span>
                             ศูนย์รวมประกาศข่าวสาร
                         </h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">ประกาศและประกาศแจ้งเตือนทั้งหมดในระบบ</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ประกาศและข่าวสารแจ้งเตือนทั้งหมดในระบบ</p>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all shadow-sm">
-                        <i class="fas fa-moon text-lg" id="themeIcon"></i>
-                    </button>
-                </div>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                    <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             <!-- ฝั่งซ้าย: ฟอร์มสร้าง/แก้ไขประกาศ -->
-            <div id="creatorSection" class="lg:col-span-5 modern-card p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-gray-200/80 dark:border-gray-800 sticky top-28">
-                <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">
+            <div id="creatorSection" class="lg:col-span-5 modern-card p-8 rounded-3xl sticky top-28">
+                <div class="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div class="w-14 h-14 bg-gradient-to-br from-sky-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-sky-500/30">
                         <i class="fas fa-edit" id="formIcon"></i>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight" id="formTitle">สร้างประกาศใหม่</h2>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">เนื้อหาและไฟล์แนบจะส่งถึงหน้านักเรียนทันที</p>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white" id="formTitle">สร้างประกาศใหม่</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">เนื้อหาและไฟล์แนบจะส่งถึงหน้านักเรียนทันที</p>
                     </div>
                 </div>
 
                 <form id="announcementForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
                     <input type="hidden" id="editAnnouncementId">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">หัวข้อประกาศ <span class="text-red-500">*</span></label>
-                        <input type="text" id="annTitle" required placeholder="เช่น กำหนดการสอบกลางภาควิชา..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl dark:text-white focus:border-primary focus:ring-2 focus:ring-blue-500/20 outline-none text-sm transition-all shadow-sm">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">หัวข้อประกาศ <span class="text-red-500">*</span></label>
+                        <input type="text" id="annTitle" required placeholder="เช่น กำหนดการสอบกลางภาค..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl dark:text-white focus:border-sky-500 outline-none text-sm transition-all shadow-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">เนื้อหาประกาศ <span class="text-red-500">*</span></label>
-                        <textarea id="annContent" required rows="5" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-2xl dark:text-white focus:border-primary focus:ring-2 focus:ring-blue-500/20 outline-none text-sm resize-none transition-all shadow-sm leading-relaxed"></textarea>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">เนื้อหาประกาศ <span class="text-red-500">*</span></label>
+                        <textarea id="annContent" required rows="5" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl dark:text-white focus:border-sky-500 outline-none text-sm resize-none transition-all shadow-sm leading-relaxed"></textarea>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">แนบไฟล์ / รูปภาพ (สูงสุด 5 ไฟล์)</label>
-                        <input type="file" id="annFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" class="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-primary hover:file:bg-blue-100 dark:file:bg-slate-800 dark:file:text-blue-400 cursor-pointer">
-                        <p class="text-[11px] text-gray-400 mt-1">รองรับรูปภาพ, PDF, เอกสาร (เลือกได้หลายไฟล์พร้อมกัน)</p>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">แนบไฟล์ / รูปภาพ (สูงสุด 5 ไฟล์)</label>
+                        <input type="file" id="annFiles" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 dark:file:bg-slate-800 dark:file:text-sky-400 cursor-pointer">
+                        <p class="text-[11px] text-slate-400 mt-1">รองรับรูปภาพ, PDF, เอกสาร (เลือกหลายไฟล์ได้)</p>
                     </div>
 
                     <div class="flex gap-3 pt-2">
-                        <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-2xl font-bold btn-glow transition-all text-sm flex items-center justify-center gap-2">
+                        <button type="submit" id="submitBtn" class="flex-1 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white py-4 rounded-2xl font-bold btn-glow transition-all text-sm flex items-center justify-center gap-2">
                             <i class="fas fa-paper-plane"></i> โพสต์ประกาศ
                         </button>
-                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden px-6 py-4 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-2xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">
+                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all">
                             ยกเลิก
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- ฝั่งขวา: ประวัติการประกาศ (Feed) -->
+            <!-- ฝั่งขวา: Feed ประกาศทั้งหมด -->
             <div id="feedSection" class="lg:col-span-7 space-y-5">
-                <div class="flex justify-between items-center modern-card p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-gray-200/80 dark:border-gray-800">
-                    <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-3">
-                        <span class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-primary flex items-center justify-center text-sm"><i class="fas fa-history"></i></span>
+                <div class="flex justify-between items-center modern-card p-6 rounded-3xl">
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-sky-600 flex items-center justify-center text-sm"><i class="fas fa-history"></i></span>
                         ประวัติประกาศทั้งหมด
                     </h3>
-                    <span id="annCount" class="text-xs bg-blue-50 dark:bg-blue-950/80 text-primary dark:text-blue-300 px-4 py-2 rounded-xl font-bold border border-blue-100 dark:border-blue-900/50">0 รายการ</span>
+                    <span id="annCount" class="text-xs bg-sky-50 dark:bg-sky-950/80 text-sky-600 dark:text-sky-300 px-4 py-2 rounded-xl font-bold border border-sky-100 dark:border-sky-900/50">0 รายการ</span>
                 </div>
 
                 <div id="announcementFeed" class="space-y-4">
-                    <div class="modern-card p-12 rounded-3xl text-center text-gray-400 border border-gray-200/80 dark:border-gray-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
-                        <i class="fas fa-spinner fa-spin text-3xl mb-3 text-primary"></i>
+                    <div class="modern-card p-12 rounded-3xl text-center text-slate-400">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3 text-sky-600"></i>
                         <p class="text-sm font-medium">กำลังโหลดประวัติประกาศ...</p>
                     </div>
                 </div>
@@ -163,11 +145,11 @@
 
         async function initPage() {
             const { data: { session } } = await mySupabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
-
-            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
-            currentUser = profile;
-            userRole = profile.role;
+            if (session) {
+                const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
+                currentUser = profile;
+                userRole = profile?.role || 'student';
+            }
 
             if (userRole === 'student') {
                 document.getElementById('creatorSection').style.display = 'none';
@@ -175,11 +157,6 @@
             }
 
             loadAnnouncements();
-            markNotificationsAsRead();
-        }
-
-        async function markNotificationsAsRead() {
-            await mySupabase.from('notifications').update({ is_read: true }).eq('is_read', false);
         }
 
         function goBack() {
@@ -196,12 +173,12 @@
             const feed = document.getElementById('announcementFeed');
             if (error || !anns || anns.length === 0) {
                 feed.innerHTML = `
-                    <div class="modern-card p-12 rounded-3xl text-center text-gray-400 border border-gray-200/80 dark:border-gray-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
-                        <div class="w-16 h-16 bg-blue-50 dark:bg-slate-800/80 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                    <div class="modern-card p-12 rounded-3xl text-center text-slate-400">
+                        <div class="w-16 h-16 bg-sky-50 dark:bg-slate-800 text-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
                             <i class="fas fa-bullhorn"></i>
                         </div>
-                        <h4 class="text-base font-bold text-gray-700 dark:text-gray-200 mb-1">ยังไม่มีประกาศในระบบ</h4>
-                        <p class="text-xs text-gray-400">ประกาศใหม่จะแสดงขึ้นที่นี่ทันทีเมื่อมีการโพสต์</p>
+                        <h4 class="text-base font-bold text-slate-700 dark:text-slate-200 mb-1">ยังไม่มีประกาศในระบบ</h4>
+                        <p class="text-xs text-slate-400">ประกาศใหม่จะแสดงขึ้นที่นี่ทันทีเมื่อมีการโพสต์</p>
                     </div>
                 `;
                 document.getElementById('annCount').textContent = '0 รายการ';
@@ -212,10 +189,7 @@
             const isStaff = ['admin', 'teacher', 'exam_creator'].includes(userRole);
 
             feed.innerHTML = anns.map(a => {
-                const dateStr = new Date(a.created_at).toLocaleString('th-TH', { 
-                    dateStyle: 'medium', 
-                    timeStyle: 'short' 
-                });
+                const dateStr = new Date(a.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
                 const titleText = a.title || 'ประกาศจากทางโรงเรียน';
 
                 let attachmentsHtml = '';
@@ -223,35 +197,35 @@
                     let filesList = a.attachments.map((url, idx) => {
                         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
                         if (isImage) {
-                            return `<a href="${url}" target="_blank" class="block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 hover:opacity-90 transition-opacity"><img src="${url}" class="w-full h-32 object-cover" alt="attachment"></a>`;
+                            return `<a href="${url}" target="_blank" class="block overflow-hidden rounded-xl border hover:opacity-90 transition-opacity"><img src="${url}" class="w-full h-32 object-cover"></a>`;
                         } else {
-                            return `<a href="${url}" target="_blank" class="flex items-center gap-2 p-3 bg-white dark:bg-darkinput rounded-xl border border-gray-200 dark:border-gray-700 text-xs font-semibold text-primary dark:text-blue-400 hover:underline"><i class="fas fa-file-arrow-down text-base"></i> ไฟล์แนบที่ ${idx + 1}</a>`;
+                            return `<a href="${url}" target="_blank" class="flex items-center gap-2 p-3 bg-slate-50 dark:bg-darkinput rounded-xl border text-xs font-semibold text-sky-600 hover:underline"><i class="fas fa-file-arrow-down text-base"></i> ไฟล์แนบ ${idx + 1}</a>`;
                         }
                     }).join('');
                     attachmentsHtml = `<div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">${filesList}</div>`;
                 }
 
                 return `
-                    <div class="modern-card p-7 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-gray-200/80 dark:border-gray-800 hover:border-blue-300 dark:hover:border-blue-700/50 transition-all relative overflow-hidden group">
-                        <div class="absolute top-0 left-0 w-2.5 h-full bg-gradient-to-b from-blue-500 to-indigo-600"></div>
+                    <div class="modern-card p-7 rounded-3xl relative overflow-hidden group">
+                        <div class="absolute top-0 left-0 w-2.5 h-full bg-gradient-to-b from-sky-500 to-indigo-600"></div>
                         <div class="flex justify-between items-start mb-4 pl-3">
                             <div>
-                                <h4 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight">${titleText}</h4>
-                                <span class="text-xs font-medium text-gray-400 dark:text-gray-400 flex items-center gap-1.5 mt-0.5"><i class="far fa-clock"></i> ${dateStr}</span>
+                                <h4 class="font-bold text-lg text-slate-900 dark:text-white">${titleText}</h4>
+                                <span class="text-xs font-medium text-slate-400 flex items-center gap-1.5 mt-0.5"><i class="far fa-clock"></i> ${dateStr}</span>
                             </div>
                             ${isStaff ? `
                                 <div class="flex gap-2">
-                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="action-btn-edit px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm" title="แก้ไข">
+                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="action-btn-edit px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
                                         <i class="fas fa-pen-to-square"></i> แก้ไข
                                     </button>
-                                    <button onclick="deleteAnnouncement('${a.id}')" class="action-btn-delete px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm" title="ลบ">
+                                    <button onclick="deleteAnnouncement('${a.id}')" class="action-btn-delete px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
                                         <i class="fas fa-trash-can"></i> ลบ
                                     </button>
                                 </div>
                             ` : ''}
                         </div>
                         <div class="pl-3">
-                            <div class="text-gray-700 dark:text-gray-200 text-sm whitespace-pre-line leading-relaxed bg-slate-50/80 dark:bg-darkinput/60 p-5 rounded-2xl border border-gray-200/50 dark:border-gray-800/80 shadow-inner">${a.content}</div>
+                            <div class="text-slate-700 dark:text-slate-200 text-sm whitespace-pre-line leading-relaxed bg-slate-50 dark:bg-darkinput/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">${a.content}</div>
                             ${attachmentsHtml}
                         </div>
                     </div>
@@ -267,18 +241,17 @@
             const fileInput = document.getElementById('annFiles');
 
             if (fileInput.files.length > 5) {
-                Swal.fire('จำกัดจำนวนไฟล์', 'คุณสามารถแนบไฟล์ได้สูงสุดไม่เกิน 5 ไฟล์ครับ', 'warning');
+                Swal.fire('จำกัดจำนวนไฟล์', 'แนบไฟล์ได้สูงสุดไม่เกิน 5 ไฟล์ครับ', 'warning');
                 return;
             }
 
-            Swal.fire({ title: 'กำลังอัปโหลดและบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             let attachmentUrls = [];
             if (fileInput.files.length > 0) {
                 for (let i = 0; i < fileInput.files.length; i++) {
                     const file = fileInput.files[i];
                     const fileName = `ann_${Date.now()}_${i}_${file.name}`;
-                    // อัปโหลดเข้า Bucket แยกสำหรับประกาศโดยเฉพาะ
                     const { error: uploadError } = await mySupabase.storage.from('announcement_files').upload(fileName, file);
                     if (!uploadError) {
                         const { data } = mySupabase.storage.from('announcement_files').getPublicUrl(fileName);
@@ -288,26 +261,16 @@
             }
 
             let payload = { title, content };
-            if (attachmentUrls.length > 0) {
-                payload.attachments = attachmentUrls;
-            }
+            if (attachmentUrls.length > 0) payload.attachments = attachmentUrls;
 
             if (editId) {
-                const { error } = await mySupabase.from('announcements').update(payload).eq('id', editId);
-                if (!error) {
-                    Swal.fire({ icon: 'success', title: 'แก้ไขประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
-                } else {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                }
+                await mySupabase.from('announcements').update(payload).eq('id', editId);
+                Swal.fire({ icon: 'success', title: 'แก้ไขประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
             } else {
-                payload.author_id = currentUser.id;
-                const { error } = await mySupabase.from('announcements').insert([payload]);
-                if (!error) {
-                    await mySupabase.from('notifications').insert([{ type: 'announcement', message: `${title}: ${content.substring(0, 50)}...` }]);
-                    Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
-                } else {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                }
+                payload.author_id = currentUser?.id;
+                await mySupabase.from('announcements').insert([payload]);
+                await mySupabase.from('notifications').insert([{ type: 'announcement', message: `${title}: ${content.substring(0, 50)}...` }]);
+                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ', timer: 1500, showConfirmButton: false });
             }
 
             resetForm();
@@ -318,13 +281,8 @@
             document.getElementById('editAnnouncementId').value = id;
             document.getElementById('annTitle').value = title;
             document.getElementById('annContent').value = content;
-            
             document.getElementById('formTitle').textContent = 'แก้ไขประกาศ';
-            document.getElementById('formIcon').className = 'fas fa-pen text-amber-500';
-            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> บันทึกการแก้ไข';
-            document.getElementById('submitBtn').className = 'flex-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-4 rounded-2xl font-bold btn-glow transition-all text-sm flex items-center justify-center gap-2';
             document.getElementById('cancelEditBtn').classList.remove('hidden');
-
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -332,9 +290,6 @@
             document.getElementById('announcementForm').reset();
             document.getElementById('editAnnouncementId').value = '';
             document.getElementById('formTitle').textContent = 'สร้างประกาศใหม่';
-            document.getElementById('formIcon').className = 'fas fa-edit';
-            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-paperplane"></i> โพสต์ประกาศ';
-            document.getElementById('submitBtn').className = 'flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-2xl font-bold btn-glow transition-all text-sm flex items-center justify-center gap-2';
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
