@@ -11,7 +11,6 @@
     <form id="loginForm">
         <input type="email" id="email" placeholder="อีเมล" required><br><br>
         <input type="password" id="password" placeholder="รหัสผ่าน" required><br><br>
-        <!-- เปลี่ยน type เป็น button และใส่ id -->
         <button type="button" id="loginBtn">Log In</button>
     </form>
     <p id="errorMsg" style="color: red;"></p>
@@ -20,16 +19,14 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
-        // มีบรรทัดนี้แค่ที่เดียวในไฟล์เท่านั้น
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // 🚨 เปลี่ยนชื่อตัวแปรเป็น mySupabase เพื่อหนี Error การตั้งชื่อซ้ำ
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ดักจับการ click ที่ปุ่มโดยตรง
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorMsg = document.getElementById('errorMsg');
             
-            // เช็คว่ากรอกข้อมูลครบไหม
             if (!email || !password) {
                 errorMsg.textContent = "กรุณากรอกอีเมลและรหัสผ่านให้ครบ";
                 return;
@@ -37,8 +34,8 @@
             
             errorMsg.textContent = "กำลังตรวจสอบ...";
 
-            // 1. ล็อกอินด้วย Email/Password
-            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            // ใช้ mySupabase ในการล็อกอิน
+            const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({
                 email: email,
                 password: password,
             });
@@ -48,20 +45,19 @@
                 return;
             }
 
-            // 2. ดึงข้อมูล Role จากตาราง profiles
+            // ใช้ mySupabase ดึงฐานข้อมูล
             const userId = authData.user.id;
-            const { data: profileData, error: profileError } = await supabase
+            const { data: profileData, error: profileError } = await mySupabase
                 .from('profiles')
                 .select('role')
                 .eq('id', userId)
                 .single();
 
             if (profileError || !profileData) {
-                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูลโปรไฟล์ (คุณยังไม่ได้กำหนด Role ให้ User นี้ในตาราง profiles)";
+                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูล Profile ของคุณในระบบ";
                 return;
             }
 
-            // 3. แยกเส้นทางตาม Role
             const role = profileData.role;
             if (role === 'admin' || role === 'teacher' || role === 'exam_creator') {
                 window.location.href = 'admin.html';
