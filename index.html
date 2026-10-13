@@ -3,241 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS Platform | เข้าสู่ระบบ</title>
-    
-    <!-- Google Fonts: Prompt -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- FontAwesome (สำหรับไอคอน) -->
+    <title>LMS | เข้าสู่ระบบระบบการเรียนการสอน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Tailwind CSS (ผ่าน CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- SweetAlert2 (สำหรับ Pop-up แจ้งเตือนสวยๆ) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- ตั้งค่า Tailwind -->
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Prompt', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: '#4f46e5',
-                        secondary: '#ec4899',
-                    }
-                }
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
+                    colors: { primary: '#1d4ed8', secondary: '#3b82f6', lightbg: '#f8fafc', darkbg: '#0f172a', darkbox: '#1e293b' } 
+                } 
             }
         }
     </script>
-
     <style>
-        /* เอฟเฟกต์กระจกฝ้า (Glassmorphism) */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .dark .glass-panel {
-            background: rgba(17, 24, 39, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Animation สำหรับพื้นหลัง */
-        .bg-animate {
-            background-size: 200% 200%;
-            animation: gradientMove 10s ease infinite;
-        }
-        @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* ปรับฟอนต์ของ SweetAlert ให้เข้ากับเว็บ */
-        div:where(.swal2-container) {
-            font-family: 'Prompt', sans-serif;
-        }
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); border: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-card { background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(51, 65, 85, 0.8); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-900 min-h-screen flex items-center justify-center transition-colors duration-500 bg-animate relative overflow-hidden">
-    
-    <!-- วงกลมแสงตกแต่งฉากหลัง -->
-    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 dark:opacity-40 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-secondary opacity-20 dark:opacity-40 rounded-full blur-3xl"></div>
+<body class="bg-lightbg dark:bg-darkbg min-h-screen flex items-center justify-center p-4 transition-colors duration-300">
 
-    <!-- ปุ่มสลับธีม (ซ้ายบน) -->
-    <button id="themeToggle" class="absolute top-5 right-5 p-3 rounded-full glass-panel text-gray-800 dark:text-gray-200 hover:scale-110 transition-transform shadow-lg z-10">
-        <i class="fas fa-moon text-xl" id="themeIcon"></i>
-    </button>
+    <!-- Login Container Card -->
+    <div class="glass-card w-full max-w-md p-8 rounded-3xl shadow-xl relative overflow-hidden">
+        
+        <!-- Decoration Glow -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
-    <!-- กล่อง Login -->
-    <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl z-10 mx-4">
         <div class="text-center mb-8">
-            <div class="inline-block p-4 rounded-2xl bg-gradient-to-tr from-primary to-secondary text-white mb-4 shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                <i class="fas fa-graduation-cap text-3xl"></i>
+            <div class="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center text-3xl font-bold mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                <i class="fas fa-graduation-cap"></i>
             </div>
-            <h2 class="text-3xl font-semibold text-gray-800 dark:text-white tracking-wide">เข้าสู่ระบบ</h2>
-            <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Learning Management System</p>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">LMS Online Platform</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">เข้าสู่ระบบเพื่อเริ่มทำข้อสอบและเรียนรู้</p>
         </div>
 
-        <form id="loginForm" class="space-y-6">
-            <!-- ช่องใส่อีเมล -->
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fas fa-envelope text-gray-400"></i>
+        <form id="loginForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">อีเมล (Email)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-envelope"></i></span>
+                    <input type="email" id="email" required placeholder="name@school.ac.th" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm">
                 </div>
-                <input type="email" id="email" class="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary dark:text-white transition-all shadow-sm" placeholder="อีเมลของคุณ" required>
             </div>
 
-            <!-- ช่องใส่รหัสผ่าน -->
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fas fa-lock text-gray-400"></i>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">รหัสผ่าน (Password)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm">
                 </div>
-                <input type="password" id="password" class="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary dark:text-white transition-all shadow-sm" placeholder="รหัสผ่าน" required>
             </div>
 
-            <!-- ปุ่ม Login -->
-            <button type="button" id="loginBtn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary hover:from-indigo-600 hover:to-pink-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex justify-center items-center gap-2 mt-4">
-                <span>เข้าสู่ระบบ</span>
-                <i class="fas fa-arrow-right"></i>
+            <button type="submit" class="w-full bg-primary hover:bg-blue-800 text-white py-3.5 rounded-xl font-bold text-base transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 transform hover:-translate-y-0.5">
+                เข้าสู่ระบบ <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </form>
+
+        <div class="mt-6 text-center text-xs text-gray-400">
+            ระบบบริหารจัดการการเรียนการสอนออนไลน์ &copy; 2026
+        </div>
     </div>
 
-    <script>
-        // ==========================
-        // 1. ระบบจัดการ Dark / Light Mode
-        // ==========================
-        const themeToggleBtn = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const htmlElement = document.documentElement;
+    <!-- Theme Toggle Floating Button -->
+    <button id="themeToggle" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white dark:bg-darkbox shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition-transform">
+        <i class="fas fa-moon text-lg" id="themeIcon"></i>
+    </button>
 
-        // เช็คว่าผู้ใช้เคยเลือกธีมไหนไว้ในเครื่อง
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    <script>
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
             htmlElement.classList.add('dark');
             themeIcon.classList.replace('fa-moon', 'fa-sun');
-        } else {
-            htmlElement.classList.remove('dark');
         }
-
-        // เมื่อกดปุ่มพระจันทร์/พระอาทิตย์
-        themeToggleBtn.addEventListener('click', () => {
+        document.getElementById('themeToggle').addEventListener('click', () => {
             htmlElement.classList.toggle('dark');
-            if (htmlElement.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-            } else {
-                localStorage.setItem('theme', 'light');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-            }
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ==========================
-        // 2. ระบบ Login ด้วย Supabase
-        // ==========================
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.getElementById('loginBtn').addEventListener('click', async () => {
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
-            // เช็คช่องว่าง
-            if (!email || !password) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'ข้อมูลไม่ครบถ้วน',
-                    text: 'กรุณากรอกอีเมลและรหัสผ่านให้ครบ',
-                    confirmButtonColor: '#4f46e5',
-                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-                });
+
+            Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const { data, error } = await mySupabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
                 return;
             }
 
-            // แสดง Pop-up โหลดหมุนๆ
-            Swal.fire({
-                title: 'กำลังตรวจสอบ...',
-                text: 'กรุณารอสักครู่',
-                allowOutsideClick: false,
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454',
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+            const { data: profile } = await mySupabase.from('profiles').select('role').eq('id', data.user.id).single();
+            Swal.close();
 
-            // ส่งข้อมูลไปตรวจ
-            const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
-
-            if (authError) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เข้าสู่ระบบไม่สำเร็จ',
-                    text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
-                    confirmButtonColor: '#4f46e5',
-                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-                });
-                return;
-            }
-
-            // ดึงข้อมูล Profile
-            const userId = authData.user.id;
-            const { data: profileData, error: profileError } = await mySupabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
-
-            if (profileError || !profileData) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่พบข้อมูล Profile ของคุณ กรุณาติดต่อแอดมิน',
-                    confirmButtonColor: '#4f46e5',
-                    background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                    color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-                });
-                return;
-            }
-
-            // ถ้าผ่านทั้งหมด แสดง Pop-up สำเร็จแล้วพาวาร์ปไปหน้าหลัก
-            Swal.fire({
-                icon: 'success',
-                title: 'เข้าสู่ระบบสำเร็จ!',
-                showConfirmButton: false,
-                timer: 1500,
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-            }).then(() => {
-                const role = profileData.role;
-                if (role === 'admin' || role === 'teacher' || role === 'exam_creator') {
-                    window.location.href = 'admin.html';
-                } else {
-                    window.location.href = 'student.html';
-                }
-            });
-        });
-        
-        // เพิ่มฟังก์ชัน: กดปุ่ม Enter ในช่องรหัสผ่านเพื่อ Login ได้เลย
-        document.getElementById('password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                document.getElementById('loginBtn').click();
+            if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'student.html';
             }
         });
     </script>
