@@ -50,7 +50,7 @@
                             <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">ดูรายชื่อการจองรายคนและย้ายเวลา</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">ดูรายชื่อการจองรายคนและย้ายเวลา (Realtime)</p>
                     </div>
                 </div>
                 <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
@@ -73,14 +73,14 @@
             </div>
         </div>
 
-        <!-- ตารางรายชื่อนักเรียนที่จอง Consult (รายคน + ย้ายเวลาได้) -->
+        <!-- ตารางรายชื่อนักเรียนจอง Consult (Realtime) -->
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-indigo-500"></i> รายชื่อนักเรียนที่จอง Consult แล้ว</h3>
-                <button onclick="loadBookedStudents()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชรายชื่อ</button>
+                <button onclick="loadBookedStudents()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
             </div>
             <div id="bookedStudentsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-80 overflow-y-auto">
-                <div class="text-center py-6 text-gray-400 text-sm">กำลังโหลดรายชื่อนักเรียนจอง...</div>
+                <div class="text-center py-6 text-gray-400 text-sm">กำลังโหลดรายชื่อ...</div>
             </div>
         </div>
 
@@ -130,10 +130,10 @@
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-indigo-500"></i> รายการ Slot ทั้งหมด</h3>
-                <button onclick="loadSlots()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรชข้อมูล</button>
+                <button onclick="loadSlots()" class="text-xs text-primary font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
             </div>
             <div id="slotsList" class="divide-y divide-gray-100 dark:divide-gray-800 max-h-96 overflow-y-auto">
-                <div class="text-center py-8 text-gray-400 text-sm">กำลังโหลดข้อมูล Slot...</div>
+                <div class="text-center py-8 text-gray-400 text-sm">กำลังโหลดข้อมูล...</div>
             </div>
         </div>
     </main>
@@ -163,6 +163,18 @@
             loadSettings();
             loadSlots();
             loadBookedStudents();
+            setupConsultRealtime();
+        }
+
+        // True Realtime Subscription สำหรับหน้าจัดการ Consult
+        function setupConsultRealtime() {
+            mySupabase
+                .channel('consult_manager_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, payload => {
+                    loadSlots();
+                    loadBookedStudents();
+                })
+                .subscribe();
         }
 
         async function loadSettings() {
@@ -270,7 +282,6 @@
                 const { error } = await mySupabase.from('consult_slots').insert(slotsToInsert);
                 if (!error) {
                     Swal.fire({ icon: 'success', title: `สร้างสำเร็จ ${slotsToInsert.length} ช่วงเวลา!`, timer: 1500, showConfirmButton: false });
-                    loadSlots();
                 } else {
                     Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
                 }
@@ -293,13 +304,13 @@
                 const startStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
                 const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 return `
-                    py-3 flex justify-between items-center text-sm">
+                    <div class="py-3 flex justify-between items-center text-sm">
                         <div>
                             <span class="font-bold text-gray-900 dark:text-white"><i class="fas fa-user-graduate mr-1.5 text-indigo-500"></i> ${s.profiles?.full_name || 'นักเรียน'}</span>
                             <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">⏰ เวลาเดิม: ${startStr} - ${endStr} น.</div>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}', '${s.start_time}')" class="px-3.5 py-1.5 bg-blue-50 text-primary dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">ย้ายเวลา</button>
+                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-blue-50 text-primary dark:bg-blue-950/40 dark:text-blue-300 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">ย้ายเวลา</button>
                             <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>
                         </div>
                     </div>
@@ -307,10 +318,8 @@
             }).join('');
         }
 
-        // ฟังก์ชันให้คุณครูกดย้ายเวลา (Reschedule) ให้กับนักเรียนรายคน
-        async function openRescheduleModal(oldSlotId, studentId, currentStart) {
+        async function openRescheduleModal(oldSlotId, studentId) {
             const nowIso = new Date().toISOString();
-            // ดึง Slot ว่างอื่นๆ ที่ยังไม่หมดเวลา
             const { data: availableSlots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').gt('end_time', nowIso).order('start_time', { ascending: true });
 
             if (!availableSlots || availableSlots.length === 0) {
@@ -326,10 +335,7 @@
 
             const { value: newSlotId } = await Swal.fire({
                 title: 'ย้ายเวลา Consult',
-                html: `
-                    <p class="text-xs text-gray-500 mb-3">เลือกช่วงเวลาใหม่ที่ต้องการย้ายให้มนุษย์/นักเรียนคนนี้:</p>
-                    <select id="newSlotSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border dark:border-gray-700 rounded-xl text-sm">${optionsHtml}</select>
-                `,
+                html: `<p class="text-xs text-gray-500 mb-3">เลือกช่วงเวลาใหม่:</p><select id="newSlotSelect" class="w-full px-4 py-3 bg-slate-50 dark:bg-darkinput border dark:border-gray-700 rounded-xl text-sm">${optionsHtml}</select>`,
                 showCancelButton: true,
                 confirmButtonText: 'ยืนยันย้ายเวลา',
                 cancelButtonText: 'ยกเลิก',
@@ -338,17 +344,10 @@
 
             if (newSlotId) {
                 Swal.fire({ title: 'กำลังย้ายเวลา...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                // 1. คืนสถานะ Slot เก่าให้ว่าง
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', oldSlotId);
-                // 2. จอง Slot ใหม่ให้เด็กคนนี้
                 await mySupabase.from('consult_slots').update({ status: 'booked', student_id: studentId }).eq('id', newSlotId);
-                // 3. อัปเดต booked_slot_id ใน consult_quotas
                 await mySupabase.from('consult_quotas').update({ booked_slot_id: newSlotId }).eq('student_id', studentId);
-
-                Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1500, showConfirmButton: false });
-                loadSlots();
-                loadBookedStudents();
+                Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1200, showConfirmButton: false });
             }
         }
 
@@ -388,15 +387,11 @@
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', slotId);
                 if (studentId) { await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', studentId); }
                 Swal.fire({ icon: 'success', title: 'ยกเลิกสำเร็จ', timer: 1200, showConfirmButton: false });
-                loadSlots();
-                loadBookedStudents();
             }
         }
 
         async function deleteSlot(id) {
             await mySupabase.from('consult_slots').delete().eq('id', id);
-            loadSlots();
-            loadBookedStudents();
         }
 
         async function resetAllQuotas() {
@@ -405,8 +400,6 @@
                 await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null });
                 await mySupabase.from('consult_slots').update({ status: 'available', student_id: null });
                 Swal.fire({ icon: 'success', title: 'รีเซ็ตสำเร็จ', timer: 1200, showConfirmButton: false });
-                loadSlots();
-                loadBookedStudents();
             }
         }
 
