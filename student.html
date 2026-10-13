@@ -29,39 +29,28 @@
             border: 1px solid rgba(226, 232, 240, 0.9);
             backdrop-filter: blur(12px);
             box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
         }
         .dark .tech-card {
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 15, 29, 0.95) 100%);
             border: 1px solid rgba(56, 189, 248, 0.15);
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
         }
-        .tech-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(2, 132, 199, 0.4);
-            box-shadow: 0 15px 35px -5px rgba(2, 132, 199, 0.15);
-        }
-        .neon-glow-btn {
-            box-shadow: 0 0 20px rgba(2, 132, 199, 0.35);
-            transition: all 0.3s ease;
-        }
-        .neon-glow-btn:hover {
-            box-shadow: 0 0 30px rgba(2, 132, 199, 0.6);
-            transform: translateY(-2px);
-        }
+        .tech-card:hover { transform: translateY(-4px); border-color: rgba(2, 132, 199, 0.4); }
+        .neon-glow-btn { box-shadow: 0 0 20px rgba(2, 132, 199, 0.35); transition: all 0.3s ease; }
+        .neon-glow-btn:hover { box-shadow: 0 0 30px rgba(2, 132, 199, 0.6); transform: translateY(-2px); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #0f172a !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
-    <!-- High-Tech Glass Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center font-extrabold text-xl shadow-lg shadow-sky-500/30">
-                        <i class="fas fa-atom animate-spin-slow"></i>
+                        <i class="fas fa-atom"></i>
                     </div>
                     <div>
                         <h1 class="font-black text-xl tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 dark:from-sky-400 dark:to-indigo-300 bg-clip-text text-transparent">STUDENT HUB</h1>
@@ -69,7 +58,6 @@
                     </div>
                 </div>
 
-                <!-- Navigation Controls + Theme Toggle -->
                 <div class="flex items-center gap-3">
                     <button onclick="window.location.href='announcements.html'" class="px-4 py-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl font-bold text-xs border border-amber-500/20 hover:bg-amber-500 hover:text-white transition-all">
                         <i class="fas fa-bullhorn mr-1.5"></i> ประกาศ
@@ -78,8 +66,7 @@
                         <i class="fas fa-calendar-check"></i> จอง Consult
                     </button>
                     
-                    <!-- Theme Switcher Button -->
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 transition-all">
                         <i class="fas fa-moon text-lg" id="themeIcon"></i>
                     </button>
 
@@ -91,32 +78,24 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
-        
-        <!-- Futuristic Banner -->
-        <div class="p-8 md:p-10 rounded-3xl bg-gradient-to-r from-sky-600 via-indigo-700 to-slate-900 text-white relative overflow-hidden shadow-2xl shadow-sky-600/20 border border-sky-400/20">
-            <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-sky-400/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-sky-200 text-xs font-bold mb-3 border border-white/20">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Academic Online System
-                    </div>
-                    <h2 class="text-3xl font-black tracking-tight">ยินดีต้อนรับนักเรียน! 🚀</h2>
-                    <p class="text-xs text-sky-100/90 mt-1 max-w-xl">เข้าทำแบบทดสอบวัดผลการเรียนรู้ หรือเลือกจอง Slot เวลาปรึกษาคุณครูได้ทันทีตลอด 24 ชั่วโมง</p>
+        <div class="p-8 md:p-10 rounded-3xl bg-gradient-to-r from-sky-600 via-indigo-700 to-slate-900 text-white relative overflow-hidden shadow-2xl border border-sky-400/20">
+            <div class="relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-sky-200 text-xs font-bold mb-3">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Academic Online System
                 </div>
+                <h2 class="text-3xl font-black tracking-tight">ยินดีต้อนรับนักเรียน! 🚀</h2>
+                <p class="text-xs text-sky-100/90 mt-1">ทำแบบทดสอบวัดผล หรือเลือกจอง Slot เวลาปรึกษาคุณครูได้ทันที</p>
             </div>
         </div>
 
-        <!-- Section: ข้อสอบกำลังจะเปิดใน 24 ชม. -->
         <div id="upcomingSec" class="hidden space-y-4">
-            <h3 class="font-extrabold text-base text-amber-500 flex items-center gap-2 tracking-wide uppercase">
+            <h3 class="font-extrabold text-base text-amber-500 flex items-center gap-2 uppercase">
                 <i class="fas fa-bolt animate-bounce"></i> ข้อสอบกำลังจะเปิดใน 24 ชั่วโมง
             </h3>
             <div id="upcomingGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
         </div>
 
-        <!-- Section: ศูนย์การทำข้อสอบ -->
         <div class="tech-card p-8 rounded-3xl space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b border-slate-200/80 dark:border-slate-800">
                 <div>
@@ -125,20 +104,16 @@
                     </h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">เลือกทำข้อสอบตามรายวิชาและตรวจสอบผลวิเคราะห์คะแนน</p>
                 </div>
-                
-                <!-- Filter Tabs -->
                 <div class="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800">
                     <button id="tabPending" onclick="switchTab('pending')" class="px-5 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-sm transition-all">ยังไม่ได้ทำ</button>
                     <button id="tabDone" onclick="switchTab('done')" class="px-5 py-2 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 transition-all">ทำเสร็จแล้ว</button>
                 </div>
             </div>
 
-            <!-- Exam Grid -->
             <div id="examGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="col-span-full text-center py-12 text-slate-400 text-sm">กำลังโหลดข้อมูลข้อสอบ...</div>
             </div>
         </div>
-
     </main>
 
     <script>
@@ -181,7 +156,7 @@
                 document.getElementById('upcomingSec').classList.remove('hidden');
                 document.getElementById('upcomingGrid').innerHTML = upcoming.map(e => `
                     <div class="tech-card p-6 rounded-3xl border-l-4 border-l-amber-500 space-y-2">
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px]">${e.exam_categories?.name || 'ทั่วไป'}</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 font-bold text-[10px]">${e.exam_categories?.name || 'ทั่วไป'}</span>
                         <h4 class="font-bold text-slate-900 dark:text-white text-sm">${e.title}</h4>
                         <div class="text-xs text-slate-400 mt-2"><i class="far fa-clock text-amber-500 mr-1"></i> เปิด: ${new Date(e.start_time).toLocaleString('th-TH')}</div>
                     </div>
@@ -218,14 +193,37 @@
                         <h4 class="font-bold text-slate-900 dark:text-white text-base leading-snug mb-2">${e.title}</h4>
                     </div>
 
-                    <button onclick="window.location.href='${isDone ? `exam_result.html?exam_id=${e.id}` : `exam_take.html?id=${e.id}`}'" class="w-full py-3 ${isDone ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200' : 'bg-sky-600 hover:bg-sky-500 text-white neon-glow-btn'} font-bold text-xs rounded-2xl transition-all">
+                    <button onclick="handleExamClick('${e.id}', '${e.passcode || ''}', ${isDone})" class="w-full py-3 ${isDone ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200' : 'bg-sky-600 hover:bg-sky-500 text-white neon-glow-btn'} font-bold text-xs rounded-2xl transition-all">
                         ${isDone ? '<i class="fas fa-chart-pie mr-1.5"></i> ดูผลวิเคราะห์ AI' : '<i class="fas fa-play mr-1.5"></i> เริ่มทำข้อสอบ'}
                     </button>
                 </div>
             `).join('');
         }
 
-        // Modal เลือกจอง Slot Consult
+        async function handleExamClick(id, passcode, isDone) {
+            if (isDone) {
+                window.location.href = `exam_result.html?exam_id=${id}`;
+                return;
+            }
+
+            if (passcode) {
+                const { value: inputCode } = await Swal.fire({
+                    title: '🔒 ข้อสอบนี้มีการตั้งรหัสผ่าน',
+                    input: 'password',
+                    inputPlaceholder: 'กรอกรหัสผ่านเพื่อเข้าทำข้อสอบ...',
+                    showCancelButton: true,
+                    confirmButtonText: 'ยืนยันรหัสผ่าน'
+                });
+
+                if (inputCode !== passcode) {
+                    Swal.fire('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบรหัสผ่านกับคุณครูอีกครั้ง', 'error');
+                    return;
+                }
+            }
+
+            window.location.href = `exam_take.html?id=${id}`;
+        }
+
         async function openBookingConsultModal() {
             const { data: setting } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
             const now = new Date();
@@ -269,6 +267,13 @@
 
                 await mySupabase.from('consult_slots').update({ status: 'booked', student_id: session.user.id }).eq('id', slotId);
                 await mySupabase.from('consult_quotas').upsert({ student_id: session.user.id, has_booked: true, booked_slot_id: slotId });
+
+                // แจ้งเตือนครูหมวด Consult
+                await mySupabase.from('notifications').insert([{
+                    category: 'consult',
+                    message: `นักเรียนได้เลือกจอง Slot เวลา Consult เรียบร้อยแล้ว`,
+                    is_read: false
+                }]);
 
                 Swal.fire({ icon: 'success', title: 'จอง Slot เวลาสำเร็จ!', timer: 1500, showConfirmButton: false });
             }
