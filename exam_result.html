@@ -14,7 +14,6 @@
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; user-select: none; }
-        /* ป้องกันการดาวน์โหลดและสั่งพิมพ์เฉลย */
         @media print { body { display: none !important; } }
     </style>
 </head>
@@ -36,15 +35,18 @@
             <p id="resultStatusText" class="text-xs text-gray-500">ทำสอบเสร็จสิ้น</p>
         </div>
 
-        <!-- เฉลยข้อสอบ (ล็อคการโหลด) -->
+        <!-- เฉลยข้อสอบ (ล็อคการดาวน์โหลด) -->
         <div class="bg-white dark:bg-darkbox p-8 rounded-3xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-800">
             <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> เฉลยคำตอบย้อนหลัง</h3>
             <div id="solutionsList" class="space-y-4"></div>
         </div>
 
-        <!-- ระบบ Q&A สอบถามคุณครูโดยตรง -->
+        <!-- ระบบ Q&A สอบถามคุณครูโดยตรง (Realtime) -->
         <div class="bg-white dark:bg-darkbox p-8 rounded-3xl shadow-xl space-y-4 border border-gray-100 dark:border-gray-800">
-            <h3 class="font-bold text-base flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><i class="fas fa-comments"></i> สอบถามข้อสงสัยกับคุณครู</h3>
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><i class="fas fa-comments"></i> สอบถามข้อสงสัยกับคุณครู (Realtime Chat)</h3>
+                <span class="text-[10px] bg-emerald-100 text-emerald-600 px-2.5 py-1 rounded-full font-bold animate-pulse">● เชื่อมต่อสด</span>
+            </div>
             <div id="qaMessagesList" class="space-y-3 max-h-60 overflow-y-auto"></div>
             <div class="flex gap-2">
                 <input id="qaInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs" placeholder="พิมพ์ข้อสงสัยเกี่ยวกับข้อสอบชุดนี้ส่งถึงคุณครู...">
@@ -71,6 +73,17 @@
 
             await loadSolutions();
             await loadQaMessages();
+            setupQaRealtime();
+        }
+
+        // เปิดใช้งาน Realtime สำหรับการทักถาม Q&A
+        function setupQaRealtime() {
+            mySupabase
+                .channel('exam_qa_realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'exam_questions_qa', filter: `attempt_id=eq.${attemptId}` }, payload => {
+                    loadQaMessages();
+                })
+                .subscribe();
         }
 
         async function loadSolutions() {
@@ -97,7 +110,7 @@
                                 <span class="font-bold text-emerald-600">เฉลยที่ถูกต้อง: ${String.fromCharCode(65 + q.correct_option_index)}</span>
                             </div>
                         ` : `
-                            <div class="text-gray-600">คำตอบของคุณ: ${userAns?.subjective_answer || '-'}<br><span class="text-amber-600 font-bold">(รอคุณครูตรวจคะแนนอัตนัย)</span></div>
+                            <div class="text-gray-600">คำตอบของคุณ: ${userAns?.subjective_answer || '-'}<br><span class="text-amber-600 font-bold">(ตรวจแล้ว ได้คะแนน: ${userAns?.score_obtained \vert{}\vert{} 0} /${q.points})</span></div>
                         `}
                     </div>
                 `;
