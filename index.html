@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>เข้าสู่ระบบ | LMS</title>
+    <!-- โหลด Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>เข้าสู่ระบบ</h2>
+    <form id="loginForm">
+        <input type="email" id="email" placeholder="อีเมล" required><br><br>
+        <input type="password" id="password" placeholder="รหัสผ่าน" required><br><br>
+        <button type="submit">Log In</button>
+    </form>
+    <p id="errorMsg" style="color: red;"></p>
+
+    <script>
+        // ใส่ URL และ Anon Key จากตั้งค่า Supabase ของคุณ
+        const SUPABASE_URL = 'https://your-project-url.supabase.co';
+        const SUPABASE_KEY = 'your-anon-key';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            
+            errorMsg.textContent = "กำลังตรวจสอบ...";
+
+            // 1. ล็อกอินด้วย Email/Password
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (authError) {
+                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                return;
+            }
+
+            // 2. ดึงข้อมูล Role จากตาราง profiles
+            const userId = authData.user.id;
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
+
+            if (profileError || !profileData) {
+                errorMsg.textContent = "ไม่พบข้อมูลโปรไฟล์ กรุณาติดต่อแอดมิน";
+                return;
+            }
+
+            // 3. แยกเส้นทางตาม Role
+            const role = profileData.role;
+            if (role === 'admin' || role === 'teacher' || role === 'exam_creator') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'student.html';
+            }
+        });
+    </script>
+</body>
+</html>
