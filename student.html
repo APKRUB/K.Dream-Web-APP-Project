@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS | พื้นที่ของนักเรียน</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -12,69 +12,78 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#4f46e5', secondary: '#ec4899' } } }
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
+                    colors: { primary: '#1d4ed8', secondary: '#3b82f6', lightbg: '#f8fafc', darkbg: '#0f172a', darkbox: '#1e293b' } 
+                } 
+            }
         }
     </script>
     <style>
-        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
-        .dark .glass-nav { background: rgba(17, 24, 39, 0.8); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(226, 232, 240, 1); }
+        .dark .glass-nav { background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(30, 41, 59, 1); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
+    <nav class="glass-nav fixed w-full top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-2">
-                    <div class="p-2 bg-primary text-white rounded-lg"><i class="fas fa-book-open"></i></div>
-                    <span class="font-semibold text-xl dark:text-white">LMS Student</span>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center font-bold shadow-md">
+                        <i class="fas fa-book-reader"></i>
+                    </div>
+                    <span class="font-bold text-xl text-gray-800 dark:text-white">LMS Student</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span id="welcomeMsg" class="hidden sm:block text-gray-600 dark:text-gray-300">กำลังโหลด...</span>
-                    <button id="themeToggle" class="text-gray-500 dark:text-gray-300 hover:text-primary transition-colors"><i class="fas fa-moon text-xl" id="themeIcon"></i></button>
-                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors shadow-sm"><i class="fas fa-sign-out-alt mr-2"></i> ออกจากระบบ</button>
+                
+                <div class="flex items-center gap-3">
+                    <!-- Notification Bell (ตามที่คุณขอ ให้นักเรียนมีกระดิ่งเช็คประวัติประกาศได้) -->
+                    <div class="relative">
+                        <button onclick="toggleNotifications()" class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700">
+                            <i class="fas fa-bell"></i>
+                            <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-darkbox"></span>
+                        </button>
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-darkbox rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                            <div class="p-4 border-b border-gray-100 dark:border-gray-700 font-bold text-gray-800 dark:text-white">ประกาศและการแจ้งเตือน</div>
+                            <div id="notifList" class="max-h-64 overflow-y-auto p-2 text-sm"></div>
+                        </div>
+                    </div>
+
+                    <span id="welcomeMsg" class="hidden md:inline text-sm font-medium text-gray-600 dark:text-gray-300">กำลังโหลด...</span>
+                    
+                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkbox text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-gray-200 dark:border-gray-700">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <button id="logoutBtn" class="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออก</span>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
-        
-        <!-- ระบบ Announcement (ประกาศจากระบบ) -->
-        <div class="mb-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 p-4 rounded-r-xl shadow-sm">
-            <div class="flex items-start">
-                <div class="flex-shrink-0 mt-0.5">
-                    <i class="fas fa-bullhorn text-blue-500 dark:text-blue-400 text-lg"></i>
-                </div>
-                <div class="ml-3 w-full">
-                    <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-300 uppercase tracking-wider">ประกาศจากระบบ</h3>
-                    <div class="mt-1 text-sm text-blue-700 dark:text-blue-200" id="announcementContent">
-                        <p>ยินดีต้อนรับเข้าสู่ระบบห้องสอบออนไลน์ ขณะนี้ยังไม่มีประกาศใหม่จากคุณครูครับ</p>
-                    </div>
-                </div>
-            </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
+        <div class="mb-8 bg-white dark:bg-darkbox p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 border-l-4 border-l-primary">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ชุดข้อสอบที่เปิดให้ทำ</h1>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">เลือกชุดข้อสอบที่คุณต้องการทำเพื่อเริ่มต้นระบบทดสอบ</p>
         </div>
 
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">ข้อสอบของคุณ</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">เลือกชุดข้อสอบที่เปิดให้ทำในขณะนี้</p>
-        </div>
-
-        <!-- รายการข้อสอบ (จะถูกดึงมาจากฐานข้อมูลอัตโนมัติ) -->
+        <!-- รายการข้อสอบ (Dynamic Fetch) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="examList">
-            <!-- สถานะกำลังโหลด -->
-            <div class="col-span-full text-center py-10">
-                <i class="fas fa-circle-notch fa-spin text-3xl text-primary mb-3"></i>
-                <p class="text-gray-500 dark:text-gray-400">กำลังดึงข้อมูลข้อสอบจากระบบ...</p>
+            <div class="col-span-full text-center py-12 text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-3 text-primary"></i>
+                <p>กำลังโหลดข้อสอบ...</p>
             </div>
         </div>
     </main>
 
     <script>
-        // 1. ระบบ Theme
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -88,106 +97,94 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // 2. ระบบ Supabase
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function initPage() {
-            // เช็คการล็อกอิน
             const { data: { session } } = await mySupabase.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
 
-            // เช็คสิทธิ์นักเรียน
-            const { data: profile } = await mySupabase.from('profiles').select('full_name, role').eq('id', session.user.id).single();
-            if (!profile || profile.role !== 'student') { window.location.href = 'index.html'; return; }
+            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
+            if (!profile || profile.role !== 'student') { window.location.href = 'admin.html'; return; }
 
-            // แสดงชื่อนักเรียน
-            document.getElementById('welcomeMsg').innerHTML = `สวัสดี, <span class="font-semibold text-primary">${profile.full_name || 'นักเรียน'}</span>`;
-            
-            // เรียกฟังก์ชันดึงข้อมูลข้อสอบ
+            document.getElementById('welcomeMsg').textContent = `สวัสดี, ${profile.full_name || 'นักเรียน'}`;
             loadExams();
+            fetchNotifications();
         }
 
-        // 3. ฟังก์ชันดึงข้อสอบจากฐานข้อมูล
         async function loadExams() {
             const examList = document.getElementById('examList');
-            
-            // ดึงข้อมูลจากตาราง exams
-            const { data: exams, error } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
+            // ดึงเฉพาะข้อสอบที่ตั้งค่า is_published = true
+            const { data: exams, error } = await mySupabase.from('exams').select('*, categories(name)').eq('is_published', true).order('created_at', { ascending: false });
 
-            // กรณีไม่มีข้อสอบในระบบ หรือเกิด Error
             if (error || !exams || exams.length === 0) {
                 examList.innerHTML = `
-                    <div class="col-span-full bg-white dark:bg-gray-800 rounded-2xl p-10 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div class="w-20 h-20 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-box-open text-4xl text-gray-400"></i>
+                    <div class="col-span-full bg-white dark:bg-darkbox rounded-2xl p-12 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="w-16 h-16 bg-blue-50 dark:bg-slate-800 text-primary rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                            <i class="fas fa-box-open"></i>
                         </div>
-                        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">ยังไม่มีชุดข้อสอบในขณะนี้</h3>
-                        <p class="text-gray-500 dark:text-gray-400 mt-2">คุณครูหรือผู้ดูแลระบบยังไม่ได้เปิดให้ทำข้อสอบใดๆ กรุณารอประกาศเพิ่มเติมครับ</p>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">ยังไม่มีชุดข้อสอบที่เปิดสอบในขณะนี้</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">กรุณารอคุณครูประกาศเปิดให้ทำข้อสอบครับ</p>
                     </div>
                 `;
                 return;
             }
 
-            // ถ้ามีข้อสอบ ให้แสดงผลเป็นการ์ด (เตรียมไว้สำหรับอนาคต)
-            // *ตอนนี้ถ้าตาราง exams ว่างเปล่า โค้ดส่วนนี้จะไม่ทำงาน
-            let html = '';
-            exams.forEach(exam => {
-                html += `
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all transform hover:-translate-y-1">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="p-3 bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 rounded-xl"><i class="fas fa-file-alt text-xl"></i></div>
-                            <span class="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-1 rounded-full">เปิดสอบ</span>
+            examList.innerHTML = exams.map(ex => `
+                <div class="bg-white dark:bg-darkbox rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs bg-blue-50 dark:bg-blue-900/40 text-primary dark:text-blue-300 px-3 py-1 rounded-full font-semibold">${ex.categories?.name || 'ทั่วไป'}</span>
+                            <span class="text-xs text-green-600 dark:text-green-400 font-semibold"><i class="fas fa-check-circle mr-1"></i>พร้อมสอบ</span>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">${exam.title}</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4"><i class="far fa-clock mr-1"></i> เวลา: ${exam.time_limit} นาที</p>
-                        <button onclick="startExam('${exam.id}')" class="w-full bg-primary hover:bg-indigo-600 text-white py-2 rounded-lg transition-colors">เริ่มทำข้อสอบ</button>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-2">${ex.title}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4"><i class="far fa-clock mr-1"></i> เวลาทำข้อสอบ: ${ex.time_limit} นาที</p>
                     </div>
-                `;
-            });
-            examList.innerHTML = html;
+                    <button onclick="startExam('${ex.id}')" class="w-full bg-primary hover:bg-blue-800 text-white py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
+                        เริ่มทำข้อสอบ <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            `).join('');
         }
 
-        // 4. ระบบกดเริ่มทำข้อสอบ
         function startExam(examId) {
             Swal.fire({
-                title: 'เตรียมความพร้อม',
-                text: "เมื่อกดเริ่มแล้ว ระบบจะเริ่มจับเวลาทันที คุณพร้อมหรือไม่?",
-                icon: 'warning',
+                title: 'พร้อมเริ่มทำข้อสอบ?',
+                text: "เมื่อกดเริ่มแล้ว ระบบจะเริ่มจับเวลาทันที",
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#4f46e5',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'พร้อม, เริ่มสอบเลย',
-                cancelButtonText: 'ยกเลิก',
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // ป้องกัน Error 404 โดยเช็คก่อนว่ามีไฟล์ exam.html ไหม ถ้ามีจะเปลี่ยนหน้าไปให้
-                    window.location.href = `exam.html?id=${examId}`;
-                }
+                confirmButtonColor: '#1d4ed8',
+                confirmButtonText: 'เริ่มสอบเลย',
+                cancelButtonText: 'ยกเลิก'
+            }).then((res) => {
+                if(res.isConfirmed) window.location.href = `exam.html?id=${examId}`;
             });
         }
 
-        // 5. ปุ่มออกจากระบบ
+        // Notifications Bell สำหรับนักเรียน
+        function toggleNotifications() {
+            const drop = document.getElementById('notifDropdown');
+            drop.classList.toggle('hidden');
+            if(!drop.classList.contains('hidden')) document.getElementById('notifBadge').classList.add('hidden');
+        }
+
+        async function fetchNotifications() {
+            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5);
+            const list = document.getElementById('notifList');
+            if(!data || data.length === 0) { list.innerHTML = '<div class="text-center py-4 text-gray-400">ไม่มีการแจ้งเตือน</div>'; return; }
+            document.getElementById('notifBadge').classList.remove('hidden');
+            list.innerHTML = data.map(n => `
+                <div class="p-3 border-b dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                    <div class="font-bold text-primary text-xs">${n.type === 'announcement' ? '<i class="fas fa-bullhorn"></i> ประกาศจากโรงเรียน' : '<i class="fas fa-bell"></i> แจ้งเตือน'}</div>
+                    <div class="mt-1 text-gray-700 dark:text-gray-300 text-xs">${n.message}</div>
+                </div>
+            `).join('');
+        }
+
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            Swal.fire({
-                title: 'ออกจากระบบ?',
-                text: "คุณต้องการออกจากระบบใช่หรือไม่",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'ใช่, ออกจากระบบ',
-                cancelButtonText: 'ยกเลิก',
-                background: htmlElement.classList.contains('dark') ? '#1f2937' : '#ffffff',
-                color: htmlElement.classList.contains('dark') ? '#ffffff' : '#545454'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    await mySupabase.auth.signOut();
-                    window.location.href = 'index.html';
-                }
+            Swal.fire({ title: 'ออกจากระบบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' }).then(async (res) => {
+                if (res.isConfirmed) { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
             });
         });
 
