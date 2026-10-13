@@ -26,13 +26,14 @@
         .dark .glass-nav { background: rgba(9, 13, 22, 0.9); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
         .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05); }
         .dark .glossy-card { background: #0f172a; border: 1px solid rgba(30, 41, 59, 1); }
-        .admin-card-btn { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .admin-card-btn { transition: all 0.25s ease; }
         .admin-card-btn:hover { transform: translateY(-4px); box-shadow: 0 12px 25px -5px rgba(2, 132, 199, 0.2); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #0f172a !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
-    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
@@ -45,8 +46,15 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400">ระบบจัดการการเรียนรู้และจัดการเวลา Consult</p>
                     </div>
                 </div>
+
                 <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm">
+                    <!-- ปุ่มกระดิ่งแจ้งเตือนสำหรับครู (แยก 4 หมวด) -->
+                    <button onclick="openTeacherNotificationModal()" class="relative w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-all">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full items-center justify-center border-2 border-white dark:border-darkbg">0</span>
+                    </button>
+
+                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                         <i class="fas fa-moon text-lg" id="themeIcon"></i>
                     </button>
                     <button onclick="logoutAdmin()" class="px-4 py-2.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-2xl font-bold text-xs hover:bg-red-100 transition-all border border-red-200/50 dark:border-red-900/50">
@@ -57,71 +65,47 @@
         </div>
     </nav>
 
-    <!-- Main Dashboard -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
-        
-        <!-- Welcome Banner -->
-        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-indigo-600 to-slate-900 text-white shadow-xl shadow-sky-600/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div class="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-indigo-600 to-slate-900 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <span class="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wider uppercase mb-3 inline-block">Management System</span>
-                <h2 class="text-2xl font-extrabold tracking-tight">ยินดีต้อนรับผู้ดูแลระบบ 👋</h2>
-                <p class="text-xs text-sky-100 mt-1">เข้าถึงศูนย์จัดการชุดข้อสอบ ประกาศข่าวสาร และจัดการระบบ Consult ได้จากที่นี่</p>
+                <span class="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider mb-3 inline-block">Management System</span>
+                <h2 class="text-2xl font-extrabold">ยินดีต้อนรับผู้ดูแลระบบ 👋</h2>
+                <p class="text-xs text-sky-100 mt-1">จัดการคลังข้อสอบ ประกาศข่าวสาร และคิวระบบ Consult ได้ทันที</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="window.location.href='admin_exam.html'" class="px-5 py-3 bg-white text-sky-700 font-bold text-xs rounded-2xl hover:bg-sky-50 transition-all shadow-md">
-                    <i class="fas fa-file-signature mr-2"></i> จัดการชุดข้อสอบ
+                <button onclick="window.location.href='admin_exams.html'" class="px-5 py-3 bg-white text-sky-700 font-bold text-xs rounded-2xl hover:bg-sky-50 shadow-md">
+                    <i class="fas fa-file-signature mr-2"></i> ศูนย์จัดการชุดข้อสอบ
                 </button>
-                <button onclick="window.location.href='admin_consult.html'" class="px-5 py-3 bg-sky-500 text-white font-bold text-xs rounded-2xl hover:bg-sky-400 transition-all shadow-md">
+                <button onclick="window.location.href='admin_consult.html'" class="px-5 py-3 bg-sky-500 text-white font-bold text-xs rounded-2xl hover:bg-sky-400 shadow-md">
                     <i class="fas fa-calendar-alt mr-2"></i> จัดการ Consult
                 </button>
             </div>
         </div>
 
-        <!-- Grid เมนูหลักหลัก (ยุบเหลือเมนูสืบค้นและจัดการตรงจุด) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            <!-- 1. ศูนย์จัดการชุดข้อสอบ -->
-            <div onclick="window.location.href='admin_exam.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
-                <div class="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center text-2xl group-hover:bg-sky-600 group-hover:text-white transition-all">
-                    <i class="fas fa-folder-open"></i>
-                </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div onclick="window.location.href='admin_exams.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
+                <div class="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 flex items-center justify-center text-2xl group-hover:bg-sky-600 group-hover:text-white transition-all"><i class="fas fa-folder-open"></i></div>
                 <div>
-                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ศูนย์จัดการชุดข้อสอบ</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">สร้าง/แก้ไขชุดข้อสอบ ตั้งเวลาเปิด-ปิด เพิ่มหมวดหมู่ และใส่ไฟล์ PDF โจทย์</p>
-                </div>
-                <div class="pt-2 flex items-center text-xs font-bold text-sky-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform">
-                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                    <h3 class="font-bold text-lg">ศูนย์จัดการชุดข้อสอบ</h3>
+                    <p class="text-xs text-slate-500 mt-1">สร้าง/แก้ไขชุดข้อสอบ ตั้งเวลาเปิด-ปิด รหัสผ่าน เพิ่มหมวดหมู่ และจัดการโจทย์</p>
                 </div>
             </div>
 
-            <!-- 2. ระบบจัดการเวลา Consult -->
             <div onclick="window.location.href='admin_consult.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
+                <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all"><i class="fas fa-calendar-check"></i></div>
                 <div>
-                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ระบบจัดการเวลา Consult</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">ตั้งเวลาเปิดจองอัตโนมัติ เจน Slot ซ้ำวัน ยกเลิกคิว และย้ายเวลานักเรียน</p>
-                </div>
-                <div class="pt-2 flex items-center text-xs font-bold text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
-                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                    <h3 class="font-bold text-lg">ระบบจัดการเวลา Consult</h3>
+                    <p class="text-xs text-slate-500 mt-1">ตั้งเวลาเปิดจอง เจน Slot ซ้ำวัน ยกเลิกคิว และย้ายเวลานักเรียน</p>
                 </div>
             </div>
 
-            <!-- 3. ศูนย์รวมประกาศและข่าวสาร -->
             <div onclick="window.location.href='announcements.html'" class="glossy-card p-7 rounded-3xl admin-card-btn cursor-pointer space-y-4 group">
-                <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition-all">
-                    <i class="fas fa-bullhorn"></i>
-                </div>
+                <div class="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center text-2xl group-hover:bg-amber-600 group-hover:text-white transition-all"><i class="fas fa-bullhorn"></i></div>
                 <div>
-                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">ศูนย์รวมประกาศและข่าวสาร</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">โพสต์ประกาศข่าวสาร แจ้งเตือนนักเรียน แนบไฟล์เอกสารและรูปภาพ</p>
-                </div>
-                <div class="pt-2 flex items-center text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform">
-                    เข้าสู่เมนูจัดการ <i class="fas fa-arrow-right ml-1.5"></i>
+                    <h3 class="font-bold text-lg">ศูนย์รวมประกาศข่าวสาร</h3>
+                    <p class="text-xs text-slate-500 mt-1">โพสต์ประกาศ แจ้งเตือนนักเรียน แนบไฟล์เอกสารและรูปภาพ</p>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -129,6 +113,8 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let allNotifications = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -143,10 +129,75 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        async function initPage() {
+            loadNotifications();
+        }
+
+        async function loadNotifications() {
+            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(30);
+            allNotifications = data || [];
+            const unreadCount = allNotifications.filter(n => !n.is_read).length;
+            const badge = document.getElementById('notifBadge');
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Modal แสดงการแจ้งเตือนแบ่ง 4 หมวด
+        async function openTeacherNotificationModal(activeCategory = 'all') {
+            await mySupabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+            document.getElementById('notifBadge').classList.add('hidden');
+
+            const filteredNotifs = activeCategory === 'all' 
+                ? allNotifications 
+                : allNotifications.filter(n => (n.category || 'general') === activeCategory);
+
+            let itemsHtml = filteredNotifs.map(n => {
+                const timeStr = new Date(n.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                let catBadge = '<span class="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[10px] font-bold">ทั่วไป</span>';
+                if (n.category === 'consult') catBadge = '<span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-600 dark:bg-indigo-950 text-[10px] font-bold">Consult</span>';
+                if (n.category === 'submission') catBadge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 dark:bg-emerald-950 text-[10px] font-bold">ส่งข้อสอบ</span>';
+                if (n.category === 'grading') catBadge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 dark:bg-amber-950 text-[10px] font-bold">ตรวจข้อสอบ</span>';
+
+                return `
+                    <div class="py-3 border-b dark:border-slate-800 text-left text-xs space-y-1">
+                        <div class="flex justify-between items-center">${catBadge} <span class="text-[10px] text-slate-400">${timeStr}</span></div>
+                        <div class="font-semibold text-slate-800 dark:text-slate-200">${n.message}</div>
+                    </div>
+                `;
+            }).join('');
+
+            Swal.fire({
+                title: '🔔 ศูนย์แจ้งเตือนสำหรับคุณครู',
+                html: `
+                    <div class="space-y-4">
+                        <div class="flex justify-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold">
+                            <button onclick="openTeacherNotificationModal('all')" class="px-2.5 py-1.5 rounded-lg ${activeCategory === 'all' ? 'bg-white text-sky-600 shadow' : 'text-slate-500'}">ทั้งหมด</button>
+                            <button onclick="openTeacherNotificationModal('general')" class="px-2.5 py-1.5 rounded-lg ${activeCategory === 'general' ? 'bg-white text-sky-600 shadow' : 'text-slate-500'}">ทั่วไป</button>
+                            <button onclick="openTeacherNotificationModal('consult')" class="px-2.5 py-1.5 rounded-lg ${activeCategory === 'consult' ? 'bg-white text-sky-600 shadow' : 'text-slate-500'}">Consult</button>
+                            <button onclick="openTeacherNotificationModal('submission')" class="px-2.5 py-1.5 rounded-lg ${activeCategory === 'submission' ? 'bg-white text-sky-600 shadow' : 'text-slate-500'}">ส่งข้อสอบ</button>
+                            <button onclick="openTeacherNotificationModal('grading')" class="px-2.5 py-1.5 rounded-lg ${activeCategory === 'grading' ? 'bg-white text-sky-600 shadow' : 'text-slate-500'}">ตรวจข้อสอบ</button>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+                            ${itemsHtml || '<div class="py-8 text-center text-slate-400">ไม่มีรายการแจ้งเตือนในหมวดนี้</div>'}
+                        </div>
+                    </div>
+                `,
+                width: '550px',
+                confirmButtonText: 'ปิดหน้าต่าง'
+            });
+        }
+
         async function logoutAdmin() {
             await mySupabase.auth.signOut();
             window.location.href = 'index.html';
         }
+
+        initPage();
     </script>
 </body>
 </html>
