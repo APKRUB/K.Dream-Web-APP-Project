@@ -56,12 +56,12 @@
             border-color: rgba(59, 130, 246, 0.5);
         }
 
-        /* Slide-over Drawer Animation */
-        #rightDrawer {
+        /* Slide-over Left Drawer Animation */
+        #leftDrawer {
             transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(100%);
+            transform: translateX(-100%);
         }
-        #rightDrawer.open {
+        #leftDrawer.open {
             transform: translateX(0);
         }
         #drawerOverlay {
@@ -81,17 +81,25 @@
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
+                
+                <!-- ฝั่งซ้าย: ปุ่ม Hamburger (ซ้ายสุด) + โลโก้ Admin -->
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-lg shadow-blue-500/30 text-lg">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <div>
-                        <span class="font-extrabold text-xl text-gray-900 dark:text-white tracking-tight block">Admin Dashboard</span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">ระบบบริหารจัดการโรงเรียน</span>
+                    <button onclick="toggleLeftDrawer()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primaryHover transition-all shadow-lg shadow-blue-500/30 cursor-pointer" title="เปิดเมนูด่วน">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    
+                    <div class="flex items-center gap-3 ml-1">
+                        <div class="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-lg shadow-blue-500/30 text-lg">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="hidden sm:block">
+                            <span class="font-extrabold text-xl text-gray-900 dark:text-white tracking-tight block">Admin Dashboard</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">ระบบบริหารจัดการโรงเรียน</span>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- จัดเรียงปุ่มทางขวาให้ปุ่ม Hamburger อยู่ริมสุดเพื่อให้มือขวาเอื้อมกดง่ายที่สุด -->
+                <!-- ฝั่งขวา: กระดิ่งแจ้งเตือน + ปุ่มสลับธีม + ปุ่มออกจากระบบ -->
                 <div class="flex items-center gap-3">
                     <!-- Notification Bell -->
                     <div class="relative">
@@ -113,18 +121,18 @@
                         <i class="fas fa-moon text-lg" id="themeIcon"></i>
                     </button>
 
-                    <!-- Hamburger Menu Button (อยู่ขวาสุด) -->
-                    <button onclick="toggleRightDrawer()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primaryHover transition-all shadow-lg shadow-blue-500/30 cursor-pointer" title="เมนูด่วน">
-                        <i class="fas fa-bars text-lg"></i>
+                    <!-- Logout Button -->
+                    <button id="logoutBtn" class="bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 border border-red-200/50 dark:border-red-900/50">
+                        <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Right Slide-over Drawer (แถบเมนูด้านขวา) -->
-    <div id="drawerOverlay" onclick="toggleRightDrawer()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65]"></div>
-    <div id="rightDrawer" class="fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-darkbox shadow-2xl z-[70] p-6 flex flex-col border-l border-gray-200 dark:border-gray-800">
+    <!-- Left Slide-over Drawer (แถบเมนูด้านซ้าย) -->
+    <div id="drawerOverlay" onclick="toggleLeftDrawer()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65]"></div>
+    <div id="leftDrawer" class="fixed top-0 left-0 h-full w-80 sm:w-96 bg-white dark:bg-darkbox shadow-2xl z-[70] p-6 flex flex-col border-r border-gray-200 dark:border-gray-800">
         <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100 dark:border-gray-800">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-primary flex items-center justify-center font-bold">
@@ -135,7 +143,7 @@
                     <p class="text-xs text-gray-400">ทางลัดจัดการระบบ</p>
                 </div>
             </div>
-            <button onclick="toggleRightDrawer()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-darkinput text-gray-500 hover:text-red-500 transition-colors">
+            <button onclick="toggleLeftDrawer()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-darkinput text-gray-500 hover:text-red-500 transition-colors">
                 <i class="fas fa-times text-lg"></i>
             </button>
         </div>
@@ -161,7 +169,7 @@
                 </div>
             </a>
 
-            <div onclick="devAlert('ตรวจข้อสอบอัตนัย'); toggleRightDrawer();" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-gray-700 dark:text-gray-200 hover:text-purple-500 transition-all border border-gray-100 dark:border-gray-800 group cursor-pointer">
+            <div onclick="devAlert('ตรวจข้อสอบอัตนัย'); toggleLeftDrawer();" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-gray-700 dark:text-gray-200 hover:text-purple-500 transition-all border border-gray-100 dark:border-gray-800 group cursor-pointer">
                 <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-tasks"></i>
                 </div>
@@ -171,7 +179,7 @@
                 </div>
             </div>
 
-            <div onclick="devAlert('จัดการนักเรียน'); toggleRightDrawer();" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-200 hover:text-emerald-500 transition-all border border-gray-100 dark:border-gray-800 group cursor-pointer">
+            <div onclick="devAlert('จัดการนักเรียน'); toggleLeftDrawer();" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-200 hover:text-emerald-500 transition-all border border-gray-100 dark:border-gray-800 group cursor-pointer">
                 <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <i class="fas fa-users"></i>
                 </div>
@@ -269,8 +277,8 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
 
-        function toggleRightDrawer() {
-            const drawer = document.getElementById('rightDrawer');
+        function toggleLeftDrawer() {
+            const drawer = document.getElementById('leftDrawer');
             const overlay = document.getElementById('drawerOverlay');
             drawer.classList.toggle('open');
             overlay.classList.toggle('open');
