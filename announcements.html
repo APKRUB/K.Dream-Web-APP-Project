@@ -15,7 +15,14 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#1d4ed8', secondary: '#3b82f6', lightbg: '#f1f5f9', darkbg: '#0f172a', darkbox: '#1e293b' } 
+                    colors: { 
+                        primary: '#2563eb', 
+                        secondary: '#3b82f6', 
+                        lightbg: '#f1f5f9', 
+                        darkbg: '#090d16',    /* ดำกรมท่าเข้มตัดกับกล่องชัดเจนขึ้น */
+                        darkbox: '#111827',   /* สีกล่องการ์ดในโหมดมืด (Gray 900) */
+                        darkinput: '#1f2937'  /* สีช่องกรอกข้อมูลในโหมดมืด (Gray 800) */
+                    } 
                 } 
             }
         }
@@ -23,23 +30,22 @@
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(203, 213, 225, 0.8); }
-        .dark .glass-nav { background: rgba(15, 23, 42, 0.92); border-bottom: 1px solid rgba(51, 65, 85, 0.8); }
+        .dark .glass-nav { background: rgba(17, 24, 39, 0.92); border-bottom: 1px solid rgba(31, 41, 55, 1); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         
-        /* สไตล์ปุ่มกดแบบโมเดิร์น */
-        .btn-modern { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(29, 78, 216, 0.15); }
-        .btn-modern:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29, 78, 216, 0.25); }
+        .btn-modern { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-modern:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
         .btn-modern:active { transform: translateY(0); }
     </style>
 </head>
-<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300">
+<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-4">
-                    <button onclick="goBack()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm">
+                    <button onclick="goBack()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm">
                         <i class="fas fa-arrow-left"></i>
                     </button>
                     <span class="font-bold text-xl text-gray-900 dark:text-white flex items-center gap-2">
@@ -47,7 +53,7 @@
                     </span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm">
+                    <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors shadow-sm">
                         <i class="fas fa-moon" id="themeIcon"></i>
                     </button>
                 </div>
@@ -55,14 +61,14 @@
         </div>
     </nav>
 
-    <!-- Main Content (Layout 2 ฝั่ง ตัดกันชัดเจน) -->
+    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- ฝั่งซ้าย: ฟอร์มสร้าง/แก้ไขประกาศ (แสดงเฉพาะ Admin/Teacher) -->
-            <div id="creatorSection" class="lg:col-span-5 bg-white dark:bg-darkbox p-8 rounded-3xl shadow-md border border-gray-200 dark:border-gray-700 sticky top-28">
-                <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
-                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 text-primary rounded-2xl flex items-center justify-center text-xl shadow-inner">
+            <!-- ฝั่งซ้าย: ฟอร์มสร้าง/แก้ไขประกาศ -->
+            <div id="creatorSection" class="lg:col-span-5 bg-white dark:bg-darkbox p-8 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-800 sticky top-28">
+                <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-950 text-primary rounded-2xl flex items-center justify-center text-xl shadow-inner border border-blue-200 dark:border-blue-900">
                         <i class="fas fa-edit" id="formIcon"></i>
                     </div>
                     <div>
@@ -74,19 +80,19 @@
                 <form id="announcementForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
                     <input type="hidden" id="editAnnouncementId">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">หัวข้อประกาศ <span class="text-red-500">*</span></label>
-                        <input type="text" id="annTitle" required placeholder="เช่น กำหนดการสอบกลางภาควิชา..." class="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:border-primary outline-none text-sm transition-colors shadow-sm">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">หัวข้อประกาศ <span class="text-red-500">*</span></label>
+                        <input type="text" id="annTitle" required placeholder="เช่น กำหนดการสอบกลางภาควิชา..." class="w-full px-4 py-3 bg-white dark:bg-darkinput border-2 border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:border-primary outline-none text-sm transition-colors shadow-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5">เนื้อหาประกาศ <span class="text-red-500">*</span></label>
-                        <textarea id="annContent" required rows="6" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:border-primary outline-none text-sm resize-none transition-colors shadow-sm"></textarea>
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">เนื้อหาประกาศ <span class="text-red-500">*</span></label>
+                        <textarea id="annContent" required rows="6" placeholder="พิมพ์รายละเอียดประกาศที่นี่..." class="w-full px-4 py-3 bg-white dark:bg-darkinput border-2 border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:border-primary outline-none text-sm resize-none transition-colors shadow-sm"></textarea>
                     </div>
 
                     <div class="flex gap-3 pt-2">
-                        <button type="submit" id="submitBtn" class="flex-1 bg-primary hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold btn-modern transition-all text-sm flex items-center justify-center gap-2">
-                            <i class="fas fa-paper-plane"></i> โพสต์ประกาศ
+                        <button type="submit" id="submitBtn" class="flex-1 bg-primary hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold btn-modern transition-all text-sm flex items-center justify-center gap-2">
+                            <i class="fas fa-paperplane"></i> โพสต์ประกาศ
                         </button>
-                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden px-5 py-3.5 bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-sm hover:bg-gray-300 transition-colors">
+                        <button type="button" id="cancelEditBtn" onclick="resetForm()" class="hidden px-5 py-3.5 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-sm hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">
                             ยกเลิก
                         </button>
                     </div>
@@ -95,15 +101,15 @@
 
             <!-- ฝั่งขวา: ประวัติการประกาศ (Feed) -->
             <div id="feedSection" class="lg:col-span-7 space-y-4">
-                <div class="flex justify-between items-center bg-white dark:bg-darkbox p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center bg-white dark:bg-darkbox p-6 rounded-2xl shadow-md border border-gray-200 dark:border-gray-800">
                     <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
                         <i class="fas fa-history text-primary"></i> ประวัติประกาศทั้งหมด
                     </h3>
-                    <span id="annCount" class="text-xs bg-blue-100 text-primary dark:bg-blue-900/50 dark:text-blue-300 px-3.5 py-1.5 rounded-full font-bold">0 รายการ</span>
+                    <span id="annCount" class="text-xs bg-blue-100 text-primary dark:bg-blue-950 dark:text-blue-300 px-3.5 py-1.5 rounded-full font-bold border border-blue-200 dark:border-blue-900">0 รายการ</span>
                 </div>
 
                 <div id="announcementFeed" class="space-y-4">
-                    <div class="bg-white dark:bg-darkbox p-8 rounded-2xl text-center text-gray-400 border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="bg-white dark:bg-darkbox p-8 rounded-2xl text-center text-gray-400 border border-gray-200 dark:border-gray-800 shadow-md">
                         <i class="fas fa-spinner fa-spin text-2xl mb-2 text-primary"></i>
                         <p class="text-sm">กำลังโหลดประวัติประกาศ...</p>
                     </div>
@@ -121,7 +127,6 @@
         let currentUser = null;
         let userRole = '';
 
-        // Theme Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -149,10 +154,9 @@
             }
 
             loadAnnouncements();
-            markNotificationsAsRead(); // เมื่อเข้ามาหน้านี้ ถือว่าเปิดอ่านแล้ว ลบจุดแดงแจ้งเตือน
+            markNotificationsAsRead();
         }
 
-        // ฟังก์ชันลบจุดแดงแจ้งเตือนเมื่อเปิดอ่าน
         async function markNotificationsAsRead() {
             await mySupabase.from('notifications').update({ is_read: true }).eq('is_read', false);
         }
@@ -171,8 +175,8 @@
             const feed = document.getElementById('announcementFeed');
             if (error || !anns || anns.length === 0) {
                 feed.innerHTML = `
-                    <div class="bg-white dark:bg-darkbox p-8 rounded-2xl text-center text-gray-400 border border-gray-200 dark:border-gray-700 shadow-sm">
-                        <i class="fas fa-bullhorn text-3xl mb-2 text-gray-300"></i>
+                    <div class="bg-white dark:bg-darkbox p-8 rounded-2xl text-center text-gray-400 border border-gray-200 dark:border-gray-800 shadow-md">
+                        <i class="fas fa-bullhorn text-3xl mb-2 text-gray-300 dark:text-gray-600"></i>
                         <p class="text-sm">ยังไม่มีประกาศในระบบ</p>
                     </div>
                 `;
@@ -191,22 +195,22 @@
                 const titleText = a.title || 'ประกาศจากทางโรงเรียน';
 
                 return `
-                    <div class="bg-white dark:bg-darkbox p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all relative overflow-hidden group">
+                    <div class="bg-white dark:bg-darkbox p-6 rounded-2xl shadow-md border border-gray-200 dark:border-gray-800 hover:shadow-lg transition-all relative overflow-hidden group">
                         <div class="absolute top-0 left-0 w-2 h-full bg-primary"></div>
                         <div class="flex justify-between items-start mb-3 pl-2">
                             <div>
                                 <h4 class="font-bold text-lg text-gray-900 dark:text-white">${titleText}</h4>
-                                <span class="text-xs text-gray-400 dark:text-gray-500"><i class="far fa-clock mr-1"></i> ${dateStr}</span>
+                                <span class="text-xs text-gray-400 dark:text-gray-400"><i class="far fa-clock mr-1"></i> ${dateStr}</span>
                             </div>
                             ${isStaff ? `
                                 <div class="flex gap-1.5">
-                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 hover:bg-amber-100 flex items-center justify-center text-xs transition-colors shadow-sm" title="แก้ไข"><i class="fas fa-edit"></i></button>
-                                    <button onclick="deleteAnnouncement('${a.id}')" class="w-9 h-9 rounded-xl bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400 hover:bg-red-100 flex items-center justify-center text-xs transition-colors shadow-sm" title="ลบ"><i class="fas fa-trash"></i></button>
+                                    <button onclick="prepareEdit('${a.id}', \`${a.title || ''}\`, \`${a.content}\`)" class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400 hover:bg-amber-100 flex items-center justify-center text-xs transition-colors shadow-sm border border-amber-200/50 dark:border-amber-900/50" title="แก้ไข"><i class="fas fa-edit"></i></button>
+                                    <button onclick="deleteAnnouncement('${a.id}')" class="w-9 h-9 rounded-xl bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 hover:bg-red-100 flex items-center justify-center text-xs transition-colors shadow-sm border border-red-200/50 dark:border-red-900/50" title="ลบ"><i class="fas fa-trash"></i></button>
                                 </div>
                             ` : ''}
                         </div>
                         <div class="pl-2">
-                            <p class="text-gray-700 dark:text-gray-200 text-sm whitespace-pre-line leading-relaxed bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-gray-200/60 dark:border-gray-800">${a.content}</p>
+                            <p class="text-gray-700 dark:text-gray-200 text-sm whitespace-pre-line leading-relaxed bg-slate-50 dark:bg-darkinput p-4 rounded-xl border border-gray-200/60 dark:border-gray-700">${a.content}</p>
                         </div>
                     </div>
                 `;
@@ -262,7 +266,7 @@
             document.getElementById('formTitle').textContent = 'สร้างประกาศใหม่';
             document.getElementById('formIcon').className = 'fas fa-edit';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-paperplane"></i> โพสต์ประกาศ';
-            document.getElementById('submitBtn').className = 'flex-1 bg-primary hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold btn-modern transition-all text-sm flex items-center justify-center gap-2';
+            document.getElementById('submitBtn').className = 'flex-1 bg-primary hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold btn-modern transition-all text-sm flex items-center justify-center gap-2';
             document.getElementById('cancelEditBtn').classList.add('hidden');
         }
 
