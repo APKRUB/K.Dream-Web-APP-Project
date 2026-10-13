@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th" class="light select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | ผลการสอบและเฉลย</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#2563eb', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } } } }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; user-select: none; }
+        /* ป้องกันการดาวน์โหลดและสั่งพิมพ์เฉลย */
+        @media print { body { display: none !important; } }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-gray-800 dark:text-gray-100" oncontextmenu="return false;">
+
+    <nav class="bg-white dark:bg-darkbox border-b dark:border-gray-800 fixed w-full top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 h-20 flex justify-between items-center">
+            <button onclick="window.location.href='student.html'" class="px-4 py-2 bg-slate-100 dark:bg-darkinput text-gray-700 dark:text-gray-200 rounded-xl text-xs font-bold"><i class="fas fa-home mr-1"></i> กลับหน้าหลัก</button>
+            <h1 class="font-extrabold text-lg text-gray-900 dark:text-white">รายงานผลการสอบและเฉลย</h1>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto pt-28 pb-20 px-4 space-y-8">
+        <!-- Summary Score Card -->
+        <div class="bg-white dark:bg-darkbox p-8 rounded-3xl shadow-xl text-center space-y-4 border border-gray-100 dark:border-gray-800">
+            <div class="w-16 h-16 bg-blue-50 text-primary rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto"><i class="fas fa-trophy"></i></div>
+            <h2 id="resultExamTitle" class="text-xl font-extrabold">สรุปคะแนนสอบ</h2>
+            <div id="scoreDisplay" class="text-4xl font-black text-primary">0 / 0</div>
+            <p id="resultStatusText" class="text-xs text-gray-500">ทำสอบเสร็จสิ้น</p>
+        </div>
+
+        <!-- เฉลยข้อสอบ (ล็อคการโหลด) -->
+        <div class="bg-white dark:bg-darkbox p-8 rounded-3xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-800">
+            <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-check-circle text-emerald-500"></i> เฉลยคำตอบย้อนหลัง</h3>
+            <div id="solutionsList" class="space-y-4"></div>
+        </div>
+
+        <!-- ระบบ Q&A สอบถามคุณครูโดยตรง -->
+        <div class="bg-white dark:bg-darkbox p-8 rounded-3xl shadow-xl space-y-4 border border-gray-100 dark:border-gray-800">
+            <h3 class="font-bold text-base flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><i class="fas fa-comments"></i> สอบถามข้อสงสัยกับคุณครู</h3>
+            <div id="qaMessagesList" class="space-y-3 max-h-60 overflow-y-auto"></div>
+            <div class="flex gap-2">
+                <input id="qaInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs" placeholder="พิมพ์ข้อสงสัยเกี่ยวกับข้อสอบชุดนี้ส่งถึงคุณครู...">
+                <button onclick="sendQaMessage()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs">ส่งคำถาม</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const attemptId = urlParams.get('attempt_id');
+        let currentAttempt = null;
+
+        async function initPage() {
+            if (!attemptId) { window.location.href = 'student.html'; return; }
+            const { data: attempt } = await mySupabase.from('exam_attempts').select('*, exams(*)').eq('id', attemptId).single();
+            currentAttempt = attempt;
+            document.getElementById('resultExamTitle').textContent = attempt.exams?.title || 'ผลการสอบ';
+            document.getElementById('scoreDisplay').textContent = `${attempt.score} / ${attempt.max_score}`;
+
+            await loadSolutions();
+            await loadQaMessages();
+        }
+
+        async function loadSolutions() {
+            const { data: questions } = await mySupabase.from('exam_questions').select('*, exam_options(*)').eq('exam_id', currentAttempt.exam_id).order('question_number');
+            const { data: userAnswers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId);
+
+            const ansMap = {};
+            (userAnswers || []).forEach(a => ansMap[a.question_id] = a);
+
+            const container = document.getElementById('solutionsList');
+            container.innerHTML = (questions || []).map(q => {
+                const userAns = ansMap[q.id];
+                const isCorrect = q.question_type === 'mcq' && userAns && userAns.selected_option_index === q.correct_option_index;
+
+                return `
+                    <div class="p-4 rounded-2xl border ${isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-red-50/50 border-red-200'} text-xs space-y-2">
+                        <div class="flex justify-between font-bold">
+                            <span>ข้อที่ ${q.question_number}: ${q.question_text || ''}</span>
+                            <span class="${isCorrect ? 'text-emerald-600' : 'text-red-500'}">${isCorrect ? '✓ ถูกต้อง' : '✗ ผิด'}</span>
+                        </div>
+                        ${q.question_type === 'mcq' ? `
+                            <div class="text-gray-600 dark:text-gray-300">
+                                คำตอบของคุณ: ${userAns && userAns.selected_option_index !== undefined ? String.fromCharCode(65 + userAns.selected_option_index) : 'ไม่ได้ตอบ'}<br>
+                                <span class="font-bold text-emerald-600">เฉลยที่ถูกต้อง: ${String.fromCharCode(65 + q.correct_option_index)}</span>
+                            </div>
+                        ` : `
+                            <div class="text-gray-600">คำตอบของคุณ: ${userAns?.subjective_answer || '-'}<br><span class="text-amber-600 font-bold">(รอคุณครูตรวจคะแนนอัตนัย)</span></div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadQaMessages() {
+            const { data: msgs } = await mySupabase.from('exam_questions_qa').select('*').eq('attempt_id', attemptId).order('created_at');
+            const list = document.getElementById('qaMessagesList');
+            if (!msgs || msgs.length === 0) {
+                list.innerHTML = `<div class="text-center py-4 text-gray-400 text-xs">ยังไม่มีข้อความสอบถาม</div>`;
+                return;
+            }
+            list.innerHTML = msgs.map(m => `
+                <div class="p-3 bg-slate-50 dark:bg-darkinput rounded-xl text-xs space-y-1">
+                    <div class="font-bold text-indigo-600"><i class="fas fa-question-circle mr-1"></i> นักเรียน: ${m.message}</div>
+                    ${m.reply ? `<div class="text-emerald-600 font-semibold pl-4">↳ คุณครูตอบ: ${m.reply}</div>` : '<div class="text-gray-400 italic pl-4">↳ รอตอบกลับจากคุณครู...</div>'}
+                </div>
+            `).join('');
+        }
+
+        async function sendQaMessage() {
+            const msg = document.getElementById('qaInput').value;
+            if (!msg) return;
+            const { data: { session } } = await mySupabase.auth.getSession();
+            await mySupabase.from('exam_questions_qa').insert([{
+                attempt_id: attemptId,
+                student_id: session.user.id,
+                message: msg
+            }]);
+            document.getElementById('qaInput').value = '';
+            loadQaMessages();
+        }
+
+        initPage();
+    </script>
+</body>
+</html>
