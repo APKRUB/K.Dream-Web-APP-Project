@@ -19,9 +19,11 @@
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
+        // มีบรรทัดนี้แค่ที่เดียวในไฟล์เท่านั้น
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // เปลี่ยนมาดักจับการ click ที่ปุ่มโดยตรง
+        // ดักจับการ click ที่ปุ่มโดยตรง
         document.getElementById('loginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -42,7 +44,7 @@
             });
 
             if (authError) {
-                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง (" + authError.message + ")";
+                errorMsg.textContent = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
                 return;
             }
 
@@ -55,7 +57,7 @@
                 .single();
 
             if (profileError || !profileData) {
-                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูลโปรไฟล์ (ไม่เจอ UUID ในตาราง profiles)";
+                errorMsg.textContent = "ล็อกอินผ่านแล้ว แต่ไม่พบข้อมูลโปรไฟล์ (คุณยังไม่ได้กำหนด Role ให้ User นี้ในตาราง profiles)";
                 return;
             }
 
