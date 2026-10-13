@@ -3,205 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์ควบคุมระบบผู้ดูแล (Admin Dashboard)</title>
+    <title>LMS | จัดการชุดข้อสอบ</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { 
-                extend: { 
-                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#2563eb', primaryHover: '#1d4ed8', lightbg: '#f8fafc', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } 
-                } 
-            }
+            theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#2563eb', darkbg: '#030712', darkbox: '#111827', darkinput: '#1f2937' } } }
         }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
         .dark .glass-nav { background: rgba(3, 7, 18, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(31, 41, 55, 0.8); }
-        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .glossy-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .dark .glossy-card {
-            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
-        }
-        .glossy-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.15);
-            border-color: rgba(37, 99, 235, 0.4);
-        }
-        #leftDrawer {
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(-100%);
-        }
-        #leftDrawer.open { transform: translateX(0); }
-        #drawerOverlay {
-            transition: opacity 0.35s ease;
-            opacity: 0;
-            pointer-events: none;
-        }
-        #drawerOverlay.open { opacity: 1; pointer-events: auto; }
+        .glossy-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.8); box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); }
+        .dark .glossy-card { background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
-<body class="bg-lightbg dark:bg-darkbg min-h-screen transition-colors duration-300 text-gray-800 dark:text-gray-100 selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-gray-800 dark:text-gray-100">
 
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleLeftDrawer()" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primaryHover transition-all shadow-lg shadow-blue-500/30 cursor-pointer" title="เปิดเมนูด่วน">
-                        <i class="fas fa-bars text-lg"></i>
-                    </button>
-                    <div class="flex items-center gap-3 ml-1">
-                        <div class="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-lg shadow-blue-500/30 text-lg"><i class="fas fa-shield-alt"></i></div>
-                        <div class="hidden sm:block">
-                            <span class="font-extrabold text-xl text-gray-900 dark:text-white tracking-tight block">Admin Dashboard</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">ระบบบริหารจัดการโรงเรียน</span>
-                        </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-gray-200 dark:border-gray-700 hover:bg-primary hover:text-white transition-all"><i class="fas fa-arrow-left text-lg"></i></button>
+                    <div>
+                        <h1 class="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm"><i class="fas fa-file-signature"></i></span>
+                            ศูนย์จัดการชุดข้อสอบ
+                        </h1>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">สร้าง กำหนดประเภทข้อสอบ และติดตามสถิติการสอบ</p>
                     </div>
                 </div>
-                
+
+                <!-- ปุ่มเพิ่มชุดข้อสอบ และ เพิ่มหมวดหมู่ ไว้มุมขวา -->
                 <div class="flex items-center gap-3">
-                    <div class="relative">
-                        <button onclick="toggleNotifications()" class="relative w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all shadow-sm border border-gray-200 dark:border-gray-700">
-                            <i class="fas fa-bell text-lg"></i>
-                            <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white dark:border-darkbox"></span>
-                        </button>
-                        <div id="notifDropdown" class="hidden absolute right-0 mt-3 w-80 bg-white dark:bg-darkbox rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden z-50">
-                            <div class="p-4 border-b border-gray-100 dark:border-gray-800 font-bold text-gray-900 dark:text-white flex justify-between items-center text-sm">
-                                <span>การแจ้งเตือนระบบ</span>
-                                <button onclick="window.location.href='announcements.html'" class="text-xs text-primary font-semibold hover:underline">ดูประกาศทั้งหมด</button>
-                            </div>
-                            <div id="notifList" class="max-h-64 overflow-y-auto p-2 text-sm"></div>
-                        </div>
-                    </div>
-
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all shadow-sm border border-gray-200 dark:border-gray-700">
-                        <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                    <button onclick="openCategoryModal()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-darkinput dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-2xl font-bold text-xs transition-all flex items-center gap-2 border border-gray-300 dark:border-gray-700">
+                        <i class="fas fa-tags text-indigo-500"></i> เพิ่ม/จัดการหมวดหมู่
                     </button>
-
-                    <button id="logoutBtn" class="bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 border border-red-200/50 dark:border-red-900/50">
-                        <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
+                    <button onclick="openCreateExamModal()" class="px-5 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> เพิ่มชุดข้อสอบ
                     </button>
+                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-gray-200 dark:border-gray-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div id="drawerOverlay" onclick="toggleLeftDrawer()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[65]"></div>
-    <div id="leftDrawer" class="fixed top-0 left-0 h-full w-80 sm:w-96 bg-white dark:bg-darkbox shadow-2xl z-[70] p-6 flex flex-col border-r border-gray-200 dark:border-gray-800">
-        <div class="flex justify-between items-center mb-8 pb-4 border-b border-gray-100 dark:border-gray-800">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-primary flex items-center justify-center font-bold"><i class="fas fa-compass"></i></div>
-                <div>
-                    <h3 class="font-bold text-base text-gray-900 dark:text-white">เมนูด่วน (Quick Menu)</h3>
-                    <p class="text-xs text-gray-400">ทางลัดจัดการระบบ</p>
-                </div>
-            </div>
-            <button onclick="toggleLeftDrawer()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-darkinput text-gray-500 hover:text-red-500 transition-colors"><i class="fas fa-times text-lg"></i></button>
-        </div>
-
-        <div class="space-y-3 flex-1 overflow-y-auto pr-1">
-            <a href="admin_upload.html" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-gray-700 dark:text-gray-200 hover:text-primary transition-all border border-gray-100 dark:border-gray-800 group">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-primary flex items-center justify-center group-hover:scale-110 transition-transform"><i class="fas fa-file-signature"></i></div>
-                <div><div class="font-bold text-sm">จัดการชุดข้อสอบ</div><div class="text-xs text-gray-400">สร้างโจทย์และกระดาษคำตอบ</div></div>
-            </a>
-            <a href="announcements.html" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-sky-50 dark:hover:bg-sky-950/40 text-gray-700 dark:text-gray-200 hover:text-sky-500 transition-all border border-gray-100 dark:border-gray-800 group">
-                <div class="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/50 text-sky-500 flex items-center justify-center group-hover:scale-110 transition-transform"><i class="fas fa-bullhorn"></i></div>
-                <div><div class="font-bold text-sm">ระบบประกาศข่าวสาร</div><div class="text-xs text-gray-400">โพสต์ประกาศและแนบไฟล์</div></div>
-            </a>
-            <a href="admin_consult.html" class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-darkinput/60 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-gray-700 dark:text-gray-200 hover:text-indigo-500 transition-all border border-gray-100 dark:border-gray-800 group">
-                <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform"><i class="fas fa-calendar-check"></i></div>
-                <div><div class="font-bold text-sm">จัดการเวลา Consult</div><div class="text-xs text-gray-400">ตั้งค่าเปิด-ปิดและสร้าง Slot</div></div>
-            </a>
-        </div>
-
-        <div class="pt-4 border-t border-gray-100 dark:border-gray-800 mt-4">
-            <button id="drawerLogoutBtn" class="w-full bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 hover:bg-red-100 py-3 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 border border-red-200/50 dark:border-red-900/50"><i class="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
-        </div>
-    </div>
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
-        
-        <!-- Widget คิว Consult (Realtime) -->
-        <div id="consultLiveWidget" class="hidden glossy-card p-6 rounded-3xl border-2 border-indigo-500/50 relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
-            <div class="absolute -left-10 -top-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/30 animate-pulse">
-                    <i class="fas fa-headset"></i>
-                </div>
-                <div>
-                    <div class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">สถานะ Consult ปัจจุบัน</div>
-                    <h3 id="currentConsultTitle" class="text-lg font-extrabold text-gray-900 dark:text-white mt-0.5">-</h3>
-                    <p id="currentConsultTime" class="text-xs text-gray-500 dark:text-gray-400"></p>
-                </div>
-            </div>
-            
-            <div class="bg-indigo-50 dark:bg-indigo-950/50 px-6 py-4 rounded-2xl border border-indigo-100 dark:border-indigo-900 text-right w-full md:w-auto">
-                <div class="text-xs font-bold text-indigo-500 uppercase tracking-wider">คิวถัดไป (Upcoming)</div>
-                <div id="upcomingStudentName" class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">-</div>
-                <div id="upcomingCountdown" class="text-xs text-indigo-600 dark:text-indigo-300 font-semibold mt-1">-</div>
-            </div>
+        <!-- รายการข้อสอบกำลังจะเปิดภายใน 1 วัน (จางๆ + Countdown) -->
+        <div id="upcomingExamsSection" class="hidden space-y-4">
+            <h3 class="font-bold text-base text-amber-600 dark:text-amber-400 flex items-center gap-2"><i class="fas fa-hourglass-half animate-spin"></i> ชุดข้อสอบที่กำลังจะเปิดภายใน 24 ชั่วโมง</h3>
+            <div id="upcomingExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
-        <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-primary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight" id="welcomeMsg">ยินดีต้อนรับ, ผู้ดูแลระบบ</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-medium">ศูนย์กลางควบคุมระบบการเรียนการสอนและข้อสอบออนไลน์</p>
+        <!-- รายการข้อสอบทั้งหมด -->
+        <div class="glossy-card p-8 rounded-3xl space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2"><i class="fas fa-layer-group text-primary"></i> รายการชุดข้อสอบในระบบ</h3>
+                <input type="text" id="searchExam" oninput="renderExams()" placeholder="ค้นหาตามชื่อหรือรหัสวิชา..." class="px-4 py-2 bg-slate-50 dark:bg-darkinput border border-gray-200 dark:border-gray-700 rounded-xl text-xs w-64">
             </div>
-            <div class="px-5 py-2.5 bg-blue-50 dark:bg-blue-950/80 text-primary dark:text-blue-300 rounded-2xl font-bold text-xs shadow-inner border border-blue-200/50 dark:border-blue-900/50 flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span> สถานะระบบ: ปกติ
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div onclick="window.location.href='admin_upload.html'" class="glossy-card p-7 rounded-3xl cursor-pointer group">
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-file-signature"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-primary transition-colors">จัดการชุดข้อสอบ</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">สร้างข้อสอบ, กำหนดโครงสร้างปรนัย/อัตนัย และกระดาษคำตอบ</p>
-            </div>
-
-            <div onclick="window.location.href='announcements.html'" class="glossy-card p-7 rounded-3xl cursor-pointer group">
-                <div class="w-14 h-14 bg-gradient-to-br from-sky-400 to-blue-600 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-bullhorn"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-primary transition-colors">ระบบประกาศข่าวสาร</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">โพสต์ประกาศแจ้งเตือน ตรวจสอบ และจัดการประวัติย้อนหลัง</p>
-            </div>
-
-            <div onclick="window.location.href='admin_consult.html'" class="glossy-card p-7 rounded-3xl cursor-pointer group border-2 border-indigo-500/30">
-                <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-calendar-check"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-indigo-600 transition-colors">จัดการเวลา Consult</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">ตั้งเวลาเปิด-ปิดระบบ, Countdown, สร้าง Slot อัตโนมัติ และรีเซ็ตโควตา</p>
-            </div>
-
-            <div onclick="devAlert('ระบบตรวจข้อสอบอัตนัย')" class="glossy-card p-7 rounded-3xl cursor-pointer group">
-                <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-700 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-tasks"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-purple-600 transition-colors">ตรวจข้อสอบอัตนัย</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">ให้คะแนนข้อสอบเขียนตอบที่รอการตรวจสอบด้วยตนเอง</p>
-            </div>
-
-            <div onclick="devAlert('ระบบจัดการนักเรียน')" class="glossy-card p-7 rounded-3xl cursor-pointer group">
-                <div class="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-700 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-users"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-emerald-600 transition-colors">จัดการนักเรียน</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">ดูคะแนนภาพรวม สถิติ และจัดการรายชื่อผู้ใช้งาน</p>
-            </div>
-
-            <div onclick="devAlert('ระบบ Audit Log')" class="glossy-card p-7 rounded-3xl cursor-pointer group">
-                <div class="w-14 h-14 bg-gradient-to-br from-rose-500 to-red-700 text-white rounded-2xl flex items-center justify-center mb-5 text-xl shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform"><i class="fas fa-shield-halved"></i></div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white tracking-tight mb-1 group-hover:text-rose-600 transition-colors">Audit Log & ความปลอดภัย</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">ตรวจสอบประวัติพฤติกรรมระหว่างการสอบและการสลับแท็บ</p>
+            <div id="examsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full text-center py-12 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">กำลังโหลดชุดข้อสอบ...</p></div>
             </div>
         </div>
     </main>
@@ -210,13 +77,12 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let allExams = [];
+        let allCategories = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
-        if (localStorage.getItem('theme') === 'dark') {
-            htmlElement.classList.add('dark');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
+        if (localStorage.getItem('theme') === 'dark') { htmlElement.classList.add('dark'); themeIcon.classList.replace('fa-moon', 'fa-sun'); }
         document.getElementById('themeToggle').addEventListener('click', () => {
             htmlElement.classList.toggle('dark');
             const isDark = htmlElement.classList.contains('dark');
@@ -224,115 +90,329 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function toggleLeftDrawer() {
-            const drawer = document.getElementById('leftDrawer');
-            const overlay = document.getElementById('drawerOverlay');
-            drawer.classList.toggle('open');
-            overlay.classList.toggle('open');
-        }
-
         async function initPage() {
-            const { data: { session } } = await mySupabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
-            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
-            if (!profile || !['admin', 'teacher', 'exam_creator'].includes(profile.role)) { window.location.href = 'student.html'; return; }
-            document.getElementById('welcomeMsg').textContent = `ยินดีต้อนรับ, คุณครู${profile.full_name || ''}`;
-            fetchNotifications();
-            loadLiveConsultWidget();
-            setupRealtimeConsult();
-            setInterval(loadLiveConsultWidget, 30000);
+            await fetchCategories();
+            await fetchExams();
+            setInterval(updateCountdowns, 1000);
         }
 
-        // True Realtime Subscription สำหรับ Admin Dashboard
-        function setupRealtimeConsult() {
-            mySupabase
-                .channel('admin_consult_realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, payload => {
-                    loadLiveConsultWidget();
-                })
-                .subscribe();
+        async function fetchCategories() {
+            const { data } = await mySupabase.from('exam_categories').select('*').order('name');
+            allCategories = data || [];
         }
 
-        async function loadLiveConsultWidget() {
+        async function fetchExams() {
+            const { data } = await mySupabase.from('exams').select('*, exam_categories(name)').order('created_at', { ascending: false });
+            allExams = data || [];
+            renderExams();
+        }
+
+        function renderExams() {
+            const search = document.getElementById('searchExam').value.toLowerCase();
             const now = new Date();
             const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            
-            const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').eq('status', 'booked').gt('end_time', now.toISOString()).order('start_time', { ascending: true });
 
-            const widget = document.getElementById('consultLiveWidget');
+            const filtered = allExams.filter(e => e.title.toLowerCase().includes(search) || e.code.toLowerCase().includes(search));
+            const upcoming = filtered.filter(e => e.start_time && new Date(e.start_time) > now && new Date(e.start_time) <= oneDayLater);
+            const regular = filtered.filter(e => !upcoming.includes(e));
 
-            if (!slots || slots.length === 0) {
-                widget.classList.add('hidden');
-                return;
+            // Render Upcoming (Faded card + Countdown)
+            const upcomingSection = document.getElementById('upcomingExamsSection');
+            const upcomingGrid = document.getElementById('upcomingExamsGrid');
+            if (upcoming.length > 0) {
+                upcomingSection.classList.remove('hidden');
+                upcomingGrid.innerHTML = upcoming.map(e => createExamCardHtml(e, true)).join('');
+            } else {
+                upcomingSection.classList.add('hidden');
             }
 
-            let current = null;
-            let upcoming = null;
+            // Render Regular
+            const examsList = document.getElementById('examsList');
+            if (regular.length === 0 && upcoming.length === 0) {
+                examsList.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 text-sm">ไม่พบชุดข้อสอบในระบบ</div>`;
+                return;
+            }
+            examsList.innerHTML = regular.map(e => createExamCardHtml(e, false)).join('');
+        }
 
-            for (let s of slots) {
-                const start = new Date(s.start_time);
-                const end = new Date(s.end_time);
+        function createExamCardHtml(exam, isFaded) {
+            const typeBadge = exam.exam_type === 'pdf' ? '<span class="bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 px-2.5 py-1 rounded-lg font-bold text-[10px]">PDF Simulator</span>' : '<span class="bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 px-2.5 py-1 rounded-lg font-bold text-[10px]">พิมพ์ลงระบบ</span>';
+            const categoryBadge = exam.exam_categories?.name ? `<span class="bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300 px-2.5 py-1 rounded-lg font-bold text-[10px]">${exam.exam_categories.name}</span>` : '';
 
-                if (now >= start && now <= end) {
-                    current = s;
-                } else if (now < start && start <= oneDayLater && !upcoming) {
-                    upcoming = s;
+            return `
+                <div class="glossy-card p-6 rounded-3xl relative flex flex-col justify-between ${isFaded ? 'opacity-60 border-2 border-dashed border-amber-400' : ''}">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-3">
+                            <div class="flex flex-wrap gap-1.5">${typeBadge}${categoryBadge}</div>
+                            <span class="text-xs font-mono font-bold text-gray-400">#${exam.code}</span>
+                        </div>
+                        <h4 class="font-bold text-base text-gray-900 dark:text-white mb-2 truncate">${exam.title}</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-4">${exam.description || 'ไม่มีรายละเอียดเพิ่มเติม'}</p>
+                        
+                        ${isFaded ? `<div class="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900 text-center text-xs font-bold text-amber-600 dark:text-amber-300 mb-4" id="cd-${exam.id}">⏳ เปิดใน: คำนวณเวลา...</div>` : ''}
+
+                        <div class="space-y-1 text-[11px] text-gray-500 dark:text-gray-400 mb-6">
+                            <div><i class="far fa-clock mr-1 text-primary"></i> เวลาทำ: ${exam.time_limit} นาที (โควต้า: ${exam.attempts_allowed} ครั้ง)</div>
+                            <div><i class="fas fa-trophy mr-1 text-amber-500"></i> ลีดเดอร์บอร์ด: ${exam.ranking_mode === 'immediate' ? 'ทันที' : 'ดีเลย์ ' + exam.ranking_delay_days + ' วัน'}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <button onclick="window.location.href='admin_exam_editor.html?id=${exam.id}'" class="py-2.5 bg-blue-50 text-primary dark:bg-blue-950/40 dark:text-blue-300 rounded-xl font-bold text-xs hover:bg-blue-100 transition-colors"><i class="fas fa-edit mr-1"></i> แก้ไขโจทย์</button>
+                        <button onclick="openAnalyticsModal('${exam.id}', '${exam.title}')" class="py-2.5 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300 rounded-xl font-bold text-xs hover:bg-indigo-100 transition-colors"><i class="fas fa-chart-line mr-1"></i> สถิติ & AI</button>
+                        <button onclick="openAuditLogsModal('${exam.id}')" class="col-span-2 py-2 bg-slate-100 text-gray-600 dark:bg-darkinput dark:text-gray-300 rounded-xl font-semibold text-[11px] hover:bg-slate-200 transition-colors"><i class="fas fa-history mr-1"></i> ดู Audit Log ประวัติแก้ไข</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCountdowns() {
+            const now = new Date();
+            allExams.forEach(e => {
+                const cdElem = document.getElementById(`cd-${e.id}`);
+                if (cdElem && e.start_time) {
+                    const diff = new Date(e.start_time) - now;
+                    if (diff <= 0) {
+                        cdElem.textContent = 'ถึงเวลาเปิดข้อสอบแล้ว!';
+                    } else {
+                        const h = Math.floor(diff / 3600000);
+                        const m = Math.floor((diff % 3600000) / 60000);
+                        const s = Math.floor((diff % 60000) / 1000);
+                        cdElem.textContent = `⏳ เปิดใน: ${h} ชม. ${m} นาที ${s} วินาที`;
+                    }
                 }
-            }
-
-            if (!current && !upcoming) {
-                widget.classList.add('hidden');
-                return;
-            }
-
-            widget.classList.remove('hidden');
-
-            if (current) {
-                document.getElementById('currentConsultTitle').textContent = `กำลัง Consult กับ: ${current.profiles?.full_name || 'นักเรียน'}`;
-                const startStr = new Date(current.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                const endStr = new Date(current.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('currentConsultTime').textContent = `⏰ เวลา: ${startStr} - ${endStr} น.`;
-            } else {
-                document.getElementById('currentConsultTitle').textContent = 'ไม่มีคิวที่กำลังดำเนินการอยู่';
-                document.getElementById('currentConsultTime').textContent = 'เตรียมพร้อมสำหรับคิวถัดไป';
-            }
-
-            if (upcoming) {
-                document.getElementById('upcomingStudentName').textContent = upcoming.profiles?.full_name || 'นักเรียน';
-                const upStart = new Date(upcoming.start_time);
-                const timeDiff = upStart - now;
-                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-                const mins = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-                document.getElementById('upcomingCountdown').textContent = `⏳ อีก ${hours > 0 ? hours + ' ชม. ' : ''}${mins} นาที`;
-            } else {
-                document.getElementById('upcomingStudentName').textContent = 'ไม่มีคิวใน 24 ชม. นี้';
-                document.getElementById('upcomingCountdown').textContent = '-';
-            }
-        }
-
-        function toggleNotifications() {
-            const drop = document.getElementById('notifDropdown');
-            drop.classList.toggle('hidden');
-            if(!drop.classList.contains('hidden')) { document.getElementById('notifBadge').classList.add('hidden'); markNotificationsAsRead(); }
-        }
-        async function markNotificationsAsRead() { await mySupabase.from('notifications').update({ is_read: true }).eq('is_read', false); }
-        async function fetchNotifications() {
-            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5);
-            const list = document.getElementById('notifList');
-            if(!data || data.length === 0) { list.innerHTML = '<div class="text-center py-6 text-gray-400 text-xs font-medium">ไม่มีการแจ้งเตือนใหม่</div>'; return; }
-            if(data.some(n => !n.is_read)) document.getElementById('notifBadge').classList.remove('hidden');
-            list.innerHTML = data.map(n => `<div onclick="window.location.href='announcements.html'" class="p-3.5 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer rounded-xl"><div class="font-bold text-primary text-xs">ประกาศใหม่</div><div class="mt-1 text-gray-700 dark:text-gray-300 text-xs truncate">${n.message}</div></div>`).join('');
-        }
-
-        async function handleLogout() {
-            Swal.fire({ title: 'ออกจากระบบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' }).then(async (res) => {
-                if (res.isConfirmed) { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
             });
         }
 
-        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-        document.getElementById('drawerLogoutBtn').addEventListener('click', handleLogout);
-        function devAlert(name) { Swal.fire({ icon: 'info', title: 'กำลังพัฒนา', text: `${name} จะเปิดให้บริการในเร็วๆ นี้`, confirmButtonColor: '#2563eb' }); }
+        // Modal สร้าง/จัดการหมวดหมู่
+        async function openCategoryModal() {
+            let catOptions = allCategories.map(c => `
+                <div class="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-darkinput rounded-xl border dark:border-gray-700 text-xs">
+                    <span class="font-bold">${c.name}</span>
+                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 hover:underline"><i class="fas fa-trash"></i> ลบ</button>
+                </div>
+            `).join('');
+
+            const { value: formValues } = await Swal.fire({
+                title: 'จัดการหมวดหมู่หลัก',
+                html: `
+                    <div class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 mb-1">เพิ่มหมวดหมู่ใหม่</label>
+                            <div class="flex gap-2">
+                                <input id="newCatInput" class="flex-1 px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs" placeholder="เช่น ฟิสิกส์ ม.ปลาย">
+                                <button onclick="addNewCategory()" class="px-4 py-2 bg-primary text-white font-bold rounded-xl text-xs">เพิ่ม</button>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">${catOptions || '<div class="text-center py-4 text-gray-400 text-xs">ยังไม่มีหมวดหมู่</div>'}</div>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+
+        async function addNewCategory() {
+            const name = document.getElementById('newCatInput').value;
+            if (!name) return;
+            await mySupabase.from('exam_categories').insert([{ name }]);
+            await fetchCategories();
+            openCategoryModal();
+        }
+
+        async function deleteCategory(id) {
+            await mySupabase.from('exam_categories').delete().eq('id', id);
+            await fetchCategories();
+            openCategoryModal();
+        }
+
+        // Modal เพิ่มชุดข้อสอบใหม่
+        async function openCreateExamModal() {
+            let categoryOptions = allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            const { value: form } = await Swal.fire({
+                title: '<i class="fas fa-plus text-primary"></i> เพิ่มชุดข้อสอบใหม่',
+                width: '700px',
+                html: `
+                    <div class="grid grid-cols-2 gap-3 text-left text-xs">
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block font-bold mb-1">ชื่อชุดข้อสอบ *</label>
+                            <input id="exTitle" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น สรุปชีววิทยา ม.3">
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="block font-bold mb-1">รหัสวิชา/ข้อสอบ *</label>
+                            <input id="exCode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl" placeholder="เช่น BIO301">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">หมวดหมู่หลัก</label>
+                            <select id="exCat" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl"><option value="">-- ไม่เลือก --</option>${categoryOptions}</select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ประเภทข้อสอบ *</label>
+                            <select id="exType" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                                <option value="online_form">พิมพ์ลงระบบ (1 ข้อ/หน้า)</option>
+                                <option value="pdf">PDF + กระดาษคำตอบจำลอง</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">วัน/เวลาเปิดรับงาน</label>
+                            <input type="datetime-local" id="exStart" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">วัน/เวลากำหนดส่ง (ระบุหรือไม่ก็ได้)</label>
+                            <input type="datetime-local" id="exEnd" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">เวลาทำสอบ (นาที)</label>
+                            <input type="number" id="exTime" value="60" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">จำนวนครั้งที่ทำได้ (Attempt)</label>
+                            <input type="number" id="exAttempts" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">สถานะ</label>
+                            <select id="exStatus" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                                <option value="draft">Draft (ร่าง)</option>
+                                <option value="public">Public (เปิดสอบทันที)</option>
+                                <option value="countdown">Countdown (นับถอยหลัง)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">การแสดง Ranking / คะแนน</label>
+                            <select id="exRankMode" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl">
+                                <option value="immediate">แสดงทันทีหลังทำเสร็จ</option>
+                                <option value="delay">รอกำหนดเวลา (วัน)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block font-bold mb-1">รายละเอียดทั่วไป</label>
+                            <textarea id="exDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำอธิบายสำหรับครู..."></textarea>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block font-bold mb-1">ข้อมูลเบื้องต้นที่ให้นักเรียนเห็น</label>
+                            <textarea id="exStudentInfo" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl h-16" placeholder="คำแนะนำการทำข้อสอบสำหรับนักเรียน..."></textarea>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'สร้างชุดข้อสอบ',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('exTitle').value,
+                        code: document.getElementById('exCode').value,
+                        category_id: document.getElementById('exCat').value || null,
+                        exam_type: document.getElementById('exType').value,
+                        start_time: document.getElementById('exStart').value ? new Date(document.getElementById('exStart').value).toISOString() : null,
+                        end_time: document.getElementById('exEnd').value ? new Date(document.getElementById('exEnd').value).toISOString() : null,
+                        time_limit: parseInt(document.getElementById('exTime').value),
+                        attempts_allowed: parseInt(document.getElementById('exAttempts').value),
+                        status: document.getElementById('exStatus').value,
+                        ranking_mode: document.getElementById('exRankMode').value,
+                        description: document.getElementById('exDesc').value,
+                        student_preview_info: document.getElementById('exStudentInfo').value
+                    }
+                }
+            });
+
+            if (form) {
+                if (!form.title || !form.code) { Swal.fire('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อและรหัสข้อสอบ', 'warning'); return; }
+                const { data, error } = await mySupabase.from('exams').insert([form]).select().single();
+                if (!error) {
+                    await mySupabase.from('exam_audit_logs').insert([{ exam_id: data.id, action_description: 'สร้างชุดข้อสอบใหม่' }]);
+                    Swal.fire({ icon: 'success', title: 'สร้างชุดข้อสอบสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    fetchExams();
+                } else { Swal.fire('เกิดข้อผิดพลาด', error.message, 'error'); }
+            }
+        }
+
+        // Modal สถิติและ AI วิเคราะห์ผลประเมิน + ดาวน์โหลด Excel
+        async function openAnalyticsModal(examId, title) {
+            Swal.fire({ title: 'กำลังประมวลผลสถิติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*, profiles(full_name)').eq('exam_id', examId).eq('status', 'submitted');
+
+            if (!attempts || attempts.length === 0) {
+                Swal.fire('ยังไม่มีข้อมูลการสอบ', 'ยังไม่มีนักเรียนส่งข้อสอบชุดนี้', 'info');
+                return;
+            }
+
+            const scores = attempts.map(a => a.score);
+            const mean = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
+            const max = Math.max(...scores);
+            const min = Math.min(...scores);
+
+            // AI Evaluation Analysis Simulation based on score statistics
+            let aiAnalysisText = "";
+            if (mean > (max * 0.75)) {
+                aiAnalysisText = "นักเรียนส่วนใหญ่ทำคะแนนอยู่ในเกณฑ์ดีเยี่ยม เข้าใจเนื้อหาหลักเป็นอย่างดี ควรเพิ่มโจทย์ท้าทายระดับสูงขึ้น";
+            } else if (mean >= (max * 0.5)) {
+                aiAnalysisText = "นักเรียนทำคะแนนระดับปานกลาง ควรเน้นทบทวน Section ที่มีข้อสอบอัตนัยหรือโจทย์ประยุกต์เพิ่มเติม";
+            } else {
+                aiAnalysisText = "คะแนนเฉลี่ยค่อนข้างต่ำ ควรจัดสอนซ่อมเสริมเนื้อหาพื้นฐานและทบทวนความเข้าใจรายบุคคล";
+            }
+
+            Swal.fire({
+                title: `<i class="fas fa-chart-line text-indigo-600"></i> วิเคราะห์ผลสอบ: ${title}`,
+                width: '650px',
+                html: `
+                    <div class="space-y-4 text-left text-xs">
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-2xl"><div class="text-gray-400">ผู้ส่งสอบ</div><div class="text-lg font-bold text-primary">${scores.length} คน</div></div>
+                            <div class="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl"><div class="text-gray-400">คะแนนเฉลี่ย</div><div class="text-lg font-bold text-emerald-600">${mean}</div></div>
+                            <div class="p-3 bg-purple-50 dark:bg-purple-950/40 rounded-2xl"><div class="text-gray-400">สูงสุด / ต่ำสุด</div><div class="text-lg font-bold text-purple-600">${max} /${min}</div></div>
+                        </div>
+
+                        <div class="p-4 bg-indigo-50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-900">
+                            <div class="font-bold text-indigo-600 dark:text-indigo-300 mb-1 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI สรุปผลประเมินภาพรวม:</div>
+                            <p class="text-gray-700 dark:text-gray-300 leading-relaxed">${aiAnalysisText}</p>
+                        </div>
+
+                        <button onclick="exportScoresToExcel('${title}')" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-file-excel"></i> ดาวน์โหลดผลคะแนนเป็น Excel (.xlsx)
+                        </button>
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'ปิดหน้าต่าง'
+            });
+
+            window.currentAttemptsForExport = attempts;
+        }
+
+        function exportScoresToExcel(title) {
+            const data = window.currentAttemptsForExport.map((a, i) => ({
+                "ลำดับ": i + 1,
+                "ชื่อ-นามสกุล": a.profiles?.full_name || 'นักเรียน',
+                "รอบที่": a.attempt_number,
+                "คะแนนที่ได้": a.score,
+                "คะแนนเต็ม": a.max_score,
+                "จำนวนครั้งที่สลับหน้าจอ": a.tab_switches,
+                "เวลาที่ส่ง": new Date(a.submit_time).toLocaleString('th-TH')
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "ผลการสอบ");
+            XLSX.writeFile(wb, `ผลการสอบ_${title}.xlsx`);
+        }
+
+        async function openAuditLogsModal(examId) {
+            const { data: logs } = await mySupabase.from('exam_audit_logs').select('*').eq('exam_id', examId).order('created_at', { ascending: false });
+            let logsHtml = (logs || []).map(l => `
+                <div class="py-2 border-b dark:border-gray-800 text-left text-xs">
+                    <div class="font-bold"><i class="fas fa-history text-primary mr-1"></i> ${l.action_description}</div>
+                    <div class="text-gray-400 text-[10px]">${new Date(l.created_at).toLocaleString('th-TH')}</div>
+                </div>
+            `).join('');
+
+            Swal.fire({
+                title: 'Audit Log ประวัติการแก้ไข',
+                html: `<div class="max-h-64 overflow-y-auto">${logsHtml || '<div class="text-gray-400 py-4 text-xs">ไม่มีประวัติการแก้ไข</div>'}</div>`,
+                confirmButtonText: 'ปิด'
+            });
+        }
 
         initPage();
     </script>
