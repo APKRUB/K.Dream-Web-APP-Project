@@ -195,4 +195,226 @@
 
         function toggleLeftDrawer() {
             const drawer = document.getElementById('leftDrawer');
-            const overlay = document.getElementById('drawer
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        async function initPage() {
+            try {
+                const { data: { session } } = await mySupabase.auth.getSession();
+                if (!session) { window.location.href = 'index.html'; return; }
+
+                const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
+                if (!profile || profile.role !== 'student') { window.location.href = 'admin.html'; return; }
+                currentUser = profile;
+
+                document.getElementById('welcomeMsg').textContent = `สวัสดี, ${profile.full_name || 'นักเรียน'}`;
+                loadExams();
+                fetchNotifications();
+            } catch (err) {
+                console.error("Init Error:", err);
+            }
+        }
+
+        async function loadExams() {
+            const examList = document.getElementById('examList');
+            const { data: exams, error } = await mySupabase.from('exams').select('*, categories(name)').eq('is_published', true).order('created_at', { ascending: false });
+
+            if (error || !exams || exams.length === 0) {
+                examList.innerHTML = `
+                    <div class="col-span-full glossy-card p-12 rounded-3xl text-center text-gray-400">
+                        <div class="w-16 h-16 bg-blue-50 dark:bg-slate-800 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-white">ยังไม่มีชุดข้อสอบที่เปิดสอบในขณะนี้</h3>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">กรุณารอคุณครูประกาศเปิดให้ทำข้อสอบครับ</p>
+                    </div>
+                `;
+                return;
+            }
+
+            examList.innerHTML = exams.map(ex => `
+                <div class="glossy-card p-7 rounded-3xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs bg-blue-50 dark:bg-blue-950/80 text-primary dark:text-blue-300 px-3.5 py-1.5 rounded-xl font-bold border border-blue-100 dark:border-blue-900/50">${ex.categories?.name || 'ทั่วไป'}</span>
+                            <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1"><i class="fas fa-check-circle"></i> พร้อมสอบ</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 tracking-tight">${ex.title}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 flex items-center gap-1.5"><i class="far fa-clock"></i> เวลาทำข้อสอบ: ${ex.time_limit} นาที</p>
+                    </div>
+                    <button onclick="startExam('${ex.id}')" class="w-full bg-primary hover:bg-blue-700 text-white py-3 rounded-2xl text-sm font-bold transition-all shadow-md shadow-blue-500/20">
+                        เริ่มทำข้อสอบ <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function startExam(examId) {
+            Swal.fire({
+                title: 'พร้อมเริ่มทำข้อสอบ?',
+                text: "เมื่อกดเริ่มแล้ว ระบบจะเริ่มจับเวลาทันที",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'เริ่มสอบเลย',
+                cancelButtonText: 'ยกเลิก'
+            }).then((res) => {
+                if(res.isConfirmed) window.location.href = `exam.html?id=${examId}`;
+            });
+        }
+
+        // ================= Consult Booking System for Students =================
+        async function openConsultModal() {
+            if (!currentUser) return;
+
+            // แสดงหน้าต่างกำลังโหลดแบบไม่ล็อกหน้าจอ
+            Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                // ดึงการตั้งค่า Consult
+                const { data: setting } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
+                
+                // ดึงโควต้าของนักเรียน
+                let { data: quota } = await mySupabase.from('consult_quotas').select('*').eq('student_id', currentUser.id).single();
+                if (!quota) {
+                    await mySupabase.from('consult_quotas').insert([{ student_id: currentUser.id, has_booked: false }]);
+                    quota = { has_booked: false };
+                }
+
+                let htmlContent = '';
+
+                if (!setting || !setting.is_open) {
+                    let messageHtml = '<span class="text-amber-600 font-bold text-base">ระบบยังไม่เปิดในขณะนี้</span>';
+                    if (setting && setting.open_at) {
+                        const openTime = new Date(setting.open_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                        messageHtml = `<span class="text-amber-600 font-bold text-sm">⏳ ระบบจะเปิดให้จองในวันที่:<br>${openTime}</span>`;
+                    }
+                    htmlContent = `
+                        <div class="text-center py-8 space-y-3">
+                            <div class="w-16 h-16 bg-amber-50 dark:bg-amber-950/40 text-amber-500 rounded-3xl flex items-center justify-center mx-auto text-2xl shadow-inner"><i class="fas fa-clock"></i></div>
+                            <div>${messageHtml}</div>
+                            <p class="text-xs text-gray-400">กรุณารอประกาศจากอาจารย์ผู้สอน</p>
+                        </div>
+                    `;
+                } else if (quota.has_booked) {
+                    let slotText = 'ช่วงเวลาของคุณ';
+                    if (quota.booked_slot_id) {
+                        const { data: bookedSlot } = await mySupabase.from('consult_slots').select('*').eq('id', quota.booked_slot_id).single();
+                        if (bookedSlot) {
+                            slotText = `${new Date(bookedSlot.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}`;
+                        }
+                    }
+                    htmlContent = `
+                        <div class="text-center py-8 space-y-4">
+                            <div class="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto text-2xl shadow-inner"><i class="fas fa-check-circle"></i></div>
+                            <div>
+                                <h4 class="font-bold text-base text-gray-900 dark:text-white">คุณได้จองเวลา Consult แล้ว</h4>
+                                <p class="text-sm font-semibold text-primary mt-1">${slotText}</p>
+                            </div>
+                            <p class="text-xs text-gray-400">คุณได้ใช้สิทธิ์จองเต็มจำนวนแล้ว (จำกัด 1 สิทธิ์ต่อรอบ)</p>
+                        </div>
+                    `;
+                } else {
+                    const { data: slots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').order('start_time', { ascending: true });
+                    if (!slots || slots.length === 0) {
+                        htmlContent = `<div class="text-center py-8 text-gray-400 text-sm">ขออภัย ไม่มีช่วงเวลาว่างให้จองในขณะนี้</div>`;
+                    } else {
+                        let slotsHtml = slots.map(s => {
+                            const startStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                            const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                            return `
+                                <div class="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-darkinput rounded-2xl border border-gray-200 dark:border-gray-700">
+                                    <span class="font-bold text-xs text-gray-900 dark:text-white"><i class="far fa-clock mr-1.5 text-primary"></i> ${startStr} - ${endStr}</span>
+                                    <button onclick="bookSlot('${s.id}')" class="px-4 py-2 bg-primary hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer">จองเวลานี้</button>
+                                </div>
+                            `;
+                        }).join('');
+                        htmlContent = `<div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">${slotsHtml}</div>`;
+                    }
+                }
+
+                Swal.fire({
+                    title: '<i class="fas fa-calendar-check text-indigo-600"></i> จองเวลา Consult อาจารย์',
+                    html: htmlContent,
+                    width: '550px',
+                    showConfirmButton: false,
+                    showCloseButton: true
+                });
+
+            } catch (err) {
+                console.error("Consult Modal Error:", err);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูล Consult ได้ในขณะนี้', 'error');
+            }
+        }
+
+        async function bookSlot(slotId) {
+            const res = await Swal.fire({
+                title: 'ยืนยันการจองเวลานี้?',
+                text: 'คุณสามารถจองได้เพียง 1 ช่วงเวลาต่อรอบการเปิดระบบเท่านั้น',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'ยืนยันการจอง',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (res.isConfirmed) {
+                Swal.fire({ title: 'กำลังบันทึกการจอง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                await mySupabase.from('consult_slots').update({ status: 'booked', student_id: currentUser.id }).eq('id', slotId);
+                await mySupabase.from('consult_quotas').upsert({ student_id: currentUser.id, has_booked: true, booked_slot_id: slotId });
+
+                Swal.fire({ icon: 'success', title: 'จองเวลาสำเร็จ!', text: 'คุณได้บันทึกเวลา Consult เรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
+                setTimeout(() => openConsultModal(), 1600);
+            }
+        }
+
+        // ================= Notifications =================
+        function toggleNotifications() {
+            const drop = document.getElementById('notifDropdown');
+            drop.classList.toggle('hidden');
+            if(!drop.classList.contains('hidden')) {
+                document.getElementById('notifBadge').classList.add('hidden');
+                markNotificationsAsRead();
+            }
+        }
+
+        async function markNotificationsAsRead() {
+            await mySupabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+        }
+
+        async function fetchNotifications() {
+            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(5);
+            const list = document.getElementById('notifList');
+            if(!data || data.length === 0) { 
+                list.innerHTML = '<div class="text-center py-6 text-gray-400 text-xs font-medium">ไม่มีการแจ้งเตือนใหม่</div>'; 
+                return; 
+            }
+            const hasUnread = data.some(n => !n.is_read);
+            if(hasUnread) document.getElementById('notifBadge').classList.remove('hidden');
+
+            list.innerHTML = data.map(n => `
+                <div onclick="window.location.href='announcements.html'" class="p-3.5 border-b dark:border-gray-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors rounded-xl">
+                    <div class="font-bold text-primary dark:text-blue-400 text-xs flex items-center gap-1.5">
+                        ${n.type === 'announcement' ? '<i class="fas fa-bullhorn"></i> ประกาศใหม่' : '<i class="fas fa-bell"></i> แจ้งเตือนระบบ'}
+                    </div>
+                    <div class="mt-1 text-gray-700 dark:text-gray-300 text-xs truncate font-medium">${n.message}</div>
+                </div>
+            `).join('');
+        }
+
+        async function handleLogout() {
+            Swal.fire({ title: 'ออกจากระบบ?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' }).then(async (res) => {
+                if (res.isConfirmed) { await mySupabase.auth.signOut(); window.location.href = 'index.html'; }
+            });
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        document.getElementById('drawerLogoutBtn').addEventListener('click', handleLogout);
+
+        initPage();
+    </script>
+</body>
+</html>
