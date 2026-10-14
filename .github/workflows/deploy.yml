@@ -2,7 +2,7 @@ name: Deploy Static Content to Pages
 
 on:
   push:
-    branches: ["main"] # หรือถ้า branch หลักของคุณชื่อ "master" ให้แก้คำว่า main เป็น master ครับ
+    branches: ["main"] # หรือ master ตามโปรเจกต์ของคุณ
 
 permissions:
   contents: read
@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-running: true
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -25,7 +25,6 @@ jobs:
 
       - name: Inject Gemini API Key
         run: |
-          # ค้นหาและแทนที่ __GEMINI_API_KEY__ ด้วยค่าจาก GitHub Secrets ในไฟล์ html
           find . -name "*.html" -type f -exec sed -i 's/__GEMINI_API_KEY__/${{ secrets.GEMINI_API_KEY }}/g' {} +
 
       - name: Setup Pages
