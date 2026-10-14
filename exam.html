@@ -114,6 +114,7 @@ function checkStudentAuth() {
 }
         
         async function initExam() {
+            if (!checkStudentAuth()) return;
             if (!examId) {
                 Swal.fire('ข้อผิดพลาด', 'ไม่พบรหัสข้อสอบ', 'error').then(() => window.location.href='student.html');
                 return;
