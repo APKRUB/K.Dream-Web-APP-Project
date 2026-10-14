@@ -248,8 +248,7 @@
             document.getElementById('totalScoreDisplay').textContent = totalQ;
 
             updateCountsAndRender();
-            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, exam ? exam.title : 'ข้อสอบ');
-        }
+await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, exam ? exam.title : 'ข้อสอบ', exam ? exam.learning_objectives : '');        }
 
         async function renderSecurePDF(url) {
             const container = document.getElementById('pdfContainer');
@@ -419,66 +418,71 @@
         }
 
         // ฟังก์ชันเรียก Google Gemini API พร้อมระบบสำรอง (Smart Fallback)
-        async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle) {
-            const container = document.getElementById('aiAnalysisContainer');
-            
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
-                renderLocalAIAnalysis(questions, answerMap, score, total);
-                return;
-            }
+async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives) {
+    const container = document.getElementById('aiAnalysisContainer');
+    
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+        renderLocalAIAnalysis(questions, answerMap, score, total, learningObjectives);
+        return;
+    }
 
-            let summaryData = questions.map((q, idx) => {
-                const ans = answerMap[q.id] || {};
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-                return {
-                    ข้อที่: q.question_number || (idx + 1),
-                    หมวดหมู่: q.category_tag || 'ทั่วไป',
-                    โจทย์: q.question_text || q.content || 'คำถาม',
-                    นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
-                    เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
-                    สถานะ: isCorrect ? 'ถูก' : 'ผิด'
-                };
-            });
+    let summaryData = questions.map((q, idx) => {
+        const ans = answerMap[q.id] || {};
+        const studentIdx = ans.selected_option_index;
+        const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
+        const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
+        return {
+            ข้อที่: q.question_number || (idx + 1),
+            หมวดหมู่: q.category_tag || 'ทั่วไป',
+            โจทย์: q.question_text || q.content || 'คำถาม',
+            นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
+            เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
+            สถานะ: isCorrect ? 'ถูก' : 'ผิด'
+        };
+    });
 
-            const prompt = `
-คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการศึกษาและการวิเคราะห์ข้อสอบ
+    // กำหนดวัตถุประสงค์เริ่มต้นเผื่อไม่ได้ใส่ในฐานข้อมูล
+    const objectivesText = learningObjectives || "เพื่อประเมินความรู้ความเข้าใจและทักษะการคิดวิเคราะห์ตามเนื้อหาของชุดข้อสอบ";
+
+    const prompt = `
+คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวัดและประเมินผลการศึกษา
 นี่คือข้อมูลผลการสอบของนักเรียนในชุดข้อสอบ "${examTitle}"
+🎯 **วัตถุประสงค์การเรียนรู้ของชุดข้อสอบนี้:** ${objectivesText}
+
 คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
 รายละเอียดการตอบรายข้อ:
 ${JSON.stringify(summaryData, null, 2)}
 
-กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โครงสร้างกระชับ เข้าใจง่าย และให้กำลังใจนักเรียน โดยแบ่งเป็น:
-1. สรุปภาพรวมและประเมินระดับความเข้าใจ
-2. จุดแข็งและจุดที่ต้องพัฒนาเพิ่มเติมแยกตามหมวดหมู่
-3. คำแนะนำและเทคนิคจำเฉพาะข้อที่ทำผิด
+กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โครงสร้างกระชับ เข้าใจง่าย และให้กำลังใจนักเรียน โดยเน้นประเมินว่านักเรียนบรรลุ "วัตถุประสงค์การเรียนรู้" ตามที่กำหนดไว้หรือไม่ แบ่งเป็น:
+1. การประเมินความบรรลุตามวัตถุประสงค์ (Objective Alignment & Mastery) ว่าทำได้ดีแค่ไหนในเป้าหมายนี้
+2. จุดแข็ง (Strengths) และจุดที่ต้องพัฒนาเพิ่มเติม (Weaknesses) ที่สัมพันธ์กับวัตถุประสงค์
+3. คำแนะนำและแนวทางพัฒนาเฉพาะประเด็นเพื่อให้บรรลุวัตถุประสงค์อย่างสมบูรณ์
 ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
 `;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                
-                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    let aiText = data.candidates[0].content.parts[0].text;
-                    aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
-                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
-                } else {
-                    renderLocalAIAnalysis(questions, answerMap, score, total);
-                }
-            } catch (err) {
-                console.error("Gemini API Error, falling back to local analysis:", err);
-                renderLocalAIAnalysis(questions, answerMap, score, total);
-            }
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            let aiText = data.candidates[0].content.parts[0].text;
+            aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
+            container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
+        } else {
+            renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
         }
+    } catch (err) {
+        console.error("Gemini API Error, falling back to local analysis:", err);
+        renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
+    }
+}
 
         // ฟังก์ชันวิเคราะห์สำรอง (ทำงานรวดเร็วและแม่นยำ)
         function renderLocalAIAnalysis(questions, answerMap, score, total) {
