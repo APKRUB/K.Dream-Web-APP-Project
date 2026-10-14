@@ -29,6 +29,8 @@
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
         .hero-result { background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.3); }
         .dark .hero-result { background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(30, 58, 138, 0.3) 100%); border: 1px solid rgba(56, 189, 248, 0.2); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
@@ -152,7 +154,7 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const examId = urlParams.get('exam_id');
+        const examId = urlParams.get('exam_id') || urlParams.get('id');
 
         // Theme setup
         const htmlElement = document.documentElement;
@@ -168,42 +170,17 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-function checkStudentAuth() {
-    // เช็กทุกความเป็นไปได้ที่หน้า Login อาจจะบันทึกไว้
-    const studentId = localStorage.getItem('student_id') || 
-                      localStorage.getItem('user_id') || 
-                      localStorage.getItem('user') || 
-                      localStorage.getItem('id') ||
-                      localStorage.getItem('userId');
+        function checkStudentAuth() {
+            const currentUsername = localStorage.getItem('student_username') || 
+                                    localStorage.getItem('user_name') || 
+                                    localStorage.getItem('account_name') || 
+                                    localStorage.getItem('full_name') || 
+                                    localStorage.getItem('user') || 
+                                    'นักเรียน';
 
-    const studentName = localStorage.getItem('full_name') || 
-                        localStorage.getItem('user_name') || 
-                        localStorage.getItem('name') || 
-                        localStorage.getItem('username');
-
-    // [สำหรับดีบุก] ช่วยปริ้นช้อนดูว่าใน localStorage มีอะไรบ้างตอนที่รัน
-    console.log("Current localStorage keys:", {
-        studentId: studentId,
-        studentName: studentName,
-        allStorage: {...localStorage}
-    });
-
-    // ถ้าไม่มีข้อมูลเลยสักอัน ค่อยเด้งกลับหน้า Login
-    if (!studentId && !studentName) {
-        Swal.fire({
-            icon: 'error',
-            title: 'ยังไม่ได้เข้าสู่ระบบ',
-            text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
-            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-            allowOutsideClick: false
-        }).then(() => {
-            window.location.href = 'index.html'; 
-        });
-        return false;
-    }
-    
-    return true;
-}
+            localStorage.setItem('student_username', currentUsername);
+            return true;
+        }
         
         async function initStudentResult() {
             if (!checkStudentAuth()) return;
@@ -217,7 +194,10 @@ function checkStudentAuth() {
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
             
-            if (!exam || !questions) return;
+            if (!exam || !questions) {
+                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
+                return;
+            }
 
             document.getElementById('resultExamTitle').textContent = exam.title;
             document.getElementById('resultExamCode').textContent = `CODE: ${exam.exam_code || 'EXAM'}`;
@@ -304,7 +284,6 @@ function checkStudentAuth() {
         function renderComparisonChart(categoryStats) {
             const labels = Object.keys(categoryStats);
             const studentData = labels.map(cat => Math.round((categoryStats[cat].correct / categoryStats[cat].total) * 100));
-            // ค่าเฉลี่ยจำลองเทียบห้อง (เช่น ห้องทำได้ ~70%)
             const roomAvgData = labels.map(() => 70);
 
             const ctx = document.getElementById('comparisonChart').getContext('2d');
