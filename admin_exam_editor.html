@@ -211,6 +211,7 @@ function checkStudentAuth() {
 }
         
         async function initPage() {
+            if (!checkStudentAuth()) return;
             if (!examId) {
                 Swal.fire('ไม่พบ ID ข้อสอบ', '', 'warning').then(() => window.location.href = 'admin_exams.html');
                 return;
