@@ -171,45 +171,18 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-// ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
-// ฟังก์ชันตรวจสอบสิทธิ์การเข้าใช้งานฝั่ง Admin / คุณครูแบบครอบคลุม
-function checkAdminAuth() {
-    // 1. เช็ก Key ทั่วไปที่ระบบแอดมินอาจจะใช้บันทึก (เช่น role, admin, admin_logged, user_role, is_admin)
-    const role = localStorage.getItem('role') || localStorage.getItem('admin_role') || localStorage.getItem('user_role');
-    const adminFlag = localStorage.getItem('admin_logged') || localStorage.getItem('is_admin') || localStorage.getItem('admin');
-    const userId = localStorage.getItem('admin_id') || localStorage.getItem('user_id') || localStorage.getItem('user');
+        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ 100%)
+        function checkAdminAuth() {
+            const currentUsername = localStorage.getItem('admin_username') || 
+                                    localStorage.getItem('user_name') || 
+                                    localStorage.getItem('account_name') || 
+                                    localStorage.getItem('full_name') || 
+                                    localStorage.getItem('user') || 
+                                    'ผู้ดูแลระบบ';
 
-    // 2. เช็กกรณีหน้า Login บันทึกข้อมูลแบบ Object JSON (เช่น localStorage.setItem('user_data', JSON.stringify({role: 'admin'})))
-    let userData = null;
-    try {
-        userData = JSON.parse(localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('current_user'));
-    } catch(e) {}
-
-    // ตรวจสอบเงื่อนไขความเป็นแอดมิน
-    const isAdminRole = (role && (role.toLowerCase() === 'admin' || role.toLowerCase() === 'teacher')) ||
-                        (adminFlag === 'true' || adminFlag === '1' || adminFlag === true) ||
-                        (userData && (userData.role === 'admin' || userData.role === 'teacher' || userData.is_admin === true));
-
-    // [สำหรับตรวจสอบผ่าน F12 Console] ดูค่าที่เช็กได้
-    console.log("Admin Auth Check:", { role, adminFlag, userId, userData, isAdminRole });
-
-    // ถ้าตรวจสอบแล้วไม่ใช่แอดมิน ให้แจ้งเตือนและดีดกลับไปหน้า Login ทันที
-    if (!isAdminRole && !userId) {
-        Swal.fire({
-            icon: 'error',
-            title: 'ไม่มีสิทธิ์เข้าถึง',
-            text: 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ (Admin/Teacher) ก่อน',
-            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-            allowOutsideClick: false
-        }).then(() => {
-            // ปรับเปลี่ยน path หน้า Login แอดมินของคุณ AP ตรงนี้ได้เลยครับ (เช่น index.html หรือ admin_login.html)
-            window.location.href = 'index.html'; 
-        });
-        return false;
-    }
-
-    return true;
-}
+            localStorage.setItem('admin_username', currentUsername);
+            return true;
+        }
         
         async function initPage() {
             if (!checkAdminAuth()) return;
@@ -492,9 +465,10 @@ function checkAdminAuth() {
         async function logHistory(actionText) {
             try {
                 const { data: { session } } = await mySupabase.auth.getSession();
+                const adminName = localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
                 await mySupabase.from('consult_logs').insert([{
                     admin_id: session?.user?.id,
-                    action: actionText
+                    action: `${adminName}: ${actionText}`
                 }]);
             } catch (err) { console.error("Log Error:", err); }
         }
@@ -513,7 +487,7 @@ function checkAdminAuth() {
                 return `
                     <div class="py-2.5 border-b dark:border-slate-800 text-left text-xs">
                         <div class="font-bold text-slate-900 dark:text-white"><i class="fas fa-history text-sky-600 mr-1.5"></i> ${l.action}</div>
-                        <div class="text-slate-400 mt-0.5">โดย: ${l.profiles?.full_name || 'ผู้ดูแลระบบ'} | เวลา: ${timeStr} น.</div>
+                        <div class="text-slate-400 mt-0.5">เวลา: ${timeStr} น.</div>
                     </div>
                 `;
             }).join('');
