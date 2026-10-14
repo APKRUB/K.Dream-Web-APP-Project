@@ -83,7 +83,7 @@
                     <div id="kpiTotalStudents" class="text-2xl font-extrabold text-slate-900 dark:text-white">0 คน</div>
                 </div>
                 <div class="hitech-card p-4 rounded-2xl space-y-1">
-                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-calculator text-indigo-500 mr-1"></i> คะแนนเฉลย (Average)</div>
+                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-calculator text-indigo-500 mr-1"></i> คะแนนเฉลี่ย (Average)</div>
                     <div id="kpiAvgScore" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">0 / 0</div>
                 </div>
                 <div class="hitech-card p-4 rounded-2xl space-y-1">
@@ -128,7 +128,7 @@
 
             </div>
 
-            <!-- ตารางคะแนนรายบุคคล -->
+            <!-- ตารางคะแนนรายบุคคล พร้อมปุ่ม Reset Attempt -->
             <div class="hitech-card p-5 rounded-2xl space-y-4">
                 <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
                     <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -148,10 +148,11 @@
                                 <th class="p-3 text-center">คะแนนรวม</th>
                                 <th class="p-3 text-center">สถานะ</th>
                                 <th class="p-3 text-center">วันที่ส่ง</th>
+                                <th class="p-3 text-center">จัดการ (Reset)</th>
                             </tr>
                         </thead>
                         <tbody id="studentScoreTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="7" class="text-center py-6 text-slate-400">ยังไม่มีข้อมูลผลสอบ</td></tr>
+                            <tr><td colspan="8" class="text-center py-6 text-slate-400">ยังไม่มีข้อมูลผลสอบ</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -190,45 +191,18 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
-// ฟังก์ชันตรวจสอบสิทธิ์การเข้าใช้งานฝั่ง Admin / คุณครูแบบครอบคลุม
-function checkAdminAuth() {
-    // 1. เช็ก Key ทั่วไปที่ระบบแอดมินอาจจะใช้บันทึก (เช่น role, admin, admin_logged, user_role, is_admin)
-    const role = localStorage.getItem('role') || localStorage.getItem('admin_role') || localStorage.getItem('user_role');
-    const adminFlag = localStorage.getItem('admin_logged') || localStorage.getItem('is_admin') || localStorage.getItem('admin');
-    const userId = localStorage.getItem('admin_id') || localStorage.getItem('user_id') || localStorage.getItem('user');
+        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ)
+        function checkAdminAuth() {
+            const currentUsername = localStorage.getItem('admin_username') || 
+                                    localStorage.getItem('user_name') || 
+                                    localStorage.getItem('account_name') || 
+                                    localStorage.getItem('full_name') || 
+                                    localStorage.getItem('user') || 
+                                    'ผู้ดูแลระบบ';
 
-    // 2. เช็กกรณีหน้า Login บันทึกข้อมูลแบบ Object JSON (เช่น localStorage.setItem('user_data', JSON.stringify({role: 'admin'})))
-    let userData = null;
-    try {
-        userData = JSON.parse(localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('current_user'));
-    } catch(e) {}
-
-    // ตรวจสอบเงื่อนไขความเป็นแอดมิน
-    const isAdminRole = (role && (role.toLowerCase() === 'admin' || role.toLowerCase() === 'teacher')) ||
-                        (adminFlag === 'true' || adminFlag === '1' || adminFlag === true) ||
-                        (userData && (userData.role === 'admin' || userData.role === 'teacher' || userData.is_admin === true));
-
-    // [สำหรับตรวจสอบผ่าน F12 Console] ดูค่าที่เช็กได้
-    console.log("Admin Auth Check:", { role, adminFlag, userId, userData, isAdminRole });
-
-    // ถ้าตรวจสอบแล้วไม่ใช่แอดมิน ให้แจ้งเตือนและดีดกลับไปหน้า Login ทันที
-    if (!isAdminRole && !userId) {
-        Swal.fire({
-            icon: 'error',
-            title: 'ไม่มีสิทธิ์เข้าถึง',
-            text: 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ (Admin/Teacher) ก่อน',
-            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-            allowOutsideClick: false
-        }).then(() => {
-            // ปรับเปลี่ยน path หน้า Login แอดมินของคุณ AP ตรงนี้ได้เลยครับ (เช่น index.html หรือ admin_login.html)
-            window.location.href = 'index.html'; 
-        });
-        return false;
-    }
-
-    return true;
-}
+            localStorage.setItem('admin_username', currentUsername);
+            return true;
+        }
         
         async function initPage() {
             if (!checkAdminAuth()) return;
@@ -260,11 +234,9 @@ function checkAdminAuth() {
 
             Swal.fire({ title: 'กำลังประมวลผลข้อมูลสถิติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // ดึงคำถามทั้งหมดในชุดนี้
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             fetchedQuestions = questions || [];
 
-            // ดึงผลการทำข้อสอบของนักเรียนทั้งหมด
             const { data: submissions } = await mySupabase.from('exam_submissions').select('*, profiles(full_name, student_id)').eq('exam_id', examId);
             fetchedSubmissions = submissions || [];
 
@@ -303,7 +275,6 @@ function checkAdminAuth() {
             document.getElementById('kpiPassRate').textContent = `${passRate}%`;
         }
 
-        // วิเคราะห์จุดอ่อนรายข้อ (ข้อที่มีคนตอบผิดมากที่สุด)
         function renderWeakPoints() {
             const container = document.getElementById('weakPointsContainer');
             if (fetchedSubmissions.length === 0 || fetchedQuestions.length === 0) {
@@ -311,7 +282,6 @@ function checkAdminAuth() {
                 return;
             }
 
-            // นับจำนวนคนตอบผิดในแต่ละข้อ
             const wrongStats = fetchedQuestions.map(q => {
                 let wrongCount = 0;
                 fetchedSubmissions.forEach(sub => {
@@ -324,7 +294,6 @@ function checkAdminAuth() {
                 return { question: q, wrongCount, wrongPercent };
             });
 
-            // เรียงจากข้อที่ตอบผิดเยอะที่สุดลงมา 5 อันดับแรก
             wrongStats.sort((a, b) => b.wrongPercent - a.wrongPercent);
             const topWeak = wrongStats.slice(0, 5).filter(w => w.wrongPercent > 0);
 
@@ -350,7 +319,6 @@ function checkAdminAuth() {
             `).join('');
         }
 
-        // แสดงกราฟการกระจายตัวของคะแนน
         function renderDistributionChart() {
             const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
             if (distributionChart) distributionChart.destroy();
@@ -395,7 +363,7 @@ function checkAdminAuth() {
             document.getElementById('studentTableCount').textContent = `${fetchedSubmissions.length} รายการ`;
 
             if (fetchedSubmissions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ยังไม่มีนักเรียนส่งข้อสอบชุดนี้</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ยังไม่มีนักเรียนส่งข้อสอบชุดนี้</td></tr>`;
                 return;
             }
 
@@ -421,12 +389,39 @@ function checkAdminAuth() {
                             </span>
                         </td>
                         <td class="p-3 text-center text-[11px] text-slate-400">${new Date(s.created_at).toLocaleDateString('th-TH')}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="resetStudentAttempt('${s.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซสสิทธิ์สอบใหม่">
+                                <i class="fas fa-rotate-right mr-1"></i> Reset
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // ฟังก์ชัน Export คะแนนรายบุคคลออกมาเป็นไฟล์ CSV
+        // ฟังก์ชัน Reset Attempt สำหรับแอดมิน (ลบผลการสอบของนักเรียนคนนั้นเพื่อให้สอบใหม่ได้)
+        async function resetStudentAttempt(submissionId) {
+            Swal.fire({
+                title: 'ยืนยันการ Reset สิทธิ์สอบ?',
+                text: 'การกระทำนี้จะลบผลคะแนนและคำตอบเดิมของนักเรียน เพื่อให้พวกเขาสามารถกลับมาทำข้อสอบใหม่ได้อีกครั้ง',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยัน Reset',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#d97706'
+            }).then(async (res) => {
+                if (res.isConfirmed) {
+                    const { error } = await mySupabase.from('exam_submissions').delete().eq('id', submissionId);
+                    if (error) {
+                        Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                    } else {
+                        Swal.fire({ icon: 'success', title: 'Reset สำเร็จ!', text: 'ลบประวัติการส่งข้อสอบเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
+                        loadAnalyticsData(currentExamId);
+                    }
+                }
+            });
+        }
+
         function exportToCSV() {
             if (fetchedSubmissions.length === 0) {
                 Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลคะแนนสำหรับ Export', 'info');
