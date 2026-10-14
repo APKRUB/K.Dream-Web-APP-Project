@@ -76,7 +76,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: PDF โจทย์ (ป้องกันดาวน์โหลด) -->
+            <!-- ฝั่งซ้าย: PDF โจทย์ -->
             <div id="pdfViewerCard" class="hidden lg:col-span-8 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ PDF (ห้ามดาวน์โหลด)</h3>
@@ -159,7 +159,7 @@
 
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (!studentId || !uuidRegex.test(studentId)) {
-                studentId = null; // ป้องกันส่งค่าสติงมั่วเข้าฟิลด์ UUID
+                studentId = null;
             }
 
             const studentName = localStorage.getItem('student_username') || 
@@ -337,10 +337,9 @@
 
             const { data, error } = await mySupabase.from('exam_attempts').insert([insertData]).select().single();
 
-            if (error || !data) {
-                // หากติด RLS หรือ Error ให้แจ้งเตือนแต่วางระบบให้ทำข้อสอบต่อได้ชั่วคราวผ่านหน่วยความจำ
-                console.warn('Exam attempt log warning:', error?.message);
-            } else {
+            if (error) {
+                console.warn('Exam attempt create warning:', error.message);
+            } else if (data) {
                 attemptId = data.id;
             }
 
@@ -400,23 +399,38 @@
                 didOpen: () => Swal.showLoading()
             });
 
+            // หากตอนเริ่มสร้าง attemptId ไม่สำเร็จ ให้สร้างใหม่ตอนนี้เพื่อให้มีค่าส่งข้อมูล
+            if (!attemptId) {
+                let studentId = localStorage.getItem('student_id');
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                if (!uuidRegex.test(studentId)) studentId = null;
+
+                const { data: newAttempt } = await mySupabase.from('exam_attempts').insert([{
+                    exam_id: examId,
+                    student_id: studentId,
+                    status: 'submitted',
+                    submit_time: new Date().toISOString()
+                }]).select().single();
+
+                if (newAttempt) attemptId = newAttempt.id;
+            }
+
             let totalScore = 0;
 
             for (const q of currentQuestions) {
                 const studentAns = studentAnswers[q.id];
                 const isEssay = q.question_type === 'essay';
-                let isCorrect = false;
                 let qScore = 0;
 
                 if (!isEssay) {
                     if (String(studentAns) === String(q.correct_answer)) {
-                        isCorrect = true;
                         qScore = 1;
                         totalScore += 1;
                     }
                 }
 
                 if (attemptId) {
+                    // บันทึกคำตอบรายข้อรองรับทั้งรูปแบบ index และ text
                     await mySupabase.from('exam_answers').insert([{
                         attempt_id: attemptId,
                         question_id: q.id,
@@ -428,6 +442,7 @@
             }
 
             if (attemptId) {
+                // อัปเดตคะแนนรวมและสถานะส่งข้อสอบให้แอดมินเห็นในระบบหลังบ้าน
                 await mySupabase.from('exam_attempts').update({
                     status: 'submitted',
                     score: totalScore,
@@ -442,7 +457,8 @@
                 confirmButtonText: 'ดูผลการสอบและเฉลย',
                 allowOutsideClick: false
             }).then(() => {
-                window.location.href = attemptId ? `exam_result.html?attempt_id=${attemptId}` : 'student.html';
+                // แก้ไขลิงก์ปลายทางให้วิ่งมาที่ student_result.html อย่างถูกต้อง
+                window.location.href = attemptId ? `student_result.html?attempt_id=${attemptId}` : 'student.html';
             });
         }
 
