@@ -29,7 +29,7 @@
     <style>
         body { 
             font-family: 'Prompt', sans-serif; 
-            user-select: none; /* ป้องกันการคลุมดำเลือกข้อความเพื่อดูดข้อมูล */
+            user-select: none; /* ป้องกันการคลุมดำเลือกข้อความ */
         }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
@@ -47,7 +47,6 @@
             box-shadow: 0 0 15px rgba(2, 132, 199, 0.6);
         }
 
-        /* Highlight กระพริบสำหรับข้อที่ยังไม่ได้ทำเมื่อกดตรวจสอบ */
         @keyframes unanswerPulse {
             0% { border-color: #f43f5e; box-shadow: 0 0 0px rgba(244, 63, 94, 0.8); }
             50% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.9); }
@@ -58,7 +57,6 @@
             border: 2px dashed #f43f5e !important;
         }
 
-        /* Top Announcement Widget สไตล์กระจกเรืองแสง */
         .top-announcement-widget {
             position: fixed; top: 5rem; left: 50%; transform: translateX(-50%) translateY(-150%); z-index: 50;
             opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -68,7 +66,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24" oncontextmenu="return false;">
 
-    <!-- Top Announcement Widget (แจ้งเตือนตรงกลางด้านบนแบบสั้นๆ) -->
+    <!-- Top Announcement Widget -->
     <div id="topAnnouncementWidget" class="top-announcement-widget w-11/12 max-w-md">
         <div class="px-4 py-3 bg-gradient-to-r from-sky-600/95 to-blue-600/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-sky-300/40 flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
@@ -86,7 +84,7 @@
         </div>
     </div>
 
-    <!-- Sticky Header คุมโทนน้ำเงิน-ฟ้า-ขาว -->
+    <!-- Sticky Header -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
@@ -101,13 +99,11 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- Timer Badge -->
                     <div class="px-3.5 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 font-bold text-xs flex items-center gap-2 shadow-sm">
                         <i class="fas fa-clock text-sky-500 animate-pulse"></i>
                         <span>เหลือเวลา: <strong id="timerDisplay" class="font-mono text-sm text-sky-600 dark:text-sky-400">--:--</strong></span>
                     </div>
 
-                    <!-- ปุ่มสลับธีม Dark/Light -->
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
                     </button>
@@ -122,7 +118,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- แจ้งเตือน Anti-Cheat Tab Switch -->
+        <!-- Anti-Cheat Tab Switch Warning -->
         <div id="cheatWarningBox" class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-2xl text-xs text-red-600 dark:text-red-400 font-bold flex items-center gap-2 shadow-sm">
             <i class="fas fa-triangle-exclamation text-sm animate-bounce"></i>
             <span>ตรวจพบการสลับหน้าจอ / ออกนอกแท็บ (<span id="cheatCount">0</span> ครั้ง)! กรุณาโฟกัสหน้าข้อสอบเพื่อความโปร่งใส</span>
@@ -130,7 +126,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- ส่วนซ้าย: แสดงโจทย์ PDF หรือออนไลน์ -->
+            <!-- ส่วนซ้าย: PDF Viewer / Online Questions -->
             <div class="lg:col-span-7 space-y-4">
                 <div class="hitech-card p-5 rounded-2xl space-y-3">
                     <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
@@ -145,7 +141,7 @@
                 </div>
             </div>
 
-            <!-- ส่วนขวา: กระดาษคำตอบ OMR พร้อม Progress Bar -->
+            <!-- ส่วนขวา: กระดาษคำตอบ OMR พร้อมแบ่งหมวดหมู่ย่อย -->
             <div class="lg:col-span-5 space-y-4">
                 <div class="hitech-card p-5 rounded-2xl space-y-4">
                     <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
@@ -155,12 +151,11 @@
                         <span id="answeredCount" class="text-xs text-sky-600 dark:text-sky-400 font-bold">ตอบแล้ว 0/0 ข้อ</span>
                     </div>
 
-                    <!-- Progress Bar ความคืบหน้า -->
                     <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden border border-sky-500/20">
                         <div id="examProgressBar" class="bg-gradient-to-r from-sky-500 to-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
 
-                    <div id="studentOmrContainer" class="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+                    <div id="studentOmrContainer" class="space-y-4 max-h-[520px] overflow-y-auto pr-1">
                         <div class="text-center py-10 text-slate-400 text-xs">กำลังโหลดชุดคำถาม...</div>
                     </div>
                 </div>
@@ -169,7 +164,6 @@
         </div>
     </main>
 
-    <!-- Audio เสียงเตือน Beep สั้นๆ สำหรับ Announcement -->
     <audio id="beepAudio" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <script>
@@ -191,7 +185,6 @@
         let announcedHalfway = false;
         let announcedLast5Min = false;
 
-        // Theme Toggle Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -245,7 +238,6 @@
 
             const pdfContainer = document.getElementById('pdfViewerContainer');
             if (exam.pdf_url) {
-                // ซ่อน Toolbar พิมพ์และดาวน์โหลดของ PDF ด้วยพารามิเตอร์ #toolbar=0
                 const cleanPdfUrl = exam.pdf_url.includes('#') ? exam.pdf_url : `${exam.pdf_url}#toolbar=0&navpanes=0&scrollbar=0`;
                 pdfContainer.innerHTML = `
                     <iframe src="${cleanPdfUrl}" class="w-full h-full rounded-xl border-0 pointer-events-auto"></iframe>
@@ -262,7 +254,6 @@
             initShortcutBlocker();
         }
 
-        // ระบบจับเวลา & ตรวจเช็กเวลาสำหรับ Announcement 1/2 และ 5 นาทีสุดท้าย
         function startExamTimer(totalSeconds) {
             timeRemainingSeconds = totalSeconds;
             timerInterval = setInterval(() => {
@@ -306,6 +297,7 @@
             document.getElementById('topAnnouncementWidget').classList.remove('show');
         }
 
+        // จัดกลุ่มแสดงผลกระดาษคำตอบ OMR ตามหมวดหมู่ (Category / Section)
         function renderStudentOmr() {
             const container = document.getElementById('studentOmrContainer');
             if (questionsData.length === 0) {
@@ -313,36 +305,62 @@
                 return;
             }
 
-            container.innerHTML = questionsData.map((q, idx) => {
-                const isEssay = q.question_type === 'essay';
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
-                const qNum = q.question_number || (idx + 1);
+            // จัดกลุ่มคำถามตาม category_name หรือ section_title (รองรับทั้งสองฟิลด์ในฐานข้อมูล)
+            const grouped = {};
+            questionsData.forEach((q, idx) => {
+                const catName = q.category_name || q.section_title || 'หมวดคำถามทั่วไป';
+                if (!grouped[catName]) grouped[catName] = [];
+                grouped[catName].push({ q, idx });
+            });
 
-                if (isEssay) {
-                    const currentEssayVal = studentAnswers[q.id] || '';
-                    return `
-                        <div id="question-box-${q.id}" class="p-3 bg-amber-500/10 rounded-xl space-y-2 border border-amber-500/30">
-                            <div class="flex justify-between items-center text-xs font-bold text-amber-600">
-                                <span>ข้อที่ ${qNum} (อัตนัย)</span>
-                            </div>
-                            <textarea rows="3" oninput="saveStudentAnswer('${q.id}', this.value)" class="w-full p-2.5 bg-white dark:bg-slate-900 border rounded-lg text-xs outline-none" placeholder="พิมพ์คำตอบข้อเขียนของคุณที่นี่...">${currentEssayVal}</textarea>
+            let htmlOutput = '';
+            Object.keys(grouped).forEach(catName => {
+                const items = grouped[catName];
+                const startNum = items[0].q.question_number || (items[0].idx + 1);
+                const endNum = items[items.length - 1].q.question_number || (items[items.length - 1].idx + 1);
+
+                htmlOutput += `
+                    <div class="space-y-2 pt-2">
+                        <div class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/60 border-l-4 border-sky-500 rounded-r-xl text-xs font-bold text-sky-700 dark:text-sky-300 flex justify-between items-center">
+                            <span><i class="fas fa-layer-group mr-1.5"></i> ${catName}</span>
+                            <span class="text-[10px] text-slate-400 font-normal">ข้อ ${startNum} ถึง ${endNum}</span>
                         </div>
-                    `;
-                }
-
-                const bubblesHtml = opts.map((optLabel, optIdx) => {
-                    const isSelected = String(studentAnswers[q.id]) === String(optIdx);
-                    return `<div onclick="selectStudentChoice('${q.id}', '${optIdx}')" class="omr-bubble-student ${isSelected ? 'selected' : ''}">${optLabel}</div>`;
-                }).join('');
-
-                return `
-                    <div id="question-box-${q.id}" class="p-3 bg-white dark:bg-slate-900/90 rounded-xl flex items-center justify-between gap-2 border border-slate-200 dark:border-slate-800 transition-all">
-                        <span class="font-extrabold text-xs text-slate-800 dark:text-slate-200 w-12">ข้อ ${qNum}</span>
-                        <div class="flex gap-2">${bubblesHtml}</div>
-                    </div>
                 `;
-            }).join('');
 
+                items.forEach(({ q, idx }) => {
+                    const isEssay = q.question_type === 'essay';
+                    const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                    const qNum = q.question_number || (idx + 1);
+
+                    if (isEssay) {
+                        const currentEssayVal = studentAnswers[q.id] || '';
+                        htmlOutput += `
+                            <div id="question-box-${q.id}" class="p-3 bg-amber-500/10 rounded-xl space-y-2 border border-amber-500/30">
+                                <div class="flex justify-between items-center text-xs font-bold text-amber-600">
+                                    <span>ข้อที่ ${qNum} (อัตนัย - ครูตรวจเอง)</span>
+                                </div>
+                                <textarea rows="3" oninput="saveStudentAnswer('${q.id}', this.value)" class="w-full p-2.5 bg-white dark:bg-slate-900 border rounded-lg text-xs outline-none" placeholder="พิมพ์คำตอบข้อเขียนของคุณที่นี่...">${currentEssayVal}</textarea>
+                            </div>
+                        `;
+                    } else {
+                        const bubblesHtml = opts.map((optLabel, optIdx) => {
+                            const isSelected = String(studentAnswers[q.id]) === String(optIdx);
+                            return `<div onclick="selectStudentChoice('${q.id}', '${optIdx}')" class="omr-bubble-student ${isSelected ? 'selected' : ''}">${optLabel}</div>`;
+                        }).join('');
+
+                        htmlOutput += `
+                            <div id="question-box-${q.id}" class="p-3 bg-white dark:bg-slate-900/90 rounded-xl flex items-center justify-between gap-2 border border-slate-200 dark:border-slate-800 transition-all">
+                                <span class="font-extrabold text-xs text-slate-800 dark:text-slate-200 w-12">ข้อ ${qNum}</span>
+                                <div class="flex gap-2">${bubblesHtml}</div>
+                            </div>
+                        `;
+                    }
+                });
+
+                htmlOutput += `</div>`;
+            });
+
+            container.innerHTML = htmlOutput;
             updateAnsweredStats();
         }
 
@@ -379,7 +397,6 @@
 
         function initShortcutBlocker() {
             document.addEventListener('keydown', (e) => {
-                // ป้องกัน Ctrl+S, Ctrl+P, Ctrl+Shift+I (Inspect)
                 if (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'u')) {
                     e.preventDefault();
                     Swal.fire({ icon: 'warning', title: 'ไม่อนุญาตให้บันทึกหรือพิมพ์หน้าจอ', timer: 1200, showConfirmButton: false });
@@ -387,11 +404,8 @@
             });
         }
 
-        // -------------------------------------------------------------
-        // ระบบแจ้งเตือนรอบแรกกรณีทำไม่ครบ พร้อมลิงก์คลิกกระโดดไปที่ข้อนั้น
-        // -------------------------------------------------------------
+        // แจ้งเตือนข้อที่ยังไม่ได้ทำ (รอบแรก)
         function confirmSubmitExam() {
-            const total = questionsData.length;
             const unansweredList = [];
 
             questionsData.forEach((q, idx) => {
@@ -403,7 +417,6 @@
             });
 
             if (unansweredList.length > 0) {
-                // กรณีทำไม่ครบ ขึ้นเตือนรอบแรก พร้อมลิสต์หมายเลขข้อที่ยังว่าง
                 const badgeHtml = unansweredList.map(item => `
                     <button onclick="jumpToUnansweredQuestion('${item.id}')" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs transition-all shadow-sm">
                         ข้อ ${item.number}
@@ -418,12 +431,12 @@
                             <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border">
                                 ${badgeHtml}
                             </div>
-                            <p class="text-[11px] text-slate-400">💡 คลิกที่หมายเลขข้อเพื่อกระโดดไปตอบทันที หรือกดปุ่ม "ดำเนินการส่งต่อ" หากต้องการส่งทันที</p>
+                            <p class="text-[11px] text-slate-400">💡 คลิกที่หมายเลขข้อเพื่อกระโดดไปตอบทันที หรือกดปุ่มดำเนินการส่งต่อหากต้องการส่งเลย</p>
                         </div>
                     `,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'ดำเนินการส่งต่อ (ยืนยันรอบสอง)',
+                    confirmButtonText: 'ดำเนินการส่งต่อ',
                     cancelButtonText: 'กลับไปทำต่อ',
                     confirmButtonColor: '#e11d48'
                 }).then(res => {
@@ -432,19 +445,16 @@
                     }
                 });
 
-                // Highlight ข้อที่ยังไม่ได้ทำในหน้า OMR
                 unansweredList.forEach(item => {
                     const box = document.getElementById(`question-box-${item.id}`);
                     if (box) box.classList.add('unanswered-highlight');
                 });
 
             } else {
-                // กรณีทำครบทุกข้อแล้ว ไปหน้ายืนยันรอบปกติได้เลย
                 showFinalSubmitConfirmation();
             }
         }
 
-        // ฟังก์ชันกระโดดไปหาข้อที่ยังไม่ได้ทำ
         function jumpToUnansweredQuestion(qId) {
             Swal.close();
             const box = document.getElementById(`question-box-${qId}`);
@@ -455,7 +465,6 @@
             }
         }
 
-        // ยืนยันรอบสุดท้ายก่อนส่งจริง
         function showFinalSubmitConfirmation() {
             Swal.fire({
                 title: 'ยืนยันการส่งข้อสอบรอบสุดท้าย?',
@@ -479,11 +488,47 @@
             }).then(() => submitExamProcess());
         }
 
+        // กระบวนการส่งข้อสอบและคัดIแยกเส้นทางตามประเภทข้อสอบ (มีอัตนัย vs ปรนัยล้วน)
         async function submitExamProcess() {
             clearInterval(timerInterval);
+            
+            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
+            const hasEssay = questionsData.some(q => q.question_type === 'essay');
+
+            // บันทึกคำตอบลง Supabase ตาราง exam_submissions
+            const submissionPayload = {
+                exam_id: examId,
+                student_id: studentId,
+                answers: studentAnswers,
+                status: hasEssay ? 'pending_grading' : 'graded',
+                submitted_at: new Date().toISOString()
+            };
+
+            await mySupabase.from('exam_submissions').insert([submissionPayload]);
             localStorage.removeItem(`exam_ans_${examId}`);
-            Swal.fire({ title: 'ส่งข้อสอบสำเร็จ!', icon: 'success', text: 'บันทึกคะแนนและคำตอบลงระบบเรียบร้อยแล้ว' })
-                .then(() => window.close());
+
+            if (hasEssay) {
+                // กรณีมีข้ออัตนัย -> เด้งไปหน้าตรวจของครู / แจ้งเตือนรอตรวจ
+                Swal.fire({
+                    icon: 'info',
+                    title: 'ส่งข้อสอบสำเร็จ!',
+                    text: 'ชุดข้อสอบนี้มีข้ออัตนัย ระบบได้ส่งข้อมูลไปยังหน้าตรวจของครูเรียบร้อยแล้ว รอคุณครูตรวจเพื่อสรุปคะแนนและผลวิเคราะห์ AI เต็มรูปแบบ',
+                    confirmButtonText: 'กลับสู่หน้าหลัก'
+                }).then(() => {
+                    window.location.href = 'student.html';
+                });
+            } else {
+                // กรณีปรนัยล้วน -> ส่งคะแนนเข้า admin_analytics.html และพาไปหน้าแสดงผลเปรียบเทียบ + AI Diagnostic
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ส่งข้อสอบและตรวจผลสำเร็จ!',
+                    text: 'ระบบกำลังพาคุณไปยังหน้าสรุปคะแนนและวิเคราะห์ผล AI...',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = `student_result.html?exam_id=${examId}`;
+                });
+            }
         }
 
         initExamTake();
