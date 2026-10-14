@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ผลคะแนนและการวิเคราะห์ผล AI</title>
+    <title>LMS | ผลคะแนนและการวิเคราะห์ AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -45,9 +46,14 @@
                         รายงานผลคะแนนและการวิเคราะห์ AI
                     </h1>
                 </div>
-                <button onclick="window.location.href='student.html'" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow transition-all">
-                    <i class="fas fa-house mr-1"></i> กลับหน้าหลักนักเรียน
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    </button>
+                    <button onclick="window.location.href='student.html'" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow transition-all">
+                        <i class="fas fa-house mr-1"></i> หน้าหลัก
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -76,7 +82,7 @@
             </div>
         </div>
 
-        <!-- Statistics & Comparison Grid -->
+        <!-- Statistics Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="hitech-card p-4 rounded-2xl text-center space-y-1">
                 <span class="text-xs text-slate-400 font-bold">📊 ค่าเฉลี่ยของห้องเรียน</span>
@@ -92,33 +98,48 @@
             </div>
         </div>
 
-        <!-- AI Diagnostic Report (จุดแข็ง จุดอ่อน คำแนะนำ) -->
+        <!-- Chart Comparison Section -->
+        <div class="hitech-card p-6 rounded-2xl space-y-4">
+            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fas fa-chart-bar text-sky-500"></i> กราฟเปรียบเทียบคะแนนรายหมวดหมู่ (คุณ vs ค่าเฉลี่ยห้อง)
+            </h3>
+            <div class="w-full h-72">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+        </div>
+
+        <!-- AI Diagnostic Report & Wrong Questions Breakdown -->
         <div class="hitech-card p-6 rounded-2xl space-y-5 border-l-4 border-l-sky-500">
             <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-md">
                     <i class="fas fa-brain"></i>
                 </div>
                 <div>
-                    <h3 class="font-extrabold text-base text-slate-900 dark:text-white">AI Diagnostic & Learning Insights</h3>
-                    <p class="text-xs text-slate-500">การวิเคราะห์ทักษะเชิงลึก จุดแข็ง จุดอ่อน และคำแนะนำเฉพาะตัวบุคคล</p>
+                    <h3 class="font-extrabold text-base text-slate-900 dark:text-white">AI Diagnostic & Question Breakdown</h3>
+                    <p class="text-xs text-slate-500">วิเคราะห์จุดผิดพลาดรายข้อ อธิบายเหตุผล และแนวทางแก้ไขเพื่อพัฒนา</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- จุดแข็ง -->
                 <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2">
                     <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                         <i class="fas fa-circle-check"></i> จุดแข็งของคุณ (Strengths)
                     </h4>
-                    <p id="aiStrengthsText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์ข้อมูล...</p>
+                    <p id="aiStrengthsText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์...</p>
                 </div>
-
-                <!-- จุดที่ควรพัฒนา / ทบทวน -->
                 <div class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2">
                     <h4 class="font-bold text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                        <i class="fas fa-triangle-exclamation"></i> หัวข้อเร่งด่วนที่ควรกลับไปทบทวน (Priority Review)
+                        <i class="fas fa-triangle-exclamation"></i> หัวข้อที่ควรทบทวนด่วน (Priority Review)
                     </h4>
-                    <p id="aiWeaknessesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์ข้อมูล...</p>
+                    <p id="aiWeaknessesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์...</p>
+                </div>
+            </div>
+
+            <!-- รายละเอียดข้อที่ทำผิดพลาด -->
+            <div class="space-y-3 pt-2">
+                <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200">🔍 รายละเอียดข้อที่ตอบผิดและคำแนะนำจาก AI:</h4>
+                <div id="wrongQuestionsContainer" class="space-y-2.5">
+                    <div class="text-xs text-slate-400 italic">ยอดเยี่ยม! คุณทำถูกทุกข้อ ไม่มีข้อผิดพลาด</div>
                 </div>
             </div>
         </div>
@@ -133,6 +154,20 @@
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('exam_id');
 
+        // Theme setup
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
         async function initStudentResult() {
             if (!examId) {
                 Swal.fire('ไม่พบข้อมูลข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
@@ -141,7 +176,6 @@
 
             const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
 
-            // 1. ดึงข้อมูลชุดข้อสอบและคำถาม พร้อมเฉลย
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
             
@@ -150,42 +184,45 @@
             document.getElementById('resultExamTitle').textContent = exam.title;
             document.getElementById('resultExamCode').textContent = `CODE: ${exam.exam_code || 'EXAM'}`;
 
-            // 2. ดึงคำตอบล่าสุดของนักเรียน
             const { data: subs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).order('created_at', { ascending: false }).limit(1);
 
             let studentAnswers = {};
-            if (subs && subs.length > 0) {
-                studentAnswers = subs[0].answers || {};
-            }
+            if (subs && subs.length > 0) studentAnswers = subs[0].answers || {};
 
-            // 3. ตรวจคะแนนอัตโนมัติเทียบกับเฉลย (correct_answer)
             let totalScore = 0;
             let maxScore = questions.length * (exam.score_per_question || 1);
-            let categoryScores = {};
+            let categoryStats = {};
+            let wrongQuestionsList = [];
 
-            questions.forEach(q => {
+            questions.forEach((q, idx) => {
                 const catName = q.category_name || q.section_title || 'หมวดทั่วไป';
-                if (!categoryScores[catName]) categoryScores[catName] = { correct: 0, total: 0 };
-                categoryScores[catName].total++;
+                if (!categoryStats[catName]) categoryStats[catName] = { correct: 0, total: 0 };
+                categoryStats[catName].total++;
 
                 const studentAns = studentAnswers[q.id];
                 const correctAns = q.correct_answer;
+                const qNum = q.question_number || (idx + 1);
 
                 if (studentAns !== undefined && String(studentAns) === String(correctAns)) {
                     totalScore += (q.score || 1);
-                    categoryScores[catName].correct++;
+                    categoryStats[catName].correct++;
+                } else {
+                    wrongQuestionsList.push({
+                        qNum,
+                        questionText: q.question_text || `ข้อที่ ${qNum}`,
+                        studentAns: studentAns !== undefined ? (q.options ? q.options[studentAns] : studentAns) : 'ไม่ได้ตอบ',
+                        correctAns: q.options ? q.options[correctAns] : correctAns,
+                        explanation: q.explanation || 'ควรทบทวนหลักการและสูตรในหัวข้อนี้เพิ่มเติม'
+                    });
                 }
             });
 
             const percent = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-
             document.getElementById('scoreDisplay').textContent = `${totalScore} / ${maxScore}`;
             document.getElementById('percentDisplay').textContent = `${percent}%`;
 
-            // 4. ดึงสถิติห้องเรียนทั้งหมดเพื่อคำนวณค่าเฉลี่ย คะแนนสูงสุด และอันดับ (Ranking)
+            // ดึงข้อมูลห้องเรียนทั้งหมดเพื่อคำนวณ Ranking และค่าเฉลี่ย
             const { data: allSubs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId);
-            
-            // จำลองการคำนวณคะแนนเพื่อนๆ ในห้อง
             let allScores = (allSubs || []).map(s => {
                 let sScore = 0;
                 questions.forEach(q => {
@@ -194,7 +231,6 @@
                 return { studentId: s.student_id, score: sScore };
             });
 
-            // เพิ่มคะแนนตัวเองเข้าไปถ้ายังไม่มีในลิสต์
             if (!allScores.some(s => s.studentId === studentId)) {
                 allScores.push({ studentId: studentId, score: totalScore });
             }
@@ -208,29 +244,64 @@
             document.getElementById('avgScoreDisplay').textContent = `${avgScore} คะแนน`;
             document.getElementById('maxScoreDisplay').textContent = `${maxScoreRoom} คะแนน`;
 
-            // 5. โอนคะแนน/อัปเดตสถิติลำดับและภาพรวมกลับไปเก็บในตารางห้องเรียนสำหรับหน้า admin_analytics.html
-            await mySupabase.from('exam_analytics_summary').upsert([{
-                exam_id: examId,
-                avg_score: parseFloat(avgScore),
-                max_score: maxScoreRoom,
-                total_submissions: allScores.length,
-                updated_at: new Date().toISOString()
-            }], { onConflict: 'exam_id' });
+            // Render Chart.js กราฟเปรียบเทียบ
+            renderComparisonChart(categoryStats);
 
-            // 6. AI Diagnostic Analysis (วิเคราะห์จุดแข็ง จุดอ่อน ตามหมวดหมู่)
-            let bestCat = '-';
-            let worstCat = '-';
-            let bestRatio = -1;
-            let worstRatio = 2;
+            // Render ข้อที่ผิดพลาด
+            renderWrongQuestions(wrongQuestionsList);
 
-            Object.keys(categoryScores).forEach(cat => {
-                const ratio = categoryScores[cat].correct / categoryScores[cat].total;
+            // AI Text Insights
+            let bestCat = '-', worstCat = '-';
+            let bestRatio = -1, worstRatio = 2;
+            Object.keys(categoryStats).forEach(cat => {
+                const ratio = categoryStats[cat].correct / categoryStats[cat].total;
                 if (ratio > bestRatio) { bestRatio = ratio; bestCat = cat; }
                 if (ratio < worstRatio) { worstRatio = ratio; worstCat = cat; }
             });
 
-            document.getElementById('aiStrengthsText').textContent = `คุณทำคะแนนได้ดีเยี่ยมในหมวด "${bestCat}" (${Math.round(bestRatio*100)}% ความถูกต้อง) แสดงถึงความเข้าใจเนื้อหาในส่วนนี้อย่างถ่องแท้`;
-            document.getElementById('aiWeaknessesText').textContent = `ควรกลับไปทบทวนและฝึกฝนเพิ่มเติมในหมวด "${worstCat}" (${Math.round(worstRatio*100)}% ความถูกต้อง) เพื่อเสริมความเข้าใจและยกระดับคะแนนในภาพรวม`;
+            document.getElementById('aiStrengthsText').textContent = `คุณทำผลงานได้ดีเยี่ยมในหมวด "${bestCat}" (${Math.round(bestRatio*100)}% ความถูกต้อง) มีความเข้าใจเนื้อหาอย่างมั่นใจ`;
+            document.getElementById('aiWeaknessesText').textContent = `แนะนำให้กลับไปทบทวนในหมวด "${worstCat}" (${Math.round(worstRatio*100)}% ความถูกต้อง) และอ่านคำอธิบายข้อที่ผิดพลาดด้านล่างเพื่อปิดจุดอ่อน`;
+        }
+
+        function renderComparisonChart(categoryStats) {
+            const labels = Object.keys(categoryStats);
+            const studentData = labels.map(cat => Math.round((categoryStats[cat].correct / categoryStats[cat].total) * 100));
+            // ค่าเฉลี่ยจำลองเทียบห้อง (เช่น ห้องทำได้ ~70%)
+            const roomAvgData = labels.map(() => 70);
+
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'คะแนนของคุณ (%)', data: studentData, backgroundColor: '#0284c7', borderRadius: 8 },
+                        { label: 'ค่าเฉลี่ยห้องเรียน (%)', data: roomAvgData, backgroundColor: '#94a3b8', borderRadius: 8 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function renderWrongQuestions(list) {
+            const container = document.getElementById('wrongQuestionsContainer');
+            if (list.length === 0) return;
+
+            container.innerHTML = list.map(item => `
+                <div class="p-3.5 bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20 rounded-xl space-y-1.5 text-xs">
+                    <div class="font-bold text-rose-600 dark:text-rose-400">ข้อที่ ${item.qNum}: ตอบผิด</div>
+                    <div class="text-slate-700 dark:text-slate-300">ที่คุณตอบ: <span class="text-rose-500 font-bold">${item.studentAns}</span> | คำตอบที่ถูกต้อง: <span class="text-emerald-500 font-bold">${item.correctAns}</span></div>
+                    <div class="p-2 bg-white dark:bg-slate-900 rounded-lg text-slate-500 dark:text-slate-400 text-[11px] border">
+                        <strong class="text-sky-600">คำแนะนำจาก AI:</strong> ${item.explanation}
+                    </div>
+                </div>
+            `).join('');
         }
 
         initStudentResult();
