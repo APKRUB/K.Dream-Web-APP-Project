@@ -91,7 +91,7 @@
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
                     <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> ระบบปฏิบัติการพร้อมใช้งาน 100%
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">AP</span></h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">ผู้ดูแลระบบ</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
                     จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และตรวจสอบ Audit Logs ผ่านศูนย์ควบคุม Hi-Tech
                 </p>
@@ -220,7 +220,8 @@
         });
 
         async function initAdminDashboard() {
-            const loggedName = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'AP';
+            // ดึงชื่อบัญชีที่ล็อกอินจริงจาก LocalStorage / Session
+            const loggedName = localStorage.getItem('account_name') || localStorage.getItem('user_name') || localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
             document.getElementById('displayAdminName').textContent = loggedName;
 
             try {
@@ -236,12 +237,17 @@
             }
         }
 
-        // ดึงการแจ้งเตือนสด Real-time จากฐานข้อมูล Supabase แท้ๆ เท่านั้น (ไม่มีของเก่าค้าง)
         async function fetchLiveNotifications() {
             liveNotifications = [];
 
+            // ตรวจเช็กว่ามีการกดสั่งล้างการแจ้งเตือนไว้ชั่วคราวหรือไม่
+            if (sessionStorage.getItem('notifs_cleared') === 'true') {
+                updateNotifBadge();
+                return;
+            }
+
             try {
-                // 1. หมวดคำถาม Consult (Pending)
+                // 1. หมวดคำถาม Consult
                 const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
                 if (consults && consults.length > 0) {
                     consults.forEach(c => {
@@ -255,7 +261,7 @@
                     });
                 }
 
-                // 2. หมวดส่งข้อสอบ (Recent Submissions)
+                // 2. หมวดส่งข้อสอบ
                 const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
                 if (subs && subs.length > 0) {
                     subs.forEach(s => {
@@ -269,7 +275,7 @@
                     });
                 }
 
-                // 3. หมวดประกาศข่าวสาร (Latest Announcements)
+                // 3. หมวดประกาศข่าวสาร
                 const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
                 if (anns && anns.length > 0) {
                     anns.forEach(a => {
@@ -283,7 +289,7 @@
                     });
                 }
 
-                // 4. หมวดข้อสอบที่ต้องตรวจ (Essay Questions)
+                // 4. หมวดข้อสอบที่ต้องตรวจ
                 const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
                 if (essayQuestions && essayQuestions.length > 0) {
                     const examIds = Array.from(new Set(essayQuestions.map(q => q.exam_id)));
@@ -296,9 +302,13 @@
                     });
                 }
             } catch(e) {
-                console.log('Error loading notifications from Database', e);
+                console.log('Error loading notifications', e);
             }
 
+            updateNotifBadge();
+        }
+
+        function updateNotifBadge() {
             const badge = document.getElementById('notifBadge');
             if (liveNotifications.length > 0) {
                 badge.textContent = liveNotifications.length;
@@ -314,17 +324,27 @@
                 width: '600px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
-                        <div class="flex gap-1 overflow-x-auto pb-1 border-b dark:border-slate-800">
-                            <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
-                            <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
-                            <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
-                            <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
-                            <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
+                        <div class="flex justify-between items-center border-b pb-2 dark:border-slate-800">
+                            <div class="flex gap-1 overflow-x-auto">
+                                <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
+                                <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
+                                <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
+                                <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
+                                <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
+                            </div>
                         </div>
 
                         <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
                             ${liveNotifications.length > 0 ? liveNotifications.map(n => renderNotifCard(n)).join('') : '<div class="text-center py-8 text-slate-400">🎉 ยังไม่มีรายการแจ้งเตือนใหม่ในระบบ</div>'}
                         </div>
+
+                        ${liveNotifications.length > 0 ? `
+                        <div class="pt-2 border-t dark:border-slate-800 flex justify-end">
+                            <button onclick="clearAllNotifications()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5">
+                                <i class="fas fa-trash-can"></i> ล้างการแจ้งเตือนทั้งหมด
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
                 `,
                 confirmButtonText: 'ปิดหน้าต่าง'
@@ -360,6 +380,14 @@
             } else {
                 container.innerHTML = filtered.map(n => renderNotifCard(n)).join('');
             }
+        }
+
+        window.clearAllNotifications = function() {
+            liveNotifications = [];
+            sessionStorage.setItem('notifs_cleared', 'true');
+            updateNotifBadge();
+            Swal.close();
+            Swal.fire({ icon: 'success', title: 'ล้างรายการแจ้งเตือนเรียบร้อยแล้ว!', timer: 1000, showConfirmButton: false });
         }
 
         function openFeatureComingSoon(featureName) {
