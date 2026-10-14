@@ -458,7 +458,7 @@
             }
         }
 
-async function submitExam(isTimeout = false) {
+        async function submitExam(isTimeout = false) {
             if (timerInterval) clearInterval(timerInterval);
             localStorage.removeItem(`exam_start_time_${examId}`);
 
@@ -479,10 +479,10 @@ async function submitExam(isTimeout = false) {
                 didOpen: () => Swal.showLoading()
             });
 
+            // เอาฟิลด์ score ออกเพื่อไม่ให้ติดปัญหาคอลัมน์ score ไม่มีในตาราง exam_attempts
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
-                score: 0,
                 submit_time: new Date().toISOString()
             };
 
@@ -492,14 +492,12 @@ async function submitExam(isTimeout = false) {
                 .select()
                 .single();
 
-            // ตรงนี้จะโชว์ Error จริงๆ จาก Supabase ขึ้นจอให้เห็นจะๆ เลยครับ
             if (attemptError || !newAttempt) {
                 console.error("Attempt Error:", attemptError);
                 Swal.fire({
                     icon: 'error',
-                    title: 'Database Error!',
-                    text: JSON.stringify(attemptError?.message || attemptError),
-                    confirmButtonText: 'รับทราบ'
+                    title: 'เกิดข้อผิดพลาดในการบันทึก',
+                    text: JSON.stringify(attemptError?.message || attemptError)
                 });
                 return;
             }
@@ -535,10 +533,6 @@ async function submitExam(isTimeout = false) {
 
                 await mySupabase.from('exam_answers').insert([answerPayload]);
             }
-
-            await mySupabase.from('exam_attempts').update({
-                score: totalScore
-            }).eq('id', attemptId);
 
             Swal.fire({
                 icon: 'success',
