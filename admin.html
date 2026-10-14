@@ -55,7 +55,6 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- ปุ่ม Notifications แบบ Realtime Badge -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -74,11 +73,10 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
-        
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
-                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Signal Active
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Notifications Connected
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">ผู้ดูแลระบบ</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
@@ -192,7 +190,6 @@
 
         let liveNotifications = [];
 
-        // Theme Toggle Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -218,94 +215,43 @@
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
                 await fetchLiveNotifications();
-                initRealtimeSubscription();
-            } catch (err) {
-                console.error(err);
-            }
+                listenRealtimeNotifications();
+            } catch (err) { console.error(err); }
         }
 
-        // ดึงการแจ้งเตือนสด Real-time จากฐานข้อมูล Supabase
+        // ดึง Notification สดจากตาราง notifications
         async function fetchLiveNotifications() {
-            liveNotifications = [];
-            if (sessionStorage.getItem('notifs_cleared') === 'true') {
-                updateNotifBadge();
-                return;
-            }
-
-            try {
-                // 1. หมวดคำถาม Consult
-                const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
-                if (consults) {
-                    consults.forEach(c => {
-                        liveNotifications.push({
-                            type: 'question',
-                            title: `คำถามใหม่จาก ${c.student_name || 'นักเรียน'}`,
-                            desc: c.topic || 'สอบถามรายละเอียดเรื่องการเรียน/ข้อสอบ',
-                            time: new Date(c.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                            targetUrl: 'admin_consult.html'
-                        });
-                    });
-                }
-
-                // 2. หมวดส่งข้อสอบ
-                const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
-                if (subs) {
-                    subs.forEach(s => {
-                        liveNotifications.push({
-                            type: 'submit',
-                            title: 'นักเรียนส่งข้อสอบใหม่',
-                            desc: `${s.profiles?.full_name || 'นักเรียน'} ส่งข้อสอบแล้ว`,
-                            time: new Date(s.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                            targetUrl: 'admin_analytics.html'
-                        });
-                    });
-                }
-
-                // 3. หมวดประกาศข่าวสาร
-                const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
-                if (anns) {
-                    anns.forEach(a => {
-                        liveNotifications.push({
-                            type: 'general',
-                            title: `ประกาศล่าสุด: ${a.title}`,
-                            desc: a.content || 'ประกาศข่าวสารใหม่ในระบบ',
-                            time: new Date(a.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                            targetUrl: 'admin_announcements.html'
-                        });
-                    });
-                }
-
-                // 4. หมวดข้อสอบที่ต้องตรวจ
-                const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
-                if (essayQuestions && essayQuestions.length > 0) {
-                    const examIds = Array.from(new Set(essayQuestions.map(q => q.exam_id)));
-                    liveNotifications.push({
-                        type: 'grading',
-                        title: 'มีข้อสอบอัตนัยที่รอตรวจ',
-                        desc: `มีข้อสอบข้อเขียนจำนวน ${examIds.length} ชุดที่รอตรวจคะแนน`,
-                        time: 'เรียลไทม์',
-                        targetUrl: 'admin_exams.html'
-                    });
-                }
-            } catch(e) { console.log('Notification Fetch Error:', e); }
-
+            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
+            liveNotifications = data || [];
             updateNotifBadge();
         }
 
-        // ระบบฟังการเปลี่ยนแปลงเรียลไทม์ (Supabase Realtime Subscriptions)
-        function initRealtimeSubscription() {
+        // ฟัง Realtime Event จากตาราง notifications
+        function listenRealtimeNotifications() {
             mySupabase
-                .channel('admin-notifications-realtime')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'consult_threads' }, () => fetchLiveNotifications())
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exam_submissions' }, () => fetchLiveNotifications())
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, () => fetchLiveNotifications())
+                .channel('realtime-notifications-channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+                    liveNotifications.unshift(payload.new);
+                    updateNotifBadge();
+                    
+                    // แสดง Toast สั้นๆ แจ้งเตือนเมื่อมีกิจกรรมใหม่
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'info',
+                        title: payload.new.title,
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                })
                 .subscribe();
         }
 
         function updateNotifBadge() {
             const badge = document.getElementById('notifBadge');
-            if (liveNotifications.length > 0) {
-                badge.textContent = liveNotifications.length;
+            const unreadCount = liveNotifications.length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount;
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
@@ -314,7 +260,7 @@
 
         function openNotificationsModal() {
             Swal.fire({
-                title: '🔔 การแจ้งเตือนคุณครู (Realtime)',
+                title: '🔔 การแจ้งเตือนระบบ Realtime',
                 width: '600px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
@@ -350,16 +296,18 @@
             else if (n.type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
             else if (n.type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
 
+            const timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+
             return `
-                <div onclick="window.location.href='${n.targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
+                <div onclick="window.location.href='${n.target_url || 'admin.html'}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
                             ${badge}
                             <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${n.title}</h5>
                         </div>
-                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${n.desc}</p>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${n.description || ''}</p>
                     </div>
-                    <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${n.time}</span>
+                    <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
                 </div>
             `;
         }
@@ -374,9 +322,9 @@
             }
         }
 
-        window.clearAllNotifications = function() {
+        async function clearAllNotifications() {
+            await mySupabase.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             liveNotifications = [];
-            sessionStorage.setItem('notifs_cleared', 'true');
             updateNotifBadge();
             Swal.close();
             Swal.fire({ icon: 'success', title: 'ล้างรายการแจ้งเตือนเรียบร้อยแล้ว!', timer: 1000, showConfirmButton: false });
