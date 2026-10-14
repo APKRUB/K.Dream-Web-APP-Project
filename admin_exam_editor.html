@@ -15,12 +15,7 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { 
-                        primary: '#0284c7', 
-                        darkbg: '#020617', 
-                        darkbox: '#090d16', 
-                        darkinput: '#0f172a' 
-                    } 
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' } 
                 } 
             } 
         }
@@ -35,43 +30,21 @@
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
 
         .omr-bubble-lg {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            border: 2px solid #cbd5e1;
-            background-color: #ffffff;
-            color: #334155;
+            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s ease; border: 2px solid #cbd5e1;
+            background-color: #ffffff; color: #334155;
         }
         .dark .omr-bubble-lg { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
         .omr-bubble-lg.active {
-            background-color: #0284c7 !important;
-            color: #ffffff !important;
-            border-color: #0284c7 !important;
+            background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important;
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
         }
 
         .bottom-floating-banner {
-            position: fixed;
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(120%);
-            z-index: 50;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(120%); z-index: 50;
+            opacity: 0; pointer-events: none; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .bottom-floating-banner.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .bottom-floating-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-32">
@@ -101,18 +74,17 @@
                 <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2">
                     <i class="fas fa-grip-vertical"></i> กระดาษคำตอบคอมพิวเตอร์ (OMR Sheet 4 ข้อ/แถว)
                 </h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">คลิกฝนเฉลยปรนัย OMR ได้ทันที | หรือเลือกประเภทเป็นอัตนัยพร้อมระบบตรวจ Keyword</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ฝนเฉลย OMR | กำหนดช่วงข้อผูกกับหมวดหมู่ย่อยได้ทันที</p>
             </div>
             <button onclick="openAutoAnswerSheetModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0">
                 <i class="fas fa-plus-circle mr-1"></i> เจนกระดาษ OMR
             </button>
         </div>
 
-        <!-- แผง PDF โจทย์ -->
         <div id="pdfUploadCard" class="hitech-card p-4 rounded-2xl space-y-2 border-l-4 border-l-red-500">
             <h3 class="font-bold text-xs flex items-center gap-2 text-red-600 dark:text-red-400"><i class="fas fa-file-pdf"></i> ไฟล์โจทย์ PDF ข้อสอบ</h3>
             <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
-                <input type="text" id="pdfUrlInput" onchange="markAsModified()" class="md:col-span-8 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs" placeholder="วาง URL ลิงก์ PDF หรืออัปโหลดไฟล์...">
+                <input type="text" id="pdfUrlInput" onchange="markAsModified()" class="md:col-span-8 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs" placeholder="วาง URL ลิงก์ PDF...">
                 <label class="md:col-span-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5">
                     <i class="fas fa-upload"></i> อัปโหลด PDF
                     <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="uploadPdfFile(this)">
@@ -121,7 +93,9 @@
             </div>
         </div>
 
-        <!-- ส่วนที่ 1: OMR 4 ข้อต่อแถว -->
+        <!-- ชิปสรุปสัดส่วนหมวดหมู่โจทย์ -->
+        <div id="categorySummaryChips" class="flex flex-wrap gap-2 pt-1"></div>
+
         <div class="hitech-card p-6 rounded-2xl space-y-4">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                 <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-check-double text-sky-500"></i> กระดาษทำเฉลย OMR</h3>
@@ -132,16 +106,14 @@
             </div>
         </div>
 
-        <!-- ส่วนที่ 2: เนื้อหาคำถามด้านล่างพร้อม Dropdown ตัวกรองหมวดหมู่ใหญ่ -->
         <div class="hitech-card p-6 rounded-2xl space-y-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                 <div>
                     <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-list-ul text-purple-500"></i> เนื้อหาคำถาม & รายการตัวเลือก (Accordion View)</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">ขยายดูโจทย์ แนบรูปภาพ เพิ่มตัวเลือก (สูงสุด 5 ตัวเลือก) และตั้งค่า Keyword ตรวจอัตนัย</p>
+                    <p class="text-xs text-slate-400 mt-0.5">ขยายดูโจทย์ แนบรูปภาพ เพิ่มตัวเลือก และตั้งค่า Keyword ตรวจอัตนัย</p>
                 </div>
                 
                 <div class="flex items-center gap-2 w-full md:w-auto">
-                    <!-- Dropdown หมวดหมู่คำถามขนาดใหญ่ตามคำขอ -->
                     <select id="categoryFilterDropdown" onchange="renderQuestionAccordions()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 font-bold text-xs rounded-xl border border-slate-300 dark:border-slate-700 outline-none text-sky-600 dark:text-sky-400">
                         <option value="ALL">📂 แสดงหมวดหมู่โจทย์ทั้งหมด</option>
                     </select>
@@ -155,7 +127,6 @@
         </div>
     </main>
 
-    <!-- Floating Save Banner -->
     <div id="floatingSaveBanner" class="bottom-floating-banner">
         <div class="px-6 py-3.5 bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 rounded-full shadow-2xl border border-sky-500/50 flex items-center gap-4">
             <div class="flex items-center gap-2 text-xs font-bold">
@@ -224,7 +195,20 @@
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             cachedQuestions = questions || [];
 
-            // อัปเดตรายการหมวดหมู่ใน Dropdown
+            // สรุปสัดส่วนหมวดหมู่โจทย์เป็น Chip ด้านบน
+            const tagCounts = {};
+            cachedQuestions.forEach(q => {
+                const tag = q.category_tag || 'ทั่วไป';
+                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+
+            const chipsSec = document.getElementById('categorySummaryChips');
+            chipsSec.innerHTML = Object.keys(tagCounts).map(tag => `
+                <span class="px-3 py-1 bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-full font-bold text-xs border border-sky-300 dark:border-sky-800">
+                    🏷️ ${tag}: ${tagCounts[tag]} ข้อ
+                </span>
+            `).join('');
+
             const tags = Array.from(new Set(cachedQuestions.map(q => q.category_tag).filter(Boolean)));
             const dd = document.getElementById('categoryFilterDropdown');
             dd.innerHTML = '<option value="ALL">📂 แสดงหมวดหมู่โจทย์ทั้งหมด</option>' + tags.map(t => `<option value="${t}">🏷️ หมวดหมู่: ${t}</option>`).join('');
@@ -288,7 +272,7 @@
 
                 const optionsListHtml = isEssay 
                     ? `<div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl text-xs text-amber-600 dark:text-amber-300 font-bold space-y-1">
-                        <div><i class="fas fa-pen-nib mr-1"></i> โหมดการตรวจอัตนัย: ${q.grading_type === 'keyword' ? 'ตรวจด้วย Keyword อัตโนมัติ' : 'คุณครูตรวจเอง (Manual)'}</div>
+                        <div><i class="fas fa-pen-nib mr-1"></i> โหมดตรวจอัตนัย: ${q.grading_type === 'keyword' ? 'ตรวจด้วย Keyword อัตโนมัติ' : 'คุณครูตรวจเอง'}</div>
                         ${(q.keywords || []).length > 0 ? `<div class="text-[11px] text-slate-500">คำสำคัญ: ${q.keywords.map(k => `<span class="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded border border-amber-300">${k.word} (${k.mode === 'exact' ? 'ตรงเป๊ะ' : 'มีในข้อความ'})</span>`).join(' ')}</div>` : ''}
                        </div>`
                     : opts.map((opt, i) => {
@@ -396,7 +380,6 @@
                             <textarea id="qText" rows="3" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800">${qData?.question_text || qData?.content || ''}</textarea>
                         </div>
 
-                        <!-- อัปโหลดรูปภาพประกอบโจทย์ลง Bucket exam_images ตามคำขอ -->
                         <div>
                             <label class="block font-bold mb-1">รูปภาพประกอบโจทย์ (ถ้ามี)</label>
                             <div class="flex gap-2 items-center">
@@ -408,13 +391,10 @@
                             </div>
                         </div>
 
-                        <!-- ส่วนตั้งค่าตัวเลือกปรนัย (ปรับเพิ่ม/ลดได้สูงสุด 5 ตัวเลือก) -->
                         <div id="mcSection" class="${qData?.question_type === 'essay' ? 'hidden' : ''} space-y-2 pt-2 border-t dark:border-slate-800">
                             <div class="flex justify-between items-center">
                                 <label class="font-bold text-slate-800 dark:text-slate-200">รายการตัวเลือกคำตอบ (สูงสุด 5 ตัวเลือก)</label>
-                                <div class="flex gap-1">
-                                    <button type="button" onclick="addOptionField()" class="px-2 py-1 bg-sky-600 text-white rounded-lg text-[10px] font-bold"><i class="fas fa-plus"></i> เพิ่มตัวเลือก</button>
-                                </div>
+                                <button type="button" onclick="addOptionField()" class="px-2 py-1 bg-sky-600 text-white rounded-lg text-[10px] font-bold"><i class="fas fa-plus"></i> เพิ่มตัวเลือก</button>
                             </div>
                             <div id="optionsInputsContainer" class="space-y-1.5">
                                 ${currentOpts.map((opt, i) => `
@@ -428,7 +408,6 @@
                             </div>
                         </div>
 
-                        <!-- ส่วนตั้งค่าการตรวจอัตนัย (Manual vs Auto Keyword 2 ระดับความแม่นยำ) -->
                         <div id="essaySection" class="${qData?.question_type === 'essay' ? '' : 'hidden'} space-y-3 pt-2 border-t dark:border-slate-800">
                             <label class="block font-bold">โหมดการตรวจอัตนัย</label>
                             <select id="qGradingType" onchange="toggleGradingTypeSec(this.value)" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800">
@@ -463,12 +442,10 @@
                     const qType = document.getElementById('qType').value;
                     const txt = document.getElementById('qText').value;
 
-                    // ดึงตัวเลือกปรนัย
                     const optInputs = document.querySelectorAll('.opt-text-input');
                     const optsParsed = Array.from(optInputs).map(inp => inp.value.trim()).filter(Boolean);
                     const selectedRadio = document.querySelector('input[name="swalCorrectRadio"]:checked');
 
-                    // ดึง Keywords
                     const kwRows = document.querySelectorAll('.keyword-row');
                     const kwParsed = Array.from(kwRows).map(row => ({
                         word: row.querySelector('.kw-text').value.trim(),
@@ -542,7 +519,6 @@
             container.appendChild(div);
         }
 
-        // อัปโหลดรูปภาพโจทย์ลง Bucket exam_images
         async function uploadQuestionImage(input) {
             const file = input.files[0];
             if (!file) return;
@@ -550,15 +526,10 @@
             const { error } = await mySupabase.storage.from('exam_images').upload(fileName, file);
             if (!error) {
                 const { data } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
-                if (data) {
-                    document.getElementById('qImageUrl').value = data.publicUrl;
-                }
-            } else {
-                Swal.fire('อัปโหลดล้มเหลว', error.message, 'error');
-            }
+                if (data) document.getElementById('qImageUrl').value = data.publicUrl;
+            } else { Swal.fire('อัปโหลดล้มเหลว', error.message, 'error'); }
         }
 
-        // ยืนยันก่อนลบคำถาม
         async function confirmDeleteQuestion(id, qNum) {
             const res = await Swal.fire({
                 title: `ยืนยันการลบข้อสอบ ข้อที่ ${qNum}?`,
@@ -576,6 +547,7 @@
             }
         }
 
+        // เจน OMR พร้อมเลือกหมวดหมู่ย่อยได้ตามต้องการ
         async function openAutoAnswerSheetModal() {
             const { value: formValues } = await Swal.fire({
                 title: '⚡ เจนกระดาษคำตอบ OMR',
@@ -591,13 +563,18 @@
                                 <input type="number" id="genEndNum" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" value="20">
                             </div>
                         </div>
+                        <div>
+                            <label class="block font-bold mb-1">ระบุหมวดหมู่ย่อยสำหรับช่วงข้อนี้ (ถ้ามี)</label>
+                            <input id="genCategoryTag" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" placeholder="เช่น ฟิสิกส์คำนวณ">
+                        </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'สร้างทันที',
+                confirmButtonText: 'สร้างกระดาษ OMR',
                 preConfirm: () => ({
                     start: parseInt(document.getElementById('genStartNum').value) || 1,
-                    end: parseInt(document.getElementById('genEndNum').value) || 20
+                    end: parseInt(document.getElementById('genEndNum').value) || 20,
+                    tag: document.getElementById('genCategoryTag').value.trim()
                 })
             });
 
@@ -610,6 +587,7 @@
                         question_number: i,
                         question_text: `ข้อที่ ${i}`,
                         content: `ข้อที่ ${i}`,
+                        category_tag: formValues.tag || '',
                         question_type: 'multiple_choice',
                         options: ['ก', 'ข', 'ค', 'ง'],
                         correct_answer: '0'
