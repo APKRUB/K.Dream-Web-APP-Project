@@ -109,7 +109,7 @@
                 <div class="flex items-center gap-2">
                     <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
                         <button id="filterBtnPending" onclick="setExamStatusFilter('pending')" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white transition-all shadow">
-                            <i class="fas fa-hourglass-start mr-1"></i> ยังไม่ได้ทำ
+                            <i class="fas fa-hourglass-start mr-1"></i> ยังไม่ได้ทำ / กำลังจะเปิด
                         </button>
                         <button id="filterBtnCompleted" onclick="setExamStatusFilter('completed')" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 transition-all">
                             <i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว
@@ -201,14 +201,10 @@
 
         async function fetchExamsList() {
             const { data, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
-            const now = new Date();
 
+            // ดึงข้อสอบทั้งหมดที่เปิดหรือตั้งเวลา Countdown ไว้ (ไม่ซ่อน)
             cachedExams = (data || []).filter(e => {
                 if (e.is_hidden === true || e.is_active === false || e.status === 'hidden' || e.status === 'draft') return false;
-                const startTime = e.start_time ? new Date(e.start_time) : null;
-                if (startTime && startTime > now) {
-                    if (e.show_countdown !== true && e.is_countdown !== true) return false;
-                }
                 return true;
             });
 
@@ -264,7 +260,7 @@
                 const examsInCat = categoriesMap[cat];
                 let examsHtml = currentViewMode === 'card' 
                     ? `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">${examsInCat.map(e => renderExamCard(e, now)).join('')}</div>`
-                    : `<div class="hitech-card p-4 rounded-2xl overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b"><th class="p-3">รหัส</th><th class="p-3">ชื่อชุดข้อสอบ</th><th class="p-3 text-center">เวลา</th><th class="p-3 text-center">กำหนดส่ง</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-center">จัดการ</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">${examsInCat.map(e => renderExamRow(e, now)).join('')}</tbody></table></div>`;
+                    : `<div class="hitech-card p-4 rounded-2xl overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b"><th class="p-3">รหัส</th><th class="p-3">ชื่อชุดข้อสอบ</th><th class="p-3 text-center">เวลา</th><th class="p-3 text-center">เปิดสอบ / กำหนดส่ง</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-center">จัดการ</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">${examsInCat.map(e => renderExamRow(e, now)).join('')}</tbody></table></div>`;
 
                 return `
                     <div class="space-y-3">
@@ -287,25 +283,31 @@
             const maxAttempts = e.max_attempts || 1;
             const isCompleted = submissionCount >= maxAttempts;
             const isResuming = myInProgressExams.includes(e.id);
+            const isCountdownActive = startTime && startTime > now;
 
             let statusBadge = '';
             let actionBtn = '';
             let cardBorder = 'border-l-4 border-l-sky-500';
             let cardBg = 'bg-white dark:bg-darkbox';
+            let timeInfoHtml = '';
 
             if (isCompleted) {
                 statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]"><i class="fas fa-check-circle mr-1"></i>ทำเสร็จแล้ว</span>';
                 actionBtn = `<button disabled class="w-full py-2.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-xl cursor-not-allowed border flex items-center justify-center gap-2"><i class="fas fa-lock"></i> ส่งแล้ว (ทำข้อสอบเสร็จสิ้น)</button>`;
                 cardBorder = 'border-l-8 border-l-emerald-500';
                 cardBg = 'bg-emerald-50/40 dark:bg-emerald-900/10';
-            } else if (startTime && startTime > now) {
-                statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px]"><i class="fas fa-clock mr-1"></i>นับถอยหลังเปิดสอบ</span>';
-                actionBtn = `<button disabled class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed border"><i class="fas fa-lock mr-1"></i> เปิดสอบ ${startTime.toLocaleString('th-TH')}</button>`;
+                timeInfoHtml = `<div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>`;
+            } else if (isCountdownActive) {
+                // แสดงเวลา Countdown ที่กำลังจะเปิดอย่างชัดเจน
+                statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] animate-pulse"><i class="fas fa-clock mr-1"></i>ตั้งเวลาเปิดสอบ</span>';
+                actionBtn = `<button disabled class="w-full py-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-xs rounded-xl cursor-not-allowed border border-amber-200 dark:border-amber-800 flex flex-col items-center justify-center py-2"><span class="text-[10px] opacity-80"><i class="fas fa-lock mr-1"></i> จะเปิดให้ทำในเวลา</span><span class="font-mono text-xs font-extrabold mt-0.5">${startTime.toLocaleString('th-TH')}</span></button>`;
                 cardBorder = 'border-l-4 border-l-amber-500';
+                timeInfoHtml = `<div class="col-span-2 text-amber-600 dark:text-amber-400 font-bold"><i class="fas fa-hourglass-start mr-1"></i> เปิดสอบ: ${startTime.toLocaleString('th-TH')}</div>`;
             } else if (dueDate && dueDate < now && e.due_date_policy === 'strict') {
                 statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-[10px]"><i class="fas fa-lock mr-1"></i>หมดเวลาสอบแล้ว</span>';
                 actionBtn = `<button disabled class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed border"><i class="fas fa-ban mr-1"></i> ปิดรับคำตอบแล้ว</button>`;
                 cardBorder = 'border-l-4 border-l-rose-500';
+                timeInfoHtml = `<div><i class="fas fa-calendar-xmark text-rose-500 mr-1"></i> ปิดรับ: <strong>${dueDate.toLocaleDateString('th-TH')}</strong></div>`;
             } else {
                 if (isResuming) {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 font-bold text-[10px]"><i class="fas fa-triangle-exclamation mr-1"></i>ค้างการทำข้อสอบ</span>';
@@ -314,6 +316,7 @@
                     statusBadge = `<span class="px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-bold text-[10px]"><i class="fas fa-pen mr-1"></i>พร้อมทำ</span>`;
                     actionBtn = `<button onclick="showExamInstructionModal('${e.id}')" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-pen-to-square"></i> เริ่มทำข้อสอบ</button>`;
                 }
+                timeInfoHtml = `<div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>`;
             }
 
             return `
@@ -329,7 +332,7 @@
                     <div class="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700/50">
                         <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                             <div><i class="fas fa-hourglass-half text-sky-500 mr-1"></i> เวลา: <strong>${e.time_limit || 60} นาที</strong></div>
-                            <div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>
+                            ${timeInfoHtml}
                         </div>
                         ${actionBtn}
                     </div>
@@ -345,28 +348,39 @@
             const maxAttempts = e.max_attempts || 1;
             const isCompleted = submissionCount >= maxAttempts;
             const isResuming = myInProgressExams.includes(e.id);
-            const isReady = !isCompleted && (!startTime || startTime <= now) && (!dueDate || dueDate >= now || e.due_date_policy !== 'strict');
+            const isCountdownActive = startTime && startTime > now;
+            const isReady = !isCompleted && !isCountdownActive && (!dueDate || dueDate >= now || e.due_date_policy !== 'strict');
 
             let statusStr = isResuming ? 'ทำค้างอยู่ (Resume)' : 'พร้อมสอบ';
             let badgeClass = isResuming ? 'bg-orange-100 text-orange-600' : 'bg-sky-100 text-sky-600';
-            if (isCompleted) { statusStr = 'ทำเสร็จแล้ว'; badgeClass = 'bg-emerald-100 text-emerald-600'; }
-            else if (!isReady) { statusStr = 'ล็อก'; badgeClass = 'bg-rose-100 text-rose-600'; }
+            let timeColText = dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด';
+
+            if (isCompleted) { 
+                statusStr = 'ทำเสร็จแล้ว'; 
+                badgeClass = 'bg-emerald-100 text-emerald-600'; 
+            } else if (isCountdownActive) { 
+                statusStr = 'กำลังจะเปิดสอบ'; 
+                badgeClass = 'bg-amber-100 text-amber-700 font-bold animate-pulse'; 
+                timeColText = `<span class="text-amber-600 font-mono font-bold">${startTime.toLocaleString('th-TH')}</span>`;
+            } else if (!isReady) { 
+                statusStr = 'ล็อก'; 
+                badgeClass = 'bg-rose-100 text-rose-600'; 
+            }
 
             return `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td class="p-3 font-mono font-bold text-sky-600">${e.exam_code || 'EXAM'}</td>
                     <td class="p-3 font-bold text-slate-900 dark:text-white">${e.title}</td>
                     <td class="p-3 text-center font-bold text-slate-500">${e.time_limit || 60} นาที</td>
-                    <td class="p-3 text-center text-slate-400">${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</td>
+                    <td class="p-3 text-center text-slate-400 text-[11px]">${timeColText}</td>
                     <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${statusStr}</span></td>
                     <td class="p-3 text-center">
-                        ${isCompleted ? `<button disabled class="px-3 py-1.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว</button>` : isReady ? `<button onclick="showExamInstructionModal('${e.id}')" class="px-3 py-1.5 ${isResuming ? 'bg-orange-600 hover:bg-orange-500' : 'bg-sky-600 hover:bg-sky-500'} text-white font-bold text-xs rounded-xl shadow transition-all">${isResuming ? 'Resume' : 'เริ่มสอบ'}</button>` : `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl">ล็อก</button>`}
+                        ${isCompleted ? `<button disabled class="px-3 py-1.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว</button>` : isCountdownActive ? `<button disabled class="px-3 py-1.5 bg-amber-100 text-amber-700 font-bold text-xs rounded-xl cursor-not-allowed" title="เปิดสอบเวลา ${startTime.toLocaleString('th-TH')}">รอเปิดสอบ</button>` : isReady ? `<button onclick="showExamInstructionModal('${e.id}')" class="px-3 py-1.5 ${isResuming ? 'bg-orange-600 hover:bg-orange-500' : 'bg-sky-600 hover:bg-sky-500'} text-white font-bold text-xs rounded-xl shadow transition-all">${isResuming ? 'Resume' : 'เริ่มสอบ'}</button>` : `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl">ล็อก</button>`}
                     </td>
                 </tr>
             `;
         }
 
-        // แสดง Modal คำชี้แจงโดยดึงข้อมูลจากชุดข้อสอบจริงที่แอดมินกรอกไว้
         async function showExamInstructionModal(examId) {
             const exam = cachedExams.find(e => e.id === examId);
             if (!exam) return;
