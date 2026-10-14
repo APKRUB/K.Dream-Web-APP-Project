@@ -29,15 +29,15 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
 
-        .omr-bubble {
-            width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s ease; border: 2px solid #cbd5e1;
+        .omr-bubble-compact {
+            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; cursor: pointer; transition: all 0.15s ease; border: 2px solid #cbd5e1;
             background-color: #ffffff; color: #334155;
         }
-        .dark .omr-bubble { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
-        .omr-bubble.active {
+        .dark .omr-bubble-compact { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
+        .omr-bubble-compact.active {
             background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important;
-            box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
         }
     </style>
 </head>
@@ -74,10 +74,10 @@
             <button onclick="window.close()" class="px-3 py-1 bg-indigo-600 text-white rounded-lg">ปิดหน้าต่างนี้</button>
         </div>
 
-        <!-- Layout แบบ 2 ฝั่ง (ซ้าย: PDF โจทย์ | ขวา: กระดาษคำตอบ OMR) -->
+        <!-- Layout แบบ 2 ฝั่ง (ซ้าย: PDF โจทย์ | ขวา: กระดาษคำตอบ OMR แบบกะทัดรัด) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: แสดงโจทย์ PDF (ถ้ามี) หรือแสดงประกาศ -->
+            <!-- ฝั่งซ้าย: แสดงโจทย์ PDF -->
             <div id="pdfViewerCard" class="hidden lg:col-span-7 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ PDF</h3>
@@ -88,21 +88,21 @@
                 </div>
             </div>
 
-            <!-- ฝั่งขวา: กระดาษคำตอบ OMR / ข้อสอบ -->
+            <!-- ฝั่งขวา: กระดาษคำตอบ OMR -->
             <div id="rightAnswerCard" class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-6">
                 <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
                     <div>
                         <h2 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-list-check text-sky-500"></i> กระดาษคำตอบข้อสอบ
                         </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">ฝนตัวเลือก OMR หรือพิมพ์คำตอบอัตนัยให้ครบถ้วนก่อนกดส่ง</p>
+                        <p class="text-xs text-slate-400 mt-0.5">เลขข้ออยู่ด้านหน้า ตัวเลือกกระชับเลื่อนง่าย</p>
                     </div>
                     <button onclick="confirmSubmitExam()" class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2">
                         <i class="fas fa-paper-plane"></i> ส่งข้อสอบ
                     </button>
                 </div>
 
-                <div id="questionsListContainer" class="space-y-4">
+                <div id="questionsListContainer" class="space-y-3">
                     <div class="text-center py-10 text-slate-400 text-xs">กำลังโหลดรายการคำถาม...</div>
                 </div>
             </div>
@@ -141,18 +141,21 @@
         function checkStudentAuth() {
             if (isPreview) return true;
 
-            const studentId = localStorage.getItem('student_id') || 
-                              localStorage.getItem('user_id') || 
-                              localStorage.getItem('user') || 
-                              localStorage.getItem('id') ||
-                              localStorage.getItem('userId') ||
-                              'student-guest';
+            let studentId = localStorage.getItem('student_id') || 
+                            localStorage.getItem('user_id') || 
+                            localStorage.getItem('user') || 
+                            localStorage.getItem('id') ||
+                            localStorage.getItem('userId');
+
+            // ตรวจสอบว่าเป็น UUID ที่ถูกต้องหรือไม่ หากไม่ใช่ให้ใช้ค่า UUID จำลองหรือเว้นว่างเพื่อป้องกัน Error
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!studentId || !uuidRegex.test(studentId)) {
+                studentId = '00000000-0000-0000-0000-000000000000';
+            }
 
             const studentName = localStorage.getItem('student_username') || 
                                 localStorage.getItem('full_name') || 
                                 localStorage.getItem('user_name') || 
-                                localStorage.getItem('name') || 
-                                localStorage.getItem('username') || 
                                 'นักเรียนทั่วไป';
 
             localStorage.setItem('student_id', studentId);
@@ -195,6 +198,24 @@
                 }
             }
 
+            // คำถามก่อนเริ่มทำข้อสอบ
+            if (!isPreview) {
+                const confirmStart = await Swal.fire({
+                    title: `พร้อมเริ่มทำข้อสอบ "${exam.title}" หรือยัง?`,
+                    text: `เวลาในการทำข้อสอบ: ${exam.time_limit || 60} นาที เมื่อกดเริ่มเวลานับถอยหลังทันที`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'เริ่มทำข้อสอบ',
+                    cancelButtonText: 'กลับหน้าหลัก',
+                    allowOutsideClick: false
+                });
+
+                if (!confirmStart.isConfirmed) {
+                    window.location.href = 'student.html';
+                    return;
+                }
+            }
+
             await loadQuestions();
 
             if (!isPreview) {
@@ -217,15 +238,16 @@
             container.innerHTML = currentQuestions.map((q, idx) => {
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                const qNum = q.question_number || (idx + 1);
 
                 if (isEssay) {
                     return `
                         <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400">ข้อที่ ${q.question_number || (idx+1)} (อัตนัย)</span>
+                            <div class="flex items-center justify-between">
+                                <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400">ข้อที่ ${qNum} (อัตนัย)</span>
                                 <span class="px-2 py-0.5 bg-amber-500 text-white font-bold text-[10px] rounded-md">เขียนตอบ</span>
                             </div>
-                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || '-'}</div>
+                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">${q.question_text || q.content || 'คำถามอัตนัย'}</div>
                             <textarea oninput="saveEssayAnswer('${q.id}', this.value)" rows="3" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs outline-none" placeholder="พิมพ์คำตอบของคุณที่นี่..."></textarea>
                         </div>
                     `;
@@ -234,21 +256,19 @@
                 const bubblesHtml = opts.map((cLabel, cIdx) => {
                     const isSelected = studentAnswers[q.id] === String(cIdx) || studentAnswers[q.id] === cLabel;
                     return `
-                        <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble ${isSelected ? 'active' : ''}">
+                        <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble-compact ${isSelected ? 'active' : ''}">
                             ${cLabel}
                         </div>
                     `;
                 }).join('');
 
                 return `
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="font-extrabold text-sm text-sky-600 dark:text-sky-400">ข้อที่ ${q.question_number || (idx+1)}</span>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="font-extrabold text-xs text-sky-600 dark:text-sky-400 w-10">ข้อ ${qNum}</span>
                             ${q.category_tag ? `<span class="px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-600 font-bold text-[10px]">${q.category_tag}</span>` : ''}
                         </div>
-                        ${q.image_url ? `<div><img src="${q.image_url}" class="max-h-40 rounded-xl border"></div>` : ''}
-                        <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || ''}</div>
-                        <div class="flex flex-wrap gap-2.5 pt-1">${bubblesHtml}</div>
+                        <div class="flex items-center gap-1.5 overflow-x-auto py-1">${bubblesHtml}</div>
                     </div>
                 `;
             }).join('');
@@ -277,17 +297,22 @@
         }
 
         async function setupAttempt() {
-            const studentId = localStorage.getItem('student_id') || 'student-guest';
+            let studentId = localStorage.getItem('student_id');
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(studentId)) {
+                studentId = null; // หากไม่ใช่ UUID ให้ส่ง null เพื่อให้ระบบผ่านหรือบันทึกตามสิทธิ์
+            }
 
-            // เอาฟิลด์ max_score ออกเพื่อป้องกัน Error กรณีฐานข้อมูลไม่ได้สร้างคอลัมน์นี้ไว้
-            const { data, error } = await mySupabase.from('exam_attempts').insert([{
+            const insertData = {
                 exam_id: examId,
-                student_id: studentId,
                 status: 'in_progress'
-            }]).select().single();
+            };
+            if (studentId) insertData.student_id = studentId;
+
+            const { data, error } = await mySupabase.from('exam_attempts').insert([insertData]).select().single();
 
             if (error || !data) {
-                Swal.fire('เริ่มต้นทำข้อสอบไม่สำเร็จ', error?.message || '', 'error').then(() => window.location.href = 'student.html');
+                Swal.fire('เริ่มต้นทำข้อสอบไม่สำเร็จ', error?.message || 'โปรดตรวจสอบตารางฐานข้อมูล', 'error').then(() => window.location.href = 'student.html');
                 return;
             }
 
