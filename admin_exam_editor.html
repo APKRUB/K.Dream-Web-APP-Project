@@ -27,112 +27,142 @@
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .glass-nav { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.92); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
-        .glossy-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-        .dark .glossy-card { background: #090d16; border: 1px solid rgba(30, 41, 59, 0.8); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); }
+        .glossy-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .dark .glossy-card { background: #090d16; border: 1px solid rgba(30, 41, 59, 0.8); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
-        .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
-        
+
+        /* Compact OMR Bubble Style */
         .omr-bubble {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
             border: 2px solid #cbd5e1;
+            background-color: #ffffff;
+            color: #475569;
         }
-        .dark .omr-bubble { border-color: #334155; }
+        .dark .omr-bubble { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
         .omr-bubble.active {
-            background-color: #0284c7;
-            color: #ffffff;
-            border-color: #0284c7;
-            box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+            border-color: #0284c7 !important;
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
         }
 
-        .fab-save-btn {
+        /* Floating Save Banner (Bottom Center) */
+        .bottom-floating-banner {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
             z-index: 50;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .fab-save-btn:hover { transform: translateY(-4px) scale(1.03); }
+        .bottom-floating-banner.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-32">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-32">
 
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <button onclick="window.location.href='admin_exams.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-primary hover:text-white transition-all"><i class="fas fa-arrow-left"></i></button>
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="window.location.href='admin_exams.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-primary hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
-                    <h1 id="examTitleHeader" class="font-extrabold text-xl text-slate-900 dark:text-white">จัดการโจทย์และเฉลย OMR</h1>
-                    <p id="examSubHeader" class="text-xs text-slate-500 dark:text-slate-400">กำลังโหลดข้อมูลข้อสอบ...</p>
+                    <h1 id="examTitleHeader" class="font-extrabold text-base text-slate-900 dark:text-white">จัดการโจทย์และเฉลย OMR</h1>
+                    <p id="examSubHeader" class="text-[11px] text-slate-500">กำลังโหลด...</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
-                <button onclick="openPreviewStudentModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all flex items-center gap-2">
-                    <i class="fas fa-eye"></i> Preview หน้าสอบนักเรียน
+            <div class="flex items-center gap-2">
+                <button onclick="openPreviewStudentModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+                    <i class="fas fa-eye"></i> Preview สอบ
                 </button>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800"><i class="fas fa-moon" id="themeIcon"></i></button>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800"><i class="fas fa-moon text-sm" id="themeIcon"></i></button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 pt-32 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 pt-20 space-y-6">
         
-        <!-- เครื่องมือสร้างกระดาษคำตอบคอมพิวเตอร์ (OMR Sheet Generator) -->
-        <div class="glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-sky-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <!-- แผงเครื่องมือสร้างกระดาษคำตอบ OMR -->
+        <div class="glossy-card p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-l-4 border-l-sky-500">
             <div>
-                <h3 class="font-bold text-base flex items-center gap-2 text-sky-600 dark:text-sky-400">
-                    <i class="fas fa-grip-vertical"></i> สร้างกระดาษคำตอบคอมพิวเตอร์ (OMR Bubble Sheet)
+                <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                    <i class="fas fa-grip-vertical"></i> กระดาษคำตอบคอมพิวเตอร์ (OMR Sheet Quick Editor)
                 </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">เจนกระดาษคำตอบฝนวงกลม ก-ง อัตโนมัติ ปรับแก้เฉลยง่ายเพียงคลิกฝนวงกลมที่ต้องการ</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ฝนเฉลยปรนัย OMR ได้ทันทีในคลิกเดียว | หรือเลือกประเภทเป็นอัตนัยสำหรับข้อเขียน</p>
             </div>
-            <button onclick="openAutoAnswerSheetModal()" class="px-5 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 transition-all shrink-0">
-                <i class="fas fa-plus-circle mr-1"></i> เจนกระดาษคำตอบ OMR
+            <button onclick="openAutoAnswerSheetModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0">
+                <i class="fas fa-plus-circle mr-1"></i> เจนกระดาษ OMR
             </button>
         </div>
 
-        <!-- แผงจัดการ PDF โจทย์ -->
-        <div id="pdfUploadCard" class="glossy-card p-6 rounded-3xl space-y-4 border-l-4 border-l-red-500">
-            <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-file-pdf text-red-500"></i> ไฟล์โจทย์ PDF ข้อสอบ</h3>
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                <input type="text" id="pdfUrlInput" class="md:col-span-8 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs" placeholder="วาง URL ลิงก์ PDF หรืออัปโหลดไฟล์จากเครื่องด้านขวา...">
-                <label class="md:col-span-2 px-4 py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2">
+        <!-- แผงจัดการ PDF โจทย์ (แสดงเมื่อประเภทเป็น PDF) -->
+        <div id="pdfUploadCard" class="glossy-card p-4 rounded-2xl space-y-2 border-l-4 border-l-red-500">
+            <h3 class="font-bold text-xs flex items-center gap-2 text-red-600 dark:text-red-400"><i class="fas fa-file-pdf"></i> ไฟล์โจทย์ PDF ข้อสอบ</h3>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+                <input type="text" id="pdfUrlInput" onchange="markAsModified()" class="md:col-span-8 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs" placeholder="วาง URL ลิงก์ PDF หรืออัปโหลดไฟล์...">
+                <label class="md:col-span-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5">
                     <i class="fas fa-upload"></i> อัปโหลด PDF
                     <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="uploadPdfFile(this)">
                 </label>
-                <button onclick="savePdfUrl()" class="md:col-span-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-all">บันทึก URL PDF</button>
+                <button onclick="savePdfUrl()" class="md:col-span-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-all">อัปเดต PDF</button>
             </div>
         </div>
 
-        <!-- รายการเฉลยกระดาษคำตอบ OMR ทั้งหมด -->
-        <div class="glossy-card p-8 rounded-3xl space-y-6">
-            <div class="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800">
-                <h3 class="font-bold text-lg"><i class="fas fa-check-double text-sky-500 mr-2"></i>กระดาษทำเฉลย OMR (คลิกวงกลมเพื่อตั้งเฉลย)</h3>
-                <button onclick="openQuestionModal()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มข้อใหม่</button>
+        <!-- ส่วนที่ 1: ตารางกระดาษทำเฉลย OMR แบบกระชับกะทัดรัด -->
+        <div class="glossy-card p-5 rounded-2xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-sm flex items-center gap-2"><i class="fas fa-check-double text-sky-500"></i> กระดาษทำเฉลย OMR (คลิกเพื่อฝนเฉลย)</h3>
+                <span class="text-[11px] text-slate-400">คลิกฝนวงกลม ก-ง หรือสลับประเภทเป็นอัตนัย</span>
             </div>
-            <div id="questionsListContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="col-span-full text-center py-8 text-slate-400 text-sm">กำลังโหลดกระดาษคำตอบ...</div>
+            <div id="omrGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div class="col-span-full text-center py-6 text-slate-400 text-xs">กำลังโหลดเฉลย OMR...</div>
+            </div>
+        </div>
+
+        <!-- ส่วนที่ 2: เนื้อหาคำถาม/โจทย์ข้อสอบ (แยกไว้ด้านล่าง) -->
+        <div class="glossy-card p-5 rounded-2xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                    <h3 class="font-bold text-sm flex items-center gap-2"><i class="fas fa-align-left text-purple-500"></i> รายละเอียดข้อความคำถาม / โจทย์</h3>
+                    <p class="text-[11px] text-slate-400">แยกเนื้อหาคำถามไว้ด้านล่างเพื่อความกระชับของกระดาษคำตอบ</p>
+                </div>
+                <button onclick="openQuestionModal()" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-sm"><i class="fas fa-plus mr-1"></i> เพิ่มข้อความโจทย์</button>
+            </div>
+            <div id="questionTextListContainer" class="space-y-2">
+                <div class="text-center py-6 text-slate-400 text-xs">กำลังโหลดข้อความโจทย์...</div>
             </div>
         </div>
     </main>
 
-    <!-- Floating Save Button -->
-    <button onclick="saveAllChangesSticky()" class="fab-save-btn px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-2xl flex items-center gap-2.5 border border-emerald-400/30">
-        <i class="fas fa-save text-base"></i>
-        <span>บันทึกการเปลี่ยนแปลงทั้งหมด</span>
-    </button>
+    <!-- Floating Save Banner (ลอยเด่นตรงกลางด้านล่าง เด้งขึ้นมาเมื่อมี Unsaved Changes) -->
+    <div id="floatingSaveBanner" class="bottom-floating-banner">
+        <div class="px-5 py-3 bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 rounded-full shadow-2xl border border-sky-500/50 flex items-center gap-4">
+            <div class="flex items-center gap-2 text-xs font-bold">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                <span>มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</span>
+            </div>
+            <button onclick="saveAllChangesSticky()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md transition-all flex items-center gap-1.5">
+                <i class="fas fa-save"></i> บันทึกข้อมูล
+            </button>
+        </div>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
@@ -142,7 +172,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('id');
 
-        let currentExamObj = null;
+        let hasUnsavedChanges = false;
+        let cachedQuestions = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -157,11 +188,19 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        function markAsModified() {
+            hasUnsavedChanges = true;
+            document.getElementById('floatingSaveBanner').classList.add('show');
+        }
+
+        function clearModifiedFlag() {
+            hasUnsavedChanges = false;
+            document.getElementById('floatingSaveBanner').classList.remove('show');
+        }
+
         async function initPage() {
             if (!examId) {
-                Swal.fire('ไม่พบ ID ข้อสอบ', 'กำลังนำคุณกลับหน้าคลังข้อสอบ', 'warning').then(() => {
-                    window.location.href = 'admin_exams.html';
-                });
+                Swal.fire('ไม่พบ ID ข้อสอบ', '', 'warning').then(() => window.location.href = 'admin_exams.html');
                 return;
             }
             await loadExamHeader();
@@ -171,54 +210,96 @@
         async function loadExamHeader() {
             const { data } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (data) {
-                currentExamObj = data;
-                document.getElementById('examTitleHeader').textContent = `จัดการโจทย์และเฉลย OMR: ${data.title}`;
-                document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | เวลา: ${data.time_limit} นาที`;
+                document.getElementById('examTitleHeader').textContent = `${data.title}`;
+                document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | โหมด: ${data.delivery_type === 'online' ? 'พิมพ์โจทย์ลงระบบ' : 'ไฟล์ PDF'}`;
                 if (data.pdf_url) document.getElementById('pdfUrlInput').value = data.pdf_url;
             }
         }
 
         async function loadQuestions() {
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
-            const container = document.getElementById('questionsListContainer');
+            cachedQuestions = questions || [];
 
-            if (!questions || questions.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400 text-sm">ยังไม่มีกระดาษคำตอบในชุดข้อสอบนี้ กดปุ่ม "เจนกระดาษคำตอบ OMR" ด้านบนเพื่อเริ่มสร้าง</div>`;
+            renderOmrGrid();
+            renderQuestionTexts();
+        }
+
+        // แสดงผล OMR Grid แบบกระชับ กะทัดรัด
+        function renderOmrGrid() {
+            const container = document.getElementById('omrGridContainer');
+            if (cachedQuestions.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">ยังไม่มีกระดาษคำตอบ OMR</div>`;
                 return;
             }
 
-            container.innerHTML = questions.map((q, idx) => {
+            container.innerHTML = cachedQuestions.map((q, idx) => {
                 const choices = ['ก', 'ข', 'ค', 'ง'];
-                const bubblesHtml = choices.map((cLabel, cIdx) => {
-                    const isSelected = String(q.correct_answer) === String(cIdx) || q.correct_answer === cLabel;
+                const isEssay = q.question_type === 'essay' || q.question_type === 'subjective';
+
+                if (isEssay) {
                     return `
-                        <div onclick="updateQuickCorrectAnswer('${q.id}', '${cIdx}')" class="omr-bubble ${isSelected ? 'active' : ''}" title="คลิกตั้งเป็นเฉลยข้อ ${cLabel}">
-                            ${cLabel}
+                        <div class="p-2.5 bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/30 flex items-center justify-between gap-2">
+                            <span class="font-extrabold text-xs text-amber-600 dark:text-amber-400">ข้อ ${q.question_number || (idx+1)}</span>
+                            <span class="px-2 py-1 bg-amber-500 text-white font-bold text-[10px] rounded-lg"><i class="fas fa-pen-nib mr-1"></i>อัตนัย</span>
+                            <button onclick="toggleQuestionType('${q.id}', 'multiple_choice')" class="text-[10px] text-slate-400 underline hover:text-sky-500">สลับ OMR</button>
                         </div>
                     `;
+                }
+
+                const bubblesHtml = choices.map((cLabel, cIdx) => {
+                    const isSelected = String(q.correct_answer) === String(cIdx) || q.correct_answer === cLabel;
+                    return `<div onclick="selectOmrChoice('${q.id}', '${cIdx}')" class="omr-bubble ${isSelected ? 'active' : ''}">${cLabel}</div>`;
                 }).join('');
 
-                const textShow = q.question_text || q.content || 'โจทย์ในกระดาษคำตอบ';
-
                 return `
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex justify-between items-center gap-3">
-                        <div class="space-y-1">
-                            <span class="font-extrabold text-sm text-slate-900 dark:text-white">ข้อ ${q.question_number || (idx + 1)}</span>
-                            <div class="text-[11px] text-slate-400 truncate max-w-[150px]">${textShow}</div>
-                            <div class="flex gap-2 pt-1">${bubblesHtml}</div>
-                        </div>
-                        <div class="flex gap-1 shrink-0">
-                            <button onclick='openQuestionModal(${JSON.stringify(q)})' class="w-8 h-8 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-sky-600 hover:text-white transition-colors" title="แก้ไขข้อความโจทย์"><i class="fas fa-pen"></i></button>
-                            <button onclick="deleteQuestion('${q.id}')" class="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-600 hover:text-white transition-colors" title="ลบข้อนี้"><i class="fas fa-trash-can"></i></button>
-                        </div>
+                    <div class="p-2 bg-slate-100 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-1">
+                        <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300 w-8">ข้อ ${q.question_number || (idx+1)}</span>
+                        <div class="flex gap-1">${bubblesHtml}</div>
+                        <button onclick="toggleQuestionType('${q.id}', 'essay')" class="text-[10px] text-slate-400 hover:text-amber-500 px-1" title="เปลี่ยนเป็นข้ออัตนัย"><i class="fas fa-file-signature"></i></button>
                     </div>
                 `;
             }).join('');
         }
 
-        async function updateQuickCorrectAnswer(qId, cIdx) {
-            await mySupabase.from('questions').update({ correct_answer: String(cIdx) }).eq('id', qId);
-            loadQuestions();
+        // แสดงผลส่วนข้อความโจทย์ด้านล่าง
+        function renderQuestionTexts() {
+            const container = document.getElementById('questionTextListContainer');
+            if (cachedQuestions.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีเนื้อหาโจทย์ข้อสอบ</div>`;
+                return;
+            }
+
+            container.innerHTML = cachedQuestions.map((q, idx) => `
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
+                    <div class="space-y-0.5 truncate pr-2">
+                        <span class="font-bold text-sky-600 dark:text-sky-400 mr-2">ข้อ ${q.question_number || (idx+1)} (${q.question_type === 'essay' ? 'อัตนัย' : 'ปรนัย OMR'}):</span>
+                        <span class="text-slate-700 dark:text-slate-300">${q.question_text || q.content || 'โจทย์ในกระดาษคำตอบ'}</span>
+                    </div>
+                    <div class="flex gap-1 shrink-0">
+                        <button onclick='openQuestionModal(${JSON.stringify(q)})' class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg text-[11px] font-bold"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteQuestion('${q.id}')" class="px-2.5 py-1 bg-red-100 dark:bg-red-950/50 text-red-600 rounded-lg text-[11px] font-bold"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectOmrChoice(qId, choiceIdx) {
+            const item = cachedQuestions.find(q => q.id === qId);
+            if (item) {
+                item.correct_answer = String(choiceIdx);
+                renderOmrGrid();
+                markAsModified();
+            }
+        }
+
+        function toggleQuestionType(qId, targetType) {
+            const item = cachedQuestions.find(q => q.id === qId);
+            if (item) {
+                item.question_type = targetType;
+                renderOmrGrid();
+                renderQuestionTexts();
+                markAsModified();
+            }
         }
 
         async function openAutoAnswerSheetModal() {
@@ -226,60 +307,43 @@
                 title: '⚡ เจนกระดาษคำตอบ OMR',
                 html: `
                     <div class="space-y-3 text-left text-xs">
-                        <p class="text-slate-400">ระบุช่วงข้อที่ต้องการสร้าง ระบบจะสร้างกระดาษคำตอบฝนวงกลม ก-ง ให้ทันที:</p>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block font-bold mb-1">เริ่มจากข้อที่</label>
-                                <input type="number" id="genStartNum" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="1">
+                                <label class="block font-bold mb-1">เริ่มข้อที่</label>
+                                <input type="number" id="genStartNum" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" value="1">
                             </div>
                             <div>
                                 <label class="block font-bold mb-1">ถึงข้อที่</label>
-                                <input type="number" id="genEndNum" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="20">
+                                <input type="number" id="genEndNum" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" value="20">
                             </div>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">ชื่อหมวดหมู่ย่อย (ถ้ามี)</label>
-                            <input id="genCategoryTag" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700" placeholder="เช่น หมวดหมู่ A">
                         </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'สร้างกระดาษคำตอบ OMR',
-                cancelButtonText: 'ยกเลิก',
-                preConfirm: () => {
-                    const start = parseInt(document.getElementById('genStartNum').value) || 1;
-                    const end = parseInt(document.getElementById('genEndNum').value) || 20;
-                    const tag = document.getElementById('genCategoryTag').value || '';
-                    if (start > end) { Swal.showValidationMessage('ข้อเริ่มต้นต้องน้อยกว่าข้อสุดท้าย'); return false; }
-                    return { start, end, tag };
-                }
+                confirmButtonText: 'สร้างทันที',
+                preConfirm: () => ({
+                    start: parseInt(document.getElementById('genStartNum').value) || 1,
+                    end: parseInt(document.getElementById('genEndNum').value) || 20
+                })
             });
 
             if (formValues) {
-                Swal.fire({ title: 'กำลังสร้างกระดาษคำตอบ OMR...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                
-                const newQuestions = [];
+                Swal.fire({ title: 'กำลังสร้าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const newItems = [];
                 for (let i = formValues.start; i <= formValues.end; i++) {
-                    const textLabel = formValues.tag ? `[${formValues.tag}] ข้อที่ ${i}` : `ข้อที่ ${i}`;
-                    newQuestions.push({
+                    newItems.push({
                         exam_id: examId,
                         question_number: i,
-                        question_text: textLabel,
-                        content: textLabel, // ส่งทั้ง content และ question_text ป้องกัน Not-Null Constraint 100%
+                        question_text: `ข้อที่ ${i}`,
+                        content: `ข้อที่ ${i}`,
                         question_type: 'multiple_choice',
                         options: ['ก', 'ข', 'ค', 'ง'],
                         correct_answer: '0'
                     });
                 }
-
-                const { error } = await mySupabase.from('questions').insert(newQuestions);
-
-                if (!error) {
-                    Swal.fire({ icon: 'success', title: `สร้างกระดาษคำตอบ OMR ${newQuestions.length} ข้อ เรียบร้อย!`, timer: 1200, showConfirmButton: false });
-                    loadQuestions();
-                } else {
-                    Swal.fire('สร้างล้มเหลว', `เกิดข้อผิดพลาด:<br><code class="text-xs text-red-400">${error.message}</code>`, 'error');
-                }
+                await mySupabase.from('questions').insert(newItems);
+                loadQuestions();
+                Swal.close();
             }
         }
 
@@ -289,60 +353,40 @@
 
         async function openQuestionModal(qData = null) {
             const isEdit = !!qData;
-            const options = qData?.options || ['ก', 'ข', 'ค', 'ง'];
-
             const { value: formValues } = await Swal.fire({
                 title: isEdit ? 'แก้ไขรายละเอียดโจทย์' : 'เพิ่มข้อสอบใหม่',
                 html: `
                     <div class="space-y-3 text-left text-xs">
                         <div class="grid grid-cols-3 gap-2">
-                            <div class="col-span-1">
+                            <div>
                                 <label class="block font-bold mb-1">ข้อที่</label>
-                                <input type="number" id="qNum" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="${qData?.question_number || 1}">
+                                <input type="number" id="qNum" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" value="${qData?.question_number || 1}">
                             </div>
                             <div class="col-span-2">
-                                <label class="block font-bold mb-1">เฉลยตัวเลือกที่ถูกต้อง</label>
-                                <select id="qCorrect" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700">
-                                    <option value="0" ${String(qData?.correct_answer) === '0' ? 'selected' : ''}>ก. (ตัวเลือก 1)</option>
-                                    <option value="1" ${String(qData?.correct_answer) === '1' ? 'selected' : ''}>ข. (ตัวเลือก 2)</option>
-                                    <option value="2" ${String(qData?.correct_answer) === '2' ? 'selected' : ''}>ค. (ตัวเลือก 3)</option>
-                                    <option value="3" ${String(qData?.correct_answer) === '3' ? 'selected' : ''}>ง. (ตัวเลือก 4)</option>
+                                <label class="block font-bold mb-1">ประเภท</label>
+                                <select id="qType" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800">
+                                    <option value="multiple_choice" ${qData?.question_type !== 'essay' ? 'selected' : ''}>ปรนัย OMR (ก-ง)</option>
+                                    <option value="essay" ${qData?.question_type === 'essay' ? 'selected' : ''}>อัตนัย (ข้อเขียน)</option>
                                 </select>
                             </div>
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">คำถาม / ข้อความโจทย์ (ถ้ามี)</label>
-                            <textarea id="qText" rows="2" class="w-full px-3 py-2 border rounded-xl dark:bg-slate-800 dark:border-slate-700">${qData?.question_text || qData?.content || ''}</textarea>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block font-bold">ตัวเลือกคำตอบ (ก - ง)</label>
-                            <input id="opt0" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="${options[0] || 'ก'}">
-                            <input id="opt1" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="${options[1] || 'ข'}">
-                            <input id="opt2" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="${options[2] || 'ค'}">
-                            <input id="opt3" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800 dark:border-slate-700" value="${options[3] || 'ง'}">
+                            <label class="block font-bold mb-1">คำถาม / ข้อความโจทย์</label>
+                            <textarea id="qText" rows="3" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800">${qData?.question_text || qData?.content || ''}</textarea>
                         </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'บันทึกโจทย์',
-                cancelButtonText: 'ยกเลิก',
-                preConfirm: () => {
-                    const txt = document.getElementById('qText').value;
-                    return {
-                        exam_id: examId,
-                        question_number: parseInt(document.getElementById('qNum').value) || 1,
-                        question_text: txt,
-                        content: txt,
-                        question_type: 'multiple_choice',
-                        options: [
-                            document.getElementById('opt0').value,
-                            document.getElementById('opt1').value,
-                            document.getElementById('opt2').value,
-                            document.getElementById('opt3').value
-                        ],
-                        correct_answer: document.getElementById('qCorrect').value
-                    }
-                }
+                confirmButtonText: 'บันทึก',
+                preConfirm: () => ({
+                    exam_id: examId,
+                    question_number: parseInt(document.getElementById('qNum').value) || 1,
+                    question_type: document.getElementById('qType').value,
+                    question_text: document.getElementById('qText').value,
+                    content: document.getElementById('qText').value,
+                    options: ['ก', 'ข', 'ค', 'ง'],
+                    correct_answer: qData?.correct_answer || '0'
+                })
             });
 
             if (formValues) {
@@ -351,7 +395,6 @@
                 } else {
                     await mySupabase.from('questions').insert([formValues]);
                 }
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1000, showConfirmButton: false });
                 loadQuestions();
             }
         }
@@ -361,32 +404,45 @@
             loadQuestions();
         }
 
+        async function savePdfUrl() {
+            const pdf_url = document.getElementById('pdfUrlInput').value;
+            await mySupabase.from('exams').update({ pdf_url }).eq('id', examId);
+            markAsModified();
+        }
+
         async function uploadPdfFile(input) {
             const file = input.files[0];
             if (!file) return;
-
-            Swal.fire({ title: 'กำลังอัปโหลด PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fileName = `exam_pdf_${Date.now()}_${file.name}`;
             const { error } = await mySupabase.storage.from('announcement_files').upload(fileName, file);
-
             if (!error) {
                 const { data } = mySupabase.storage.from('announcement_files').getPublicUrl(fileName);
                 if (data) {
                     document.getElementById('pdfUrlInput').value = data.publicUrl;
                     await savePdfUrl();
-                    Swal.fire({ icon: 'success', title: 'อัปโหลดและบันทึก URL PDF สำเร็จ!', timer: 1200, showConfirmButton: false });
                 }
-            } else { Swal.fire('อัปโหลดล้มเหลว', error.message, 'error'); }
+            }
         }
 
-        async function savePdfUrl() {
-            const pdf_url = document.getElementById('pdfUrlInput').value;
-            await mySupabase.from('exams').update({ pdf_url }).eq('id', examId);
-        }
-
+        // ปุ่มบันทึกการเปลี่ยนแปลงทั้งหมด
         async function saveAllChangesSticky() {
-            await savePdfUrl();
-            Swal.fire({ icon: 'success', title: 'บันทึกการเปลี่ยนแปลงทั้งหมดแล้ว!', timer: 1200, showConfirmButton: false });
+            Swal.fire({ title: 'กำลังบันทึกการเปลี่ยนแปลง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            // Upsert ปรับปรุงคำตอบ OMR ทั้งหมดลง Supabase
+            for (const q of cachedQuestions) {
+                await mySupabase.from('questions').update({
+                    correct_answer: q.correct_answer,
+                    question_type: q.question_type
+                }).eq('id', q.id);
+            }
+
+            const pdf_url = document.getElementById('pdfUrlInput').value;
+            if (pdf_url) {
+                await mySupabase.from('exams').update({ pdf_url }).eq('id', examId);
+            }
+
+            clearModifiedFlag();
+            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อยแล้ว!', timer: 1200, showConfirmButton: false });
         }
 
         initPage();
