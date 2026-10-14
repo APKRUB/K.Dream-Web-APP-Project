@@ -11,6 +11,28 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL ข้ามหน้าโดยไม่ได้รับอนุญาต -->
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) {
+                        hasSession = true;
+                        break;
+                    }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -177,7 +199,6 @@
         let fetchedQuestions = [];
         let distributionChart = null;
 
-        // Theme Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -191,21 +212,7 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ)
-        function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username') || 
-                                    localStorage.getItem('user_name') || 
-                                    localStorage.getItem('account_name') || 
-                                    localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
-                                    'ผู้ดูแลระบบ';
-
-            localStorage.setItem('admin_username', currentUsername);
-            return true;
-        }
-        
         async function initPage() {
-            if (!checkAdminAuth()) return;
             await loadExamOptions();
         }
 
@@ -399,7 +406,6 @@
             }).join('');
         }
 
-        // ฟังก์ชัน Reset Attempt สำหรับแอดมิน (ลบผลการสอบของนักเรียนคนนั้นเพื่อให้สอบใหม่ได้)
         async function resetStudentAttempt(submissionId) {
             Swal.fire({
                 title: 'ยืนยันการ Reset สิทธิ์สอบ?',
