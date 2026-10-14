@@ -234,7 +234,22 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // เพิ่มระบบตรวจสอบการเข้าสู่ระบบ (Auth Guard) ป้องกันการหลุดรอด
         function checkStudentAuth() {
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            if (!studentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อความถูกต้อง',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
+
             const currentUsername = localStorage.getItem('student_username') || 
                                     localStorage.getItem('user_name') || 
                                     localStorage.getItem('account_name') || 
@@ -261,21 +276,17 @@
         }
 
         async function fetchStudentData() {
-    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
-    
-    // ดึงประวัติการส่งข้อสอบทั้งหมดจากตาราง exam_attempts
-    let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
-    const { data: subs } = await query;
-    
-    // กรองเอาเฉพาะที่ status เป็น submitted (รองรับทั้งแบบเทียบ student_id และแบบรวมถ้าไม่ได้เก็บ id)
-    mySubmissions = (subs || []).filter(s => {
-        if (s.status !== 'submitted') return false;
-        if (studentId && s.student_id && s.student_id !== studentId) {
-            return false; // ถ้ามีเก็บ student_id แล้วไม่ตรงกัน ให้ข้าม
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+            
+            // ดึงประวัติการส่งข้อสอบทั้งหมดโดยกรองตาม student_id ให้ตรงตัว
+            let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
+            if (studentId) {
+                query = query.eq('student_id', studentId);
+            }
+            const { data: subs } = await query;
+            
+            mySubmissions = (subs || []).filter(s => s.status === 'submitted');
         }
-        return true;
-    });
-}
 
         async function fetchExamsList() {
             const { data, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
@@ -520,7 +531,7 @@
         }
 
         async function initAnalyticsData() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
             
             const { data: exams } = await mySupabase.from('exams').select('*');
             allExamsData = exams || [];
