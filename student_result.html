@@ -249,7 +249,22 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // ระบบตรวจสอบการเข้าสู่ระบบ (Auth Guard)
         function checkStudentAuth() {
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            if (!studentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อความถูกต้อง',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
+
             const currentUsername = localStorage.getItem('student_username') || 
                                     localStorage.getItem('user_name') || 
                                     localStorage.getItem('account_name') || 
@@ -276,9 +291,14 @@
         }
 
         async function fetchStudentData() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student';
-            const { data: subs } = await mySupabase.from('exam_attempts').select('exam_id, created_at, status').eq('student_id', studentId).eq('status', 'submitted');
-            mySubmissions = subs || [];
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+            
+            let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, student_id');
+            if (studentId) {
+                query = query.eq('student_id', studentId);
+            }
+            const { data: subs } = await query;
+            mySubmissions = (subs || []).filter(s => s.status === 'submitted');
 
             try {
                 const localProgress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
@@ -589,7 +609,7 @@
         // ANALYTICS LOGIC (Feature 2)
         // ==========================================
         async function initAnalyticsData() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
             
             const { data: exams } = await mySupabase.from('exams').select('*');
             allExamsData = exams || [];
