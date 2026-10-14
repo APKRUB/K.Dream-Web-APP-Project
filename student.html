@@ -234,14 +234,30 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // เพิ่มระบบตรวจสอบการเข้าสู่ระบบ (Auth Guard) ป้องกันการหลุดรอด
+        // ฟังก์ชันกลางกวาดหาและตรวจสอบ Student ID จากคีย์ทั้งหมดใน LocalStorage อย่างแม่นยำ
+        function getValidatedStudentId() {
+            let studentId = localStorage.getItem('id') || 
+                            localStorage.getItem('student_id') || 
+                            localStorage.getItem('user_id') || 
+                            localStorage.getItem('userId') || null;
+
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
+                try {
+                    const userObj = JSON.parse(localStorage.getItem('user') || localStorage.getItem('profile') || localStorage.getItem('current_user') || '{}');
+                    studentId = userObj.id || userObj.student_id || userObj.uid || null;
+                } catch(e) {}
+            }
+            return studentId;
+        }
+
+        // ระบบ Auth Guard ป้องกันคนไม่ได้ Login เข้ามาใช้งานอย่างเด็ดขาด
         function checkStudentAuth() {
-            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
-            if (!studentId) {
+            const studentId = getValidatedStudentId();
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
                 Swal.fire({
                     icon: 'warning',
                     title: 'ยังไม่ได้เข้าสู่ระบบ!',
-                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อความถูกต้อง',
+                    text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้าหลักนักเรียน',
                     confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
                     allowOutsideClick: false
                 }).then(() => {
@@ -276,15 +292,13 @@
         }
 
         async function fetchStudentData() {
-            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+            const studentId = getValidatedStudentId();
             
-            // ดึงประวัติการส่งข้อสอบทั้งหมดโดยกรองตาม student_id ให้ตรงตัว
             let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
             if (studentId) {
                 query = query.eq('student_id', studentId);
             }
             const { data: subs } = await query;
-            
             mySubmissions = (subs || []).filter(s => s.status === 'submitted');
         }
 
@@ -531,7 +545,7 @@
         }
 
         async function initAnalyticsData() {
-            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            const studentId = getValidatedStudentId();
             
             const { data: exams } = await mySupabase.from('exams').select('*');
             allExamsData = exams || [];
