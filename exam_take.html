@@ -74,7 +74,7 @@
             <button onclick="window.close()" class="px-3 py-1 bg-indigo-600 text-white rounded-lg">ปิดหน้าต่างนี้</button>
         </div>
 
-        <!-- Layout แบบ 2 ฝั่ง (ซ้าย: PDF โจทย์ | ขวา: กระดาษคำตอบ OMR แบบกะทัดรัด) -->
+        <!-- Layout แบบ 2 ฝั่ง (ซ้าย: PDF โจทย์ | ขวา: กระดาษคำตอบ OMR จัดหมวดหมู่) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             <!-- ฝั่งซ้าย: แสดงโจทย์ PDF -->
@@ -95,14 +95,14 @@
                         <h2 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-list-check text-sky-500"></i> กระดาษคำตอบข้อสอบ
                         </h2>
-                        <p class="text-xs text-slate-400 mt-0.5">เลขข้ออยู่ด้านหน้า ตัวเลือกกระชับเลื่อนง่าย</p>
+                        <p class="text-xs text-slate-400 mt-0.5">เรียงเลขข้อไว้ด้านหน้า เลื่อนง่ายกระชับ</p>
                     </div>
                     <button onclick="confirmSubmitExam()" class="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2">
                         <i class="fas fa-paper-plane"></i> ส่งข้อสอบ
                     </button>
                 </div>
 
-                <div id="questionsListContainer" class="space-y-3">
+                <div id="questionsListContainer" class="space-y-4">
                     <div class="text-center py-10 text-slate-400 text-xs">กำลังโหลดรายการคำถาม...</div>
                 </div>
             </div>
@@ -147,7 +147,6 @@
                             localStorage.getItem('id') ||
                             localStorage.getItem('userId');
 
-            // ตรวจสอบว่าเป็น UUID ที่ถูกต้องหรือไม่ หากไม่ใช่ให้ใช้ค่า UUID จำลองหรือเว้นว่างเพื่อป้องกัน Error
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (!studentId || !uuidRegex.test(studentId)) {
                 studentId = '00000000-0000-0000-0000-000000000000';
@@ -198,7 +197,6 @@
                 }
             }
 
-            // คำถามก่อนเริ่มทำข้อสอบ
             if (!isPreview) {
                 const confirmStart = await Swal.fire({
                     title: `พร้อมเริ่มทำข้อสอบ "${exam.title}" หรือยัง?`,
@@ -235,43 +233,67 @@
                 return;
             }
 
-            container.innerHTML = currentQuestions.map((q, idx) => {
-                const isEssay = q.question_type === 'essay';
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
-                const qNum = q.question_number || (idx + 1);
+            // จัดกลุ่มคำถามตาม category_tag
+            const groups = {};
+            currentQuestions.forEach((q, idx) => {
+                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ข้อสอบทั่วไป';
+                if (!groups[tag]) groups[tag] = [];
+                groups[tag].push({ q, idx });
+            });
 
-                if (isEssay) {
-                    return `
-                        <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400">ข้อที่ ${qNum} (อัตนัย)</span>
-                                <span class="px-2 py-0.5 bg-amber-500 text-white font-bold text-[10px] rounded-md">เขียนตอบ</span>
-                            </div>
-                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">${q.question_text || q.content || 'คำถามอัตนัย'}</div>
-                            <textarea oninput="saveEssayAnswer('${q.id}', this.value)" rows="3" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs outline-none" placeholder="พิมพ์คำตอบของคุณที่นี่..."></textarea>
+            let htmlContent = '';
+
+            for (const [tag, items] of Object.entries(groups)) {
+                // หัวข้อหมวดหมู่ด้านบนสุด
+                htmlContent += `
+                    <div class="space-y-2 pt-2">
+                        <div class="px-3 py-1.5 bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/30 rounded-xl text-xs font-extrabold text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                            <i class="fas fa-layer-group"></i> 🏷️ หมวดหมู่: ${tag}
                         </div>
-                    `;
+                        <div class="space-y-2">
+                `;
+
+                for (const { q, idx } of items) {
+                    const isEssay = q.question_type === 'essay';
+                    const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                    const qNum = q.question_number || (idx + 1);
+
+                    if (isEssay) {
+                        htmlContent += `
+                            <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-extrabold text-sm text-amber-600 dark:text-amber-400">ข้อที่ ${qNum} (อัตนัย)</span>
+                                    <span class="px-2 py-0.5 bg-amber-500 text-white font-bold text-[10px] rounded-md">เขียนตอบ</span>
+                                </div>
+                                <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">${q.question_text || q.content || 'คำถามอัตนัย'}</div>
+                                <textarea oninput="saveEssayAnswer('${q.id}', this.value)" rows="3" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs outline-none" placeholder="พิมพ์คำตอบของคุณที่นี่..."></textarea>
+                            </div>
+                        `;
+                    } else {
+                        const bubblesHtml = opts.map((cLabel, cIdx) => {
+                            const isSelected = studentAnswers[q.id] === String(cIdx) || studentAnswers[q.id] === cLabel;
+                            return `
+                                <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble-compact ${isSelected ? 'active' : ''}">
+                                    ${cLabel}
+                                </div>
+                            `;
+                        }).join('');
+
+                        htmlContent += `
+                            <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="font-extrabold text-xs text-sky-600 dark:text-sky-400 w-12">ข้อ ${qNum}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 overflow-x-auto py-1">${bubblesHtml}</div>
+                            </div>
+                        `;
+                    }
                 }
 
-                const bubblesHtml = opts.map((cLabel, cIdx) => {
-                    const isSelected = studentAnswers[q.id] === String(cIdx) || studentAnswers[q.id] === cLabel;
-                    return `
-                        <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble-compact ${isSelected ? 'active' : ''}">
-                            ${cLabel}
-                        </div>
-                    `;
-                }).join('');
+                htmlContent += `</div></div>`;
+            }
 
-                return `
-                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span class="font-extrabold text-xs text-sky-600 dark:text-sky-400 w-10">ข้อ ${qNum}</span>
-                            ${q.category_tag ? `<span class="px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-950 text-sky-600 font-bold text-[10px]">${q.category_tag}</span>` : ''}
-                        </div>
-                        <div class="flex items-center gap-1.5 overflow-x-auto py-1">${bubblesHtml}</div>
-                    </div>
-                `;
-            }).join('');
+            container.innerHTML = htmlContent;
         }
 
         function selectAnswer(qId, cIdx) {
@@ -300,7 +322,7 @@
             let studentId = localStorage.getItem('student_id');
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (!uuidRegex.test(studentId)) {
-                studentId = null; // หากไม่ใช่ UUID ให้ส่ง null เพื่อให้ระบบผ่านหรือบันทึกตามสิทธิ์
+                studentId = null;
             }
 
             const insertData = {
