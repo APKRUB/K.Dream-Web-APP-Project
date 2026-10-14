@@ -100,29 +100,34 @@
 
             Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data, error } = await mySupabase.auth.signInWithPassword({ email, password });
-            if (error) {
+            const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ email, password });
+            if (authError || !authData.user) {
                 Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
                 return;
             }
 
-            const userId = data.user.id;
+            const userId = authData.user.id;
             const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).single();
             Swal.close();
 
-            // บันทึกข้อมูลไอดีและโปรไฟล์ลง localStorage ให้ครบทุกคีย์ที่หน้า student.html และ exam_take.html ใช้งาน
+            const userName = profile?.full_name || profile?.username || email.split('@')[0];
+            
+            // บันทึกข้อมูลไอดีและโปรไฟล์ลง localStorage ให้ครบทุกคีย์
             localStorage.setItem('id', userId);
             localStorage.setItem('student_id', userId);
             localStorage.setItem('user_id', userId);
-            localStorage.setItem('student_username', profile?.full_name || profile?.username || email.split('@')[0]);
-            localStorage.setItem('full_name', profile?.full_name || profile?.username || email.split('@')[0]);
+            localStorage.setItem('student_username', userName);
+            localStorage.setItem('full_name', userName);
             localStorage.setItem('profile', JSON.stringify(profile || {}));
 
-            if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'student.html';
-            }
+            // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า localStorage ถูกบันทึกเรียบร้อยก่อนเปลี่ยนหน้า
+            setTimeout(() => {
+                if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'student.html';
+                }
+            }, 300);
         });
     </script>
 </body>
