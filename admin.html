@@ -291,28 +291,61 @@
             });
         }
 
-        window.renderNotifCard = function(n) {
-            let badge = '';
-            if (n.type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
-            else if (n.type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
-            else if (n.type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
-            else if (n.type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
+// ฟังก์ชัน Render การ์ดแจ้งเตือน (ป้องกัน undefined 100%)
+window.renderNotifCard = function(n) {
+    let badge = '';
+    const type = n.type || 'general';
+    if (type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
+    else if (type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
+    else if (type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
+    else if (type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
 
-            const timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+    // เช็กค่าป้องกัน Undefined ทุกกรณี
+    const titleText = n.title || n.topic || 'การแจ้งเตือนจากระบบ';
+    const descText = n.description || n.content || n.message || n.desc || 'ไม่มีรายละเอียดเพิ่มเติม';
+    const targetUrl = n.target_url || n.targetUrl || 'admin.html';
+    
+    let timeStr = 'เมื่อครู่นี้';
+    if (n.created_at) {
+        timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    } else if (n.time) {
+        timeStr = n.time;
+    }
 
-            return `
-                <div onclick="window.location.href='${n.target_url || 'admin.html'}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            ${badge}
-                            <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${n.title}</h5>
-                        </div>
-                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${n.description || ''}</p>
-                    </div>
-                    <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
+    return `
+        <div onclick="window.location.href='${targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    ${badge}
+                    <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${titleText}</h5>
                 </div>
-            `;
+                <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${descText}</p>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
+        </div>
+    `;
+};
+
+// ดึงการแจ้งเตือนสดจาก Supabase (รองรับ fallback)
+async function fetchLiveNotifications() {
+    try {
+        const { data, error } = await mySupabase
+            .from('notifications')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (!error && data) {
+            liveNotifications = data;
+        } else {
+            liveNotifications = [];
         }
+    } catch (err) {
+        console.error('Fetch Notifications Error:', err);
+        liveNotifications = [];
+    }
+    updateNotifBadge();
+}
 
         // ฟังก์ชันสลับสีปุ่ม Tabs เมื่อกดเลือกหมวดหมู่
         window.filterNotifTab = function(type) {
