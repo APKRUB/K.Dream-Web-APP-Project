@@ -53,6 +53,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
+    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
@@ -67,10 +68,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- ปุ่ม Notifications แบ่ง 4 ประเภท -->
+                    <!-- ปุ่ม Notifications ดึงข้อมูลสดจาก Database -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
-                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">4</span>
+                        <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                     </button>
 
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
@@ -87,13 +88,13 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Hero Welcome Banner -->
+        <!-- Hero Welcome Banner (แสดงชื่อตามรหัสที่ Login) -->
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
                     <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> ระบบปฏิบัติการพร้อมใช้งาน 100%
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ AP</h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">AP</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
                     จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และตรวจสอบ Audit Logs ผ่านศูนย์ควบคุม Hi-Tech
                 </p>
@@ -119,7 +120,6 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 
-                <!-- 1. ศูนย์จัดการชุดข้อสอบ -->
                 <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
@@ -133,7 +133,6 @@
                     </div>
                 </div>
 
-                <!-- 2. ศูนย์วิเคราะห์ผลคะแนน & สถิติ -->
                 <div onclick="window.location.href='admin_analytics.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 text-white flex items-center justify-center text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
@@ -147,7 +146,6 @@
                     </div>
                 </div>
 
-                <!-- 3. ระบบ Audit Logs -->
                 <div onclick="window.location.href='admin_audit_logs.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-700 text-white flex items-center justify-center text-lg shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
@@ -161,7 +159,6 @@
                     </div>
                 </div>
 
-                <!-- 4. ระบบประกาศข่าวสาร (Announcements) -->
                 <div onclick="window.location.href='admin_announcements.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
@@ -175,7 +172,6 @@
                     </div>
                 </div>
 
-                <!-- 5. ระบบ Consult (ปรึกษาคุณครู / AI) -->
                 <div onclick="window.location.href='admin_consult.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
@@ -189,7 +185,6 @@
                     </div>
                 </div>
 
-                <!-- 6. จัดการผู้ใช้งาน / นักเรียน -->
                 <div onclick="openFeatureComingSoon('ระบบจัดการบัญชีผู้ใช้งาน')" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
@@ -213,6 +208,9 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let liveNotifications = [];
+
+        // Theme Toggle Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -227,67 +225,131 @@
         });
 
         async function initAdminDashboard() {
+            // ดึงชื่อผู้ใช้ที่ Login จาก LocalStorage / Session
+            const loggedName = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'AP';
+            document.getElementById('displayAdminName').textContent = loggedName;
+
             try {
                 const { count: examCount } = await mySupabase.from('exams').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalExams').textContent = examCount ?? 0;
 
                 const { count: subCount } = await mySupabase.from('exam_submissions').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
+
+                // ดึงการแจ้งเตือนสด Real-time จาก 4 แหล่ง
+                await fetchLiveNotifications();
             } catch (err) {
                 console.error(err);
             }
         }
 
-        // Popup Notifications แบ่ง 4 หมวดหมู่ชัดเจน + แท็บสลับ + ลิงก์ตรง
-        function openNotificationsModal() {
-            const notifs = [
-                { id: 1, type: 'submit', title: 'นักเรียนส่งข้อสอบใหม่', desc: 'ด.ช. ปารย์ชวัล ส่งข้อสอบ PHYS-101', time: '2 นาทีที่แล้ว', targetUrl: 'admin_analytics.html' },
-                { id: 2, type: 'grading', title: 'มีข้อสอบอัตนัยรอตรวจ', desc: 'ข้อสอบอัตนัยวิชาชีววิทยา จำนวน 3 ฉบับ', time: '10 นาทีที่แล้ว', targetUrl: 'admin_exam_grading.html' },
-                { id: 3, type: 'question', title: 'คำถามใหม่จากระบบ Consult', desc: 'นักเรียนสอบถามเรื่องเวลา Due Date', time: '25 นาทีที่แล้ว', targetUrl: 'admin_consult.html' },
-                { id: 4, type: 'general', title: 'ระบบสำรองข้อมูลสำเร็จ', desc: 'ซิงค์ฐานข้อมูล Supabase อัตโนมัติ', time: '1 ชั่วโมงที่แล้ว', targetUrl: 'admin_audit_logs.html' }
-            ];
+        // ระบบดึง Notifications สดจาก Database ทั้ง 4 หมวด
+        async function fetchLiveNotifications() {
+            liveNotifications = [];
 
+            // 1. หมวดคำถาม Consult (Pending Questions)
+            const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
+            if (consults) {
+                consults.forEach(c => {
+                    liveNotifications.push({
+                        type: 'question',
+                        title: `คำถามใหม่จาก ${c.student_name || 'นักเรียน'}`,
+                        desc: c.topic || 'สอบถามรายละเอียดเรื่องการเรียน/ข้อสอบ',
+                        time: new Date(c.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                        targetUrl: 'admin_consult.html'
+                    });
+                });
+            }
+
+            // 2. หมวดส่งข้อสอบ (Recent Submissions)
+            const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
+            if (subs) {
+                subs.forEach(s => {
+                    liveNotifications.push({
+                        type: 'submit',
+                        title: 'นักเรียนส่งข้อสอบใหม่',
+                        desc: `${s.profiles?.full_name || 'นักเรียน'} ส่งข้อสอบ (คะแนน: ${s.score || 0})`,
+                        time: new Date(s.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                        targetUrl: 'admin_analytics.html'
+                    });
+                });
+            }
+
+            // 3. หมวดประกาศข่าวสาร (Latest Announcements)
+            const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
+            if (anns) {
+                anns.forEach(a => {
+                    liveNotifications.push({
+                        type: 'general',
+                        title: `ประกาศล่าสุด: ${a.title}`,
+                        desc: a.content || 'มีประกาศข่าวสารใหม่ในระบบ',
+                        time: new Date(a.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                        targetUrl: 'admin_announcements.html'
+                    });
+                });
+            }
+
+            // 4. หมวดข้อสอบที่ต้องตรวจ (Essay Grading)
+            const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
+            if (essayQuestions && essayQuestions.length > 0) {
+                const examIds = Array.from(new Set(essayQuestions.map(q => q.exam_id)));
+                liveNotifications.push({
+                    type: 'grading',
+                    title: 'มีข้อสอบอัตนัยที่รอตรวจ',
+                    desc: `มีข้อสอบข้อเขียนในคลัง ${examIds.length} ชุดที่ต้องตรวจให้คะแนน`,
+                    time: 'วันนี้',
+                    targetUrl: 'admin_exams.html'
+                });
+            }
+
+            // อัปเดต Badge สีแดง
+            const badge = document.getElementById('notifBadge');
+            if (liveNotifications.length > 0) {
+                badge.textContent = liveNotifications.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function openNotificationsModal() {
             Swal.fire({
                 title: '🔔 การแจ้งเตือนคุณครู',
                 width: '600px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
-                        <!-- Tabs เลือกหมวดหมู่ -->
                         <div class="flex gap-1 overflow-x-auto pb-1 border-b dark:border-slate-800">
-                            <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด</button>
-                            <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ทั่วไป</button>
+                            <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
                             <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
+                            <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
                             <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
-                            <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม</button>
+                            <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
                         </div>
 
-                        <!-- รายการแจ้งเตือน -->
                         <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            ${notifs.map(n => renderNotifCard(n)).join('')}
+                            ${liveNotifications.length > 0 ? liveNotifications.map(n => renderNotifCard(n)).join('') : '<div class="text-center py-6 text-slate-400">ยังไม่มีรายการแจ้งเตือนใหม่</div>'}
                         </div>
                     </div>
                 `,
                 confirmButtonText: 'ปิดหน้าต่าง'
             });
-
-            window.notifsData = notifs;
         }
 
         window.renderNotifCard = function(n) {
             let badge = '';
-            if (n.type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป</span>';
+            if (n.type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
             else if (n.type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
             else if (n.type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
-            else if (n.type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม</span>';
+            else if (n.type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
 
             return `
                 <div onclick="window.location.href='${n.targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
                     <div class="space-y-1">
                         <div class="flex items-center gap-2">
                             ${badge}
-                            <h5 class="font-bold text-slate-900 dark:text-white">${n.title}</h5>
+                            <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${n.title}</h5>
                         </div>
-                        <p class="text-slate-500 dark:text-slate-400 text-[11px]">${n.desc}</p>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${n.desc}</p>
                     </div>
                     <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${n.time}</span>
                 </div>
@@ -296,9 +358,9 @@
 
         window.filterNotifTab = function(type) {
             const container = document.getElementById('notifListContainer');
-            const filtered = type === 'all' ? window.notifsData : window.notifsData.filter(n => n.type === type);
+            const filtered = type === 'all' ? liveNotifications : liveNotifications.filter(n => n.type === type);
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ไม่มีการแจ้งเตือนในหมวดหมู่นี้</div>`;
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ไม่มีรายการแจ้งเตือนในหมวดหมู่นี้</div>`;
             } else {
                 container.innerHTML = filtered.map(n => renderNotifCard(n)).join('');
             }
