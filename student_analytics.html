@@ -150,14 +150,35 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // ตรวจสอบการเข้าสู่ระบบ (Auth Guard) ป้องกันการเข้าหน้าวิเคราะห์โดยไม่ล็อกอิน
+        function checkStudentAuth() {
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            if (!studentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อดูประวัติผลการเรียน',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
+            return true;
+        }
+
         async function initAnalytics() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            if (!checkStudentAuth()) return;
+
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
             
             // 1. โหลดข้อมูลชุดข้อสอบทั้งหมด
             const { data: exams } = await mySupabase.from('exams').select('*');
             allExamsData = exams || [];
 
             const selectEl = document.getElementById('examFilterSelect');
+            selectEl.innerHTML = `<option value="all">📊 ภาพรวมทุกชุดข้อสอบทั้งหมด</option>`;
             allExamsData.forEach(ex => {
                 const opt = document.createElement('option');
                 opt.value = ex.id;
@@ -165,9 +186,11 @@
                 selectEl.appendChild(opt);
             });
 
-            // 2. โหลดประวัติการสอบของนักเรียนคนนี้จากตาราง exam_attempts
+            // 2. โหลดประวัติการสอบของนักเรียนคนนี้จากตาราง exam_attempts เฉพาะของตัวเอง
             let query = mySupabase.from('exam_attempts').select('*, exams(*)');
-            if (studentId) query = query.eq('student_id', studentId);
+            if (studentId) {
+                query = query.eq('student_id', studentId);
+            }
 
             const { data: attempts } = await query.order('created_at', { ascending: false });
             allAttemptsData = attempts || [];
@@ -191,7 +214,7 @@
             
             document.getElementById('totalExamsDone').textContent = `${totalDone} ชุด`;
             document.getElementById('avgScoreAll').textContent = `${avgScore} คะแนน`;
-            document.getElementById('avgPercentAll',).textContent = totalDone > 0 ? `${Math.round((avgScore / 10) * 100)}%` : '0%';
+            document.getElementById('avgPercentAll').textContent = totalDone > 0 ? `${Math.round((avgScore / 10) * 100)}%` : '0%';
 
             // Render Table ประวัติ
             const tbody = document.getElementById('historyTableBody');
