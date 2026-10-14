@@ -9,6 +9,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันไม่ให้ผู้ใช้ทั่วไปแอบพิมพ์/แปะ URL เข้ามาตรงๆ -->
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) {
+                        hasSession = true;
+                        break;
+                    }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -56,7 +78,6 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- ปุ่ม Notifications -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -190,12 +211,11 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let liveNotifications = [];
 
-        // Theme Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -209,7 +229,6 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ 100%)
         function checkAdminAuth() {
             const currentUsername = localStorage.getItem('admin_username') || 
                                     localStorage.getItem('user_name') || 
@@ -391,7 +410,13 @@
                 showCancelButton: true,
                 confirmButtonText: 'ออกจากระบบ',
                 cancelButtonText: 'ยกเลิก'
-            }).then(res => { if (res.isConfirmed) window.location.href = 'index.html'; });
+            }).then(async res => { 
+                if (res.isConfirmed) {
+                    await mySupabase.auth.signOut();
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                } 
+            });
         }
 
         initAdminDashboard();
