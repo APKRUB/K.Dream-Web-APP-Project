@@ -88,7 +88,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: แสดง PDF เป็นภาพคมชัดสูง ป้องกันการดาวน์โหลด 100% -->
+            <!-- ฝั่งซ้าย: PDF Viewer -->
             <div id="pdfViewerCard" class="hidden lg:col-span-8 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ (ความคมชัดสูง / ห้ามดาวน์โหลด)</h3>
@@ -135,7 +135,6 @@
         let studentAnswers = {};
         let flaggedQuestions = {};
         let timerInterval = null;
-        let attemptId = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -237,14 +236,16 @@
 
             await loadQuestions();
 
-            if (!isPreview) {
-                await setupAttempt();
-            } else {
-                startTimer((exam.time_limit || 60) * 60);
+            const timerKey = `exam_start_time_${examId}`;
+            let startTime = localStorage.getItem(timerKey);
+            if (!startTime || isPreview) {
+                startTime = Date.now();
+                localStorage.setItem(timerKey, startTime);
             }
+
+            startPersistentTimer(parseInt(startTime, 10), (currentExam.time_limit || 60) * 60);
         }
 
-        // ฟังก์ชันแปลง PDF เป็นภาพความคมชัดสูง (เพิ่ม scale เป็น 3.0 เพื่อความคมชัดสูงสุด ไม่เบลอ)
         async function renderSecurePDF(url) {
             const container = document.getElementById('pdfContainer');
             container.innerHTML = `<div class="text-slate-400 text-xs py-10">กำลังเรนเดอร์เอกสารข้อสอบความคมชัดสูง...</div>`;
@@ -255,12 +256,11 @@
 
                 for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                     const page = await pdfDoc.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 3.0 }); // ปรับสเกลเป็น 3.0 คมชัดกริบ
+                    const viewport = page.getViewport({ scale: 3.0 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    // กำหนดขนาดแสดงผลใน CSS ให้พอดีจอ แต่ความละเอียดข้างในคมชัด
                     canvas.style.width = '100%';
                     canvas.style.height = 'auto';
                     canvas.className = 'shadow-md rounded-lg mb-4 bg-white';
@@ -391,37 +391,6 @@
             }
         }
 
-        async function setupAttempt() {
-            let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('id');
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-            if (!uuidRegex.test(studentId)) {
-                studentId = null;
-            }
-
-            const insertData = {
-                exam_id: examId,
-                status: 'in_progress'
-            };
-            if (studentId) insertData.student_id = studentId;
-
-            const { data, error } = await mySupabase.from('exam_attempts').insert([insertData]).select().single();
-
-            if (error) {
-                console.warn('Exam attempt create warning:', error.message);
-            } else if (data) {
-                attemptId = data.id;
-            }
-
-            const timerKey = `exam_start_time_${examId}`;
-            let startTime = localStorage.getItem(timerKey);
-            if (!startTime) {
-                startTime = Date.now();
-                localStorage.setItem(timerKey, startTime);
-            }
-
-            startPersistentTimer(parseInt(startTime, 10), (currentExam.time_limit || 60) * 60);
-        }
-
         function startPersistentTimer(startTime, totalDurationSeconds) {
             const display = document.getElementById('timerDisplay');
 
@@ -513,58 +482,61 @@
             }
 
             Swal.fire({
-                title: 'กำลังประมวลผลคำตอบ...',
+                title: 'กำลังบันทึกและประมวลผลคำตอบ...',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
 
-            if (!attemptId) {
-                let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('id');
-                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-                if (!uuidRegex.test(studentId)) studentId = null;
-
-                const { data: newAttempt } = await mySupabase.from('exam_attempts').insert([{
-                    exam_id: examId,
-                    student_id: studentId,
-                    status: 'submitted',
-                    submit_time: new Date().toISOString()
-                }]).select().single();
-
-                if (newAttempt) attemptId = newAttempt.id;
+            let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            if (!studentId || !uuidRegex.test(studentId)) {
+                studentId = null;
             }
 
+            // 1. สร้างแถวใหม่ในตาราง exam_attempts ทันที
+            const { data: newAttempt, error: attemptError } = await mySupabase.from('exam_attempts').insert([{
+                exam_id: examId,
+                student_id: studentId,
+                status: 'submitted',
+                score: 0,
+                submit_time: new Date().toISOString()
+            }]).select().single();
+
+            if (attemptError || !newAttempt) {
+                console.error(attemptError);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                return;
+            }
+
+            const attemptId = newAttempt.id;
             let totalScore = 0;
 
+            // 2. ประเมินคำตอบและบันทึกลงตาราง exam_answers ทีละข้อ
             for (const q of currentQuestions) {
                 const studentAns = studentAnswers[q.id];
                 const isEssay = q.question_type === 'essay';
                 let qScore = 0;
 
                 if (!isEssay) {
-                    if (String(studentAns) === String(q.correct_answer)) {
+                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
                         qScore = 1;
                         totalScore += 1;
                     }
                 }
 
-                if (attemptId) {
-                    await mySupabase.from('exam_answers').insert([{
-                        attempt_id: attemptId,
-                        question_id: q.id,
-                        selected_option_index: !isEssay ? (studentAns !== undefined ? parseInt(studentAns) : null) : null,
-                        subjective_answer: isEssay ? (studentAns || '') : null,
-                        score: qScore
-                    }]);
-                }
+                await mySupabase.from('exam_answers').insert([{
+                    attempt_id: attemptId,
+                    question_id: q.id,
+                    selected_option_index: !isEssay && studentAns !== undefined && studentAns !== null ? parseInt(studentAns) : null,
+                    subjective_answer: isEssay ? (studentAns || '') : null,
+                    score: qScore
+                }]);
             }
 
-            if (attemptId) {
-                await mySupabase.from('exam_attempts').update({
-                    status: 'submitted',
-                    score: totalScore,
-                    submit_time: new Date().toISOString()
-                }).eq('id', attemptId);
-            }
+            // 3. อัปเดตคะแนนรวมกลับเข้าไปใน exam_attempts
+            await mySupabase.from('exam_attempts').update({
+                score: totalScore
+            }).eq('id', attemptId);
 
             Swal.fire({
                 icon: 'success',
@@ -573,7 +545,7 @@
                 confirmButtonText: 'ดูผลการสอบและเฉลย',
                 allowOutsideClick: false
             }).then(() => {
-                window.location.href = attemptId ? `student_result.html?attempt_id=${attemptId}` : 'student.html';
+                window.location.href = `student_result.html?attempt_id=${attemptId}`;
             });
         }
 
