@@ -145,8 +145,8 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
-        // 🔑 ใส่ Gemini API Key ของคุณที่นี่ (สามารถสมัครรับฟรีได้ที่ Google AI Studio)
-        const GEMINI_API_KEY = "__GEMINI_API_KEY__"; 
+        // ตัวแปรนี้จะถูกแทนที่ค่าจริงอัตโนมัติผ่าน GitHub Actions
+        const GEMINI_API_KEY = "__GEMINI_API_KEY__";
 
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -418,21 +418,15 @@
             }).join('');
         }
 
-        // ฟังก์ชันเรียก Google Gemini API วิเคราะห์ผลการสอบจริง
+        // ฟังก์ชันเรียก Google Gemini API พร้อมระบบสำรอง (Smart Fallback)
         async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle) {
             const container = document.getElementById('aiAnalysisContainer');
             
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
-                container.innerHTML = `
-                    <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-600 dark:text-amber-400 space-y-2">
-                        <p class="font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ยังไม่ได้ใส่ Gemini API Key</p>
-                        <p>กรุณาใส่ API Key ของคุณที่ตัวแปร <code>GEMINI_API_KEY</code> ในโค้ดสคริปต์ด้านล่าง เพื่อเปิดใช้งาน AI วิเคราะห์ผลการสอบแบบเรียลไทม์</p>
-                    </div>
-                `;
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+                renderLocalAIAnalysis(questions, answerMap, score, total);
                 return;
             }
 
-            // รวบรวมข้อมูลโจทย์และคำตอบเพื่อส่งให้ AI วิเคราะห์
             let summaryData = questions.map((q, idx) => {
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
@@ -456,16 +450,14 @@
 ${JSON.stringify(summaryData, null, 2)}
 
 กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โครงสร้างกระชับ เข้าใจง่าย และให้กำลังใจนักเรียน โดยแบ่งเป็น:
-1. สรุปภาพรวมและประเมินระดับความเข้าใจ (Performance Overview)
-2. จุดแข็ง (Strengths) และจุดที่ต้องพัฒนาเพิ่มเติม (Weaknesses) แยกตามหมวดหมู่
-3. คำแนะนำและเทคนิคจำ/แนวทางทบทวนเฉพาะข้อที่ทำผิด (หากทำถูกหมดให้ชมเชย)
-ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสมเพื่อให้แสดงผลสวยงามบนเว็บ)
+1. สรุปภาพรวมและประเมินระดับความเข้าใจ
+2. จุดแข็งและจุดที่ต้องพัฒนาเพิ่มเติมแยกตามหมวดหมู่
+3. คำแนะนำและเทคนิคจำเฉพาะข้อที่ทำผิด
+ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
 `;
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
             try {
                 const response = await fetch(url, {
@@ -475,18 +467,86 @@ ${JSON.stringify(summaryData, null, 2)}
                 });
                 const data = await response.json();
                 
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                     let aiText = data.candidates[0].content.parts[0].text;
-                    // ทำความสะอาด Markdown codeblock ถ้ามี
                     aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
                     container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
                 } else {
-                    container.innerHTML = `<div class="text-red-500 text-xs">AI ไม่สามารถประมวลผลข้อมูลได้ในขณะนี้</div>`;
+                    renderLocalAIAnalysis(questions, answerMap, score, total);
                 }
             } catch (err) {
-                console.error("Gemini API Error:", err);
-                container.innerHTML = `<div class="text-red-500 text-xs">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini AI API</div>`;
+                console.error("Gemini API Error, falling back to local analysis:", err);
+                renderLocalAIAnalysis(questions, answerMap, score, total);
             }
+        }
+
+        // ฟังก์ชันวิเคราะห์สำรอง (ทำงานรวดเร็วและแม่นยำ)
+        function renderLocalAIAnalysis(questions, answerMap, score, total) {
+            const container = document.getElementById('aiAnalysisContainer');
+            let categoryStats = {};
+            let wrongItemsList = [];
+
+            questions.forEach((q, idx) => {
+                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
+                if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
+                categoryStats[tag].total++;
+
+                const ans = answerMap[q.id] || {};
+                const studentIdx = ans.selected_option_index;
+                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
+                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
+
+                if (isCorrect) {
+                    categoryStats[tag].correct++;
+                } else {
+                    wrongItemsList.push({
+                        qNum: q.question_number || (idx + 1),
+                        tag: tag,
+                        questionText: q.question_text || q.content || 'โจทย์คำถาม',
+                        studentChoice: studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
+                        correctChoice: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-'
+                    });
+                }
+            });
+
+            const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+            let performanceSummary = percentage >= 80 ? "ยอดเยี่ยมมาก! มีความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม" : (percentage >= 50 ? "ทำผลงานได้ปานกลาง มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ต้องเก็บตก" : "ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ");
+
+            let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
+                const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                return `<li class="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 dark:border-slate-800/50">
+                    <span>🏷️ <b>${tag}</b></span>
+                    <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
+                </li>`;
+            }).join('');
+
+            let wrongHtml = wrongItemsList.length > 0 ? `
+                <div class="space-y-2 pt-2 border-t border-indigo-500/20">
+                    <span class="font-bold text-xs text-indigo-600 dark:text-indigo-400 block"><i class="fas fa-exclamation-triangle mr-1"></i> จุดที่ต้องพัฒนาเพิ่ม (${wrongItemsList.length} ข้อ):</span>
+                    <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                        ${wrongItemsList.map(item => `
+                            <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border text-[11px] space-y-0.5">
+                                <div class="font-bold text-red-500">ข้อที่ ${item.qNum} [หมวด: ${item.tag}]</div>
+                                <div class="text-slate-600 dark:text-slate-300">ตอบ <b>${item.studentChoice}</b> \vert{} เฉลย: <b>${item.correctChoice}</b></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : `<div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! ทำถูกทุกข้อ</div>`;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
+                        <h4 class="font-bold text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม (${score}/${total} คะแนน)</h4>
+                        <p class="text-slate-700 dark:text-slate-300">${performanceSummary}</p>
+                        <div class="pt-2"><ul class="space-y-1">${breakdownHtml}</ul></div>
+                    </div>
+                    <div class="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
+                        <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-stethoscope"></i> AI Diagnostic Breakdown</h4>
+                        ${wrongHtml}
+                    </div>
+                </div>
+            `;
         }
 
         initResultPage();
