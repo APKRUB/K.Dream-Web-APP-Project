@@ -166,6 +166,7 @@ function checkStudentAuth() {
 }
         
         async function initPage() {
+            if (!checkStudentAuth()) return;
             const { data: { session } } = await mySupabase.auth.getSession();
             if (session) {
                 const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
