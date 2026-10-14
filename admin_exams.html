@@ -302,6 +302,7 @@ function checkStudentAuth() {
 }
 
         async function initPage() {
+            if (!checkStudentAuth()) return;
 
             updateViewSwitcherButtons();
 
