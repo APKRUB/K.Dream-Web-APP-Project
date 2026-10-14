@@ -49,8 +49,8 @@
             </div>
             <div id="qaMessagesList" class="space-y-3 max-h-60 overflow-y-auto"></div>
             <div class="flex gap-2">
-                <input id="qaInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs" placeholder="พิมพ์ข้อสงสัยเกี่ยวกับข้อสอบชุดนี้ส่งถึงคุณครู...">
-                <button onclick="sendQaMessage()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs">ส่งคำถาม</button>
+                <input id="qaInput" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-darkinput border rounded-xl text-xs outline-none" placeholder="พิมพ์ข้อสงสัยเกี่ยวกับข้อสอบชุดนี้ส่งถึงคุณครู...">
+                <button onclick="sendQaMessage()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all">ส่งคำถาม</button>
             </div>
         </div>
     </main>
@@ -64,48 +64,43 @@
         const attemptId = urlParams.get('attempt_id');
         let currentAttempt = null;
 
-// ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
-function checkStudentAuth() {
-    // เช็กทุกความเป็นไปได้ที่หน้า Login อาจจะบันทึกไว้
-    const studentId = localStorage.getItem('student_id') || 
-                      localStorage.getItem('user_id') || 
-                      localStorage.getItem('user') || 
-                      localStorage.getItem('id') ||
-                      localStorage.getItem('userId');
+        function checkStudentAuth() {
+            const studentId = localStorage.getItem('student_id') || 
+                              localStorage.getItem('user_id') || 
+                              localStorage.getItem('user') || 
+                              localStorage.getItem('id') ||
+                              localStorage.getItem('userId');
 
-    const studentName = localStorage.getItem('full_name') || 
-                        localStorage.getItem('user_name') || 
-                        localStorage.getItem('name') || 
-                        localStorage.getItem('username');
+            const studentName = localStorage.getItem('full_name') || 
+                                localStorage.getItem('user_name') || 
+                                localStorage.getItem('name') || 
+                                localStorage.getItem('username');
 
-    // [สำหรับดีบุก] ช่วยปริ้นช้อนดูว่าใน localStorage มีอะไรบ้างตอนที่รัน
-    console.log("Current localStorage keys:", {
-        studentId: studentId,
-        studentName: studentName,
-        allStorage: {...localStorage}
-    });
-
-    // ถ้าไม่มีข้อมูลเลยสักอัน ค่อยเด้งกลับหน้า Login
-    if (!studentId && !studentName) {
-        Swal.fire({
-            icon: 'error',
-            title: 'ยังไม่ได้เข้าสู่ระบบ',
-            text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
-            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-            allowOutsideClick: false
-        }).then(() => {
-            window.location.href = 'index.html'; 
-        });
-        return false;
-    }
-    
-    return true;
-}
+            if (!studentId && !studentName) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ',
+                    text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html'; 
+                });
+                return false;
+            }
+            return true;
+        }
         
         async function initPage() {
             if (!checkStudentAuth()) return;
             if (!attemptId) { window.location.href = 'student.html'; return; }
+            
             const { data: attempt } = await mySupabase.from('exam_attempts').select('*, exams(*)').eq('id', attemptId).single();
+            if (!attempt) {
+                Swal.fire('ไม่พบข้อมูลการสอบ', '', 'error').then(() => window.location.href = 'student.html');
+                return;
+            }
+
             currentAttempt = attempt;
             document.getElementById('resultExamTitle').textContent = attempt.exams?.title || 'ผลการสอบ';
             document.getElementById('scoreDisplay').textContent = `${attempt.score} / ${attempt.max_score}`;
@@ -115,7 +110,6 @@ function checkStudentAuth() {
             setupQaRealtime();
         }
 
-        // เปิดใช้งาน Realtime สำหรับการทักถาม Q&A
         function setupQaRealtime() {
             mySupabase
                 .channel('exam_qa_realtime')
@@ -126,30 +120,42 @@ function checkStudentAuth() {
         }
 
         async function loadSolutions() {
-            const { data: questions } = await mySupabase.from('exam_questions').select('*, exam_options(*)').eq('exam_id', currentAttempt.exam_id).order('question_number');
+            const { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', currentAttempt.exam_id).order('question_number');
             const { data: userAnswers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId);
 
             const ansMap = {};
             (userAnswers || []).forEach(a => ansMap[a.question_id] = a);
 
             const container = document.getElementById('solutionsList');
-            container.innerHTML = (questions || []).map(q => {
+            if (!questions || questions.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 text-gray-400 text-xs">ไม่มีข้อมูลเฉลยคำตอบ</div>`;
+                return;
+            }
+
+            container.innerHTML = questions.map((q, idx) => {
                 const userAns = ansMap[q.id];
-                const isCorrect = q.question_type === 'mcq' && userAns && userAns.selected_option_index === q.correct_option_index;
+                const isEssay = q.question_type === 'essay';
+                const isCorrect = !isEssay && userAns && String(userAns.selected_option_index) === String(q.correct_answer);
+
+                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
 
                 return `
-                    <div class="p-4 rounded-2xl border ${isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-red-50/50 border-red-200'} text-xs space-y-2">
+                    <div class="p-4 rounded-2xl border ${isEssay ? 'bg-amber-50/40 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900' : (isCorrect ? 'bg-emerald-50/50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900' : 'bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-900')} text-xs space-y-2">
                         <div class="flex justify-between font-bold">
-                            <span>ข้อที่ ${q.question_number}: ${q.question_text || ''}</span>
-                            <span class="${isCorrect ? 'text-emerald-600' : 'text-red-500'}">${isCorrect ? '✓ ถูกต้อง' : '✗ ผิด'}</span>
+                            <span>ข้อที่ ${q.question_number || (idx+1)}: ${q.question_text || q.content || ''}</span>
+                            ${!isEssay ? `<span class="${isCorrect ? 'text-emerald-600' : 'text-red-500'}">${isCorrect ? '✓ ถูกต้อง' : '✗ ผิด'}</span>` : '<span class="text-amber-600">อัตนัย (ข้อเขียน)</span>'}
                         </div>
-                        ${q.question_type === 'mcq' ? `
-                            <div class="text-gray-600 dark:text-gray-300">
-                                คำตอบของคุณ: ${userAns && userAns.selected_option_index !== undefined ? String.fromCharCode(65 + userAns.selected_option_index) : 'ไม่ได้ตอบ'}<br>
-                                <span class="font-bold text-emerald-600">เฉลยที่ถูกต้อง: ${String.fromCharCode(65 + q.correct_option_index)}</span>
+                        ${!isEssay ? `
+                            <div class="text-gray-600 dark:text-gray-300 space-y-0.5">
+                                <div>คำตอบของคุณ: <strong class="text-slate-800 dark:text-white">${userAns && userAns.selected_option_index !== undefined ? opts[userAns.selected_option_index] || userAns.selected_option_index : 'ไม่ได้ตอบ'}</strong></div>
+                                <div>เฉลยที่ถูกต้อง: <strong class="text-emerald-600">${opts[q.correct_answer] || q.correct_answer}</strong></div>
                             </div>
                         ` : `
-                            <div class="text-gray-600">คำตอบของคุณ: ${userAns?.subjective_answer || '-'}<br><span class="text-amber-600 font-bold">(ตรวจแล้ว ได้คะแนน: ${userAns?.score_obtained \vert{}\vert{} 0} /${q.points})</span></div>
+                            <div class="text-gray-600 dark:text-gray-300 space-y-1">
+                                <div>คำตอบของคุณ: <div class="p-2 bg-white dark:bg-darkinput rounded-lg mt-1 font-medium whitespace-pre-wrap">${userAns?.subjective_answer || '-'}</div></div>
+                                <div class="text-amber-600 font-bold">คะแนนที่ได้: ${userAns?.score ?? 0} / ${q.points || 1} คะแนน</div>
+                                ${userAns?.teacher_comment ? `<div class="text-indigo-600 dark:text-indigo-400 font-semibold">คอมเมนต์จากคุณครู: ${userAns.teacher_comment}</div>` : ''}
+                            </div>
                         `}
                     </div>
                 `;
@@ -157,31 +163,39 @@ function checkStudentAuth() {
         }
 
         async function loadQaMessages() {
-            const { data: msgs } = await mySupabase.from('exam_questions_qa').select('*').eq('attempt_id', attemptId).order('created_at');
+            const { data: msgs } = await mySupabase.from('exam_questions_qa').select('*').eq('attempt_id', attemptId).order('created_at', { ascending: true });
             const list = document.getElementById('qaMessagesList');
             if (!msgs || msgs.length === 0) {
-                list.innerHTML = `<div class="text-center py-4 text-gray-400 text-xs">ยังไม่มีข้อความสอบถาม</div>`;
+                list.innerHTML = `<div class="text-center py-4 text-gray-400 text-xs">ยังไม่มีข้อความสอบถาม สามารถพิมพ์ส่งคำถามถึงคุณครูได้ด้านล่าง</div>`;
                 return;
             }
             list.innerHTML = msgs.map(m => `
                 <div class="p-3 bg-slate-50 dark:bg-darkinput rounded-xl text-xs space-y-1">
-                    <div class="font-bold text-indigo-600"><i class="fas fa-question-circle mr-1"></i> นักเรียน: ${m.message}</div>
-                    ${m.reply ? `<div class="text-emerald-600 font-semibold pl-4">↳ คุณครูตอบ: ${m.reply}</div>` : '<div class="text-gray-400 italic pl-4">↳ รอตอบกลับจากคุณครู...</div>'}
+                    <div class="font-bold text-indigo-600 dark:text-indigo-400"><i class="fas fa-question-circle mr-1"></i> นักเรียน: ${m.message}</div>
+                    ${m.reply ? `<div class="text-emerald-600 dark:text-emerald-400 font-semibold pl-4">↳ คุณครูตอบ: ${m.reply}</div>` : '<div class="text-gray-400 italic pl-4">↳ รอตอบกลับจากคุณครู...</div>'}
                 </div>
             `).join('');
         }
 
         async function sendQaMessage() {
-            const msg = document.getElementById('qaInput').value;
+            const msgInput = document.getElementById('qaInput');
+            const msg = msgInput.value.trim();
             if (!msg) return;
-            const { data: { session } } = await mySupabase.auth.getSession();
-            await mySupabase.from('exam_questions_qa').insert([{
+
+            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('user') || 'student';
+
+            const { error } = await mySupabase.from('exam_questions_qa').insert([{
                 attempt_id: attemptId,
-                student_id: session.user.id,
+                student_id: studentId,
                 message: msg
             }]);
-            document.getElementById('qaInput').value = '';
-            loadQaMessages();
+
+            if (!error) {
+                msgInput.value = '';
+                loadQaMessages();
+            } else {
+                Swal.fire('ส่งข้อความไม่สำเร็จ', error.message, 'error');
+            }
         }
 
         initPage();
