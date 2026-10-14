@@ -609,19 +609,77 @@
             markAsModified();
         }
 
-        async function uploadPdfFile(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const fileName = `exam_pdf_${Date.now()}_${file.name}`;
-            const { error } = await mySupabase.storage.from('exam_images').upload(fileName, file);
-            if (!error) {
-                const { data } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
-                if (data) {
-                    document.getElementById('pdfUrlInput').value = data.publicUrl;
-                    await savePdfUrl();
-                }
-            }
+// ฟังก์ชันอัปโหลดไฟล์ PDF โจทย์ลง Supabase Storage พร้อมดักจับ Error รายละเอียด
+async function uploadPdfFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // ตรวจสอบขนาดไฟล์ (เช่น ไม่เกิน 20MB)
+    if (file.size > 20 * 1024 * 1024) {
+        Swal.fire('ไฟล์มีขนาดใหญ่เกินไป', 'กรุณาอัปโหลดไฟล์ PDF ขนาดไม่เกิน 20MB', 'warning');
+        return;
+    }
+
+    Swal.fire({
+        title: 'กำลังอัปโหลดไฟล์ PDF...',
+        html: '<div class="text-xs text-slate-400 mt-1">กำลังบันทึกลง Supabase Storage...</div>',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // สร้างชื่อไฟล์ป้องกันภาษาไทยหรืออักขระพิเศษ
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const fileName = `pdf_${Date.now()}_${cleanFileName}`;
+
+    try {
+        // อัปโหลดไปยัง Bucket exam_images
+        const { data: uploadData, error: uploadError } = await mySupabase.storage
+            .from('exam_images')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: true,
+                contentType: 'application/pdf'
+            });
+
+        if (uploadError) {
+            console.error('Supabase Storage Error:', uploadError);
+            Swal.fire({
+                icon: 'error',
+                title: 'อัปโหลด PDF ล้มเหลว',
+                html: `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block p-2 bg-slate-900 rounded">${uploadError.message}</code><div class="text-[11px] text-slate-400 mt-2">กรุณาเช็กสิทธิ์ RLS Policy หรือ MIME Type ใน Bucket "exam_images"</div>`
+            });
+            return;
         }
+
+        // ดึง Public URL ของไฟล์ที่อัปโหลดสำเร็จ
+        const { data: urlData } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
+        
+        if (urlData && urlData.publicUrl) {
+            const pdfUrl = urlData.publicUrl;
+            document.getElementById('pdfUrlInput').value = pdfUrl;
+
+            // บันทึกลิงก์ PDF ลงในตาราง exams ทันที
+            const { error: dbError } = await mySupabase.from('exams').update({ pdf_url: pdfUrl }).eq('id', examId);
+
+            if (dbError) {
+                Swal.fire('บันทึกลงฐานข้อมูลล้มเหลว', dbError.message, 'error');
+                return;
+            }
+
+            // อัปเดต UI
+            document.getElementById('previewPdfBtn').classList.remove('hidden');
+            const badge = document.getElementById('pdfStatusBadge');
+            badge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-300";
+            badge.textContent = "พร้อมใช้งาน PDF";
+
+            markAsModified();
+            Swal.fire({ icon: 'success', title: 'อัปโหลดและบันทึก PDF สำเร็จ!', timer: 1200, showConfirmButton: false });
+        }
+    } catch (err) {
+        console.error('Unexpected Upload Error:', err);
+        Swal.fire('เกิดข้อผิดพลาดไม่คาดคิด', err.message || 'ไม่สามารถเชื่อมต่อระบบไฟล์ได้', 'error');
+    }
+}
 
         async function saveAllChangesSticky() {
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
