@@ -58,6 +58,27 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
+function checkStudentAuth() {
+    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
+    const studentName = localStorage.getItem('full_name') || localStorage.getItem('user_name');
+
+    // ถ้าไม่มีข้อมูลการ Login ในระบบ ให้ดีดกลับหน้าแรกทันที
+    if (!studentId || !studentName) {
+        Swal.fire({
+            icon: 'error',
+            title: 'ยังไม่ได้เข้าสู่ระบบ',
+            text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
+            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+            allowOutsideClick: false
+        }).then(() => {
+            window.location.href = 'index.html'; // หรือเปลี่ยนเป็นหน้า Login ของคุณ AP
+        });
+        return false;
+    }
+    return true;
+}
+        
         async function initPage() {
             const { data: exams } = await mySupabase.from('exams').select('*').eq('status', 'public').order('created_at', { ascending: false });
             document.getElementById('studentExamsFullContainer').innerHTML = (exams || []).map(e => `
