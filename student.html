@@ -135,7 +135,6 @@
             FEATURE 2: ติดตาม & วิเคราะห์ผลการเรียน
             ========================================== -->
         <section id="featureTabSection2" class="hidden space-y-6">
-            <!-- Filter & Header Control -->
             <div class="hitech-card p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -150,7 +149,6 @@
                 </div>
             </div>
 
-            <!-- Summary Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="hitech-card p-5 rounded-2xl space-y-1">
                     <span class="text-xs text-slate-400 font-bold">📝 ข้อสอบที่ทำทั้งหมด</span>
@@ -166,7 +164,6 @@
                 </div>
             </div>
 
-            <!-- Chart Section -->
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-chart-column text-sky-500"></i> กราฟเปรียบเทียบคะแนนของคุณกับค่าเฉลี่ยห้องเรียน
@@ -176,7 +173,6 @@
                 </div>
             </div>
 
-            <!-- History Table Section -->
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-history text-sky-500"></i> ประวัติการทำข้อสอบทั้งหมด (คลิกเพื่อดูผลวิเคราะห์รายบุคคล)
@@ -221,7 +217,6 @@
         let countdownInterval = null;
         let collapsedCategories = {};
 
-        // Analytics variables
         let myChart = null;
         let allAttemptsData = [];
         let allExamsData = [];
@@ -266,8 +261,12 @@
         }
 
         async function fetchStudentData() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student';
-            const { data: subs } = await mySupabase.from('exam_attempts').select('exam_id, created_at, status, id').eq('student_id', studentId);
+            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+            let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
+            if (studentId) {
+                query = query.eq('student_id', studentId);
+            }
+            const { data: subs } = await query;
             mySubmissions = subs || [];
         }
 
@@ -299,9 +298,8 @@
             const query = document.getElementById('examSearchInput').value.trim().toLowerCase();
 
             const filteredByStatus = cachedExams.filter(e => {
-                const submittedAttempts = mySubmissions.filter(s => s.exam_id === e.id && s.status === 'submitted');
-                const maxAttempts = e.max_attempts || 1;
-                const isCompleted = submittedAttempts.length >= maxAttempts;
+                const submittedAttempts = mySubmissions.filter(s => String(s.exam_id).trim() === String(e.id).trim() && s.status === 'submitted');
+                const isCompleted = submittedAttempts.length > 0;
                 return currentStatusFilter === 'completed' ? isCompleted : !isCompleted;
             });
 
@@ -354,12 +352,10 @@
             const startTime = e.start_time ? new Date(e.start_time) : null;
             const dueDate = e.due_date ? new Date(e.due_date) : null;
 
-            const submittedAttempts = mySubmissions.filter(s => s.exam_id === e.id && s.status === 'submitted');
-            const submissionCount = submittedAttempts.length;
-            const maxAttempts = e.max_attempts || 1;
-            const isCompleted = submissionCount >= maxAttempts;
+            const submittedAttempts = mySubmissions.filter(s => String(s.exam_id).trim() === String(e.id).trim() && s.status === 'submitted');
+            const isCompleted = submittedAttempts.length > 0;
             const isCountdownActive = startTime && startTime > now;
-            const lastAttemptId = submittedAttempts.length > 0 ? submittedAttempts[submittedAttempts.length - 1].id : null;
+            const lastAttemptId = isCompleted ? submittedAttempts[submittedAttempts.length - 1].id : null;
 
             let statusBadge = '';
             let actionBtn = '';
@@ -370,8 +366,8 @@
             if (isCompleted) {
                 statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]"><i class="fas fa-check-circle mr-1"></i>ทำเสร็จแล้ว</span>';
                 actionBtn = lastAttemptId 
-                    ? `<button onclick="window.location.href='student_result.html?attempt_id=${lastAttemptId}'" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-chart-pie"></i> ดูผลคะแนน & เฉลย</button>`
-                    : `<button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว (${submissionCount}/${maxAttempts})</button>`;
+                    ? `<button onclick="window.location.href='student_result.html?attempt_id=${lastAttemptId}'" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-chart-pie"></i> ดูผลวิเคราะห์ & เฉลย</button>`
+                    : `<button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว</button>`;
                 cardBorder = 'border-l-8 border-l-emerald-500';
                 cardBg = 'bg-emerald-50/40 dark:bg-emerald-900/10';
                 timeInfoHtml = `<div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>`;
@@ -516,9 +512,6 @@
             });
         }
 
-        // ==========================================
-        // ANALYTICS LOGIC (Feature 2)
-        // ==========================================
         async function initAnalyticsData() {
             const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
             
