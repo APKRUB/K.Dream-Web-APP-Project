@@ -68,12 +68,8 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        // ค้นหาพารามิเตอร์ทุกรูปแบบที่เป็นไปได้ใน URL (exam_id, id, exam, code หรือค่าแรกที่ส่งมา)
-        let examId = urlParams.get('exam_id') || urlParams.get('id') || urlParams.get('exam') || urlParams.get('code');
-        if (!examId && urlParams.keys().next().value) {
-            examId = urlParams.get(urlParams.keys().next().value);
-        }
-
+        // แก้ไขตรงนี้ให้รองรับทั้ง exam_id และ id เพื่อให้ดึงข้อมูลชุดข้อสอบเดิมที่คุณ AP ทำไว้ได้ถูกต้องเสมอ
+        const examId = urlParams.get('exam_id') || urlParams.get('id');
         let attemptId = null;
         let questionsData = [];
         let timerInterval = null;
@@ -94,14 +90,8 @@
 
         async function initExam() {
             if (!examId) {
-                // หากยังไม่พบจริงๆ ให้ดึงชุดข้อสอบล่าสุดจากฐานข้อมูลมาแสดงแทนอัตโนมัติ เพื่อไม่ให้หน้าเว็บพัง
-                const { data: latestExams } = await mySupabase.from('exams').select('id').order('created_at', { ascending: false }).limit(1);
-                if (latestExams && latestExams.length > 0) {
-                    examId = latestExams[0].id;
-                } else {
-                    Swal.fire('ไม่พบรหัสข้อสอบ', 'กรุณากลับไปเลือกชุดข้อสอบจากหน้าหลักอีกครั้ง', 'error').then(() => window.location.href = 'student.html');
-                    return;
-                }
+                Swal.fire('ไม่พบรหัสข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
+                return;
             }
 
             const studentId = localStorage.getItem('id') || localStorage.getItem('user_id') || 'guest_student';
@@ -109,7 +99,7 @@
             // ดึงข้อมูลชุดข้อสอบ
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (!exam) {
-                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', 'ชุดข้อสอบนี้อาจถูกลบหรือไม่มีอยู่ในระบบ', 'error').then(() => window.location.href = 'student.html');
+                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
                 return;
             }
 
@@ -119,7 +109,7 @@
             // ตรวจสอบว่ามี Attempt ที่ค้างอยู่ (in_progress) หรือไม่
             let { data: existingAttempt } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId).eq('student_id', studentId).eq('status', 'in_progress').single();
 
-            // หากไม่มี ให้สร้างใหม่ทันที
+            // หากไม่มี (เนื่องจากถูกลบสิทธิ์ไปแล้ว หรือยังไม่เคยทำ) ให้สร้างใหม่ทันที
             if (!existingAttempt) {
                 const { data: newAtt, error } = await mySupabase.from('exam_attempts').insert([{
                     exam_id: examId,
