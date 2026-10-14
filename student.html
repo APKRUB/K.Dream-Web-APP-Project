@@ -216,11 +216,10 @@
 
         let cachedExams = [];
         let mySubmissions = [];
-        let myInProgressExams = [];
         let currentStatusFilter = 'pending';
         let studentNotifications = [];
         let countdownInterval = null;
-        let collapsedCategories = {}; // เก็บสถานะยุบ/ขยายหมวดหมู่
+        let collapsedCategories = {};
 
         // Analytics variables
         let myChart = null;
@@ -270,13 +269,6 @@
             const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student';
             const { data: subs } = await mySupabase.from('exam_attempts').select('exam_id, created_at, status, id').eq('student_id', studentId);
             mySubmissions = subs || [];
-
-            try {
-                const localProgress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
-                myInProgressExams = Object.keys(localProgress);
-            } catch (e) {
-                myInProgressExams = [];
-            }
         }
 
         async function fetchExamsList() {
@@ -366,7 +358,6 @@
             const submissionCount = submittedAttempts.length;
             const maxAttempts = e.max_attempts || 1;
             const isCompleted = submissionCount >= maxAttempts;
-            const isResuming = myInProgressExams.includes(e.id);
             const isCountdownActive = startTime && startTime > now;
             const lastAttemptId = submittedAttempts.length > 0 ? submittedAttempts[submittedAttempts.length - 1].id : null;
 
@@ -408,13 +399,8 @@
                 cardBorder = 'border-l-4 border-l-rose-500';
                 timeInfoHtml = `<div><i class="fas fa-calendar-xmark text-rose-500 mr-1"></i> ปิดรับ: <strong>${dueDate.toLocaleDateString('th-TH')}</strong></div>`;
             } else {
-                if (isResuming) {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 font-bold text-[10px]"><i class="fas fa-triangle-exclamation mr-1"></i>ค้างการทำข้อสอบ</span>';
-                    actionBtn = `<button onclick="showExamInstructionModal('${e.id}')" class="w-full py-2.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-play"></i> Resume (ทำต่อ)</button>`;
-                } else {
-                    statusBadge = `<span class="px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-bold text-[10px]"><i class="fas fa-pen mr-1"></i>พร้อมทำ</span>`;
-                    actionBtn = `<button onclick="showExamInstructionModal('${e.id}')" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-pen-to-square"></i> เริ่มทำข้อสอบ</button>`;
-                }
+                statusBadge = `<span class="px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-bold text-[10px]"><i class="fas fa-pen mr-1"></i>พร้อมทำ</span>`;
+                actionBtn = `<button onclick="showExamInstructionModal('${e.id}')" class="w-full py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"><i class="fas fa-pen-to-square"></i> เริ่มทำข้อสอบ</button>`;
                 timeInfoHtml = `<div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>`;
             }
 
@@ -506,11 +492,6 @@
                 confirmButtonColor: '#0284c7'
             }).then(res => { 
                 if (res.isConfirmed) {
-                    let progress = {};
-                    try { progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}'); } catch(e){}
-                    progress[examId] = true;
-                    localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
-
                     window.location.href = `exam_take.html?id=${examId}`;
                 } 
             });
