@@ -10,6 +10,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL เข้ามาตรงๆ โดยไม่ได้รับอนุญาต -->
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) {
+                        hasSession = true;
+                        break;
+                    }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -129,7 +151,7 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
-        let userRole = 'admin'; // กำหนดค่าเริ่มต้นเป็น admin เพื่อไม่ให้ติดล็อกหน้าจอ
+        let userRole = 'admin';
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -144,7 +166,6 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ 100%)
         function checkAdminAuth() {
             const currentUsername = localStorage.getItem('admin_username') || 
                                     localStorage.getItem('user_name') || 
@@ -160,7 +181,6 @@
         async function initPage() {
             if (!checkAdminAuth()) return;
 
-            // ตรวจสอบ Role จาก LocalStorage หรือ Session
             userRole = localStorage.getItem('role') || localStorage.getItem('user_role') || 'admin';
 
             if (userRole === 'student') {
@@ -198,7 +218,7 @@
             }
 
             document.getElementById('annCount').textContent = `${anns.length} รายการ`;
-            const isStaff = true; // เปิดสิทธิ์ให้จัดการได้เต็มที่
+            const isStaff = true;
 
             feed.innerHTML = anns.map(a => {
                 const dateStr = new Date(a.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
