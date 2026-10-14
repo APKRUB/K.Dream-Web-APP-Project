@@ -3,89 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ห้องสอบออนไลน์</title>
+    <title>LMS | ทำข้อสอบออนไลน์</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', darkbg: '#050811', darkbox: '#0f172a' } } } }
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16' } } } }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; }
-        .cut-through { text-decoration: line-through; opacity: 0.4; }
-        .glass-top { background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); }
-        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .dark .swal2-popup { background-color: #0f172a !important; color: #f8fafc !important; }
+        body { font-family: 'Prompt', sans-serif; }
+        .omr-bubble-student {
+            width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s ease; border: 2px solid #cbd5e1;
+            background-color: #ffffff; color: #334155;
+        }
+        .dark .omr-bubble-student { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
+        .omr-bubble-student.selected {
+            background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important;
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+        }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 flex flex-col">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
-    <!-- Sticky Exam Topbar (Time Bar & Progress Bar) -->
-    <header class="glass-top fixed top-0 left-0 right-0 z-50 text-white shadow-xl">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+    <!-- Sticky Header พร้อม Timer ถอยหลัง -->
+    <header class="fixed top-0 left-0 w-full z-40 bg-white/90 dark:bg-darkbox/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div>
-                <h1 id="examTitle" class="font-black text-sm md:text-base leading-tight">ห้องสอบออนไลน์</h1>
-                <p id="examSub" class="text-[10px] text-sky-300">กำลังโหลดโจทย์...</p>
+                <h1 id="examTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">กำลังโหลดชุดข้อสอบ...</h1>
+                <p id="examCodeSub" class="text-[11px] text-slate-400 font-mono">CODE: -</p>
             </div>
-
-            <!-- Time Bar & Progress Bar Indicator -->
+            
             <div class="flex items-center gap-4">
-                <div class="text-right hidden sm:block">
-                    <div class="text-[10px] text-slate-400 font-bold uppercase">ความคืบหน้า</div>
-                    <div id="progressText" class="text-xs font-black text-emerald-400">0 / 0 ข้อ (0%)</div>
+                <!-- ตัวจับเวลา -->
+                <div class="px-4 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center gap-2">
+                    <i class="fas fa-hourglass-half animate-spin"></i>
+                    <span>เวลาที่เหลือ: <strong id="timerDisplay" class="font-mono text-sm">--:--</strong></span>
                 </div>
-                <div class="flex items-center gap-2 bg-slate-800/80 px-3.5 py-1.5 rounded-2xl border border-sky-500/30">
-                    <i class="fas fa-clock text-amber-400 animate-pulse text-sm"></i>
-                    <span id="timerDisplay" class="font-mono font-extrabold text-sm text-amber-300">00:00:00</span>
-                </div>
-                <button onclick="confirmSubmitExam()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs rounded-xl shadow-lg transition-all">
-                    <i class="fas fa-paper-plane mr-1"></i> ส่งข้อสอบ
+                
+                <button onclick="confirmSubmitExam()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+                    ส่งข้อสอบ
                 </button>
             </div>
         </div>
-
-        <!-- Visual Progress Bar Line -->
-        <div class="w-full bg-slate-800 h-1.5">
-            <div id="progressBarLine" class="bg-gradient-to-r from-sky-500 to-emerald-400 h-1.5 w-0 transition-all duration-300"></div>
-        </div>
     </header>
 
-    <!-- Main Exam Workspace -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 pt-24 pb-12 flex flex-col gap-4">
+    <main class="max-w-6xl mx-auto px-4 pt-24 space-y-6">
         
-        <!-- Controls: Layout Switcher & View Modes -->
-        <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 text-xs">
-            <div class="flex gap-2">
-                <button id="btnViewSplit" onclick="switchExamView('split')" class="px-3 py-1.5 rounded-xl font-bold bg-sky-600 text-white"><i class="fas fa-columns mr-1"></i> PDF + ตอบคำตอบ</button>
-                <button id="btnViewSingle" onclick="switchExamView('single')" class="px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"><i class="fas fa-list-ul mr-1"></i> เลื่อนทำทีละข้อ</button>
-                <button id="btnViewStep" onclick="switchExamView('step')" class="px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"><i class="fas fa-forward-step mr-1"></i> ทำทีละข้อ (One-by-One)</button>
-            </div>
-            <div class="text-[11px] text-slate-400 hidden sm:block"><i class="fas fa-info-circle mr-1"></i> คลิกขวาหรือกดไอคอนตา <i class="fas fa-eye-slash"></i> เพื่อตัดช้อยส์</div>
+        <!-- แจ้งเตือน Anti-Cheat Tab Switch -->
+        <div id="cheatWarningBox" class="hidden p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-600 dark:text-red-400 font-bold flex items-center gap-2">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>ตรวจพบการสลับหน้าจอ / ออกนอกแท็บ (<span id="cheatCount">0</span> ครั้ง)! กรุณาโฟกัสหน้าข้อสอบ</span>
         </div>
 
-        <!-- Exam Content Layout Area -->
-        <div id="examBodyLayout" class="grid grid-cols-1 md:grid-cols-12 gap-6 min-h-[70vh]">
-            
-            <!-- ฝั่งขวา (หรือซ้าย): PDF Viewer -->
-            <div id="pdfViewerCol" class="md:col-span-7 bg-slate-800 rounded-3xl overflow-hidden shadow-inner border border-slate-700 flex flex-col">
-                <div class="p-3 bg-slate-900 text-xs text-slate-300 font-bold flex justify-between items-center">
-                    <span><i class="fas fa-file-pdf text-red-500 mr-1.5"></i> เอกสารโจทย์ข้อสอบ PDF</span>
-                    <a id="pdfOpenExternal" href="#" target="_blank" class="text-sky-400 hover:underline text-[11px]"><i class="fas fa-external-link-alt"></i> เปิดหน้าต่างใหม่</a>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- ส่วนแสดงโจทย์ PDF หรือออนไลน์ -->
+            <div id="questionArea" class="lg:col-span-7 space-y-4">
+                <div class="p-5 bg-white dark:bg-darkbox rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400"><i class="fas fa-file-pdf mr-1"></i> โจทย์ข้อสอบ (PDF / Online)</h3>
+                    <div id="pdfViewerContainer" class="w-full h-[550px] bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 text-xs">
+                        กำลังโหลดไฟล์โจทย์...
+                    </div>
                 </div>
-                <iframe id="pdfFrame" class="w-full flex-1 min-h-[500px]" src="about:blank"></iframe>
             </div>
 
-            <!-- ฝั่งกระดาษคำตอบ / โจทย์รายข้อ -->
-            <div id="answerSheetCol" class="md:col-span-5 bg-white dark:bg-slate-800/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col justify-between space-y-6">
-                <div id="questionsContainer" class="space-y-6 overflow-y-auto max-h-[65vh] pr-2"></div>
+            <!-- ส่วนกระดาษคำตอบ OMR / ตอบคำถาม -->
+            <div class="lg:col-span-5 space-y-4">
+                <div class="p-5 bg-white dark:bg-darkbox rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2 dark:border-slate-800">
+                        <h3 class="font-bold text-sm flex items-center gap-2"><i class="fas fa-check-double text-sky-500"></i> กระดาษคำตอบ OMR</h3>
+                        <span id="answeredCount" class="text-xs text-slate-400 font-semibold">ตอบแล้ว 0/0 ข้อ</span>
+                    </div>
 
-                <!-- Navigation Controls for Step Mode -->
-                <div id="stepNavControls" class="hidden justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <button onclick="prevStepQuestion()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 font-bold text-xs rounded-xl"><i class="fas fa-chevron-left mr-1"></i> ข้อก่อนหน้า</button>
-                    <span id="stepQuestionIndicator" class="font-bold text-xs text-sky-500">ข้อ 1 / 20</span>
-                    <button onclick="nextStepQuestion()" class="px-4 py-2 bg-sky-600 text-white font-bold text-xs rounded-xl">ข้อถัดไป <i class="fas fa-chevron-right ml-1"></i></button>
+                    <div id="studentOmrContainer" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                        <div class="text-center py-10 text-slate-400 text-xs">กำลังโหลดชุดคำถาม...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,276 +95,183 @@
         const isPreview = urlParams.get('preview') === 'true';
 
         let examData = null;
-        let questionsList = [];
-        let answersMap = {}; // { qId: choiceIdx }
-        let flagsMap = {};   // { qId: boolean }
-        let cutsMap = {};    // { qId_choiceIdx: boolean }
-
+        let questionsData = [];
+        let studentAnswers = {}; // เก็บคำตอบ { question_id: choice_index }
         let timerInterval = null;
-        let totalSecondsLeft = 3600;
-        let currentStepIdx = 0;
-        let currentLayoutView = 'split';
+        let timeRemainingSeconds = 0;
+        let tabSwitchCount = 0;
 
-        const storageKey = `exam_state_${examId}`;
-
-        async function initExamPage() {
-            // โหลด State เดิมจาก LocalStorage (ป้องกัน F5 ข้อมูลหาย)
-            const savedState = localStorage.getItem(storageKey);
-            if (savedState) {
-                try {
-                    const parsed = JSON.parse(savedState);
-                    answersMap = parsed.answersMap || {};
-                    flagsMap = parsed.flagsMap || {};
-                    cutsMap = parsed.cutsMap || {};
-                } catch(e) {}
-            }
-
-            const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
-            if (!exam) { Swal.fire('ไม่พบข้อสอบ', '', 'error'); return; }
-            examData = exam;
-
-            document.getElementById('examTitle').textContent = exam.title;
-            document.getElementById('examSub').textContent = `CODE: ${exam.exam_code || 'N/A'} | เวลา: ${exam.time_limit} นาที`;
-
-            if (exam.pdf_url) {
-                document.getElementById('pdfFrame').src = exam.pdf_url;
-                document.getElementById('pdfOpenExternal').href = exam.pdf_url;
-            } else {
-                switchExamView('single'); // ถ้าไม่มี PDF บังคับสลับไปโจทย์ปกติ
-            }
-
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
-            questionsList = questions || [];
-
-            totalSecondsLeft = (exam.time_limit || 60) * 60;
-            startTimer();
-            renderQuestions();
-            updateProgress();
-        }
-
-        function saveStateToLocalStorage() {
-            localStorage.setItem(storageKey, JSON.stringify({
-                answersMap, flagsMap, cutsMap
-            }));
-        }
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                if (totalSecondsLeft <= 0) {
-                    clearInterval(timerInterval);
-                    Swal.fire('หมดเวลาทำข้อสอบ!', 'ระบบจะทำการส่งคำตอบให้อัตโนมัติ', 'warning').then(() => submitExamData());
-                    return;
-                }
-                totalSecondsLeft--;
-                const h = Math.floor(totalSecondsLeft / 3600).toString().padStart(2, '0');
-                const m = Math.floor((totalSecondsLeft % 3600) / 60).toString().padStart(2, '0');
-                const s = (totalSecondsLeft % 60).toString().padStart(2, '0');
-                document.getElementById('timerDisplay').textContent = `${h}:${m}:${s}`;
-            }, 1000);
-        }
-
-        function switchExamView(view) {
-            currentLayoutView = view;
-            const pdfCol = document.getElementById('pdfViewerCol');
-            const ansCol = document.getElementById('answerSheetCol');
-            const stepNav = document.getElementById('stepNavControls');
-
-            document.getElementById('btnViewSplit').className = view === 'split' ? 'px-3 py-1.5 rounded-xl font-bold bg-sky-600 text-white' : 'px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
-            document.getElementById('btnViewSingle').className = view === 'single' ? 'px-3 py-1.5 rounded-xl font-bold bg-sky-600 text-white' : 'px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
-            document.getElementById('btnViewStep').className = view === 'step' ? 'px-3 py-1.5 rounded-xl font-bold bg-sky-600 text-white' : 'px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
-
-            if (view === 'split') {
-                pdfCol.classList.remove('hidden');
-                pdfCol.className = 'md:col-span-7 bg-slate-800 rounded-3xl overflow-hidden shadow-inner border border-slate-700 flex flex-col';
-                ansCol.className = 'md:col-span-5 bg-white dark:bg-slate-800/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col justify-between space-y-6';
-                stepNav.classList.add('hidden');
-            } else if (view === 'single') {
-                pdfCol.classList.add('hidden');
-                ansCol.className = 'col-span-12 max-w-4xl mx-auto w-full bg-white dark:bg-slate-800/90 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-6';
-                stepNav.classList.add('hidden');
-            } else if (view === 'step') {
-                pdfCol.classList.add('hidden');
-                ansCol.className = 'col-span-12 max-w-3xl mx-auto w-full bg-white dark:bg-slate-800/90 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-6';
-                stepNav.classList.remove('hidden');
-                stepNav.classList.add('flex');
-            }
-
-            renderQuestions();
-        }
-
-        function renderQuestions() {
-            const container = document.getElementById('questionsContainer');
-            
-            const listToRender = currentLayoutView === 'step' 
-                ? [questionsList[currentStepIdx]] 
-                : questionsList;
-
-            if (currentLayoutView === 'step') {
-                document.getElementById('stepQuestionIndicator').textContent = `ข้อ ${currentStepIdx + 1} / ${questionsList.length}`;
-            }
-
-            container.innerHTML = listToRender.map((q, idx) => {
-                if (!q) return '';
-                const qNum = q.question_number || (idx + 1);
-                const isFlagged = flagsMap[q.id];
-                const selectedChoice = answersMap[q.id];
-
-                const choicesHtml = (q.options || []).map((opt, cIdx) => {
-                    const isCut = cutsMap[`${q.id}_${cIdx}`];
-                    const isSelected = String(selectedChoice) === String(cIdx);
-
-                    return `
-                        <div class="flex items-center justify-between p-3 rounded-2xl border transition-all ${isSelected ? 'bg-sky-50 dark:bg-sky-950/60 border-sky-500 font-bold' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'} ${isCut ? 'cut-through' : ''}">
-                            <label class="flex items-center gap-3 cursor-pointer flex-1">
-                                <input type="radio" name="q_${q.id}" value="${cIdx}" ${isSelected ? 'checked' : ''} onchange="selectAnswer('${q.id}', ${cIdx})" class="w-4 h-4 text-sky-600">
-                                <span class="text-xs ${isCut ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200'}">${String.fromCharCode(65+cIdx)}. ${opt}</span>
-                            </label>
-                            <button onclick="toggleCutChoice('${q.id}', ${cIdx})" class="text-slate-400 hover:text-red-500 p-1 text-xs" title="ตัดช้อยส์">
-                                <i class="fas ${isCut ? 'fa-eye text-sky-500' : 'fa-eye-slash'}"></i>
-                            </button>
-                        </div>
-                    `;
-                }).join('');
-
-                return `
-                    <div id="q_card_${q.id}" class="p-5 rounded-2xl bg-white dark:bg-slate-800 border ${isFlagged ? 'border-amber-400 dark:border-amber-500 bg-amber-50/20' : 'border-slate-200 dark:border-slate-700'} space-y-3">
-                        <div class="flex justify-between items-start">
-                            <span class="font-bold text-sm text-slate-900 dark:text-white">ข้อที่ ${qNum}: ${q.question_text || ''}</span>
-                            <button onclick="toggleFlagQuestion('${q.id}')" class="px-2.5 py-1 rounded-xl text-xs font-bold ${isFlagged ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-amber-500'} transition-all">
-                                <i class="fas fa-flag mr-1"></i> ${isFlagged ? 'ปักธงแล้ว' : 'ปักธง'}
-                            </button>
-                        </div>
-                        <div class="space-y-2">${choicesHtml}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function selectAnswer(qId, choiceIdx) {
-            answersMap[qId] = choiceIdx;
-            saveStateToLocalStorage();
-            updateProgress();
-        }
-
-        function toggleFlagQuestion(qId) {
-            flagsMap[qId] = !flagsMap[qId];
-            saveStateToLocalStorage();
-            renderQuestions();
-        }
-
-        function toggleCutChoice(qId, cIdx) {
-            const key = `${qId}_${cIdx}`;
-            cutsMap[key] = !cutsMap[key];
-            saveStateToLocalStorage();
-            renderQuestions();
-        }
-
-        function prevStepQuestion() {
-            if (currentStepIdx > 0) { currentStepIdx--; renderQuestions(); }
-        }
-
-        function nextStepQuestion() {
-            if (currentStepIdx < questionsList.length - 1) { currentStepIdx++; renderQuestions(); }
-        }
-
-        function updateProgress() {
-            const doneCount = Object.keys(answersMap).length;
-            const total = questionsList.length;
-            const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-
-            document.getElementById('progressText').textContent = `${doneCount} / ${total} ข้อ (${pct}%)`;
-            document.getElementById('progressBarLine').style.width = `${pct}%`;
-        }
-
-        // ระบบแจ้งเตือนตรวจสอบรอบแรกก่อนส่งข้อสอบจริง (พร้อมสรุปข้อที่ยังไม่ได้ทำและข้อที่ปักธงไว้)
-        async function confirmSubmitExam() {
-            const totalCount = questionsList.length;
-            const unanswered = questionsList.filter(q => answersMap[q.id] === undefined);
-            const flagged = questionsList.filter(q => flagsMap[q.id]);
-
-            let alertHtml = '';
-
-            if (unanswered.length > 0) {
-                const unNumList = unanswered.map(q => `ข้อ ${q.question_number}`).join(', ');
-                alertHtml += `
-                    <div class="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-left text-xs text-red-600 dark:text-red-300 space-y-1 mb-3">
-                        <div class="font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> คุณยังไม่ได้ตอบอีก ${unanswered.length} ข้อ:</div>
-                        <div class="font-mono">${unNumList}</div>
-                    </div>
-                `;
-            }
-
-            if (flagged.length > 0) {
-                const flagNumList = flagged.map(q => `ข้อ ${q.question_number}`).join(', ');
-                alertHtml += `
-                    <div class="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl text-left text-xs text-amber-600 dark:text-amber-300 space-y-1">
-                        <div class="font-bold"><i class="fas fa-flag mr-1"></i> มีข้อที่ปักธงไว้ ${flagged.length} ข้อ:</div>
-                        <div class="font-mono">${flagNumList}</div>
-                    </div>
-                `;
-            }
-
-            if (!alertHtml) {
-                alertHtml = '<div class="text-emerald-500 font-bold text-sm py-2"><i class="fas fa-check-circle mr-1"></i> คุณทำข้อสอบครบถ้วนทุกข้อแล้ว!</div>';
-            }
-
-            const { isConfirmed } = await Swal.fire({
-                title: 'ยืนยันการส่งข้อสอบ?',
-                html: alertHtml,
-                icon: unanswered.length > 0 ? 'warning' : 'question',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันส่งข้อสอบ',
-                cancelButtonText: 'กลับไปตรวจทาน'
-            });
-
-            if (isConfirmed) {
-                submitExamData();
-            }
-        }
-
-        async function submitExamData() {
-            clearInterval(timerInterval);
-            if (isPreview) {
-                Swal.fire('การ Preview เสร็จสมบูรณ์', 'ระบบทำงานเรียบร้อยแล้ว', 'success').then(() => window.close());
+        async function initExamTake() {
+            if (!examId) {
+                Swal.fire('ไม่พบ ID ข้อสอบ', '', 'error').then(() => window.location.href = 'index.html');
                 return;
             }
 
-            Swal.fire({ title: 'กำลังบันทึกและส่งข้อสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            // โหลดข้อมูลข้อสอบ
+            const { data: exam, error } = await mySupabase.from('exams').select('*').eq('id', examId).single();
+            if (error || !exam) {
+                Swal.fire('ไม่พบชุดข้อสอบนี้ในระบบ', '', 'error');
+                return;
+            }
+            examData = exam;
 
-            const { data: { session } } = await mySupabase.auth.getSession();
-            if (session) {
-                // คำนวณคะแนน
-                let score = 0;
-                questionsList.forEach(q => {
-                    if (String(answersMap[q.id]) === String(q.correct_answer)) score++;
-                });
+            document.getElementById('examTitle').textContent = exam.title;
+            document.getElementById('examCodeSub').textContent = `CODE: ${exam.exam_code || 'EXAM'} | เวลาทำ: ${exam.time_limit || 60} นาที`;
 
-                await mySupabase.from('exam_attempts').insert([{
-                    exam_id: examId,
-                    student_id: session.user.id,
-                    score: score,
-                    total_questions: questionsList.length,
-                    answers: answersMap,
-                    status: 'submitted'
-                }]);
-
-                // แจ้งเตือนครูหมวด ส่งข้อสอบ
-                await mySupabase.from('notifications').insert([{
-                    category: 'submission',
-                    message: `นักเรียนส่งข้อสอบชุด "${examData.title}" คะแนนที่ได้: ${score}/${questionsList.length}`,
-                    is_read: false
-                }]);
+            // เช็กสถานะ Due Date / Countdown (ถ้าไม่ใช่โหมด Preview)
+            if (!isPreview) {
+                const now = new Date();
+                if (exam.status === 'countdown' && exam.start_time && new Date(exam.start_time) > now) {
+                    Swal.fire('ยังไม่ถึงเวลาเปิดสอบ', `ข้อสอบจะเปิดให้ทำในวันที่ ${new Date(exam.start_time).toLocaleString('th-TH')}`, 'warning')
+                        .then(() => window.close());
+                    return;
+                }
+                if (exam.due_date && new Date(exam.due_date) < now && exam.due_date_policy === 'strict') {
+                    Swal.fire('หมดเวลาทำข้อสอบแล้ว (Due Date)', 'เลยกำหนดเวลาส่งข้อสอบแบบเข้มงวด', 'error')
+                        .then(() => window.close());
+                    return;
+                }
             }
 
-            // ล้าง LocalStorage หลังส่งสำเร็จ
-            localStorage.removeItem(storageKey);
+            // โหลดคำถาม
+            const { data: qList } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
+            questionsData = qList || [];
 
-            Swal.fire({ icon: 'success', title: 'ส่งข้อสอบเรียบร้อยแล้ว!', timer: 1500, showConfirmButton: false }).then(() => {
-                window.location.href = `exam_result.html?exam_id=${examId}`;
+            // โหลดคำตอบเดิมจาก LocalStorage (Auto-Save Recovery)
+            const savedAns = localStorage.getItem(`exam_ans_${examId}`);
+            if (savedAns) {
+                try { studentAnswers = JSON.parse(savedAns); } catch(e) {}
+            }
+
+            // แสดง PDF หรือโจทย์ออนไลน์
+            const pdfContainer = document.getElementById('pdfViewerContainer');
+            if (exam.pdf_url) {
+                pdfContainer.innerHTML = `<iframe src="${exam.pdf_url}" class="w-full h-full rounded-xl border-0"></iframe>`;
+            } else {
+                pdfContainer.innerHTML = `<div class="text-xs text-slate-400">ชุดข้อสอบนี้ใช้รูปแบบโจทย์ออนไลน์ (ดูโจทย์จากระบบ)</div>`;
+            }
+
+            renderStudentOmr();
+            startExamTimer((exam.time_limit || 60) * 60);
+            initAntiCheatListener();
+        }
+
+        // ระบบจับเวลาถอยหลัง & Auto Submit
+        function startExamTimer(totalSeconds) {
+            timeRemainingSeconds = totalSeconds;
+            timerInterval = setInterval(() => {
+                timeRemainingSeconds--;
+                if (timeRemainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    autoSubmitExamTimeUp();
+                    return;
+                }
+                const m = Math.floor(timeRemainingSeconds / 60);
+                const s = timeRemainingSeconds % 60;
+                document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }, 1000);
+        }
+
+        function renderStudentOmr() {
+            const container = document.getElementById('studentOmrContainer');
+            if (questionsData.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีรายการโจทย์ในชุดนี้</div>`;
+                return;
+            }
+
+            container.innerHTML = questionsData.map((q, idx) => {
+                const isEssay = q.question_type === 'essay';
+                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                const qNum = q.question_number || (idx + 1);
+
+                if (isEssay) {
+                    const currentEssayVal = studentAnswers[q.id] || '';
+                    return `
+                        <div class="p-3 bg-amber-500/10 rounded-xl space-y-2 border border-amber-500/30">
+                            <div class="flex justify-between items-center text-xs font-bold text-amber-600">
+                                <span>ข้อที่ ${qNum} (อัตนัย)</span>
+                            </div>
+                            <textarea rows="3" oninput="saveStudentAnswer('${q.id}', this.value)" class="w-full p-2.5 bg-white dark:bg-slate-900 border rounded-lg text-xs outline-none" placeholder="พิมพ์คำตอบข้อเขียนของคุณที่นี่...">${currentEssayVal}</textarea>
+                        </div>
+                    `;
+                }
+
+                const bubblesHtml = opts.map((optLabel, optIdx) => {
+                    const isSelected = String(studentAnswers[q.id]) === String(optIdx);
+                    return `<div onclick="selectStudentChoice('${q.id}', '${optIdx}')" class="omr-bubble-student ${isSelected ? 'selected' : ''}">${optLabel}</div>`;
+                }).join('');
+
+                return `
+                    <div class="p-3 bg-slate-100 dark:bg-slate-900/80 rounded-xl flex items-center justify-between gap-2 border border-slate-200 dark:border-slate-800">
+                        <span class="font-extrabold text-xs text-slate-800 dark:text-slate-200 w-12">ข้อ ${qNum}</span>
+                        <div class="flex gap-2">${bubblesHtml}</div>
+                    </div>
+                `;
+            }).join('');
+
+            updateAnsweredStats();
+        }
+
+        // บันทึกคำตอบลง LocalStorage (Auto-Save)
+        function selectStudentChoice(qId, choiceIdx) {
+            studentAnswers[qId] = choiceIdx;
+            localStorage.setItem(`exam_ans_${examId}`, JSON.stringify(studentAnswers));
+            renderStudentOmr();
+        }
+
+        function saveStudentAnswer(qId, textVal) {
+            studentAnswers[qId] = textVal;
+            localStorage.setItem(`exam_ans_${examId}`, JSON.stringify(studentAnswers));
+            updateAnsweredStats();
+        }
+
+        function updateAnsweredStats() {
+            const answeredCount = Object.keys(studentAnswers).filter(k => studentAnswers[k] !== undefined && studentAnswers[k] !== '').length;
+            document.getElementById('answeredCount').textContent = `ตอบแล้ว ${answeredCount}/${questionsData.length} ข้อ`;
+        }
+
+        // ระบบป้องกันการโกง: นับจำนวนครั้งการสลับแท็บ
+        function initAntiCheatListener() {
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && !isPreview) {
+                    tabSwitchCount++;
+                    document.getElementById('cheatCount').textContent = tabSwitchCount;
+                    document.getElementById('cheatWarningBox').classList.remove('hidden');
+                }
             });
         }
 
-        initExamPage();
+        function confirmSubmitExam() {
+            Swal.fire({
+                title: 'ยืนยันการส่งข้อสอบ?',
+                text: 'เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขคำตอบได้อีก',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันส่งข้อสอบ',
+                cancelButtonText: 'ตรวจสอบอีกครั้ง'
+            }).then(res => {
+                if (res.isConfirmed) submitExamProcess();
+            });
+        }
+
+        function autoSubmitExamTimeUp() {
+            Swal.fire({
+                title: 'หมดเวลาทำข้อสอบ!',
+                text: 'ระบบกำลังทำการส่งข้อสอบอัตโนมัติ',
+                icon: 'warning',
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => submitExamProcess());
+        }
+
+        async function submitExamProcess() {
+            clearInterval(timerInterval);
+            localStorage.removeItem(`exam_ans_${examId}`);
+            Swal.fire({ title: 'ส่งข้อสอบสำเร็จ!', icon: 'success', text: 'บันทึกคะแนนและคำตอบลงระบบเรียบร้อยแล้ว' })
+                .then(() => window.close());
+        }
+
+        initExamTake();
     </script>
 </body>
 </html>
