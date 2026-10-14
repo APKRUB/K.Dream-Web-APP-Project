@@ -476,6 +476,12 @@
             if (timerInterval) clearInterval(timerInterval);
             localStorage.removeItem(`exam_start_time_${examId}`);
 
+            try {
+                let progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
+                delete progress[examId];
+                localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
+            } catch(e) {}
+
             if (isPreview) {
                 Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
                 return;
@@ -493,17 +499,22 @@
                 studentId = null;
             }
 
-            // 1. สร้างแถวใหม่ในตาราง exam_attempts ทันที
-            const { data: newAttempt, error: attemptError } = await mySupabase.from('exam_attempts').insert([{
+            const attemptPayload = {
                 exam_id: examId,
-                student_id: studentId,
                 status: 'submitted',
                 score: 0,
                 submit_time: new Date().toISOString()
-            }]).select().single();
+            };
+            if (studentId) attemptPayload.student_id = studentId;
+
+            const { data: newAttempt, error: attemptError } = await mySupabase
+                .from('exam_attempts')
+                .insert([attemptPayload])
+                .select()
+                .single();
 
             if (attemptError || !newAttempt) {
-                console.error(attemptError);
+                console.error("Attempt Error:", attemptError);
                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
                 return;
             }
@@ -511,7 +522,6 @@
             const attemptId = newAttempt.id;
             let totalScore = 0;
 
-            // 2. ประเมินคำตอบและบันทึกลงตาราง exam_answers ทีละข้อ
             for (const q of currentQuestions) {
                 const studentAns = studentAnswers[q.id];
                 const isEssay = q.question_type === 'essay';
@@ -524,16 +534,23 @@
                     }
                 }
 
-                await mySupabase.from('exam_answers').insert([{
+                const answerPayload = {
                     attempt_id: attemptId,
                     question_id: q.id,
-                    selected_option_index: !isEssay && studentAns !== undefined && studentAns !== null ? parseInt(studentAns) : null,
-                    subjective_answer: isEssay ? (studentAns || '') : null,
                     score: qScore
-                }]);
+                };
+
+                if (!isEssay) {
+                    answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
+                    answerPayload.subjective_answer = null;
+                } else {
+                    answerPayload.selected_option_index = null;
+                    answerPayload.subjective_answer = studentAns || '';
+                }
+
+                await mySupabase.from('exam_answers').insert([answerPayload]);
             }
 
-            // 3. อัปเดตคะแนนรวมกลับเข้าไปใน exam_attempts
             await mySupabase.from('exam_attempts').update({
                 score: totalScore
             }).eq('id', attemptId);
