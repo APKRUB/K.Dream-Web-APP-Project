@@ -462,7 +462,7 @@ ${JSON.stringify(summaryData, null, 2)}
 ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสมเพื่อให้แสดงผลสวยงามบนเว็บ)
 `;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }]
             };
