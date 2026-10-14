@@ -493,18 +493,10 @@ async function submitExam(isTimeout = false) {
         didOpen: () => Swal.showLoading()
     });
 
-    // ดึง student_id ให้ชัวร์ที่สุดจากทุกแหล่งใน LocalStorage
-    let studentId = localStorage.getItem('student_id') || 
-                    localStorage.getItem('user_id') || 
-                    localStorage.getItem('user') || 
-                    localStorage.getItem('id') || null;
-
+    // เช็ครูปแบบ UUID ให้ปลอดภัย ถ้าไม่ใช่รูปแบบ UUID ให้ปล่อยเป็น null ป้องกัน Supabase ตีกลับ
+    let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!studentId || !uuidRegex.test(studentId)) {
-        studentId = null;
-    }
-
-    // สร้างข้อมูล payload สำหรับบันทึกattempt โดยบังคับใส่ student_id เสมอ
+    
     const attemptPayload = {
         exam_id: examId,
         status: 'submitted',
@@ -512,7 +504,8 @@ async function submitExam(isTimeout = false) {
         submit_time: new Date().toISOString()
     };
     
-    if (studentId) {
+    // ใส่ student_id เฉพาะเมื่อเป็น UUID ที่ถูกต้องเท่านั้น เพื่อป้องกัน Error
+    if (studentId && uuidRegex.test(studentId)) {
         attemptPayload.student_id = studentId;
     }
 
@@ -524,7 +517,7 @@ async function submitExam(isTimeout = false) {
 
     if (attemptError || !newAttempt) {
         console.error("Attempt Error:", attemptError);
-        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ (กรุณาตรวจสอบโครงสร้างฐานข้อมูล)', 'error');
         return;
     }
 
