@@ -43,7 +43,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="window.print()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"><i class="fas fa-print"></i> พิมพ์ผลการสอบ</button>
+                <button onclick="window.print()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"><i class="fas fa-print"></i> พิมพ์ผล</button>
                 <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800"><i class="fas fa-moon text-sm" id="themeIcon"></i></button>
             </div>
         </div>
@@ -51,7 +51,7 @@
 
     <main class="max-w-5xl mx-auto px-4 pt-24 space-y-6">
         
-        <!-- ส่วนสรุปคะแนนรวม -->
+        <!-- สรุปคะแนนรวม -->
         <div class="hitech-card p-6 rounded-3xl grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-l-4 border-l-sky-500">
             <div class="md:col-span-1 text-center md:text-left space-y-1">
                 <span class="px-2.5 py-1 bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-300 font-bold text-[10px] rounded-full">ผลการประเมิน</span>
@@ -69,49 +69,73 @@
                 </div>
                 <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl">
                     <div class="text-purple-600 font-extrabold text-lg" id="percentageDisplay">-</div>
-                    <div class="text-[11px] text-slate-400">คิดเป็นร้อยละ</div>
+                    <div class="text-[11px] text-slate-400">ร้อยละ</div>
                 </div>
             </div>
         </div>
 
-        <!-- ส่วน AI วิเคราะห์จุดแข็ง จุดอ่อน -->
+        <!-- AI Diagnostic & Actionable Study Roadmap -->
         <div class="hitech-card ai-glow p-6 rounded-3xl space-y-4">
             <div class="flex items-center gap-2.5 pb-3 border-b border-purple-500/20">
                 <div class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm shadow-md shadow-purple-500/30"><i class="fas fa-brain"></i></div>
                 <div>
-                    <h3 class="font-bold text-sm text-purple-600 dark:text-purple-400">AI Diagnostic Report (วิเคราะห์จุดแข็ง & จุดอ่อนรายบุคคล)</h3>
-                    <p class="text-[11px] text-slate-400">ประมวลผลจากรูปแบบการตอบข้อสอบของคุณ</p>
+                    <h3 class="font-bold text-sm text-purple-600 dark:text-purple-400">AI Diagnostic & Actionable Study Roadmap</h3>
+                    <p class="text-[11px] text-slate-400">แผนที่การเรียนรู้และคำแนะนำเชิงลึกเฉพาะบุคคล</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-500/30 space-y-2">
                     <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5"><i class="fas fa-shield-halved"></i> จุดแข็งของคุณ (Strengths)</h4>
-                    <ul id="strengthsList" class="text-xs space-y-1 text-slate-700 dark:text-slate-300 list-disc list-inside">
-                        <li>กำลังวิเคราะห์ข้อมูล...</li>
-                    </ul>
+                    <ul id="strengthsList" class="text-xs space-y-1 text-slate-700 dark:text-slate-300 list-disc list-inside"><li>กำลังวิเคราะห์...</li></ul>
                 </div>
                 <div class="p-4 bg-rose-50/50 dark:bg-rose-950/20 rounded-2xl border border-rose-500/30 space-y-2">
-                    <h4 class="font-bold text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5"><i class="fas fa-triangle-exclamation"></i> จุดที่ต้องพัฒนา (Weaknesses & Focus Areas)</h4>
-                    <ul id="weaknessesList" class="text-xs space-y-1 text-slate-700 dark:text-slate-300 list-disc list-inside">
-                        <li>กำลังวิเคราะห์ข้อมูล...</li>
-                    </ul>
+                    <h4 class="font-bold text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5"><i class="fas fa-triangle-exclamation"></i> จุดที่ต้องพัฒนา (Focus Areas)</h4>
+                    <ul id="weaknessesList" class="text-xs space-y-1 text-slate-700 dark:text-slate-300 list-disc list-inside"><li>กำลังวิเคราะห์...</li></ul>
                 </div>
+            </div>
+
+            <div class="p-4 bg-purple-50/60 dark:bg-purple-950/40 rounded-2xl border border-purple-300 dark:border-purple-800 space-y-2">
+                <h4 class="font-bold text-xs text-purple-700 dark:text-purple-300 flex items-center gap-1.5"><i class="fas fa-route"></i> AI Actionable Roadmap (คำแนะนำเพื่อการทำคะแนนให้สูงขึ้น):</h4>
+                <p id="aiRoadmapText" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">กำลังประมวลผลคำแนะนำ...</p>
             </div>
         </div>
 
-        <!-- ส่วนรายการข้อที่ตอบผิดพร้อม AI วิเคราะห์ข้อผิดพลาด -->
+        <!-- รายการข้อสอบพร้อมตัวกรอง -->
         <div class="hitech-card p-6 rounded-3xl space-y-4">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-circle-xmark text-red-500"></i> รายการข้อที่ตอบผิด & ข้อเสนอแนะจาก AI</h3>
-                <span class="text-xs text-slate-400" id="wrongCountLabel">แสดงข้อที่ต้องทบทวน</span>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                    <h3 class="font-bold text-base flex items-center gap-2"><i class="fas fa-list-check text-sky-500"></i> ผลลัพธ์รายข้อ & ข้อเสนอแนะจาก AI</h3>
+                    <p class="text-xs text-slate-400" id="filterSubtitle">แสดงรายการคำถามทั้งหมด</p>
+                </div>
+                <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    <button onclick="filterQuestions('ALL')" id="btnFilterAll" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 shadow-sm text-sky-600">ทั้งหมด</button>
+                    <button onclick="filterQuestions('WRONG')" id="btnFilterWrong" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800">เฉพาะที่ผิด</button>
+                    <button onclick="filterQuestions('CORRECT')" id="btnFilterCorrect" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800">เฉพาะที่ถูก</button>
+                </div>
             </div>
 
-            <div id="wrongQuestionsContainer" class="space-y-4">
-                <div class="text-center py-8 text-slate-400 text-xs">กำลังประมวลผลข้อสอบ...</div>
+            <div id="questionsResultContainer" class="space-y-4">
+                <div class="text-center py-8 text-slate-400 text-xs">กำลังประมวลผลผลการสอบ...</div>
             </div>
         </div>
     </main>
+
+    <!-- Modal ฝึกทำข้อที่ผิดซ้ำ (Wrong Answer Retake) -->
+    <div id="retakeModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="hitech-card max-w-lg w-full p-6 rounded-3xl space-y-4 relative">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-sm text-amber-500 flex items-center gap-2"><i class="fas fa-dumbbell"></i> ฝึกทำซ้ำเฉพาะข้อที่ผิด (Practice Mode)</h3>
+                <button onclick="closeRetakeModal()" class="text-slate-400 hover:text-slate-200"><i class="fas fa-times text-base"></i></button>
+            </div>
+            <div id="retakeModalContent" class="space-y-3 text-xs">
+                <!-- เนื้อหาโจทย์ฝึกทำ -->
+            </div>
+            <div class="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-300">
+                ℹ️ โหมดฝึกฝนนี้ทำเพื่อให้เกิดการเรียนรู้เพิ่มเติม <strong>คะแนนจะไม่ถูกนำไปบวกเพิ่มทับคะแนนสอบจริง</strong>
+            </div>
+        </div>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
@@ -120,6 +144,9 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const attemptId = urlParams.get('attempt_id');
+
+        let cachedAllItems = [];
+        let currentFilter = 'ALL';
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -140,16 +167,14 @@
                 return;
             }
 
-            // 1. ดึงข้อมูล Attempt
             const { data: attempt, error: attErr } = await mySupabase.from('exam_attempts').select('*, exams(*)').eq('id', attemptId).single();
             if (attErr || !attempt) {
                 Swal.fire('ไม่พบข้อมูลการสอบ', '', 'error');
                 return;
             }
 
-            document.getElementById('examSubTitle').textContent = `ชุดข้อสอบ: ${attempt.exams?.title || 'แบบทดสอบ'} | ส่งเมื่อ: ${new Date(attempt.submit_time || attempt.created_at).toLocaleString('th-TH')}`;
+            document.getElementById('examSubTitle').textContent = `ชุดข้อสอบ: ${attempt.exams?.title || 'แบบทดสอบ'} | ส่งเมื่อ: ${attempt.submission_time ? new Date(attempt.submission_time).toLocaleString('th-TH') : '-'}`;
 
-            // 2. ดึงคำถามทั้งหมดและคำตอบของนักเรียน
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
             const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId);
 
@@ -158,10 +183,9 @@
 
         function processResults(questions, answers, attempt) {
             let correctCount = 0;
-            let wrongItems = [];
             const tagStats = {};
 
-            questions.forEach((q, idx) => {
+            cachedAllItems = questions.map((q, idx) => {
                 const ansObj = answers.find(a => a.question_id === q.id) || {};
                 const studentAns = ansObj.selected_option_index !== undefined ? String(ansObj.selected_option_index) : (ansObj.selected_answer || '');
                 const correctAns = String(q.correct_answer);
@@ -171,78 +195,101 @@
                 tagStats[tag].total += 1;
 
                 const isCorrect = studentAns === correctAns;
-                if (isCorrect) {
-                    correctCount++;
-                    tagStats[tag].correct += 1;
-                } else {
-                    wrongItems.push({
-                        qNum: q.question_number || (idx + 1),
-                        questionText: q.question_text || q.content || 'โจทย์คำถาม',
-                        options: q.options || ['ก', 'ข', 'ค', 'ง'],
-                        studentAns,
-                        correctAns,
-                        tag,
-                        imageUrl: q.image_url
-                    });
-                }
+                if (isCorrect) correctCount++;
+
+                return {
+                    id: q.id,
+                    qNum: q.question_number || (idx + 1),
+                    questionText: q.question_text || q.content || 'โจทย์คำถาม',
+                    options: q.options || ['ก', 'ข', 'ค', 'ง'],
+                    studentAns,
+                    correctAns,
+                    tag,
+                    imageUrl: q.image_url,
+                    isCorrect
+                };
             });
 
             const totalQ = questions.length || 1;
             const wrongCount = totalQ - correctCount;
             const percentage = Math.round((correctCount / totalQ) * 100);
 
-            // Render Header Stats
             document.getElementById('totalScoreDisplay').textContent = `${attempt.score !== undefined ? attempt.score : correctCount} / ${totalQ}`;
             document.getElementById('correctCountDisplay').textContent = correctCount;
             document.getElementById('incorrectCountDisplay').textContent = wrongCount;
             document.getElementById('percentageDisplay').textContent = `${percentage}%`;
-            document.getElementById('wrongCountLabel').textContent = `ตอบผิด ${wrongCount} ข้อ จากทั้งหมด ${totalQ} ข้อ`;
 
-            // AI Diagnostic Analysis (Strengths & Weaknesses)
+            // Strengths & Weaknesses
             let strengthsHtml = '';
             let weaknessesHtml = '';
+            let weakTags = [];
 
             Object.keys(tagStats).forEach(tag => {
                 const stat = tagStats[tag];
                 const ratio = stat.correct / stat.total;
                 if (ratio >= 0.7) {
-                    strengthsHtml += `<li>หมวด <strong>${tag}</strong> ทำคะแนนได้ดีเยี่ยม (${stat.correct}/${stat.total} ข้อ) มีความเข้าใจเนื้อหาแม่นยำ</li>`;
+                    strengthsHtml += `<li>หมวด <strong>${tag}</strong> ทำคะแนนได้ดีเยี่ยม (${stat.correct}/${stat.total} ข้อ)</li>`;
                 } else {
-                    weaknessesHtml += `<li>หมวด <strong>${tag}</strong> ควรทบทวนเพิ่มเติม (${stat.correct}/${stat.total} ข้อ) อาจยังสับสนในหลักการสำคัญ</li>`;
+                    weaknessesHtml += `<li>หมวด <strong>${tag}</strong> ควรทบทวนเพิ่ม (${stat.correct}/${stat.total} ข้อ)</li>`;
+                    weakTags.push(tag);
                 }
             });
 
-            if (!strengthsHtml) strengthsHtml = `<li>มีความพยายามในการทำข้อสอบครบทุกข้อ แนะนำฝึกฝนโจทย์เพิ่มเติม</li>`;
-            if (!weaknessesHtml) weaknessesHtml = `<li>ยอดเยี่ยมมาก! ไม่มีหมวดหมู่ใดที่ทำคะแนนต่ำกว่าเกณฑ์</li>`;
+            if (!strengthsHtml) strengthsHtml = `<li>มีความพยายามในการทำข้อสอบ แนะนำฝึกฝนโจทย์เพิ่มเติม</li>`;
+            if (!weaknessesHtml) weaknessesHtml = `<li>ยอดเยี่ยมมาก! ไม่มีหมวดหมู่ใดที่ต่ำกว่าเกณฑ์</li>`;
 
             document.getElementById('strengthsList').innerHTML = strengthsHtml;
             document.getElementById('weaknessesList').innerHTML = weaknessesHtml;
 
-            // Render Wrong Questions with AI Insights
-            const wrongContainer = document.getElementById('wrongQuestionsContainer');
-            if (wrongItems.length === 0) {
-                wrongContainer.innerHTML = `
-                    <div class="text-center py-10 space-y-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-500/30">
-                        <i class="fas fa-award text-3xl text-emerald-500"></i>
-                        <h4 class="font-bold text-sm text-emerald-700 dark:text-emerald-300">สุดยอดมาก! คุณทำคะแนนเต็มไม่มีข้อที่ตอบผิดเลย</h4>
-                    </div>
-                `;
+            // AI Actionable Roadmap
+            let roadmapMsg = `ภาพรวมคุณทำคะแนนได้ ${percentage}% แนะนำให้ทบทวนเนื้อหาอย่างสม่ำเสมอ`;
+            if (weakTags.length > 0) {
+                roadmapMsg = `AI แนะนำให้คุณกลับไปทบทวนเนื้อหาในหมวดหมู่ <strong>${weakTags.join(', ')}</strong> เป็นพิเศษ โดยเน้นทำความเข้าใจนิยามและฝึกแก้โจทย์ตัวอย่างซ้ำอีกรอบเพื่อเสริมความแม่นยำ`;
+            }
+            document.getElementById('aiRoadmapText').innerHTML = roadmapMsg;
+
+            renderQuestionList();
+        }
+
+        function filterQuestions(type) {
+            currentFilter = type;
+            ['All', 'Wrong', 'Correct'].forEach(t => {
+                const btn = document.getElementById(`btnFilter${t}`);
+                if (btn) {
+                    if (t.toUpperCase() === type || (t === 'All' && type === 'ALL')) {
+                        btn.className = "px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 shadow-sm text-sky-600";
+                    } else {
+                        btn.className = "px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800";
+                    }
+                }
+            });
+            renderQuestionList();
+        }
+
+        function renderQuestionList() {
+            const container = document.getElementById('questionsResultContainer');
+            let filtered = cachedAllItems;
+            if (currentFilter === 'WRONG') filtered = cachedAllItems.filter(i => !i.isCorrect);
+            if (currentFilter === 'CORRECT') filtered = cachedAllItems.filter(i => i.isCorrect);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">ไม่มีรายการในตัวกรองนี้</div>`;
                 return;
             }
 
-            wrongContainer.innerHTML = wrongItems.map(item => {
+            container.innerHTML = filtered.map(item => {
                 const opts = item.options;
                 const studentLabel = !isNaN(item.studentAns) ? opts[parseInt(item.studentAns)] || item.studentAns : item.studentAns;
                 const correctLabel = !isNaN(item.correctAns) ? opts[parseInt(item.correctAns)] || item.correctAns : item.correctAns;
 
-                // AI Simulated Diagnostic Reason
-                let aiReason = `คุณเลือกตอบ "${studentLabel || 'ไม่ได้ตอบ'}" ซึ่งคลาดเคลื่อนจากคำตอบที่ถูกต้องคือ "${correctLabel}" อาจเกิดจากการวิเคราะห์โจทย์ข้ามเงื่อนไขสำคัญหรือคำนวณสูตรคลาดเคลื่อนเล็กน้อย แนะนำให้ทบทวนนิยามและสูตรในหมวดหมู่ <strong>${item.tag}</strong> อีกรอบครับ`;
-
                 return `
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border ${item.isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-3">
                         <div class="flex justify-between items-center">
-                            <span class="px-2.5 py-0.5 rounded bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-bold text-xs">ข้อที่ ${item.qNum} (${item.tag})</span>
-                            <span class="text-[11px] text-slate-400 font-bold">ตอบผิด</span>
+                            <span class="px-2.5 py-0.5 rounded ${item.isCorrect ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} font-bold text-xs">ข้อที่ ${item.qNum} (${item.tag})</span>
+                            <div class="flex items-center gap-2">
+                                ${!item.isCorrect ? `<button onclick="openRetakePractice('${item.id}')" class="px-2 py-1 bg-amber-500 text-white rounded-lg font-bold text-[10px] hover:bg-amber-600"><i class="fas fa-dumbbell mr-1"></i>ฝึกทำข้อนี้ซ้ำ</button>` : ''}
+                                <span class="text-xs font-bold ${item.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">${item.isCorrect ? '✔️ ตอบถูก' : '❌ ตอบผิด'}</span>
+                            </div>
                         </div>
 
                         ${item.imageUrl ? `<div><img src="${item.imageUrl}" class="max-h-40 rounded-xl border"></div>` : ''}
@@ -252,23 +299,64 @@
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div class="p-2.5 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900">
-                                <span class="text-rose-600 font-bold"><i class="fas fa-times-circle mr-1"></i> คำตอบที่คุณเลือก:</span> 
-                                <span class="font-medium text-slate-700 dark:text-slate-300">${studentLabel || '(ไม่ได้ตอบ)'}</span>
+                            <div class="p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl border">
+                                <span class="font-bold text-slate-500">คำตอบที่คุณเลือก:</span> 
+                                <span class="font-medium ${item.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">${studentLabel || '(ไม่ได้ตอบ)'}</span>
                             </div>
-                            <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900">
-                                <span class="text-emerald-600 font-bold"><i class="fas fa-check-circle mr-1"></i> เฉลยที่ถูกต้อง:</span> 
-                                <span class="font-medium text-slate-700 dark:text-slate-300">${correctLabel}</span>
+                            <div class="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200">
+                                <span class="font-bold text-emerald-600">เฉลยที่ถูกต้อง:</span> 
+                                <span class="font-medium text-emerald-700 dark:text-emerald-300">${correctLabel}</span>
                             </div>
                         </div>
 
                         <div class="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-900 text-xs space-y-1">
-                            <div class="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI วิเคราะห์จุดผิดพลาด (AI Diagnostic Feedback):</div>
-                            <p class="text-slate-600 dark:text-slate-300">${aiReason}</p>
+                            <div class="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI Diagnostic Feedback:</div>
+                            <p class="text-slate-600 dark:text-slate-300">${item.isCorrect ? 'ยอดเยี่ยม! คุณวิเคราะห์เงื่อนไขและเลือกคำตอบได้อย่างแม่นยำ' : `คุณเลือกตอบ "${studentLabel \vert{}\vert{} 'ไม่ได้ตอบ'}" ซึ่งคลาดเคลื่อน แนะนำให้ทบทวนหลักการในหัวข้อ <strong>${item.tag}</strong> และระวังการตีความโจทย์ในลักษณะนี้อีกครั้งครับ`}</p>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        // ระบบฝึกทำข้อที่ผิดซ้ำ (Wrong Answer Retake - คะแนนไม่ทับคะแนนจริง)
+        function openRetakePractice(qId) {
+            const item = cachedAllItems.find(i => i.id === qId);
+            if (!item) return;
+
+            const modal = document.getElementById('retakeModal');
+            const content = document.getElementById('retakeModalContent');
+            modal.classList.remove('hidden');
+
+            const opts = item.options;
+            content.innerHTML = `
+                <div class="font-bold text-slate-800 dark:text-slate-200">ข้อที่ ${item.qNum}: ${item.questionText}</div>
+                <div class="space-y-2 pt-2">
+                    ${opts.map((opt, i) => `
+                        <label class="p-2.5 border rounded-xl flex items-center gap-2 cursor-pointer hover:border-sky-500 dark:border-slate-700">
+                            <input type="radio" name="practiceChoice" value="${i}">
+                            <span class="font-bold">${String.fromCharCode(65+i)}:</span> <span>${opt}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <button onclick="checkPracticeAnswer('${item.correctAns}')" class="w-full py-2 bg-sky-600 text-white rounded-xl font-bold text-xs shadow-md">ตรวจคำตอบฝึกฝน</button>
+                <div id="practiceResultBox" class="text-center font-bold text-xs pt-1"></div>
+            `;
+        }
+
+        function checkPracticeAnswer(correctAns) {
+            const selected = document.querySelector('input[name="practiceChoice"]:checked');
+            const box = document.getElementById('practiceResultBox');
+            if (!selected) { box.innerHTML = '<span class="text-rose-500">กรุณาเลือกคำตอบก่อนตรวจ</span>'; return; }
+
+            if (selected.value === correctAns) {
+                box.innerHTML = '<span class="text-emerald-600">🎉 ถูกต้องแล้วครับ! คุณเข้าใจหลักการข้อนี้แล้ว</span>';
+            } else {
+                box.innerHTML = '<span class="text-rose-500">❌ ยังไม่ถูกต้อง ลองทบทวนคำอธิบายของ AI ด้านบนแล้วลองใหม่อีกครั้งครับ</span>';
+            }
+        }
+
+        function closeRetakeModal() {
+            document.getElementById('retakeModal').classList.add('hidden');
         }
 
         initPage();
