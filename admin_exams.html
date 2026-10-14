@@ -29,70 +29,67 @@
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.92); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
-        .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05); }
+        .glossy-card { background: #ffffff; border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .dark .glossy-card { background: #090d16; border: 1px solid rgba(30, 41, 59, 0.8); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
         .dark select option { background-color: #090d16 !important; color: #f8fafc !important; }
-        .upcoming-card { background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.03) 100%); border: 1px dashed rgba(245, 158, 11, 0.4); opacity: 0.88; }
-        .dark .upcoming-card { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(9, 13, 22, 0.8) 100%); border: 1px dashed rgba(245, 158, 11, 0.5); opacity: 0.85; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100">
 
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='admin.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-primary hover:text-white transition-all shadow-sm">
-                        <i class="fas fa-arrow-left text-lg"></i>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-primary hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <div>
-                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-file-signature"></i></span>
+                        <h1 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-sky-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-file-signature"></i></span>
                             ศูนย์จัดการชุดข้อสอบ
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">สร้าง รหัสข้อสอบ UNIQUE จัดกลุ่มสไตล์ Classroom และตรวจข้อสอบอัตนัย</p>
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-3">
-                    <button onclick="openCategoryManagerModal()" class="px-4 py-2.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 rounded-2xl font-bold text-xs border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-100 transition-all shadow-sm flex items-center gap-2">
-                        <i class="fas fa-tags text-indigo-500"></i> จัดการหมวดหมู่
+                <div class="flex items-center gap-2">
+                    <button onclick="openCategoryManagerModal()" class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 rounded-xl font-bold text-xs border border-indigo-200 dark:border-indigo-900 hover:bg-indigo-100 transition-all shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-tags text-indigo-500"></i> หมวดหมู่
                     </button>
-                    <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
-                        <i class="fas fa-moon text-lg" id="themeIcon"></i>
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-6">
         
-        <!-- Section: ข้อสอบที่จะเปิดใน 24 ชั่วโมง (Upcoming) สไตล์จางๆ -->
-        <div id="upcomingExamSection" class="hidden space-y-4">
-            <h3 class="font-extrabold text-sm text-amber-500 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-hourglass-start animate-spin"></i> ข้อสอบตั้งเวลาเปิดบริการ (ภายใน 24 ชั่วโมง)
+        <!-- Section: ข้อสอบเปิดใน 24 ชั่วโมง -->
+        <div id="upcomingExamSection" class="hidden space-y-3">
+            <h3 class="font-extrabold text-xs text-amber-500 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-hourglass-start animate-spin"></i> ข้อสอบเตรียมเปิดบริการ (ภายใน 24 ชม.)
             </h3>
-            <div id="upcomingExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="upcomingExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
-        <!-- Section หลัก: จัดกลุ่มข้อสอบสไตล์ Google Classroom -->
+        <!-- Section หลัก: จัดกลุ่มข้อสอบ -->
         <div class="space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 glossy-card p-6 rounded-3xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 glossy-card p-4 rounded-2xl">
                 <div>
-                    <h2 class="font-bold text-lg text-slate-900 dark:text-white">คลังข้อสอบแบ่งตามหมวดหมู่ (Classroom Style)</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">คลังข้อสอบแยกตามรายวิชา/หมวดหมู่ พร้อมระบบตรวจข้อสอบอัตนัย</p>
+                    <h2 class="font-bold text-base text-slate-900 dark:text-white">คลังชุดข้อสอบ (Classroom Style)</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">จัดการข้อสอบ แยกตามประเภท PDF หรือ ระบบพิมพ์โจทย์ออนไลน์</p>
                 </div>
-                <button onclick="openExamModal()" class="px-5 py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-sky-500/20 transition-all flex items-center gap-2">
+                <button onclick="openExamModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0">
                     <i class="fas fa-plus"></i> สร้างชุดข้อสอบใหม่
                 </button>
             </div>
 
-            <div id="classroomExamsContainer" class="space-y-8">
-                <div class="text-center py-12 text-slate-400 text-sm">กำลังโหลดคลังข้อสอบ...</div>
+            <div id="classroomExamsContainer" class="space-y-6">
+                <div class="text-center py-8 text-slate-400 text-xs">กำลังโหลดคลังข้อสอบ...</div>
             </div>
         </div>
     </main>
@@ -131,7 +128,7 @@
             const { data: exams, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
             
             if (error || !exams || exams.length === 0) {
-                document.getElementById('classroomExamsContainer').innerHTML = `<div class="glossy-card p-12 rounded-3xl text-center text-slate-400 text-sm">ยังไม่มีชุดข้อสอบในระบบ</div>`;
+                document.getElementById('classroomExamsContainer').innerHTML = `<div class="glossy-card p-8 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ</div>`;
                 return;
             }
 
@@ -145,25 +142,22 @@
             if (upcomingExams.length > 0) {
                 upcomingSec.classList.remove('hidden');
                 upcomingGrid.innerHTML = upcomingExams.map(e => `
-                    <div class="upcoming-card p-6 rounded-3xl space-y-3 relative overflow-hidden backdrop-blur-md">
+                    <div class="glossy-card p-4 rounded-2xl space-y-2 border-l-4 border-l-amber-500">
                         <div class="flex justify-between items-start">
-                            <span class="px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold text-[10px]"><i class="fas fa-clock mr-1"></i> เตรียมเปิดอัตโนมัติ</span>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold text-[10px]"><i class="fas fa-clock mr-1"></i> เตรียมเปิด</span>
                             <span class="font-mono text-xs text-amber-600 dark:text-amber-400 font-bold">${e.exam_code || 'NO-CODE'}</span>
                         </div>
-                        <h4 class="font-bold text-slate-900 dark:text-white text-base">${e.title}</h4>
-                        <div class="text-xs text-slate-500 dark:text-slate-400">
-                            <div><i class="far fa-calendar-alt mr-1"></i> เปิด: ${new Date(e.start_time).toLocaleString('th-TH')}</div>
-                        </div>
+                        <h4 class="font-bold text-slate-900 dark:text-white text-sm">${e.title}</h4>
+                        <div class="text-[11px] text-slate-500">เปิด: ${new Date(e.start_time).toLocaleString('th-TH')}</div>
                     </div>
                 `).join('');
             } else {
                 upcomingSec.classList.add('hidden');
             }
 
-            // จัดกลุ่มตามหมวดหมู่แบบ Google Classroom
             const grouped = {};
             exams.forEach(e => {
-                const catName = e.exam_categories?.name || 'ข้อสอบทั่วไป / ไม่ระบุหมวดหมู่';
+                const catName = e.exam_categories?.name || 'ข้อสอบทั่วไป';
                 if (!grouped[catName]) grouped[catName] = [];
                 grouped[catName].push(e);
             });
@@ -173,42 +167,42 @@
                 const catExams = grouped[catName];
                 const cardsHtml = catExams.map(e => {
                     const statusBadge = e.status === 'public' 
-                        ? '<span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] border border-emerald-200 dark:border-emerald-800">เปิดให้ทำ</span>' 
+                        ? '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">เปิดบริการ</span>' 
                         : (e.status === 'countdown' 
-                            ? '<span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[11px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>' 
-                            : '<span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[11px]">ซ่อนอยู่</span>');
+                            ? '<span class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>' 
+                            : '<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px]">ซ่อน</span>');
+
+                    const deliveryBadge = e.delivery_type === 'online'
+                        ? '<span class="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>โจทย์ออนไลน์</span>'
+                        : '<span class="px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-300 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
 
                     return `
-                        <div class="glossy-card p-6 rounded-3xl flex flex-col justify-between space-y-4">
-                            <div>
-                                <div class="flex justify-between items-start mb-2">
-                                    <span class="font-mono text-xs font-bold text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2.5 py-1 rounded-lg">CODE: ${e.exam_code || 'ไม่ระบุ'}</span>
+                        <div class="glossy-card p-4 rounded-2xl flex flex-col justify-between space-y-3">
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center gap-1">
+                                    <span class="font-mono text-[11px] font-bold text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-md">${e.exam_code || 'CODE'}</span>
                                     ${statusBadge}
                                 </div>
-                                <h3 class="font-bold text-base text-slate-900 dark:text-white leading-snug mb-2">${e.title}</h3>
-                                <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                                    <div><i class="far fa-clock mr-1 text-sky-500"></i> เวลาทำ: ${e.time_limit || 60} นาที</div>
-                                    ${e.start_time ? `<div><i class="far fa-calendar-alt mr-1 text-indigo-500"></i> เปิด: ${new Date(e.start_time).toLocaleString('th-TH')}</div>` : ''}
+                                <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-snug line-clamp-1">${e.title}</h3>
+                                <div class="flex items-center gap-2 pt-0.5">
+                                    ${deliveryBadge}
+                                    <span class="text-[11px] text-slate-400"><i class="far fa-clock mr-1"></i>${e.time_limit || 60} นาที</span>
                                 </div>
                             </div>
 
-                            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                                <button onclick="window.location.href='admin_exam_editor.html?id=${e.id}'" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                    <i class="fas fa-list-check"></i> จัดการโจทย์ & กระดาษคำตอบ
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+                                <button onclick="window.location.href='admin_exam_editor.html?id=${e.id}'" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                    <i class="fas fa-list-check"></i> จัดการโจทย์ & เฉลย OMR
                                 </button>
                                 
-                                <!-- ปุ่มตรวจข้อสอบอัตนัย (นำกลับมาตามคำขอ) -->
-                                <button onclick="window.location.href='admin_grading.html?exam_id=${e.id}'" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
-                                    <i class="fas fa-pen-nib"></i> ตรวจข้อสอบอัตนัย / ให้คะแนน
-                                </button>
-
-                                <div class="flex gap-2">
-                                    <button onclick='openExamModal(${JSON.stringify(e)})' class="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors">
-                                        <i class="fas fa-pen mr-1"></i> แก้ไข
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <button onclick="window.location.href='admin_grading.html?exam_id=${e.id}'" class="py-1.5 bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1">
+                                        <i class="fas fa-pen-nib"></i> ตรวจอัตนัย
                                     </button>
-                                    <button onclick="deleteExam('${e.id}')" class="px-3 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">
-                                        <i class="fas fa-trash-can"></i>
-                                    </button>
+                                    <div class="flex gap-1">
+                                        <button onclick='openExamModal(${JSON.stringify(e)})' class="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-slate-200 transition-colors">แก้ไข</button>
+                                        <button onclick="deleteExam('${e.id}')" class="px-2.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-lg text-[11px] font-bold hover:bg-red-100 transition-colors"><i class="fas fa-trash-can"></i></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -216,13 +210,13 @@
                 }).join('');
 
                 return `
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-3 border-b-2 border-sky-500/20 pb-2">
-                            <span class="w-3 h-8 bg-sky-600 rounded-full"></span>
-                            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">${catName}</h3>
-                            <span class="px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold">${catExams.length} ชุด</span>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                            <span class="w-2.5 h-5 bg-sky-600 rounded-full"></span>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white">${catName}</h3>
+                            <span class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold">${catExams.length}</span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${cardsHtml}</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">${cardsHtml}</div>
                     </div>
                 `;
             }).join('');
@@ -235,47 +229,59 @@
             const { value: formValues } = await Swal.fire({
                 title: isEdit ? 'แก้ไขชุดข้อสอบ' : 'สร้างชุดข้อสอบใหม่',
                 html: `
-                    <div class="space-y-4 text-left text-xs">
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="col-span-2">
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">ชื่อชุดข้อสอบ <span class="text-red-500">*</span></label>
-                                <input id="swalTitle" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none" value="${examData?.title || ''}" placeholder="ระบุชื่อชุดข้อสอบ...">
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">รหัสชุดข้อสอบ (Code)</label>
-                                <input id="swalExamCode" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono uppercase outline-none" value="${examData?.exam_code || ''}" placeholder="EXAM-01">
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">ประเภทรูปแบบข้อสอบ <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="p-2.5 border rounded-xl dark:border-slate-700 flex items-center gap-2 cursor-pointer hover:border-sky-500">
+                                    <input type="radio" name="swalDeliveryType" value="pdf" ${(!examData || examData.delivery_type === 'pdf') ? 'checked' : ''}>
+                                    <div>
+                                        <div class="font-bold text-slate-800 dark:text-slate-200"><i class="fas fa-file-pdf text-red-500 mr-1"></i>ใช้ไฟล์ PDF</div>
+                                        <div class="text-[10px] text-slate-400">อ่านโจทย์จาก PDF + OMR</div>
+                                    </div>
+                                </label>
+                                <label class="p-2.5 border rounded-xl dark:border-slate-700 flex items-center gap-2 cursor-pointer hover:border-sky-500">
+                                    <input type="radio" name="swalDeliveryType" value="online" ${examData?.delivery_type === 'online' ? 'checked' : ''}>
+                                    <div>
+                                        <div class="font-bold text-slate-800 dark:text-slate-200"><i class="fas fa-keyboard text-purple-500 mr-1"></i>พิมพ์ลงระบบ</div>
+                                        <div class="text-[10px] text-slate-400">พิมพ์โจทย์ลงเว็บออนไลน์</div>
+                                    </div>
+                                </label>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2">
+                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">ชื่อชุดข้อสอบ <span class="text-red-500">*</span></label>
+                                <input id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData?.title || ''}">
+                            </div>
                             <div>
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">หมวดหมู่</label>
-                                <select id="swalCategory" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none">
+                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">รหัสข้อสอบ (Code)</label>
+                                <input id="swalExamCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-mono uppercase outline-none" value="${examData?.exam_code || ''}">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่</label>
+                                <select id="swalCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
                                     <option value="">-- ไม่ระบุ --</option>
                                     ${categoryOptions}
                                 </select>
                             </div>
                             <div>
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">เวลาทำ (นาที) <span class="text-red-500">*</span></label>
-                                <input type="number" id="swalTimeLimit" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none" value="${examData?.time_limit || 60}">
+                                <label class="block font-bold mb-1">เวลาทำ (นาที) <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalTimeLimit" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData?.time_limit || 60}">
                             </div>
                         </div>
+
                         <div>
-                            <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">สถานะเปิดข้อสอบ <span class="text-red-500">*</span></label>
-                            <select id="swalStatus" onchange="toggleDateFields(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none">
+                            <label class="block font-bold mb-1">สถานะเปิดข้อสอบ</label>
+                            <select id="swalStatus" onchange="toggleDateFields(this.value)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
                                 <option value="draft" ${examData?.status === 'draft' ? 'selected' : ''}>ซ่อนอยู่ (Draft)</option>
-                                <option value="public" ${examData?.status === 'public' ? 'selected' : ''}>เปิดให้ทำทันที (Public)</option>
-                                <option value="countdown" ${examData?.status === 'countdown' ? 'selected' : ''}>ตั้งเวลาเปิดอัตโนมัติ (Countdown)</option>
+                                <option value="public" ${examData?.status === 'public' ? 'selected' : ''}>เปิดบริการทันที (Public)</option>
+                                <option value="countdown" ${examData?.status === 'countdown' ? 'selected' : ''}>ตั้งเวลาเปิดบริการ (Countdown)</option>
                             </select>
-                        </div>
-                        <div id="dateFieldsSection" class="${['public','countdown'].includes(examData?.status) ? '' : 'hidden'} grid grid-cols-2 gap-3 pt-1">
-                            <div>
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">เวลาเริ่มเปิด (Start Time)</label>
-                                <input type="datetime-local" id="swalStartTime" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none" value="${examData?.start_time ? new Date(new Date(examData.start_time).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
-                            </div>
-                            <div>
-                                <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">เวลาปิดรับ (End Time)</label>
-                                <input type="datetime-local" id="swalEndTime" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none" value="${examData?.end_time ? new Date(new Date(examData.end_time).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
-                            </div>
                         </div>
                     </div>
                 `,
@@ -285,30 +291,17 @@
                 preConfirm: async () => {
                     const title = document.getElementById('swalTitle').value;
                     const exam_code = document.getElementById('swalExamCode').value.trim().toUpperCase();
-                    const timeLimit = document.getElementById('swalTimeLimit').value;
-                    const status = document.getElementById('swalStatus').value;
+                    const delivery_type = document.querySelector('input[name="swalDeliveryType"]:checked')?.value || 'pdf';
 
                     if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อชุดข้อสอบ'); return false; }
-                    if (!timeLimit) { Swal.showValidationMessage('กรุณากรอกเวลาทำข้อสอบ'); return false; }
-
-                    if (exam_code) {
-                        let query = mySupabase.from('exams').select('id').eq('exam_code', exam_code);
-                        if (isEdit) query = query.neq('id', examData.id);
-                        const { data: dup } = await query;
-                        if (dup && dup.length > 0) {
-                            Swal.showValidationMessage('รหัสชุดข้อสอบ (Exam Code) นี้ถูกใช้งานแล้ว');
-                            return false;
-                        }
-                    }
 
                     return {
                         title,
                         exam_code: exam_code || `EXAM-${Math.floor(Math.random()*9000+1000)}`,
+                        delivery_type,
                         category_id: document.getElementById('swalCategory').value || null,
-                        time_limit: parseInt(timeLimit) || 60,
-                        status,
-                        start_time: ['public','countdown'].includes(status) && document.getElementById('swalStartTime').value ? new Date(document.getElementById('swalStartTime').value).toISOString() : null,
-                        end_time: ['public','countdown'].includes(status) && document.getElementById('swalEndTime').value ? new Date(document.getElementById('swalEndTime').value).toISOString() : null
+                        time_limit: parseInt(document.getElementById('swalTimeLimit').value) || 60,
+                        status: document.getElementById('swalStatus').value
                     }
                 }
             });
@@ -319,47 +312,34 @@
                 } else {
                     await mySupabase.from('exams').insert([formValues]);
                 }
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1200, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1000, showConfirmButton: false });
                 loadExams();
             }
         }
 
-        window.toggleDateFields = function(statusVal) {
-            const sec = document.getElementById('dateFieldsSection');
-            if (['public', 'countdown'].includes(statusVal)) sec.classList.remove('hidden');
-            else sec.classList.add('hidden');
-        }
-
         async function openCategoryManagerModal() {
             let catHtml = categoriesList.map(c => `
-                <div class="flex justify-between items-center p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs">
-                    <span class="font-bold text-slate-800 dark:text-slate-200">${c.name}</span>
-                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fas fa-trash"></i></button>
+                <div class="flex justify-between items-center p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs">
+                    <span class="font-bold">${c.name}</span>
+                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 px-2 py-1"><i class="fas fa-trash"></i></button>
                 </div>
             `).join('');
 
             const { value: newCatName } = await Swal.fire({
-                title: 'จัดการหมวดหมู่ชุดข้อสอบ',
+                title: 'จัดการหมวดหมู่',
                 html: `
-                    <div class="space-y-4 text-left text-xs">
-                        <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                            ${catHtml || '<div class="text-center text-slate-400">ยังไม่มีหมวดหมู่</div>'}
-                        </div>
-                        <div class="pt-3 border-t border-slate-200 dark:border-slate-700">
-                            <label class="block font-bold text-slate-800 dark:text-slate-100 mb-1">เพิ่มหมวดหมู่ใหม่</label>
-                            <input id="newCatInput" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none" placeholder="พิมพ์ชื่อหมวดหมู่...">
-                        </div>
+                    <div class="space-y-3 text-left text-xs">
+                        <div class="space-y-1.5 max-h-40 overflow-y-auto">${catHtml || '<div class="text-center text-slate-400">ยังไม่มีหมวดหมู่</div>'}</div>
+                        <input id="newCatInput" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่...">
                     </div>
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'เพิ่มหมวดหมู่',
-                cancelButtonText: 'ปิดหน้าต่าง',
                 preConfirm: () => document.getElementById('newCatInput').value
             });
 
             if (newCatName) {
                 await mySupabase.from('exam_categories').insert([{ name: newCatName }]);
-                Swal.fire({ icon: 'success', title: 'เพิ่มหมวดหมู่สำเร็จ', timer: 1200, showConfirmButton: false });
                 await loadCategories();
                 openCategoryManagerModal();
             }
@@ -372,18 +352,8 @@
         }
 
         async function deleteExam(id) {
-            const res = await Swal.fire({
-                title: 'ยืนยันลบชุดข้อสอบนี้?',
-                text: 'การกระทำนี้จะไม่สามารถกู้คืนได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ลบข้อมูล'
-            });
-
-            if (res.isConfirmed) {
+            if ((await Swal.fire({ title: 'ยืนยันลบชุดข้อสอบนี้?', icon: 'warning', showCancelButton: true })).isConfirmed) {
                 await mySupabase.from('exams').delete().eq('id', id);
-                Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1200, showConfirmButton: false });
                 loadExams();
             }
         }
