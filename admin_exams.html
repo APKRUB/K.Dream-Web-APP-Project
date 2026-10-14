@@ -141,7 +141,6 @@
                 return;
             }
 
-            // กรองข้อสอบสถานะ Countdown ที่จะเปิดภายใน 24-48 ชั่วโมงข้างหน้า
             const now = new Date();
             const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
             
@@ -185,11 +184,9 @@
                 upcomingSec.classList.add('hidden');
             }
 
-            // ตรวจสอบชุดข้อสอบที่มีข้อสอบประเภทอัตนัย
             const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
             const examsWithEssay = new Set((essayQuestions || []).map(q => q.exam_id));
 
-            // จัดกลุ่มตามหมวดหมู่
             const grouped = {};
             exams.forEach(e => {
                 const catName = e.exam_categories?.name || 'ข้อสอบทั่วไป';
@@ -207,7 +204,8 @@
                             ? '<span class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>' 
                             : '<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px]">ซ่อน</span>');
 
-                    const deliveryBadge = e.delivery_type === 'online'
+                    const dType = e.delivery_type || e.exam_type || 'pdf';
+                    const deliveryBadge = dType === 'online'
                         ? '<span class="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>โจทย์ออนไลน์</span>'
                         : '<span class="px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-300 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
 
@@ -263,6 +261,7 @@
         async function openExamModal(examData = null) {
             const isEdit = !!examData;
             const categoryOptions = categoriesList.map(c => `<option value="${c.id}" ${examData?.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            const currentDelivery = examData?.delivery_type || examData?.exam_type || 'pdf';
 
             const { value: formValues } = await Swal.fire({
                 title: isEdit ? 'แก้ไขชุดข้อสอบ' : 'สร้างชุดข้อสอบใหม่',
@@ -273,14 +272,14 @@
                             <label class="block font-bold mb-1">ประเภทรูปแบบข้อสอบ <span class="text-red-500">*</span></label>
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="p-2.5 border rounded-xl dark:border-slate-700 flex items-center gap-2 cursor-pointer hover:border-sky-500">
-                                    <input type="radio" name="swalDeliveryType" value="pdf" ${(!examData || examData.delivery_type === 'pdf') ? 'checked' : ''}>
+                                    <input type="radio" name="swalDeliveryType" value="pdf" ${(!examData || currentDelivery === 'pdf') ? 'checked' : ''}>
                                     <div>
                                         <div class="font-bold"><i class="fas fa-file-pdf text-red-500 mr-1"></i>ใช้ไฟล์ PDF</div>
                                         <div class="text-[10px] text-slate-400">อ่านโจทย์จาก PDF + OMR</div>
                                     </div>
                                 </label>
                                 <label class="p-2.5 border rounded-xl dark:border-slate-700 flex items-center gap-2 cursor-pointer hover:border-sky-500">
-                                    <input type="radio" name="swalDeliveryType" value="online" ${examData?.delivery_type === 'online' ? 'checked' : ''}>
+                                    <input type="radio" name="swalDeliveryType" value="online" ${currentDelivery === 'online' ? 'checked' : ''}>
                                     <div>
                                         <div class="font-bold"><i class="fas fa-keyboard text-purple-500 mr-1"></i>พิมพ์ลงระบบ</div>
                                         <div class="text-[10px] text-slate-400">พิมพ์โจทย์ลงระบบออนไลน์</div>
@@ -357,10 +356,12 @@
 
                     if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อชุดข้อสอบ'); return false; }
 
+                    // ส่งทั้ง delivery_type และ exam_type ป้องกัน Not-Null Constraint 100%
                     const payload = {
                         title,
                         exam_code: exam_code || `EXAM-${Math.floor(Math.random()*9000+1000)}`,
                         delivery_type,
+                        exam_type: delivery_type,
                         category_id: catVal ? catVal : null,
                         time_limit: parseInt(document.getElementById('swalTimeLimit').value) || 60,
                         max_attempts: parseInt(document.getElementById('swalMaxAttempts').value) || 0,
