@@ -261,14 +261,21 @@
         }
 
         async function fetchStudentData() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
-            let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
-            if (studentId) {
-                query = query.eq('student_id', studentId);
-            }
-            const { data: subs } = await query;
-            mySubmissions = subs || [];
+    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
+    
+    // ดึงประวัติการส่งข้อสอบทั้งหมดจากตาราง exam_attempts
+    let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
+    const { data: subs } = await query;
+    
+    // กรองเอาเฉพาะที่ status เป็น submitted (รองรับทั้งแบบเทียบ student_id และแบบรวมถ้าไม่ได้เก็บ id)
+    mySubmissions = (subs || []).filter(s => {
+        if (s.status !== 'submitted') return false;
+        if (studentId && s.student_id && s.student_id !== studentId) {
+            return false; // ถ้ามีเก็บ student_id แล้วไม่ตรงกัน ให้ข้าม
         }
+        return true;
+    });
+}
 
         async function fetchExamsList() {
             const { data, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
