@@ -220,6 +220,7 @@ function checkStudentAuth() {
 }
         
         async function initExamTake() {
+            if (!checkStudentAuth()) return;
             if (!examId) {
                 Swal.fire('ไม่พบ ID ข้อสอบ', '', 'error').then(() => window.close());
                 return;
