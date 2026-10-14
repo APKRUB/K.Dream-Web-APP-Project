@@ -199,6 +199,7 @@ function checkStudentAuth() {
 }
         
         async function initStudentPortal() {
+            if (!checkStudentAuth()) return;
             const fullName = localStorage.getItem('full_name') || localStorage.getItem('user_name') || 'นักเรียน';
             document.getElementById('studentDisplayName').textContent = fullName;
 
