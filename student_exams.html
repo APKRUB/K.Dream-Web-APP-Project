@@ -59,8 +59,22 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ฟังก์ชันตรวจสอบสิทธิ์นักเรียนแบบยืดหยุ่น ป้องกันการติดล็อกหน้าจอ
+        // ระบบตรวจสอบการเข้าสู่ระบบ (Auth Guard)
         function checkStudentAuth() {
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            if (!studentId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อเข้าดูคลังข้อสอบ',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
+
             const currentUsername = localStorage.getItem('student_username') || 
                                     localStorage.getItem('user_name') || 
                                     localStorage.getItem('account_name') || 
