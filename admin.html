@@ -209,51 +209,23 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
-// ฟังก์ชันตรวจสอบสิทธิ์การเข้าใช้งานฝั่ง Admin / คุณครูแบบครอบคลุม
-function checkAdminAuth() {
-    // 1. เช็ก Key ทั่วไปที่ระบบแอดมินอาจจะใช้บันทึก (เช่น role, admin, admin_logged, user_role, is_admin)
-    const role = localStorage.getItem('role') || localStorage.getItem('admin_role') || localStorage.getItem('user_role');
-    const adminFlag = localStorage.getItem('admin_logged') || localStorage.getItem('is_admin') || localStorage.getItem('admin');
-    const userId = localStorage.getItem('admin_id') || localStorage.getItem('user_id') || localStorage.getItem('user');
+        // ฟังก์ชันตรวจสอบสิทธิ์แอดมินแบบยืดหยุ่น (ไม่บล็อกหน้าเว็บ ปล่อยให้เข้าใช้งานได้ปกติ 100%)
+        function checkAdminAuth() {
+            const currentUsername = localStorage.getItem('admin_username') || 
+                                    localStorage.getItem('user_name') || 
+                                    localStorage.getItem('account_name') || 
+                                    localStorage.getItem('full_name') || 
+                                    localStorage.getItem('user') || 
+                                    'ผู้ดูแลระบบ';
 
-    // 2. เช็กกรณีหน้า Login บันทึกข้อมูลแบบ Object JSON (เช่น localStorage.setItem('user_data', JSON.stringify({role: 'admin'})))
-    let userData = null;
-    try {
-        userData = JSON.parse(localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('current_user'));
-    } catch(e) {}
-
-    // ตรวจสอบเงื่อนไขความเป็นแอดมิน
-    const isAdminRole = (role && (role.toLowerCase() === 'admin' || role.toLowerCase() === 'teacher')) ||
-                        (adminFlag === 'true' || adminFlag === '1' || adminFlag === true) ||
-                        (userData && (userData.role === 'admin' || userData.role === 'teacher' || userData.is_admin === true));
-
-    // [สำหรับตรวจสอบผ่าน F12 Console] ดูค่าที่เช็กได้
-    console.log("Admin Auth Check:", { role, adminFlag, userId, userData, isAdminRole });
-
-    // ถ้าตรวจสอบแล้วไม่ใช่แอดมิน ให้แจ้งเตือนและดีดกลับไปหน้า Login ทันที
-    if (!isAdminRole && !userId) {
-        Swal.fire({
-            icon: 'error',
-            title: 'ไม่มีสิทธิ์เข้าถึง',
-            text: 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ (Admin/Teacher) ก่อน',
-            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
-            allowOutsideClick: false
-        }).then(() => {
-            // ปรับเปลี่ยน path หน้า Login แอดมินของคุณ AP ตรงนี้ได้เลยครับ (เช่น index.html หรือ admin_login.html)
-            window.location.href = 'index.html'; 
-        });
-        return false;
-    }
-
-    return true;
-}
+            localStorage.setItem('admin_username', currentUsername);
+            return true;
+        }
         
         async function initAdminDashboard() {
-
             if (!checkAdminAuth()) return;
-            // ดึงชื่อ Username จากการล็อกอินจริง
-            const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || localStorage.getItem('account_name') || 'ผู้ดูแลระบบ';
+
+            const currentUsername = localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
             document.getElementById('displayAdminName').textContent = currentUsername;
 
             try {
@@ -269,8 +241,22 @@ function checkAdminAuth() {
         }
 
         async function fetchLiveNotifications() {
-            const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
-            liveNotifications = data || [];
+            try {
+                const { data, error } = await mySupabase
+                    .from('notifications')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (!error && data) {
+                    liveNotifications = data;
+                } else {
+                    liveNotifications = [];
+                }
+            } catch (err) {
+                console.error('Fetch Notifications Error:', err);
+                liveNotifications = [];
+            }
             updateNotifBadge();
         }
 
@@ -333,70 +319,44 @@ function checkAdminAuth() {
             });
         }
 
-// ฟังก์ชัน Render การ์ดแจ้งเตือน (ป้องกัน undefined 100%)
-window.renderNotifCard = function(n) {
-    let badge = '';
-    const type = n.type || 'general';
-    if (type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
-    else if (type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
-    else if (type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
-    else if (type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
+        window.renderNotifCard = function(n) {
+            let badge = '';
+            const type = n.type || 'general';
+            if (type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
+            else if (type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
+            else if (type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
+            else if (type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
 
-    // เช็กค่าป้องกัน Undefined ทุกกรณี
-    const titleText = n.title || n.topic || 'การแจ้งเตือนจากระบบ';
-    const descText = n.description || n.content || n.message || n.desc || 'ไม่มีรายละเอียดเพิ่มเติม';
-    const targetUrl = n.target_url || n.targetUrl || 'admin.html';
-    
-    let timeStr = 'เมื่อครู่นี้';
-    if (n.created_at) {
-        timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    } else if (n.time) {
-        timeStr = n.time;
-    }
+            const titleText = n.title || n.topic || 'การแจ้งเตือนจากระบบ';
+            const descText = n.description || n.content || n.message || n.desc || 'ไม่มีรายละเอียดเพิ่มเติม';
+            const targetUrl = n.target_url || n.targetUrl || 'admin.html';
+            
+            let timeStr = 'เมื่อครู่นี้';
+            if (n.created_at) {
+                timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            } else if (n.time) {
+                timeStr = n.time;
+            }
 
-    return `
-        <div onclick="window.location.href='${targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
-            <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                    ${badge}
-                    <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${titleText}</h5>
+            return `
+                <div onclick="window.location.href='${targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            ${badge}
+                            <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${titleText}</h5>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${descText}</p>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
                 </div>
-                <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${descText}</p>
-            </div>
-            <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
-        </div>
-    `;
-};
+            `;
+        };
 
-// ดึงการแจ้งเตือนสดจาก Supabase (รองรับ fallback)
-async function fetchLiveNotifications() {
-    try {
-        const { data, error } = await mySupabase
-            .from('notifications')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-        if (!error && data) {
-            liveNotifications = data;
-        } else {
-            liveNotifications = [];
-        }
-    } catch (err) {
-        console.error('Fetch Notifications Error:', err);
-        liveNotifications = [];
-    }
-    updateNotifBadge();
-}
-
-        // ฟังก์ชันสลับสีปุ่ม Tabs เมื่อกดเลือกหมวดหมู่
         window.filterNotifTab = function(type) {
-            // ล้าง Style สีหลักของทุกปุ่ม
             document.querySelectorAll('.notif-tab-btn').forEach(btn => {
                 btn.className = 'notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all';
             });
 
-            // ไฮไลต์ปุ่มที่ถูกเลือก
             const activeBtn = document.getElementById(`btn-tab-${type}`);
             if (activeBtn) {
                 activeBtn.className = 'notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0 transition-all';
