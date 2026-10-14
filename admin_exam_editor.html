@@ -189,6 +189,27 @@
             if (banner) banner.classList.remove('show');
         }
 
+// ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
+function checkStudentAuth() {
+    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
+    const studentName = localStorage.getItem('full_name') || localStorage.getItem('user_name');
+
+    // ถ้าไม่มีข้อมูลการ Login ในระบบ ให้ดีดกลับหน้าแรกทันที
+    if (!studentId || !studentName) {
+        Swal.fire({
+            icon: 'error',
+            title: 'ยังไม่ได้เข้าสู่ระบบ',
+            text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
+            confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+            allowOutsideClick: false
+        }).then(() => {
+            window.location.href = 'index.html'; // หรือเปลี่ยนเป็นหน้า Login ของคุณ AP
+        });
+        return false;
+    }
+    return true;
+}
+        
         async function initPage() {
             if (!examId) {
                 Swal.fire('ไม่พบ ID ข้อสอบ', '', 'warning').then(() => window.location.href = 'admin_exams.html');
