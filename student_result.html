@@ -190,6 +190,7 @@ function checkStudentAuth() {
 }
         
         async function initStudentResult() {
+            if (!checkStudentAuth()) return;
             if (!examId) {
                 Swal.fire('ไม่พบข้อมูลข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
                 return;
