@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- โหลด PDF.js เพื่อแปลง PDF เป็นภาพ ป้องกันการดาวน์โหลดไฟล์แบบเด็ดขาด -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -89,14 +88,14 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: แสดง PDF เป็นภาพ ป้องกันการดาวน์โหลดและคลิกขวาแบบเด็ดขาด -->
+            <!-- ฝั่งซ้าย: แสดง PDF เป็นภาพคมชัดสูง ป้องกันการดาวน์โหลด 100% -->
             <div id="pdfViewerCard" class="hidden lg:col-span-8 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ (ระบบป้องกันการดาวน์โหลด 100%)</h3>
-                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ห้ามดาวน์โหลด / ห้ามพิมพ์</span>
+                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ (ความคมชัดสูง / ห้ามดาวน์โหลด)</h3>
+                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ป้องกันการดาวน์โหลด 100%</span>
                 </div>
                 <div id="pdfContainer" class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-y-auto border p-4 flex flex-col items-center gap-4 select-none" oncontextmenu="return false;">
-                    <div class="text-slate-400 text-xs py-20">กำลังเรนเดอร์เอกสารข้อสอบ...</div>
+                    <div class="text-slate-400 text-xs py-20">กำลังเรนเดอร์เอกสารข้อสอบความคมชัดสูง...</div>
                 </div>
             </div>
 
@@ -151,7 +150,6 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // บล็อกการคลิกขวาและคีย์ลัดเซฟ/พิมพ์อย่างเด็ดขาด
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('mousedown', e => { if (e.button === 2) e.preventDefault(); });
         document.addEventListener('keydown', (e) => {
@@ -226,7 +224,6 @@
                 }
             }
 
-            // แสดงหน้ากระดาษ PDF เป็นภาพผ่าน PDF.js ป้องกันการดาวน์โหลด 100%
             if (exam.pdf_url) {
                 const pdfCard = document.getElementById('pdfViewerCard');
                 const rightCard = document.getElementById('rightAnswerCard');
@@ -247,10 +244,10 @@
             }
         }
 
-        // ฟังก์ชันแปลง PDF เป็น Canvas ภาพ ป้องกันการเซฟไฟล์
+        // ฟังก์ชันแปลง PDF เป็นภาพความคมชัดสูง (เพิ่ม scale เป็น 3.0 เพื่อความคมชัดสูงสุด ไม่เบลอ)
         async function renderSecurePDF(url) {
             const container = document.getElementById('pdfContainer');
-            container.innerHTML = `<div class="text-slate-400 text-xs py-10">กำลังโหลดเนื้อหาข้อสอบ...</div>`;
+            container.innerHTML = `<div class="text-slate-400 text-xs py-10">กำลังเรนเดอร์เอกสารข้อสอบความคมชัดสูง...</div>`;
             try {
                 const loadingTask = pdfjsLib.getDocument(url);
                 const pdfDoc = await loadingTask.promise;
@@ -258,12 +255,15 @@
 
                 for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                     const page = await pdfDoc.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 1.5 });
+                    const viewport = page.getViewport({ scale: 3.0 }); // ปรับสเกลเป็น 3.0 คมชัดกริบ
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
-                    canvas.className = 'shadow-md rounded-lg max-w-full h-auto mb-4 bg-white';
+                    // กำหนดขนาดแสดงผลใน CSS ให้พอดีจอ แต่ความละเอียดข้างในคมชัด
+                    canvas.style.width = '100%';
+                    canvas.style.height = 'auto';
+                    canvas.className = 'shadow-md rounded-lg mb-4 bg-white';
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
                     container.appendChild(canvas);
@@ -449,7 +449,6 @@
             }, 1000);
         }
 
-        // ระบบยืนยันการส่งข้อสอบ 2 รอบ (Double Confirmation) พร้อมเช็คข้อที่ยังไม่ทำ
         async function confirmSubmitExam() {
             let unanswered = [];
             currentQuestions.forEach((q, idx) => {
@@ -463,7 +462,6 @@
             });
 
             if (unanswered.length > 0) {
-                // รอบที่ 1: แจ้งเตือนว่ายังทำไม่ครบ
                 const res1 = await Swal.fire({
                     title: 'คุณยังทำข้อสอบไม่ครบทุกข้อ!',
                     html: `มีข้อที่ยังไม่ได้ตอบดังนี้:<br><b class="text-red-500 text-sm">ข้อที่: ${unanswered.join(', ')}</b><br><br>ระบบได้ทำเครื่องหมายกรอบสีแดงไว้ ต้องการดำเนินการต่อหรือไม่?`,
@@ -477,7 +475,6 @@
 
                 if (!res1.isConfirmed) return;
             } else {
-                // รอบที่ 1 (กรณีทำครบ): ถามยืนยันครั้งแรก
                 const res1 = await Swal.fire({
                     title: 'ยืนยันการส่งข้อสอบ?',
                     text: 'คุณได้ทำข้อสอบครบทุกข้อแล้ว ต้องการส่งคำตอบหรือไม่',
@@ -490,10 +487,9 @@
                 if (!res1.isConfirmed) return;
             }
 
-            // รอบที่ 2: ถามย้ำอีกรอบเหมือนกันทั้ง 2 กรณี
             const res2 = await Swal.fire({
                 title: 'ยืนยันครั้งสุดท้าย!',
-                text: 'เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขหรือเปลี่ยนคำตอบได้อีกแน่ใจนะ?',
+                text: 'เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขหรือเปลี่ยนคำตอบได้อีก แน่ใจนะ?',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'ใช่, ส่งข้อสอบเลย',
