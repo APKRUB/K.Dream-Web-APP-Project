@@ -10,26 +10,17 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    
-    <!-- INSTANT AUTH GUARD -->
-    <script>
-        (function() {
-            let hasSession = false;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) { hasSession = true; break; }
-                }
-            }
-            const fallbackId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
-            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
-        })();
-    </script>
-
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Prompt', 'sans-serif'] }, colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' } } } }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' }
+                }
+            }
+        }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
@@ -39,9 +30,27 @@
         .dark .hitech-card { background: #090d16; border: 1px solid rgba(30, 41, 59, 0.8); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
-        .omr-bubble-compact { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; cursor: pointer; border: 2px solid #cbd5e1; background-color: #ffffff; color: #334155; }
+
+        .omr-bubble-compact {
+            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 11px; cursor: pointer; transition: all 0.15s ease; border: 2px solid #cbd5e1;
+            background-color: #ffffff; color: #334155;
+        }
         .dark .omr-bubble-compact { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
-        .omr-bubble-compact.active { background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important; box-shadow: 0 0 10px rgba(2, 132, 199, 0.5); }
+        .omr-bubble-compact.active {
+            background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important;
+            box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+        }
+        .question-unanswered-highlight {
+            border: 2px solid #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.05) !important;
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+            0% { border-color: #ef4444; }
+            50% { border-color: rgba(239, 68, 68, 0.3); }
+            100% { border-color: #ef4444; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-16" oncontextmenu="return false;">
@@ -49,34 +58,66 @@
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-sm shadow-md"><i class="fas fa-file-lines"></i></div>
+                <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                    <i class="fas fa-file-lines"></i>
+                </div>
                 <div>
                     <h1 id="examTitleNav" class="font-extrabold text-sm text-slate-900 dark:text-white">กำลังโหลดข้อสอบ...</h1>
                     <p id="examSubNav" class="text-[11px] text-slate-500">กรุณารอสักครู่...</p>
                 </div>
             </div>
+
             <div class="flex items-center gap-3">
-                <div class="px-4 py-1.5 bg-amber-500/10 text-amber-600 border border-amber-500/30 rounded-xl font-mono font-bold text-xs flex items-center gap-1.5"><i class="fas fa-clock animate-pulse"></i><span id="timerDisplay">--:--</span></div>
+                <div class="px-4 py-1.5 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-mono font-bold text-xs flex items-center gap-1.5">
+                    <i class="fas fa-clock animate-pulse"></i>
+                    <span id="timerDisplay">--:--</span>
+                </div>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-[96rem] mx-auto px-4 pt-24 space-y-6">
+        
+        <div id="previewBanner" class="hidden p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl flex justify-between items-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
+            <span><i class="fas fa-eye mr-1.5"></i> โหมดดูตัวอย่างข้อสอบ (Preview Mode - คะแนนจะไม่ถูกบันทึก)</span>
+            <button onclick="window.close()" class="px-3 py-1 bg-indigo-600 text-white rounded-lg">ปิดหน้าต่างนี้</button>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- ฝั่งซ้าย: PDF Viewer -->
             <div id="pdfViewerCard" class="hidden lg:col-span-8 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ (ห้ามดาวน์โหลด)</h3>
+                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ (ความคมชัดสูง / ห้ามดาวน์โหลด)</h3>
+                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ป้องกันการดาวน์โหลด 100%</span>
                 </div>
-                <div id="pdfContainer" class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-y-auto border p-4 flex flex-col items-center gap-4"></div>
+                <div id="pdfContainer" class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-y-auto border p-4 flex flex-col items-center gap-4 select-none" oncontextmenu="return false;">
+                    <div class="text-slate-400 text-xs py-20">กำลังเรนเดอร์เอกสารข้อสอบความคมชัดสูง...</div>
+                </div>
             </div>
 
+            <!-- ฝั่งขวา: กระดาษคำตอบ OMR -->
             <div id="rightAnswerCard" class="lg:col-span-4 hitech-card p-5 rounded-3xl space-y-5">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <h2 class="font-bold text-sm flex items-center gap-1.5"><i class="fas fa-list-check text-sky-500"></i> กระดาษคำตอบ</h2>
-                    <button onclick="confirmSubmitExam()" class="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md"><i class="fas fa-paper-plane mr-1"></i> ส่งข้อสอบ</button>
+                    <div>
+                        <h2 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <i class="fas fa-list-check text-sky-500"></i> กระดาษคำตอบ
+                        </h2>
+                        <p class="text-[11px] text-slate-400 mt-0.5">ช้อยส์ซ้ายสุด | ธงขวาสุด</p>
+                    </div>
+                    <button onclick="confirmSubmitExam()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                        <i class="fas fa-paper-plane"></i> ส่งข้อสอบ
+                    </button>
                 </div>
-                <div id="questionsListContainer" class="space-y-3"><div class="text-center py-10 text-slate-400 text-xs">กำลังโหลดข้อสอบ...</div></div>
+
+                <div id="questionsListContainer" class="space-y-3">
+                    <div class="text-center py-10 text-slate-400 text-xs">กรุณากดเริ่มทำข้อสอบเพื่อแสดงชุดข้อสอบ</div>
+                </div>
             </div>
+
         </div>
     </main>
 
@@ -87,122 +128,478 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('id');
-        let currentExam = null, currentQuestions = [], studentAnswers = {}, flaggedQuestions = {}, timerInterval = null, currentRemainingSeconds = 0;
+        const isPreview = urlParams.get('preview') === 'true';
 
-        async function getValidatedStudentId() {
-            let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+        let currentExam = null;
+        let currentQuestions = [];
+        let studentAnswers = {};
+        let flaggedQuestions = {};
+        let timerInterval = null;
+        let currentRemainingSeconds = 0;
+
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('mousedown', e => { if (e.button === 2) e.preventDefault(); });
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'a' || e.key === 'i')) {
+                e.preventDefault();
+                Swal.fire({ icon: 'warning', text: 'ไม่อนุญาตให้ดำเนินการดังกล่าวในหน้าข้อสอบ', timer: 1200, showConfirmButton: false });
+            }
+            if (e.key === 'F12' || e.key === 'PrintScreen') {
+                e.preventDefault();
+            }
+        });
+
+        // ฟังก์ชันดึงและตรวจสอบ Student ID จากคีย์ทั้งหมดที่เป็นไปได้ใน LocalStorage อย่างครอบคลุม
+        function getValidatedStudentId() {
+            let studentId = localStorage.getItem('id') || 
+                            localStorage.getItem('student_id') || 
+                            localStorage.getItem('user_id') || 
+                            localStorage.getItem('userId') || null;
+
             if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
                 try {
-                    const { data: { session } } = await mySupabase.auth.getSession();
-                    if (session && session.user) studentId = session.user.id;
+                    const userObj = JSON.parse(localStorage.getItem('user') || localStorage.getItem('profile') || localStorage.getItem('current_user') || '{}');
+                    studentId = userObj.id || userObj.student_id || userObj.uid || null;
                 } catch(e) {}
             }
             return studentId;
         }
 
+        // ระบบ Auth Guard ป้องกันคนไม่ได้ Login เข้ามาทำข้อสอบอย่างเด็ดขาด
+        function checkStudentAuth() {
+            if (isPreview) return true;
+
+            const studentId = getValidatedStudentId();
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบก่อนทำข้อสอบ',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
+            return true;
+        }
+
         async function initPage() {
-            const studentId = await getValidatedStudentId();
-            if (!studentId) { window.location.replace('index.html'); return; }
-            if (!examId) { window.location.href = 'student.html'; return; }
+            if (!checkStudentAuth()) return;
+            if (!examId) {
+                Swal.fire('ไม่พบ ID ข้อสอบ', '', 'warning').then(() => window.location.href = 'student.html');
+                return;
+            }
+
+            if (isPreview) {
+                document.getElementById('previewBanner').classList.remove('hidden');
+            }
 
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
-            if (!exam) { window.location.href = 'student.html'; return; }
+            if (!exam) {
+                Swal.fire('ไม่พบชุดข้อสอบนี้', '', 'error').then(() => window.location.href = 'student.html');
+                return;
+            }
 
             currentExam = exam;
             document.getElementById('examTitleNav').textContent = exam.title;
-            document.getElementById('examSubNav').textContent = `รหัส: ${exam.exam_code || 'ไม่มี'} | เวลา: ${exam.time_limit || 60} นาที`;
+            document.getElementById('examSubNav').textContent = `รหัส: ${exam.exam_code || 'ไม่มี'} | เวลาทำ: ${exam.time_limit || 60} นาที`;
+
+            if (!isPreview) {
+                const confirmStart = await Swal.fire({
+                    title: `พร้อมเริ่มทำข้อสอบ "${exam.title}" หรือยัง?`,
+                    text: `เวลาในการทำข้อสอบ: ${exam.time_limit || 60} นาที เมื่อกดเริ่มเวลานับถอยหลังทันที`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'เริ่มทำข้อสอบ',
+                    cancelButtonText: 'กลับหน้าหลัก',
+                    allowOutsideClick: false
+                });
+
+                if (!confirmStart.isConfirmed) {
+                    window.location.href = 'student.html';
+                    return;
+                }
+            }
 
             if (exam.pdf_url) {
-                document.getElementById('pdfViewerCard').classList.remove('hidden');
-                document.getElementById('rightAnswerCard').className = 'lg:col-span-4 hitech-card p-5 rounded-3xl space-y-5';
-                renderSecurePDF(exam.pdf_url);
+                const pdfCard = document.getElementById('pdfViewerCard');
+                const rightCard = document.getElementById('rightAnswerCard');
+                
+                if (pdfCard) {
+                    pdfCard.classList.remove('hidden');
+                    if (rightCard) rightCard.className = 'lg:col-span-4 hitech-card p-5 rounded-3xl space-y-5';
+                    renderSecurePDF(exam.pdf_url);
+                }
             }
+
             await loadQuestions();
 
             const timerKey = `exam_start_time_${examId}`;
             let startTime = localStorage.getItem(timerKey);
-            if (!startTime) { startTime = Date.now(); localStorage.setItem(timerKey, startTime); }
-            startPersistentTimer(parseInt(startTime, 10), (exam.time_limit || 60) * 60);
+            if (!startTime || isPreview) {
+                startTime = Date.now();
+                localStorage.setItem(timerKey, startTime);
+            }
+
+            startPersistentTimer(parseInt(startTime, 10), (currentExam.time_limit || 60) * 60);
         }
 
         async function renderSecurePDF(url) {
             const container = document.getElementById('pdfContainer');
+            container.innerHTML = `<div class="text-slate-400 text-xs py-10">กำลังเรนเดอร์เอกสารข้อสอบความคมชัดสูง...</div>`;
             try {
-                const pdfDoc = await pdfjsLib.getDocument(url).promise;
+                const loadingTask = pdfjsLib.getDocument(url);
+                const pdfDoc = await loadingTask.promise;
                 container.innerHTML = '';
-                for (let p = 1; p <= pdfDoc.numPages; p++) {
-                    const page = await pdfDoc.getPage(p);
-                    const viewport = page.getViewport({ scale: 2.5 });
+
+                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 3.0 });
                     const canvas = document.createElement('canvas');
-                    canvas.width = viewport.width; canvas.height = viewport.height;
-                    canvas.style.width = '100%'; canvas.className = 'shadow rounded bg-white mb-4';
-                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.style.width = '100%';
+                    canvas.style.height = 'auto';
+                    canvas.className = 'shadow-md rounded-lg mb-4 bg-white';
+                    
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
                     container.appendChild(canvas);
                 }
-            } catch(e) { container.innerHTML = `<div class="text-red-500 text-xs">โหลด PDF ไม่สำเร็จ</div>`; }
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div class="text-red-500 text-xs py-10">ไม่สามารถโหลดเอกสารข้อสอบได้ กรุณาติดต่อผู้คุมสอบ</div>`;
+            }
         }
 
         async function loadQuestions() {
-            const { data } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number');
-            currentQuestions = data || [];
+            const { data: qs } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
+            currentQuestions = qs || [];
             renderQuestionsContainer();
         }
 
         function renderQuestionsContainer() {
             const container = document.getElementById('questionsListContainer');
-            if (!currentQuestions.length) { container.innerHTML = `<div class="text-center text-xs text-slate-400">ไม่มีข้อสอบ</div>`; return; }
-            container.innerHTML = currentQuestions.map((q, idx) => {
-                const qNum = q.question_number || (idx + 1);
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
-                const isSelected = studentAnswers[q.id];
-                if (q.question_type === 'essay') {
-                    return `<div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-2"><div class="font-bold text-xs text-amber-600">ข้อ ${qNum} (อัตนัย)</div><div class="text-xs">${q.question_text || ''}</div><textarea oninput="studentAnswers['${q.id}'] = this.value" rows="2" class="w-full p-2 border rounded text-xs">${studentAnswers[q.id] || ''}</textarea></div>`;
+            if (currentQuestions.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">ยังไม่มีรายการโจทย์ในชุดข้อสอบนี้</div>`;
+                return;
+            }
+
+            const groups = {};
+            currentQuestions.forEach((q, idx) => {
+                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ข้อสอบทั่วไป';
+                if (!groups[tag]) groups[tag] = [];
+                groups[tag].push({ q, idx });
+            });
+
+            let htmlContent = '';
+
+            for (const [tag, items] of Object.entries(groups)) {
+                htmlContent += `
+                    <div class="space-y-2 pt-2">
+                        <div class="px-3 py-1.5 bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/30 rounded-xl text-xs font-extrabold text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                            <i class="fas fa-layer-group"></i> 🏷️ ${tag}
+                        </div>
+                        <div class="space-y-2">
+                `;
+
+                for (const { q, idx } of items) {
+                    const isEssay = q.question_type === 'essay';
+                    const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                    const qNum = q.question_number || (idx + 1);
+                    const isFlagged = flaggedQuestions[q.id];
+
+                    if (isEssay) {
+                        htmlContent += `
+                            <div id="q-box-${q.id}" class="p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 relative">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-extrabold text-xs text-amber-600 dark:text-amber-400">ข้อ ${qNum} (อัตนัย)</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 bg-amber-500 text-white font-bold text-[9px] rounded">เขียนตอบ</span>
+                                        <button onclick="toggleFlag('${q.id}')" class="text-xs ${isFlagged ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'}" title="ปักธงข้อที่ไม่มั่นใจ">
+                                            <i class="fas fa-flag"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800/60 p-2.5 rounded-xl border">${q.question_text || q.content || 'คำถามอัตนัย'}</div>
+                                <textarea id="ans-${q.id}" oninput="saveEssayAnswer('${q.id}', this.value)" rows="3" class="w-full p-2.5 bg-white dark:bg-slate-800 border rounded-xl text-xs outline-none" placeholder="พิมพ์คำตอบของคุณที่นี่...">${studentAnswers[q.id] || ''}</textarea>
+                            </div>
+                        `;
+                    } else {
+                        const bubblesHtml = opts.map((cLabel, cIdx) => {
+                            const isSelected = studentAnswers[q.id] === String(cIdx) || studentAnswers[q.id] === cLabel;
+                            return `
+                                <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble-compact ${isSelected ? 'active' : ''}">
+                                    ${cLabel}
+                                </div>
+                            `;
+                        }).join('');
+
+                        htmlContent += `
+                            <div id="q-box-${q.id}" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-extrabold text-xs text-sky-600 dark:text-sky-400 w-8 shrink-0">ข้อ ${qNum}</span>
+                                    <div class="flex items-center gap-1.5">${bubblesHtml}</div>
+                                </div>
+                                <button onclick="toggleFlag('${q.id}')" class="text-xs ${isFlagged ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'} shrink-0 ml-2" title="ปักธงข้อที่ไม่มั่นใจ">
+                                    <i class="fas fa-flag"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
-                return `<div id="q-box-${q.id}" class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between"><span class="font-bold text-xs text-sky-600">ข้อ ${qNum}</span><div class="flex gap-1.5">${opts.map((lbl, i) => `<div onclick="selectAnswer('${q.id}', '${i}')" id="bubble-${q.id}-${i}" class="omr-bubble-compact ${isSelected === String(i) ? 'active' : ''}">${lbl}</div>`).join('')}</div></div>`;
-            }).join('');
+
+                htmlContent += `</div></div>`;
+            }
+
+            container.innerHTML = htmlContent;
+        }
+
+        function toggleFlag(qId) {
+            flaggedQuestions[qId] = !flaggedQuestions[qId];
+            renderQuestionsContainer();
         }
 
         function selectAnswer(qId, cIdx) {
             studentAnswers[qId] = String(cIdx);
-            currentQuestions.find(q => q.id === qId)?.options?.forEach((_, i) => {
-                document.getElementById(`bubble-${qId}-${i}`)?.classList.toggle('active', i === parseInt(cIdx));
-            });
+            
+            const box = document.getElementById(`q-box-${qId}`);
+            if (box) box.classList.remove('question-unanswered-highlight');
+
+            const qObj = currentQuestions.find(q => q.id === qId);
+            if (qObj && qObj.options) {
+                qObj.options.forEach((_, i) => {
+                    const bubble = document.getElementById(`bubble-${qId}-${i}`);
+                    if (bubble) {
+                        if (String(i) === String(cIdx)) {
+                            bubble.classList.add('active');
+                        } else {
+                            bubble.classList.remove('active');
+                        }
+                    }
+                });
+            }
         }
 
-        function startPersistentTimer(startTime, duration) {
+        function saveEssayAnswer(qId, val) {
+            studentAnswers[qId] = val;
+            if (val && val.trim() !== '') {
+                const box = document.getElementById(`q-box-${qId}`);
+                if (box) box.classList.remove('question-unanswered-highlight');
+            }
+        }
+
+        function startPersistentTimer(startTime, totalDurationSeconds) {
             const display = document.getElementById('timerDisplay');
+
             timerInterval = setInterval(() => {
-                const remaining = duration - Math.floor((Date.now() - startTime) / 1000);
-                currentRemainingSeconds = remaining > 0 ? remaining : 0;
-                if (remaining <= 0) { clearInterval(timerInterval); submitExam(true); return; }
-                display.textContent = `${Math.floor(remaining / 60).toString().padStart(2,'0')}:${(remaining % 60).toString().padStart(2,'0')}`;
+                const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                const remainingSeconds = totalDurationSeconds - elapsedSeconds;
+                currentRemainingSeconds = remainingSeconds > 0 ? remainingSeconds : 0;
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    localStorage.removeItem(`exam_start_time_${examId}`);
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'หมดเวลาทำข้อสอบ!',
+                        text: 'ระบบกำลังส่งคำตอบของคุณโดยอัตโนมัติ',
+                        allowOutsideClick: false,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => submitExam(true));
+                    return;
+                }
+
+                const minutes = parseInt(remainingSeconds / 60, 10);
+                const seconds = parseInt(remainingSeconds % 60, 10);
+                display.textContent = `${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
             }, 1000);
         }
 
         async function confirmSubmitExam() {
-            const res = await Swal.fire({ title: 'ยืนยันการส่งข้อสอบ?', icon: 'question', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ทำต่อ' });
-            if (res.isConfirmed) submitExam(false);
-        }
+            let unanswered = [];
+            currentQuestions.forEach((q, idx) => {
+                const qNum = q.question_number || (idx + 1);
+                const ans = studentAnswers[q.id];
+                if (ans === undefined || ans === null || String(ans).trim() === '') {
+                    unanswered.push(qNum);
+                    const box = document.getElementById(`q-box-${q.id}`);
+                    if (box) box.classList.add('question-unanswered-highlight');
+                }
+            });
 
-        async function submitExam(isTimeout) {
-            if (timerInterval) clearInterval(timerInterval);
-            localStorage.removeItem(`exam_start_time_${examId}`);
-            const studentId = await getValidatedStudentId();
-            if (!studentId) { window.location.replace('index.html'); return; }
+            if (unanswered.length > 0) {
+                const res1 = await Swal.fire({
+                    title: 'คุณยังทำข้อสอบไม่ครบทุกข้อ!',
+                    html: `มีข้อที่ยังไม่ได้ตอบดังนี้:<br><b class="text-red-500 text-sm">ข้อที่: ${unanswered.join(', ')}</b><br><br>ระบบได้ทำเครื่องหมายกรอบสีแดงไว้ ต้องการดำเนินการต่อหรือไม่?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'ดำเนินการต่อ',
+                    cancelButtonText: 'กลับไปทำต่อ',
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#ef4444'
+                });
 
-            Swal.fire({ title: 'กำลังบันทึกคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                if (!res1.isConfirmed) return;
+            } else {
+                const res1 = await Swal.fire({
+                    title: 'ยืนยันการส่งข้อสอบ?',
+                    text: 'คุณได้ทำข้อสอบครบทุกข้อแล้ว ต้องการส่งคำตอบหรือไม่',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'ยืนยัน',
+                    cancelButtonText: 'ตรวจสอบอีกครั้ง'
+                });
 
-            let totalScore = 0;
-            currentQuestions.forEach(q => { if (q.question_type !== 'essay' && String(studentAnswers[q.id]) === String(q.correct_answer)) totalScore++; });
-
-            const { data: attempt, error } = await mySupabase.from('exam_attempts').insert([{ exam_id: examId, student_id: studentId, status: 'submitted', total_score: totalScore, remaining_time: currentRemainingSeconds }]).select().single();
-            if (error || !attempt) { Swal.fire('เกิดข้อผิดพลาด', error?.message || '', 'error'); return; }
-
-            for (const q of currentQuestions) {
-                await mySupabase.from('exam_answers').insert([{ attempt_id: attempt.id, question_id: q.id, score: q.question_type !== 'essay' && String(studentAnswers[q.id]) === String(q.correct_answer) ? 1 : 0, selected_option_index: q.question_type !== 'essay' ? parseInt(studentAnswers[q.id]) || null : null, subjective_answer: q.question_type === 'essay' ? studentAnswers[q.id] || '' : null }]);
+                if (!res1.isConfirmed) return;
             }
 
-            Swal.fire({ icon: 'success', title: 'ส่งข้อสอบสำเร็จ!', text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`, confirmButtonText: 'ดูผลสอบ' }).then(() => { window.location.href = `student_result.html?attempt_id=${attempt.id}`; });
+            const res2 = await Swal.fire({
+                title: 'ยืนยันครั้งสุดท้าย!',
+                text: 'เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขหรือเปลี่ยนคำตอบได้อีก แน่ใจนะ?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ใช่, ส่งข้อสอบเลย',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#64748b'
+            });
+
+            if (res2.isConfirmed) {
+                submitExam(false);
+            }
+        }
+
+        async function submitExam(isTimeout = false) {
+            if (timerInterval) clearInterval(timerInterval);
+            localStorage.removeItem(`exam_start_time_${examId}`);
+
+            try {
+                let progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
+                delete progress[examId];
+                localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
+            } catch(e) {}
+
+            if (isPreview) {
+                Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังบันทึกและประมวลผลคำตอบ...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            let totalScore = 0;
+            currentQuestions.forEach(q => {
+                const studentAns = studentAnswers[q.id];
+                const isEssay = q.question_type === 'essay';
+                if (!isEssay) {
+                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                        totalScore += 1;
+                    }
+                }
+            });
+
+            // ดึง Student ID ผ่านฟังก์ชันกลางที่ตรวจสอบทุกคีย์อย่างปลอดภัย
+            const studentId = getValidatedStudentId();
+
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อมูลผู้ใช้ไม่ถูกต้อง',
+                    text: 'กรุณาเข้าสู่ระบบใหม่อีกครั้งเพื่อบันทึกคะแนน',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return;
+            }
+
+            const attemptPayload = {
+                exam_id: examId,
+                status: 'submitted',
+                student_id: studentId,
+                answer_saved: JSON.stringify(studentAnswers),
+                remaining_time: currentRemainingSeconds,
+                total_score: totalScore,
+                submission_time: new Date().toISOString()
+            };
+
+            const { data: newAttempt, error: attemptError } = await mySupabase
+                .from('exam_attempts')
+                .insert([attemptPayload])
+                .select()
+                .single();
+
+            if (attemptError || !newAttempt) {
+                console.error("Attempt Error:", attemptError);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Supabase Error!',
+                    html: `<div class="text-left text-xs bg-slate-900 p-3 rounded text-red-400 font-mono">${JSON.stringify(attemptError, null, 2)}</div>`,
+                    confirmButtonText: 'รับทราบ'
+                });
+                return;
+            }
+
+            const attemptId = newAttempt.id;
+
+            for (const q of currentQuestions) {
+                const studentAns = studentAnswers[q.id];
+                const isEssay = q.question_type === 'essay';
+                let qScore = 0;
+
+                if (!isEssay) {
+                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                        qScore = 1;
+                    }
+                }
+
+                const answerPayload = {
+                    attempt_id: attemptId,
+                    question_id: q.id,
+                    score: qScore
+                };
+
+                if (!isEssay) {
+                    answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
+                    answerPayload.subjective_answer = null;
+                } else {
+                    answerPayload.selected_option_index = null;
+                    answerPayload.subjective_answer = studentAns || '';
+                }
+
+                await mySupabase.from('exam_answers').insert([answerPayload]);
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'ส่งข้อสอบสำเร็จ!',
+                text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`,
+                confirmButtonText: 'ดูผลการสอบและเฉลย',
+                allowOutsideClick: false
+            }).then(() => {
+                window.location.href = `student_result.html?attempt_id=${attemptId}`;
+            });
         }
 
         initPage();
