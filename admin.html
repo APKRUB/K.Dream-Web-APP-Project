@@ -24,29 +24,17 @@
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
-        
         .hitech-card { 
-            background: rgba(255, 255, 255, 0.95); 
-            border: 1px solid rgba(186, 230, 253, 0.8); 
-            box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); 
+            box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
         .dark .hitech-card { 
-            background: rgba(9, 13, 22, 0.95); 
-            border: 1px solid rgba(30, 58, 138, 0.5); 
+            background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); 
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
         }
         .hitech-card:hover { transform: translateY(-4px); border-color: #0ea5e9; box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.2); }
-
-        .hero-banner {
-            background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        }
-        .dark .hero-banner {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(30, 58, 138, 0.2) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-        }
-
+        .hero-banner { background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .dark .hero-banner { background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(30, 58, 138, 0.2) 100%); border: 1px solid rgba(56, 189, 248, 0.2); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
@@ -67,6 +55,7 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <!-- ปุ่ม Notifications แบบ Realtime Badge -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -89,7 +78,7 @@
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
-                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> ระบบปฏิบัติการพร้อมใช้งาน 100%
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Signal Active
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">ผู้ดูแลระบบ</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
@@ -115,7 +104,6 @@
             </h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                
                 <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
@@ -193,10 +181,8 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน สิทธิ์การเข้าถึง และจัดการรหัสผ่านผู้ใช้งานในระบบ</p>
                     </div>
                 </div>
-
             </div>
         </div>
-
     </main>
 
     <script>
@@ -206,6 +192,7 @@
 
         let liveNotifications = [];
 
+        // Theme Toggle Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -220,7 +207,6 @@
         });
 
         async function initAdminDashboard() {
-            // ดึงชื่อบัญชีที่ล็อกอินจริงจาก LocalStorage / Session
             const loggedName = localStorage.getItem('account_name') || localStorage.getItem('user_name') || localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
             document.getElementById('displayAdminName').textContent = loggedName;
 
@@ -232,15 +218,15 @@
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
                 await fetchLiveNotifications();
+                initRealtimeSubscription();
             } catch (err) {
                 console.error(err);
             }
         }
 
+        // ดึงการแจ้งเตือนสด Real-time จากฐานข้อมูล Supabase
         async function fetchLiveNotifications() {
             liveNotifications = [];
-
-            // ตรวจเช็กว่ามีการกดสั่งล้างการแจ้งเตือนไว้ชั่วคราวหรือไม่
             if (sessionStorage.getItem('notifs_cleared') === 'true') {
                 updateNotifBadge();
                 return;
@@ -249,7 +235,7 @@
             try {
                 // 1. หมวดคำถาม Consult
                 const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
-                if (consults && consults.length > 0) {
+                if (consults) {
                     consults.forEach(c => {
                         liveNotifications.push({
                             type: 'question',
@@ -263,7 +249,7 @@
 
                 // 2. หมวดส่งข้อสอบ
                 const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
-                if (subs && subs.length > 0) {
+                if (subs) {
                     subs.forEach(s => {
                         liveNotifications.push({
                             type: 'submit',
@@ -277,7 +263,7 @@
 
                 // 3. หมวดประกาศข่าวสาร
                 const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
-                if (anns && anns.length > 0) {
+                if (anns) {
                     anns.forEach(a => {
                         liveNotifications.push({
                             type: 'general',
@@ -301,11 +287,19 @@
                         targetUrl: 'admin_exams.html'
                     });
                 }
-            } catch(e) {
-                console.log('Error loading notifications', e);
-            }
+            } catch(e) { console.log('Notification Fetch Error:', e); }
 
             updateNotifBadge();
+        }
+
+        // ระบบฟังการเปลี่ยนแปลงเรียลไทม์ (Supabase Realtime Subscriptions)
+        function initRealtimeSubscription() {
+            mySupabase
+                .channel('admin-notifications-realtime')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'consult_threads' }, () => fetchLiveNotifications())
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'exam_submissions' }, () => fetchLiveNotifications())
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, () => fetchLiveNotifications())
+                .subscribe();
         }
 
         function updateNotifBadge() {
@@ -320,18 +314,16 @@
 
         function openNotificationsModal() {
             Swal.fire({
-                title: '🔔 การแจ้งเตือนคุณครู',
+                title: '🔔 การแจ้งเตือนคุณครู (Realtime)',
                 width: '600px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
-                        <div class="flex justify-between items-center border-b pb-2 dark:border-slate-800">
-                            <div class="flex gap-1 overflow-x-auto">
-                                <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
-                                <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
-                                <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
-                                <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
-                                <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
-                            </div>
+                        <div class="flex gap-1 overflow-x-auto pb-1 border-b dark:border-slate-800">
+                            <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
+                            <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
+                            <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
+                            <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
+                            <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
                         </div>
 
                         <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
