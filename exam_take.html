@@ -458,7 +458,7 @@
             }
         }
 
-        async function submitExam(isTimeout = false) {
+async function submitExam(isTimeout = false) {
             if (timerInterval) clearInterval(timerInterval);
             localStorage.removeItem(`exam_start_time_${examId}`);
 
@@ -479,7 +479,6 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // ป้องกันปัญหาเรื่อง type mismatch ของ student_id โดยส่งเฉพาะข้อมูลที่จำเป็นพื้นฐาน
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
@@ -493,9 +492,15 @@
                 .select()
                 .single();
 
+            // ตรงนี้จะโชว์ Error จริงๆ จาก Supabase ขึ้นจอให้เห็นจะๆ เลยครับ
             if (attemptError || !newAttempt) {
                 console.error("Attempt Error:", attemptError);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Database Error!',
+                    text: JSON.stringify(attemptError?.message || attemptError),
+                    confirmButtonText: 'รับทราบ'
+                });
                 return;
             }
 
