@@ -168,13 +168,28 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-// ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
 function checkStudentAuth() {
-    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
-    const studentName = localStorage.getItem('full_name') || localStorage.getItem('user_name');
+    // เช็กทุกความเป็นไปได้ที่หน้า Login อาจจะบันทึกไว้
+    const studentId = localStorage.getItem('student_id') || 
+                      localStorage.getItem('user_id') || 
+                      localStorage.getItem('user') || 
+                      localStorage.getItem('id') ||
+                      localStorage.getItem('userId');
 
-    // ถ้าไม่มีข้อมูลการ Login ในระบบ ให้ดีดกลับหน้าแรกทันที
-    if (!studentId || !studentName) {
+    const studentName = localStorage.getItem('full_name') || 
+                        localStorage.getItem('user_name') || 
+                        localStorage.getItem('name') || 
+                        localStorage.getItem('username');
+
+    // [สำหรับดีบุก] ช่วยปริ้นช้อนดูว่าใน localStorage มีอะไรบ้างตอนที่รัน
+    console.log("Current localStorage keys:", {
+        studentId: studentId,
+        studentName: studentName,
+        allStorage: {...localStorage}
+    });
+
+    // ถ้าไม่มีข้อมูลเลยสักอัน ค่อยเด้งกลับหน้า Login
+    if (!studentId && !studentName) {
         Swal.fire({
             icon: 'error',
             title: 'ยังไม่ได้เข้าสู่ระบบ',
@@ -182,10 +197,11 @@ function checkStudentAuth() {
             confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
             allowOutsideClick: false
         }).then(() => {
-            window.location.href = 'index.html'; // หรือเปลี่ยนเป็นหน้า Login ของคุณ AP
+            window.location.href = 'index.html'; 
         });
         return false;
     }
+    
     return true;
 }
         
