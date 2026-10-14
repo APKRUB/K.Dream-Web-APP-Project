@@ -80,6 +80,7 @@ function checkStudentAuth() {
 }
         
         async function initPage() {
+            if (!checkStudentAuth()) return;
             const { data: exams } = await mySupabase.from('exams').select('*').eq('status', 'public').order('created_at', { ascending: false });
             document.getElementById('studentExamsFullContainer').innerHTML = (exams || []).map(e => `
                 <div class="glossy-card p-6 rounded-3xl space-y-4 flex flex-col justify-between">
