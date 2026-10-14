@@ -460,111 +460,113 @@
             }
         }
 
-        async function submitExam(isTimeout = false) {
-            if (timerInterval) clearInterval(timerInterval);
-            localStorage.removeItem(`exam_start_time_${examId}`);
+async function submitExam(isTimeout = false) {
+    if (timerInterval) clearInterval(timerInterval);
+    localStorage.removeItem(`exam_start_time_${examId}`);
 
-            try {
-                let progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
-                delete progress[examId];
-                localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
-            } catch(e) {}
+    try {
+        let progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
+        delete progress[examId];
+        localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
+    } catch(e) {}
 
-            if (isPreview) {
-                Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
-                return;
+    if (isPreview) {
+        Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
+        return;
+    }
+
+    Swal.fire({
+        title: 'กำลังบันทึกและประมวลผลคำตอบ...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // 1) คำนวณคะแนนรวม
+    let totalScore = 0;
+    currentQuestions.forEach(q => {
+        const studentAns = studentAnswers[q.id];
+        const isEssay = q.question_type === 'essay';
+        if (!isEssay) {
+            if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                totalScore += 1;
             }
-
-            Swal.fire({
-                title: 'กำลังบันทึกและประมวลผลคำตอบ...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            // 1) คำนวณคะแนนรวม (total score)
-            let totalScore = 0;
-            currentQuestions.forEach(q => {
-                const studentAns = studentAnswers[q.id];
-                const isEssay = q.question_type === 'essay';
-                if (!isEssay) {
-                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
-                        totalScore += 1;
-                    }
-                }
-            });
-
-            // ดึง student_id
-            const studentId = localStorage.getItem('student_id') || 
-                              localStorage.getItem('user_id') || 
-                              localStorage.getItem('id') || null;
-
-            // รวบรวม 5 ค่าที่ต้องการบันทึกลงตาราง exam_attempts ครบถ้วน
-            const attemptPayload = {
-                exam_id: examId,
-                status: 'submitted',
-                student_id: studentId,                           // 1) student_id
-                answer_saved: JSON.stringify(studentAnswers),    // 2) answer_saved (แปลงเป็น JSON string)
-                remaining_time: currentRemainingSeconds,         // 3) remaining_time (เวลาเหลือเป็นวินาที)
-                score: totalScore,                               // 4) total score
-                submission_time: new Date().toISOString()        // 5) submission_time (เวลาที่กดส่งข้อสอบ)
-            };
-
-            const { data: newAttempt, error: attemptError } = await mySupabase
-                .from('exam_attempts')
-                .insert([attemptPayload])
-                .select()
-                .single();
-
-            if (attemptError || !newAttempt) {
-                console.error("Attempt Error:", attemptError);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาดในการบันทึก',
-                    text: JSON.stringify(attemptError?.message || attemptError)
-                });
-                return;
-            }
-
-            const attemptId = newAttempt.id;
-
-            for (const q of currentQuestions) {
-                const studentAns = studentAnswers[q.id];
-                const isEssay = q.question_type === 'essay';
-                let qScore = 0;
-
-                if (!isEssay) {
-                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
-                        qScore = 1;
-                    }
-                }
-
-                const answerPayload = {
-                    attempt_id: attemptId,
-                    question_id: q.id,
-                    score: qScore
-                };
-
-                if (!isEssay) {
-                    answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
-                    answerPayload.subjective_answer = null;
-                } else {
-                    answerPayload.selected_option_index = null;
-                    answerPayload.subjective_answer = studentAns || '';
-                }
-
-                await mySupabase.from('exam_answers').insert([answerPayload]);
-            }
-
-            Swal.fire({
-                icon: 'success',
-                title: 'ส่งข้อสอบสำเร็จ!',
-                text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`,
-                confirmButtonText: 'ดูผลการสอบและเฉลย',
-                allowOutsideClick: false
-            }).then(() => {
-                window.location.href = `student_result.html?attempt_id=${attemptId}`;
-            });
         }
+    });
+
+    // ดึง student_id
+    const studentId = localStorage.getItem('student_id') || 
+                      localStorage.getItem('user_id') || 
+                      localStorage.getItem('id') || null;
+
+    // Payload ที่ส่งไป (ใช้ชื่อ total_score และ submission_time ตามที่คุณ AP กำหนด)
+    const attemptPayload = {
+        exam_id: examId,
+        status: 'submitted',
+        student_id: studentId,
+        answer_saved: JSON.stringify(studentAnswers),
+        remaining_time: currentRemainingSeconds,
+        total_score: totalScore,
+        submission_time: new Date().toISOString()
+    };
+
+    const { data: newAttempt, error: attemptError } = await mySupabase
+        .from('exam_attempts')
+        .insert([attemptPayload])
+        .select()
+        .single();
+
+    // ถ้ายังพัง ตรงนี้จะแสดงข้อความ Error ชัดเจนว่าติดคอลัมน์ไหนในตาราง exam_attempts
+    if (attemptError || !newAttempt) {
+        console.error("Attempt Error:", attemptError);
+        Swal.fire({
+            icon: 'error',
+            title: 'Supabase Error!',
+            html: `<div class="text-left text-xs bg-slate-900 p-3 rounded text-red-400 font-mono">${JSON.stringify(attemptError, null, 2)}</div>`,
+            confirmButtonText: 'รับทราบ'
+        });
+        return;
+    }
+
+    const attemptId = newAttempt.id;
+
+    for (const q of currentQuestions) {
+        const studentAns = studentAnswers[q.id];
+        const isEssay = q.question_type === 'essay';
+        let qScore = 0;
+
+        if (!isEssay) {
+            if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                qScore = 1;
+            }
+        }
+
+        const answerPayload = {
+            attempt_id: attemptId,
+            question_id: q.id,
+            score: qScore
+        };
+
+        if (!isEssay) {
+            answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
+            answerPayload.subjective_answer = null;
+        } else {
+            answerPayload.selected_option_index = null;
+            answerPayload.subjective_answer = studentAns || '';
+        }
+
+        await mySupabase.from('exam_answers').insert([answerPayload]);
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: 'ส่งข้อสอบสำเร็จ!',
+        text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`,
+        confirmButtonText: 'ดูผลการสอบและเฉลย',
+        allowOutsideClick: false
+    }).then(() => {
+        window.location.href = `student_result.html?attempt_id=${attemptId}`;
+    });
+}
 
         initPage();
     </script>
