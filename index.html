@@ -106,8 +106,17 @@
                 return;
             }
 
-            const { data: profile } = await mySupabase.from('profiles').select('role').eq('id', data.user.id).single();
+            const userId = data.user.id;
+            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).single();
             Swal.close();
+
+            // บันทึกข้อมูลไอดีและโปรไฟล์ลง localStorage ให้ครบทุกคีย์ที่หน้า student.html และ exam_take.html ใช้งาน
+            localStorage.setItem('id', userId);
+            localStorage.setItem('student_id', userId);
+            localStorage.setItem('user_id', userId);
+            localStorage.setItem('student_username', profile?.full_name || profile?.username || email.split('@')[0]);
+            localStorage.setItem('full_name', profile?.full_name || profile?.username || email.split('@')[0]);
+            localStorage.setItem('profile', JSON.stringify(profile || {}));
 
             if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
                 window.location.href = 'admin.html';
