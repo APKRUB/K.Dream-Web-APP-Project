@@ -493,22 +493,14 @@ async function submitExam(isTimeout = false) {
         }
     });
 
-    // 2) ดึง student_id จากคีย์ 'id' ใน LocalStorage (ตามทางเลือก A)
-    let studentId = localStorage.getItem('id') || 
-                      localStorage.getItem('student_id') || 
-                      localStorage.getItem('user_id') || null;
+    // 2) ดึง student_id จาก LocalStorage โดยตรง (รองรับทั้ง id และ student_id)
+    let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || null;
 
-    // ตรวจสอบรูปแบบ UUID ให้ถูกต้องก่อนบันทึกป้องกันติด Foreign Key Constraint
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!studentId || !uuidRegex.test(studentId) || studentId === '00000000-0000-0000-0000-000000000000') {
-        studentId = null;
-    }
-
-    // 3) จัดเตรียม 5 ค่าครบถ้วนตามต้องการ
+    // 3) จัดเตรียม 5 ค่าครบถ้วน
     const attemptPayload = {
         exam_id: examId,
         status: 'submitted',
-        student_id: studentId,                           // 1) student_id (ดึงจาก id)
+        student_id: studentId,                           // 1) student_id (ดึงค่ามาใส่ตรงๆ)
         answer_saved: JSON.stringify(studentAnswers),    // 2) answer_saved
         remaining_time: currentRemainingSeconds,         // 3) remaining_time
         total_score: totalScore,                         // 4) total_score
