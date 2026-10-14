@@ -162,6 +162,7 @@
         let currentStatusFilter = 'pending';
         let currentViewMode = 'card';
         let studentNotifications = [];
+        let countdownInterval = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -183,6 +184,10 @@
             await fetchStudentData();
             await fetchExamsList();
             await fetchStudentNotifications();
+
+            // เริ่มรัน Timer นับถอยหลังทุก 1 วินาที
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateLiveCountdowns, 1000);
         }
 
         async function fetchStudentData() {
@@ -202,7 +207,6 @@
         async function fetchExamsList() {
             const { data, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
 
-            // ดึงข้อสอบทั้งหมดที่เปิดหรือตั้งเวลา Countdown ไว้ (ไม่ซ่อน)
             cachedExams = (data || []).filter(e => {
                 if (e.is_hidden === true || e.is_active === false || e.status === 'hidden' || e.status === 'draft') return false;
                 return true;
@@ -260,7 +264,7 @@
                 const examsInCat = categoriesMap[cat];
                 let examsHtml = currentViewMode === 'card' 
                     ? `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">${examsInCat.map(e => renderExamCard(e, now)).join('')}</div>`
-                    : `<div class="hitech-card p-4 rounded-2xl overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b"><th class="p-3">รหัส</th><th class="p-3">ชื่อชุดข้อสอบ</th><th class="p-3 text-center">เวลา</th><th class="p-3 text-center">เปิดสอบ / กำหนดส่ง</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-center">จัดการ</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">${examsInCat.map(e => renderExamRow(e, now)).join('')}</tbody></table></div>`;
+                    : `<div class="hitech-card p-4 rounded-2xl overflow-x-auto"><table class="w-full text-left text-xs border-collapse"><thead><tr class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border-b"><th class="p-3">รหัส</th><th class="p-3">ชื่อชุดข้อสอบ</th><th class="p-3 text-center">เวลา</th><th class="p-3 text-center">เวลาเปิดสอบ / นับถอยหลัง</th><th class="p-3 text-center">สถานะ</th><th class="p-3 text-center">จัดการ</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">${examsInCat.map(e => renderExamRow(e, now)).join('')}</tbody></table></div>`;
 
                 return `
                     <div class="space-y-3">
@@ -298,11 +302,24 @@
                 cardBg = 'bg-emerald-50/40 dark:bg-emerald-900/10';
                 timeInfoHtml = `<div><i class="fas fa-calendar-day text-sky-500 mr-1"></i> ส่ง: <strong>${dueDate ? dueDate.toLocaleDateString('th-TH') : 'ไม่จำกัด'}</strong></div>`;
             } else if (isCountdownActive) {
-                // แสดงเวลา Countdown ที่กำลังจะเปิดอย่างชัดเจน
-                statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] animate-pulse"><i class="fas fa-clock mr-1"></i>ตั้งเวลาเปิดสอบ</span>';
-                actionBtn = `<button disabled class="w-full py-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-xs rounded-xl cursor-not-allowed border border-amber-200 dark:border-amber-800 flex flex-col items-center justify-center py-2"><span class="text-[10px] opacity-80"><i class="fas fa-lock mr-1"></i> จะเปิดให้ทำในเวลา</span><span class="font-mono text-xs font-extrabold mt-0.5">${startTime.toLocaleString('th-TH')}</span></button>`;
+                statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] animate-pulse"><i class="fas fa-clock mr-1"></i>กำลังจะเปิดสอบ</span>';
+                
+                // กล่องแสดงนาฬิกานับถอยหลัง Real-time
+                const diffMs = startTime.getTime() - now.getTime();
+                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                const countdownStr = `${d > 0 ? d + 'วัน ' : ''}${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+                actionBtn = `
+                    <div class="w-full py-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold text-xs rounded-xl border border-amber-200 dark:border-amber-800 flex flex-col items-center justify-center">
+                        <span class="text-[10px] opacity-80 mb-0.5"><i class="fas fa-hourglass-start mr-1"></i> เปิดในอีก (Countdown):</span>
+                        <span class="font-mono text-sm font-extrabold text-amber-600 dark:text-amber-400 live-countdown-timer" data-time="${startTime.getTime()}">${countdownStr}</span>
+                    </div>
+                `;
                 cardBorder = 'border-l-4 border-l-amber-500';
-                timeInfoHtml = `<div class="col-span-2 text-amber-600 dark:text-amber-400 font-bold"><i class="fas fa-hourglass-start mr-1"></i> เปิดสอบ: ${startTime.toLocaleString('th-TH')}</div>`;
+                timeInfoHtml = `<div class="col-span-2 text-amber-600 dark:text-amber-400 font-bold"><i class="fas fa-clock mr-1"></i> เปิดสอบ: ${startTime.toLocaleString('th-TH')}</div>`;
             } else if (dueDate && dueDate < now && e.due_date_policy === 'strict') {
                 statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-[10px]"><i class="fas fa-lock mr-1"></i>หมดเวลาสอบแล้ว</span>';
                 actionBtn = `<button disabled class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed border"><i class="fas fa-ban mr-1"></i> ปิดรับคำตอบแล้ว</button>`;
@@ -361,7 +378,15 @@
             } else if (isCountdownActive) { 
                 statusStr = 'กำลังจะเปิดสอบ'; 
                 badgeClass = 'bg-amber-100 text-amber-700 font-bold animate-pulse'; 
-                timeColText = `<span class="text-amber-600 font-mono font-bold">${startTime.toLocaleString('th-TH')}</span>`;
+                
+                const diffMs = startTime.getTime() - now.getTime();
+                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                const countdownStr = `${d > 0 ? d + 'วัน ' : ''}${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+                timeColText = `<span class="font-mono font-bold text-amber-600 live-countdown-timer" data-time="${startTime.getTime()}">${countdownStr}</span>`;
             } else if (!isReady) { 
                 statusStr = 'ล็อก'; 
                 badgeClass = 'bg-rose-100 text-rose-600'; 
@@ -372,13 +397,42 @@
                     <td class="p-3 font-mono font-bold text-sky-600">${e.exam_code || 'EXAM'}</td>
                     <td class="p-3 font-bold text-slate-900 dark:text-white">${e.title}</td>
                     <td class="p-3 text-center font-bold text-slate-500">${e.time_limit || 60} นาที</td>
-                    <td class="p-3 text-center text-slate-400 text-[11px]">${timeColText}</td>
+                    <td class="p-3 text-center text-[11px]">${timeColText}</td>
                     <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${statusStr}</span></td>
                     <td class="p-3 text-center">
-                        ${isCompleted ? `<button disabled class="px-3 py-1.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว</button>` : isCountdownActive ? `<button disabled class="px-3 py-1.5 bg-amber-100 text-amber-700 font-bold text-xs rounded-xl cursor-not-allowed" title="เปิดสอบเวลา ${startTime.toLocaleString('th-TH')}">รอเปิดสอบ</button>` : isReady ? `<button onclick="showExamInstructionModal('${e.id}')" class="px-3 py-1.5 ${isResuming ? 'bg-orange-600 hover:bg-orange-500' : 'bg-sky-600 hover:bg-sky-500'} text-white font-bold text-xs rounded-xl shadow transition-all">${isResuming ? 'Resume' : 'เริ่มสอบ'}</button>` : `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl">ล็อก</button>`}
+                        ${isCompleted ? `<button disabled class="px-3 py-1.5 bg-emerald-100 text-emerald-600 font-bold text-xs rounded-xl cursor-not-allowed">ส่งแล้ว</button>` : isCountdownActive ? `<button disabled class="px-3 py-1.5 bg-amber-100 text-amber-700 font-bold text-xs rounded-xl cursor-not-allowed">รอเปิดสอบ</button>` : isReady ? `<button onclick="showExamInstructionModal('${e.id}')" class="px-3 py-1.5 ${isResuming ? 'bg-orange-600 hover:bg-orange-500' : 'bg-sky-600 hover:bg-sky-500'} text-white font-bold text-xs rounded-xl shadow transition-all">${isResuming ? 'Resume' : 'เริ่มสอบ'}</button>` : `<button disabled class="px-3 py-1.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl">ล็อก</button>`}
                     </td>
                 </tr>
             `;
+        }
+
+        // ฟังก์ชันอัปเดตตัวเลขนับถอยหลังทุก ๆ 1 วินาทีแบบ Real-time
+        function updateLiveCountdowns() {
+            const now = new Date().getTime();
+            const timers = document.querySelectorAll('.live-countdown-timer');
+            let needReload = false;
+
+            timers.forEach(timer => {
+                const targetTime = parseInt(timer.getAttribute('data-time'));
+                const diffMs = targetTime - now;
+
+                if (diffMs <= 0) {
+                    needReload = true;
+                    return;
+                }
+
+                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+                timer.textContent = `${d > 0 ? d + 'วัน ' : ''}${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            });
+
+            // ถ้านับถอยหลังจนถึง 0 แล้ว ให้รีเฟรชหน้าเว็บหรือโหลดรายการใหม่เพื่อให้ปุ่มปลดล็อกทันที
+            if (needReload) {
+                fetchExamsList();
+            }
         }
 
         async function showExamInstructionModal(examId) {
