@@ -36,7 +36,7 @@
             font-weight: 700; font-size: 11px; border: 2px solid #cbd5e1; background-color: #ffffff; color: #334155;
         }
         .dark .result-bubble { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
-        .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.1); }
+        .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.15); }
         .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; }
         .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; }
     </style>
@@ -99,10 +99,10 @@
             </div>
         </div>
 
-        <!-- เลย์เอาต์หลัก 2 คอลัมน์ -->
+        <!-- เลย์เอาต์หลัก 2 คอลัมน์: ฝั่งซ้าย PDF ข้อสอบ | ฝั่งขวา เฉลยคำตอบ & ตัวกรอง -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: PDF Viewer ข้อสอบย้อนหลัง -->
+            <!-- ฝั่งซ้าย: PDF Viewer ข้อสอบย้อนหลัง (ห้ามดาวน์โหลด) -->
             <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบทบทวน (ความคมชัดสูง)</h3>
@@ -120,7 +120,7 @@
                         <i class="fas fa-list-check text-sky-500"></i> เฉลยคำตอบและผลการทำข้อสอบ
                     </h3>
                     
-                    <!-- แท็บกรองหมวดหมู่ -->
+                    <!-- แท็บกรองหมวดหมู่: ทั้งหมด / ตอบถูก / ตอบผิด -->
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                         <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm">ทั้งหมด (<span id="count-all">0</span>)</button>
                         <button onclick="setFilter('correct')" id="filter-correct" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-emerald-500">ตอบถูก (<span id="count-correct">0</span>)</button>
@@ -164,6 +164,12 @@
 
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('mousedown', e => { if (e.button === 2) e.preventDefault(); });
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'a' || e.key === 'i')) {
+                e.preventDefault();
+            }
+            if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
+        });
 
         async function initResultPage() {
             if (!attemptId) {
@@ -200,14 +206,13 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
-            // โหลดคำถามทั้งหมด
             const { data: questions } = await mySupabase
                 .from('questions')
                 .select('*')
                 .eq('exam_id', attempt.exam_id)
                 .order('question_number', { ascending: true });
 
-            // โหลดคำตอบรายข้อจากตาราง exam_answers
+            // ดึงข้อมูลคำตอบจากตาราง exam_answers โดยตรง และรองรับการดึงจาก answer_saved ใน attempt เผื่อกรณีสำรอง
             const { data: answers } = await mySupabase
                 .from('exam_answers')
                 .select('*')
@@ -216,18 +221,23 @@
             globalQuestions = questions || [];
             globalAnswerMap = {};
 
-            // จัดเก็บคำตอบลง Map (รองรับทั้งการดึงจากตาราง exam_answers และสำรองจาก attempt.answer_saved หากมี)
-            if (answers && answers.length > 0) {
-                answers.forEach(ans => {
-                    globalAnswerMap[ans.question_id] = ans;
-                });
-            } else if (attempt.answer_saved) {
+            // 1. อ่านจากตาราง exam_answers ก่อน
+            (answers || []).forEach(ans => {
+                globalAnswerMap[ans.question_id] = {
+                    selected_option_index: ans.selected_option_index !== undefined ? ans.selected_option_index : (ans.selected_answer !== undefined ? parseInt(ans.selected_answer) : null),
+                    subjective_answer: ans.subjective_answer
+                };
+            });
+
+            // 2. หากตาราง exam_answers ว่าง ให้ลองแปลงจาก JSON ใน attempt.answer_saved
+            if (Object.keys(globalAnswerMap).length === 0 && attempt.answer_saved) {
                 try {
-                    const parsed = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
-                    Object.keys(parsed).forEach(qId => {
+                    const savedObj = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
+                    Object.keys(savedObj).forEach(qId => {
+                        const val = savedObj[qId];
                         globalAnswerMap[qId] = {
-                            selected_option_index: parsed[qId] !== undefined && parsed[qId] !== null ? parseInt(parsed[qId]) : null,
-                            subjective_answer: parsed[qId]
+                            selected_option_index: !isNaN(val) ? parseInt(val) : null,
+                            subjective_answer: isNaN(val) ? val : null
                         };
                     });
                 } catch(e) {}
@@ -291,8 +301,8 @@
                 const isEssay = q.question_type === 'essay';
                 if (!isEssay) {
                     const studentIdx = ans.selected_option_index;
-                    const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                    if (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && String(studentIdx) === String(correctIdx)) {
+                    const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
+                    if (studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx)) {
                         correctCount++;
                     } else {
                         wrongCount++;
@@ -314,14 +324,14 @@
                 return;
             }
 
-            const filtered = globalQuestions.filter((q) => {
+            const filtered = globalQuestions.filter((q, idx) => {
                 const ans = globalAnswerMap[q.id] || {};
                 const isEssay = q.question_type === 'essay';
                 if (isEssay) return currentFilter === 'all';
 
                 const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && String(studentIdx) === String(correctIdx));
+                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
+                const isCorrect = (studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx));
 
                 if (currentFilter === 'correct') return isCorrect;
                 if (currentFilter === 'wrong') return !isCorrect;
@@ -333,7 +343,7 @@
                 return;
             }
 
-            container.innerHTML = filtered.map((q) => {
+            container.innerHTML = filtered.map((q, idx) => {
                 const qNum = q.question_number || (globalQuestions.indexOf(q) + 1);
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
@@ -341,7 +351,7 @@
                 
                 const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
                 const correctChoiceIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = !isEssay && studentChoiceIdx !== null && !isNaN(studentChoiceIdx) && String(studentChoiceIdx) === String(correctChoiceIdx);
+                const isCorrect = !isEssay && studentChoiceIdx !== null && String(studentChoiceIdx) === String(correctChoiceIdx);
 
                 if (isEssay) {
                     return `
@@ -418,6 +428,9 @@
             }
 
             let categoryStats = {};
+            let wrongTopics = new Set();
+            let strongTopics = new Set();
+
             questions.forEach(q => {
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
                 if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
@@ -425,16 +438,31 @@
 
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && String(studentIdx) === String(correctIdx);
+                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
+                const isCorrect = studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx);
 
                 if (isCorrect) {
                     categoryStats[tag].correct++;
+                    strongTopics.add(tag);
+                } else {
+                    wrongTopics.add(tag);
                 }
             });
 
             const percentage = Math.round((score / total) * 100);
-            let performanceSummary = percentage >= 80 ? 'ยอดเยี่ยมมาก! คุณทำคะแนนได้ดีเยี่ยม' : percentage >= 50 ? 'ทำผลงานได้ดีในเกณฑ์มาตรฐาน' : 'ควรฝึกฝนและทบทวนเนื้อหาเพิ่มเติม';
+            let performanceSummary = '';
+            let recommendation = '';
+
+            if (percentage >= 80) {
+                performanceSummary = `ยอดเยี่ยมมาก! คุณทำคะแนนได้ ${score}/${total} (${percentage}%) แสดงถึงความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม`;
+                recommendation = 'รักษามาตรฐานนี้ไว้ และลองท้าทายตนเองด้วยโจทย์ขั้นสูงในหมวดหมู่ที่สนใจเพิ่มเติม';
+            } else if (percentage >= 50) {
+                performanceSummary = `ทำผลงานได้ดีพอสมควร ได้คะแนน ${score}/${total} (${percentage}%) มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ยังคลาดเคลื่อน`;
+                recommendation = `ควรกลับไปทบทวนเนื้อหาในหมวดหมู่ที่ยังทำผิดพลาด เพื่อความแม่นยำยิ่งขึ้น`;
+            } else {
+                performanceSummary = `คุณทำคะแนนได้ ${score}/${total} (${percentage}%) อยู่ในเกณฑ์ที่ต้องฝึกฝนและทบทวนเนื้อหาเพิ่มเติมอย่างจริงจัง`;
+                recommendation = `แนะนำให้อ่านสรุปเนื้อหาและเปิดดูเอกสาร PDF ข้อสอบควบคู่กับการทำแบบฝึกหัดซ้ำอีกรอบ`;
+            }
 
             let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
                 const p = Math.round((stat.correct / stat.total) * 100);
@@ -448,7 +476,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
                         <h4 class="font-bold text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม</h4>
-                        <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${performanceSummary} (ได้ ${score}/${total} คะแนนคิดเป็น ${percentage}%)</p>
+                        <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${performanceSummary}</p>
                         <div class="pt-2">
                             <span class="text-[11px] font-bold text-slate-400 block mb-1">สถิติแยกตามหมวดหมู่:</span>
                             <ul class="space-y-1">${breakdownHtml}</ul>
@@ -458,8 +486,8 @@
                     <div class="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
                         <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-lightbulb"></i> ข้อเสนอแนะจาก AI Tutor</h4>
                         <div class="space-y-2 text-xs">
-                            <p class="text-slate-700 dark:text-slate-300"><b>🎯 จุดที่ต้องพัฒนา:</b> แนะนำให้ตรวจสอบเฉลยข้อที่ตอบผิดทางด้านขวาและเปิดเอกสาร PDF ควบคู่กัน</p>
-                            <p class="text-slate-700 dark:text-slate-300"><b>💡 คำแนะนำ:</b> ใช้ตัวกรองหมวดหมู่เพื่อดูเฉพาะข้อที่ตอบผิดและฝึกทำความเข้าใจเพิ่มเติม</p>
+                            <p class="text-slate-700 dark:text-slate-300"><b>🎯 จุดที่ต้องพัฒนาเพิ่ม:</b> ${recommendation}</p>
+                            <p class="text-slate-700 dark:text-slate-300"><b>💡 คำแนะนำ:</b> ใช้ฟังก์ชันตัวกรองด้านขวาเพื่อตรวจสอบเฉลยข้อที่ตอบผิด และเปิดเอกสาร PDF ด้านซ้ายทบทวนสูตรหรือเนื้อหาควบคู่กันไปเพื่อให้เกิดการเรียนรู้สูงสุด</p>
                         </div>
                     </div>
                 </div>
