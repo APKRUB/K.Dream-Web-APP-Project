@@ -29,10 +29,7 @@
 </head>
 <body class="bg-lightbg dark:bg-darkbg min-h-screen flex items-center justify-center p-4 transition-colors duration-300">
 
-    <!-- Login Container Card -->
     <div class="glass-card w-full max-w-md p-8 rounded-3xl shadow-xl relative overflow-hidden">
-        
-        <!-- Decoration Glow -->
         <div class="absolute -top-24 -right-24 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="text-center mb-8">
@@ -70,7 +67,6 @@
         </div>
     </div>
 
-    <!-- Theme Toggle Floating Button -->
     <button id="themeToggle" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white dark:bg-darkbox shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition-transform">
         <i class="fas fa-moon text-lg" id="themeIcon"></i>
     </button>
@@ -112,7 +108,6 @@
 
             const userName = profile?.full_name || profile?.username || email.split('@')[0];
             
-            // บันทึกข้อมูลไอดีและโปรไฟล์ลง localStorage ให้ครบทุกคีย์
             localStorage.setItem('id', userId);
             localStorage.setItem('student_id', userId);
             localStorage.setItem('user_id', userId);
@@ -120,7 +115,6 @@
             localStorage.setItem('full_name', userName);
             localStorage.setItem('profile', JSON.stringify(profile || {}));
 
-            // หน่วงเวลาเล็กน้อยเพื่อให้แน่ใจว่า localStorage ถูกบันทึกเรียบร้อยก่อนเปลี่ยนหน้า
             setTimeout(() => {
                 if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
                     window.location.href = 'admin.html';
