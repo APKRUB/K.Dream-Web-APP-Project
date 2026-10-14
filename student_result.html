@@ -154,7 +154,8 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const examId = urlParams.get('exam_id') || urlParams.get('id');
+        const attemptId = urlParams.get('attempt_id');
+        let examId = urlParams.get('exam_id') || urlParams.get('id');
 
         // Theme setup
         const htmlElement = document.documentElement;
@@ -170,29 +171,30 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function checkStudentAuth() {
-            const currentUsername = localStorage.getItem('student_username') || 
-                                    localStorage.getItem('user_name') || 
-                                    localStorage.getItem('account_name') || 
-                                    localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
-                                    'นักเรียน';
-
-            localStorage.setItem('student_username', currentUsername);
-            return true;
-        }
-        
         async function initStudentResult() {
-            if (!checkStudentAuth()) return;
-            if (!examId) {
-                Swal.fire('ไม่พบข้อมูลข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
+            if (!attemptId && !examId) {
+                Swal.fire('ไม่พบข้อมูลผลการสอบ', '', 'error').then(() => window.location.href = 'student.html');
                 return;
             }
 
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
+            let attemptData = null;
+
+            // ถ้ามี attempt_id ให้ดึงข้อมูลการสอบรอบนั้นๆ ตรงๆ
+            if (attemptId) {
+                const { data: att } = await mySupabase.from('exam_attempts').select('*').eq('id', attemptId).single();
+                if (att) {
+                    attemptData = att;
+                    examId = att.exam_id;
+                }
+            }
+
+            if (!examId) {
+                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
+                return;
+            }
 
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             
             if (!exam || !questions) {
                 Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
@@ -202,18 +204,32 @@
             document.getElementById('resultExamTitle').textContent = exam.title;
             document.getElementById('resultExamCode').textContent = `CODE: ${exam.exam_code || 'EXAM'}`;
 
-            const { data: subs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).order('created_at', { ascending: false }).limit(1);
+            // หากยังไม่มี attemptData ให้ลองดึงการสอบล่าสุดของนักเรียนคนนี้
+            if (!attemptData) {
+                const studentId = localStorage.getItem('student_id') || null;
+                let query = mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+                if (studentId) query = query.eq('student_id', studentId);
+                const { data: atts } = await query.order('created_at', { ascending: false }).limit(1);
+                if (atts && atts.length > 0) attemptData = atts[0];
+            }
 
             let studentAnswers = {};
-            if (subs && subs.length > 0) studentAnswers = subs[0].answers || {};
+            if (attemptData) {
+                const { data: answersData } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptData.id);
+                if (answersData) {
+                    answersData.forEach(ans => {
+                        studentAnswers[ans.question_id] = ans.selected_option_index !== null ? ans.selected_option_index : ans.subjective_answer;
+                    });
+                }
+            }
 
             let totalScore = 0;
-            let maxScore = questions.length * (exam.score_per_question || 1);
+            let maxScore = questions.length;
             let categoryStats = {};
             let wrongQuestionsList = [];
 
             questions.forEach((q, idx) => {
-                const catName = q.category_name || q.section_title || 'หมวดทั่วไป';
+                const catName = q.category_tag || q.category_name || 'หมวดทั่วไป';
                 if (!categoryStats[catName]) categoryStats[catName] = { correct: 0, total: 0 };
                 categoryStats[catName].total++;
 
@@ -221,15 +237,15 @@
                 const correctAns = q.correct_answer;
                 const qNum = q.question_number || (idx + 1);
 
-                if (studentAns !== undefined && String(studentAns) === String(correctAns)) {
-                    totalScore += (q.score || 1);
+                if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(correctAns)) {
+                    totalScore += 1;
                     categoryStats[catName].correct++;
                 } else {
                     wrongQuestionsList.push({
                         qNum,
-                        questionText: q.question_text || `ข้อที่ ${qNum}`,
-                        studentAns: studentAns !== undefined ? (q.options ? q.options[studentAns] : studentAns) : 'ไม่ได้ตอบ',
-                        correctAns: q.options ? q.options[correctAns] : correctAns,
+                        questionText: q.question_text || q.content || `ข้อที่ ${qNum}`,
+                        studentAns: studentAns !== undefined && studentAns !== null ? (q.options && !isNaN(studentAns) ? q.options[studentAns] : studentAns) : 'ไม่ได้ตอบ',
+                        correctAns: q.options && !isNaN(correctAns) ? q.options[correctAns] : correctAns,
                         explanation: q.explanation || 'ควรทบทวนหลักการและสูตรในหัวข้อนี้เพิ่มเติม'
                     });
                 }
@@ -239,36 +255,27 @@
             document.getElementById('scoreDisplay').textContent = `${totalScore} / ${maxScore}`;
             document.getElementById('percentDisplay').textContent = `${percent}%`;
 
-            // ดึงข้อมูลห้องเรียนทั้งหมดเพื่อคำนวณ Ranking และค่าเฉลี่ย
-            const { data: allSubs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId);
-            let allScores = (allSubs || []).map(s => {
-                let sScore = 0;
-                questions.forEach(q => {
-                    if (s.answers && String(s.answers[q.id]) === String(q.correct_answer)) sScore += (q.score || 1);
-                });
-                return { studentId: s.student_id, score: sScore };
-            });
+            // คำนวณอันดับและค่าเฉลี่ยห้องจากตาราง exam_attempts
+            const { data: allAttempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId).eq('status', 'submitted');
+            let allScores = (allAttempts || []).map(a => ({ studentId: a.student_id, score: a.score || 0 }));
 
-            if (!allScores.some(s => s.studentId === studentId)) {
-                allScores.push({ studentId: studentId, score: totalScore });
+            const currentStudentId = localStorage.getItem('student_id');
+            if (attemptData && !allScores.some(s => s.studentId === currentStudentId)) {
+                allScores.push({ studentId: currentStudentId, score: totalScore });
             }
 
             allScores.sort((a, b) => b.score - a.score);
-            const myRank = allScores.findIndex(s => s.studentId === studentId) + 1;
+            const myRank = attemptData ? (allScores.findIndex(s => s.studentId === attemptData.student_id) + 1) : 1;
             const avgScore = allScores.length > 0 ? (allScores.reduce((acc, curr) => acc + curr.score, 0) / allScores.length).toFixed(1) : totalScore;
             const maxScoreRoom = allScores.length > 0 ? allScores[0].score : totalScore;
 
-            document.getElementById('rankDisplay').textContent = `#${myRank}`;
+            document.getElementById('rankDisplay').textContent = `#${myRank > 0 ? myRank : 1}`;
             document.getElementById('avgScoreDisplay').textContent = `${avgScore} คะแนน`;
             document.getElementById('maxScoreDisplay').textContent = `${maxScoreRoom} คะแนน`;
 
-            // Render Chart.js กราฟเปรียบเทียบ
             renderComparisonChart(categoryStats);
-
-            // Render ข้อที่ผิดพลาด
             renderWrongQuestions(wrongQuestionsList);
 
-            // AI Text Insights
             let bestCat = '-', worstCat = '-';
             let bestRatio = -1, worstRatio = 2;
             Object.keys(categoryStats).forEach(cat => {
