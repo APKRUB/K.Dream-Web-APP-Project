@@ -135,6 +135,7 @@
         let studentAnswers = {};
         let flaggedQuestions = {};
         let timerInterval = null;
+        let currentRemainingSeconds = 0; // ตัวแปรเก็บเวลาเหลือเป็นวินาที
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -383,6 +384,7 @@
             timerInterval = setInterval(() => {
                 const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
                 const remainingSeconds = totalDurationSeconds - elapsedSeconds;
+                currentRemainingSeconds = remainingSeconds > 0 ? remainingSeconds : 0;
 
                 if (remainingSeconds <= 0) {
                     clearInterval(timerInterval);
@@ -479,7 +481,7 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // คำนวณคะแนนรวมล่วงหน้า
+            // 1) คำนวณคะแนนรวม (total score)
             let totalScore = 0;
             currentQuestions.forEach(q => {
                 const studentAns = studentAnswers[q.id];
@@ -491,11 +493,20 @@
                 }
             });
 
-            // ส่งเฉพาะฟิลด์พื้นฐานที่จำเป็น (exam_id, status, score) ปราศจาก submit_time
+            // ดึง student_id
+            const studentId = localStorage.getItem('student_id') || 
+                              localStorage.getItem('user_id') || 
+                              localStorage.getItem('id') || null;
+
+            // รวบรวม 5 ค่าที่ต้องการบันทึกลงตาราง exam_attempts ครบถ้วน
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
-                score: totalScore
+                student_id: studentId,                           // 1) student_id
+                answer_saved: JSON.stringify(studentAnswers),    // 2) answer_saved (แปลงเป็น JSON string)
+                remaining_time: currentRemainingSeconds,         // 3) remaining_time (เวลาเหลือเป็นวินาที)
+                score: totalScore,                               // 4) total score
+                submission_time: new Date().toISOString()        // 5) submission_time (เวลาที่กดส่งข้อสอบ)
             };
 
             const { data: newAttempt, error: attemptError } = await mySupabase
