@@ -193,6 +193,7 @@ function checkStudentAuth() {
 }
         
         async function initPage() {
+            if (!checkStudentAuth()) return;
             loadSettings();
             loadSlots();
             loadBookedStudents();
