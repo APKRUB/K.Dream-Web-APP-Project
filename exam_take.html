@@ -27,7 +27,10 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; }
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            user-select: none; /* ป้องกันการคลุมดำเลือกข้อความเพื่อดูดข้อมูล */
+        }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
@@ -44,6 +47,17 @@
             box-shadow: 0 0 15px rgba(2, 132, 199, 0.6);
         }
 
+        /* Highlight กระพริบสำหรับข้อที่ยังไม่ได้ทำเมื่อกดตรวจสอบ */
+        @keyframes unanswerPulse {
+            0% { border-color: #f43f5e; box-shadow: 0 0 0px rgba(244, 63, 94, 0.8); }
+            50% { border-color: #f43f5e; box-shadow: 0 0 12px rgba(244, 63, 94, 0.9); }
+            100% { border-color: #f43f5e; box-shadow: 0 0 0px rgba(244, 63, 94, 0.8); }
+        }
+        .unanswered-highlight {
+            animation: unanswerPulse 1.2s infinite;
+            border: 2px dashed #f43f5e !important;
+        }
+
         /* Top Announcement Widget สไตล์กระจกเรืองแสง */
         .top-announcement-widget {
             position: fixed; top: 5rem; left: 50%; transform: translateX(-50%) translateY(-150%); z-index: 50;
@@ -52,7 +66,7 @@
         .top-announcement-widget.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24" oncontextmenu="return false;">
 
     <!-- Top Announcement Widget (แจ้งเตือนตรงกลางด้านบนแบบสั้นๆ) -->
     <div id="topAnnouncementWidget" class="top-announcement-widget w-11/12 max-w-md">
@@ -123,11 +137,9 @@
                         <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2">
                             <i class="fas fa-file-pdf"></i> โจทย์ข้อสอบ (PDF Viewer / ระบบออนไลน์)
                         </h3>
-                        <a id="downloadPdfLink" href="#" target="_blank" class="hidden text-xs text-sky-600 hover:underline font-bold">
-                            <i class="fas fa-external-link-alt mr-1"></i> เปิดแท็บใหม่
-                        </a>
+                        <span class="text-[10px] text-slate-400 font-semibold">🔒 ป้องกันการดาวน์โหลดไฟล์</span>
                     </div>
-                    <div id="pdfViewerContainer" class="w-full h-[600px] bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 text-xs border border-slate-200 dark:border-slate-800">
+                    <div id="pdfViewerContainer" class="w-full h-[600px] bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center text-slate-400 text-xs border border-slate-200 dark:border-slate-800 relative overflow-hidden">
                         กำลังโหลดไฟล์โจทย์...
                     </div>
                 </div>
@@ -195,7 +207,7 @@
 
         async function initExamTake() {
             if (!examId) {
-                Swal.fire('ไม่พบ ID ข้อสอบ', '', 'error').then(() => window.location.href = 'index.html');
+                Swal.fire('ไม่พบ ID ข้อสอบ', '', 'error').then(() => window.close());
                 return;
             }
 
@@ -233,10 +245,12 @@
 
             const pdfContainer = document.getElementById('pdfViewerContainer');
             if (exam.pdf_url) {
-                pdfContainer.innerHTML = `<iframe src="${exam.pdf_url}" class="w-full h-full rounded-xl border-0"></iframe>`;
-                const dlLink = document.getElementById('downloadPdfLink');
-                dlLink.href = exam.pdf_url;
-                dlLink.classList.remove('hidden');
+                // ซ่อน Toolbar พิมพ์และดาวน์โหลดของ PDF ด้วยพารามิเตอร์ #toolbar=0
+                const cleanPdfUrl = exam.pdf_url.includes('#') ? exam.pdf_url : `${exam.pdf_url}#toolbar=0&navpanes=0&scrollbar=0`;
+                pdfContainer.innerHTML = `
+                    <iframe src="${cleanPdfUrl}" class="w-full h-full rounded-xl border-0 pointer-events-auto"></iframe>
+                    <div class="absolute inset-0 bg-transparent pointer-events-none"></div>
+                `;
             } else {
                 pdfContainer.innerHTML = `<div class="text-xs text-slate-400">ชุดข้อสอบนี้ใช้รูปแบบโจทย์ออนไลน์ (ดูโจทย์จากระบบ)</div>`;
             }
@@ -245,6 +259,7 @@
             totalExamSeconds = (exam.time_limit || 60) * 60;
             startExamTimer(totalExamSeconds);
             initAntiCheatListener();
+            initShortcutBlocker();
         }
 
         // ระบบจับเวลา & ตรวจเช็กเวลาสำหรับ Announcement 1/2 และ 5 นาทีสุดท้าย
@@ -253,13 +268,11 @@
             timerInterval = setInterval(() => {
                 timeRemainingSeconds--;
 
-                // เช็กประกาศ 1/2 เวลา
                 if (!announcedHalfway && timeRemainingSeconds === Math.floor(totalExamSeconds / 2)) {
                     announcedHalfway = true;
                     showTopAnnouncement('ประกาศครึ่งทางการสอบ', 'เวลาทำข้อสอบดำเนินมาถึงครึ่งทางแล้ว ลุยต่อเลยครับ!');
                 }
 
-                // เช็กประกาศ 5 นาทีสุดท้าย (300 วินาที)
                 if (!announcedLast5Min && timeRemainingSeconds === 300) {
                     announcedLast5Min = true;
                     showTopAnnouncement('⚠️ ประกาศเตือน 5 นาทีสุดท้าย', 'ใกล้หมดเวลาทำข้อสอบแล้ว กรุณาตรวจสอบคำตอบและเตรียมส่ง!');
@@ -277,21 +290,16 @@
             }, 1000);
         }
 
-        // แสดง Widget ประกาศด้านบน พร้อมเสียง Sound Effect
         function showTopAnnouncement(title, text) {
             document.getElementById('announcementTitle').textContent = title;
             document.getElementById('announcementText').textContent = text;
             const widget = document.getElementById('topAnnouncementWidget');
             widget.classList.add('show');
 
-            // เล่นเสียง Beep
             const beep = document.getElementById('beepAudio');
             if (beep) beep.play().catch(e => console.log('Audio autoplay blocked'));
 
-            // ซ่อนอัตโนมัติใน 8 วินาที
-            setTimeout(() => {
-                closeAnnouncementWidget();
-            }, 8000);
+            setTimeout(() => { closeAnnouncementWidget(); }, 8000);
         }
 
         function closeAnnouncementWidget() {
@@ -313,7 +321,7 @@
                 if (isEssay) {
                     const currentEssayVal = studentAnswers[q.id] || '';
                     return `
-                        <div class="p-3 bg-amber-500/10 rounded-xl space-y-2 border border-amber-500/30">
+                        <div id="question-box-${q.id}" class="p-3 bg-amber-500/10 rounded-xl space-y-2 border border-amber-500/30">
                             <div class="flex justify-between items-center text-xs font-bold text-amber-600">
                                 <span>ข้อที่ ${qNum} (อัตนัย)</span>
                             </div>
@@ -328,7 +336,7 @@
                 }).join('');
 
                 return `
-                    <div class="p-3 bg-white dark:bg-slate-900/90 rounded-xl flex items-center justify-between gap-2 border border-slate-200 dark:border-slate-800">
+                    <div id="question-box-${q.id}" class="p-3 bg-white dark:bg-slate-900/90 rounded-xl flex items-center justify-between gap-2 border border-slate-200 dark:border-slate-800 transition-all">
                         <span class="font-extrabold text-xs text-slate-800 dark:text-slate-200 w-12">ข้อ ${qNum}</span>
                         <div class="flex gap-2">${bubblesHtml}</div>
                     </div>
@@ -369,9 +377,88 @@
             });
         }
 
+        function initShortcutBlocker() {
+            document.addEventListener('keydown', (e) => {
+                // ป้องกัน Ctrl+S, Ctrl+P, Ctrl+Shift+I (Inspect)
+                if (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'u')) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'warning', title: 'ไม่อนุญาตให้บันทึกหรือพิมพ์หน้าจอ', timer: 1200, showConfirmButton: false });
+                }
+            });
+        }
+
+        // -------------------------------------------------------------
+        // ระบบแจ้งเตือนรอบแรกกรณีทำไม่ครบ พร้อมลิงก์คลิกกระโดดไปที่ข้อนั้น
+        // -------------------------------------------------------------
         function confirmSubmitExam() {
+            const total = questionsData.length;
+            const unansweredList = [];
+
+            questionsData.forEach((q, idx) => {
+                const qNum = q.question_number || (idx + 1);
+                const ans = studentAnswers[q.id];
+                if (ans === undefined || ans === '') {
+                    unansweredList.push({ id: q.id, number: qNum });
+                }
+            });
+
+            if (unansweredList.length > 0) {
+                // กรณีทำไม่ครบ ขึ้นเตือนรอบแรก พร้อมลิสต์หมายเลขข้อที่ยังว่าง
+                const badgeHtml = unansweredList.map(item => `
+                    <button onclick="jumpToUnansweredQuestion('${item.id}')" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-600 dark:text-rose-400 border border-rose-500/30 rounded-xl font-bold text-xs transition-all shadow-sm">
+                        ข้อ ${item.number}
+                    </button>
+                `).join('');
+
+                Swal.fire({
+                    title: '⚠️ คุณยังทำข้อสอบไม่ครบ!',
+                    html: `
+                        <div class="space-y-3 text-left text-xs">
+                            <p class="text-slate-600 dark:text-slate-400">คุณยังมีข้อที่ยังไม่ได้ตอบทั้งหมด <strong class="text-rose-500">${unansweredList.length} ข้อ</strong> ดังรายชื่อด้านล่าง:</p>
+                            <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-2 bg-slate-50 dark:bg-slate-900 rounded-xl border">
+                                ${badgeHtml}
+                            </div>
+                            <p class="text-[11px] text-slate-400">💡 คลิกที่หมายเลขข้อเพื่อกระโดดไปตอบทันที หรือกดปุ่ม "ดำเนินการส่งต่อ" หากต้องการส่งทันที</p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'ดำเนินการส่งต่อ (ยืนยันรอบสอง)',
+                    cancelButtonText: 'กลับไปทำต่อ',
+                    confirmButtonColor: '#e11d48'
+                }).then(res => {
+                    if (res.isConfirmed) {
+                        showFinalSubmitConfirmation();
+                    }
+                });
+
+                // Highlight ข้อที่ยังไม่ได้ทำในหน้า OMR
+                unansweredList.forEach(item => {
+                    const box = document.getElementById(`question-box-${item.id}`);
+                    if (box) box.classList.add('unanswered-highlight');
+                });
+
+            } else {
+                // กรณีทำครบทุกข้อแล้ว ไปหน้ายืนยันรอบปกติได้เลย
+                showFinalSubmitConfirmation();
+            }
+        }
+
+        // ฟังก์ชันกระโดดไปหาข้อที่ยังไม่ได้ทำ
+        function jumpToUnansweredQuestion(qId) {
+            Swal.close();
+            const box = document.getElementById(`question-box-${qId}`);
+            if (box) {
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                box.classList.add('unanswered-highlight');
+                setTimeout(() => box.classList.remove('unanswered-highlight'), 3000);
+            }
+        }
+
+        // ยืนยันรอบสุดท้ายก่อนส่งจริง
+        function showFinalSubmitConfirmation() {
             Swal.fire({
-                title: 'ยืนยันการส่งข้อสอบ?',
+                title: 'ยืนยันการส่งข้อสอบรอบสุดท้าย?',
                 text: 'เมื่อส่งแล้วจะไม่สามารถกลับมาแก้ไขคำตอบได้อีก',
                 icon: 'question',
                 showCancelButton: true,
