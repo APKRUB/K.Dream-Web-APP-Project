@@ -41,6 +41,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
+    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
@@ -55,6 +56,7 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <!-- ปุ่ม Notifications -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -73,12 +75,14 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+        
+        <!-- Welcome Banner แสดงชื่อ Username ดึงจาก Session/LocalStorage -->
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
-                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Notifications Connected
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Signal Active
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName">ผู้ดูแลระบบ</span></h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName" class="text-sky-600 dark:text-sky-400">ผู้ดูแลระบบ</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
                     จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และตรวจสอบ Audit Logs ผ่านศูนย์ควบคุม Hi-Tech
                 </p>
@@ -96,6 +100,7 @@
             </div>
         </div>
 
+        <!-- Modules Grid -->
         <div class="space-y-4">
             <h3 class="font-extrabold text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <i class="fas fa-th-large text-sky-500"></i> ฟังก์ชันหลักระบบผู้ดูแลระบบ (Admin Modules)
@@ -190,6 +195,7 @@
 
         let liveNotifications = [];
 
+        // Theme Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -204,8 +210,9 @@
         });
 
         async function initAdminDashboard() {
-            const loggedName = localStorage.getItem('account_name') || localStorage.getItem('user_name') || localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
-            document.getElementById('displayAdminName').textContent = loggedName;
+            // ดึงชื่อ Username จากการล็อกอินจริง
+            const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || localStorage.getItem('account_name') || 'ผู้ดูแลระบบ';
+            document.getElementById('displayAdminName').textContent = currentUsername;
 
             try {
                 const { count: examCount } = await mySupabase.from('exams').select('*', { count: 'exact', head: true });
@@ -219,22 +226,18 @@
             } catch (err) { console.error(err); }
         }
 
-        // ดึง Notification สดจากตาราง notifications
         async function fetchLiveNotifications() {
             const { data } = await mySupabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20);
             liveNotifications = data || [];
             updateNotifBadge();
         }
 
-        // ฟัง Realtime Event จากตาราง notifications
         function listenRealtimeNotifications() {
             mySupabase
                 .channel('realtime-notifications-channel')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
                     liveNotifications.unshift(payload.new);
                     updateNotifBadge();
-                    
-                    // แสดง Toast สั้นๆ แจ้งเตือนเมื่อมีกิจกรรมใหม่
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
@@ -249,9 +252,8 @@
 
         function updateNotifBadge() {
             const badge = document.getElementById('notifBadge');
-            const unreadCount = liveNotifications.length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount;
+            if (liveNotifications.length > 0) {
+                badge.textContent = liveNotifications.length;
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
@@ -265,11 +267,11 @@
                 html: `
                     <div class="space-y-3 text-left text-xs">
                         <div class="flex gap-1 overflow-x-auto pb-1 border-b dark:border-slate-800">
-                            <button onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0">ทั้งหมด (${liveNotifications.length})</button>
-                            <button onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ส่งข้อสอบ</button>
-                            <button onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">คำถาม Consult</button>
-                            <button onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ที่ต้องตรวจ</button>
-                            <button onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold shrink-0">ประกาศ/ทั่วไป</button>
+                            <button id="btn-tab-all" onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0 transition-all">ทั้งหมด (${liveNotifications.length})</button>
+                            <button id="btn-tab-submit" onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ส่งข้อสอบ</button>
+                            <button id="btn-tab-question" onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">คำถาม Consult</button>
+                            <button id="btn-tab-grading" onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ที่ต้องตรวจ</button>
+                            <button id="btn-tab-general" onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ประกาศ/ทั่วไป</button>
                         </div>
 
                         <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
@@ -312,7 +314,19 @@
             `;
         }
 
+        // ฟังก์ชันสลับสีปุ่ม Tabs เมื่อกดเลือกหมวดหมู่
         window.filterNotifTab = function(type) {
+            // ล้าง Style สีหลักของทุกปุ่ม
+            document.querySelectorAll('.notif-tab-btn').forEach(btn => {
+                btn.className = 'notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all';
+            });
+
+            // ไฮไลต์ปุ่มที่ถูกเลือก
+            const activeBtn = document.getElementById(`btn-tab-${type}`);
+            if (activeBtn) {
+                activeBtn.className = 'notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0 transition-all';
+            }
+
             const container = document.getElementById('notifListContainer');
             const filtered = type === 'all' ? liveNotifications : liveNotifications.filter(n => n.type === type);
             if (filtered.length === 0) {
