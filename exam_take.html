@@ -135,7 +135,7 @@
         let studentAnswers = {};
         let flaggedQuestions = {};
         let timerInterval = null;
-        let currentRemainingSeconds = 0; // ตัวแปรเก็บเวลาเหลือเป็นวินาที
+        let currentRemainingSeconds = 0;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -162,13 +162,39 @@
             }
         });
 
+        // ฟังก์ชันดึงและตรวจสอบ Student ID จากคีย์ทั้งหมดที่เป็นไปได้ใน LocalStorage อย่างครอบคลุม
+        function getValidatedStudentId() {
+            let studentId = localStorage.getItem('id') || 
+                            localStorage.getItem('student_id') || 
+                            localStorage.getItem('user_id') || 
+                            localStorage.getItem('userId') || null;
+
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
+                try {
+                    const userObj = JSON.parse(localStorage.getItem('user') || localStorage.getItem('profile') || localStorage.getItem('current_user') || '{}');
+                    studentId = userObj.id || userObj.student_id || userObj.uid || null;
+                } catch(e) {}
+            }
+            return studentId;
+        }
+
+        // ระบบ Auth Guard ป้องกันคนไม่ได้ Login เข้ามาทำข้อสอบอย่างเด็ดขาด
         function checkStudentAuth() {
             if (isPreview) return true;
-            let studentName = localStorage.getItem('student_username') || 
-                            localStorage.getItem('full_name') || 
-                            localStorage.getItem('user_name') || 
-                            'นักเรียนทั่วไป';
-            localStorage.setItem('student_username', studentName);
+
+            const studentId = getValidatedStudentId();
+            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ได้เข้าสู่ระบบ!',
+                    text: 'กรุณาเข้าสู่ระบบก่อนทำข้อสอบ',
+                    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
+                return false;
+            }
             return true;
         }
 
@@ -492,17 +518,8 @@
                 }
             });
 
-            // ดึงค่าไอดีจากคีย์ที่ถูกต้อง และป้องกันค่าที่เป็น Zero UUID หรือค่าว่าง
-            let studentId = localStorage.getItem('id') || 
-                            localStorage.getItem('student_id') || 
-                            localStorage.getItem('user_id') || null;
-
-            if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
-                try {
-                    const userObj = JSON.parse(localStorage.getItem('user') || localStorage.getItem('profile') || '{}');
-                    studentId = userObj.id || userObj.student_id || userObj.uid || null;
-                } catch(e) {}
-            }
+            // ดึง Student ID ผ่านฟังก์ชันกลางที่ตรวจสอบทุกคีย์อย่างปลอดภัย
+            const studentId = getValidatedStudentId();
 
             if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
                 Swal.fire({
