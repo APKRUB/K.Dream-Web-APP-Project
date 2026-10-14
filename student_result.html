@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | ผลคะแนนและการวิเคราะห์ผล AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
+        .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
+        .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        .hero-result { background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .dark .hero-result { background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(30, 58, 138, 0.3) 100%); border: 1px solid rgba(56, 189, 248, 0.2); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
+
+    <!-- Sticky Header -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-sm"></i>
+                    </button>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-pie"></i></span>
+                        รายงานผลคะแนนและการวิเคราะห์ AI
+                    </h1>
+                </div>
+                <button onclick="window.location.href='student.html'" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow transition-all">
+                    <i class="fas fa-house mr-1"></i> กลับหน้าหลักนักเรียน
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+        
+        <!-- Hero Score Banner -->
+        <div class="hero-result p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="space-y-2 text-center md:text-left">
+                <span class="px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
+                    <i class="fas fa-award mr-1"></i> ผลการประเมินชุดข้อสอบ
+                </span>
+                <h2 id="resultExamTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">กำลังประมวลผลคะแนน...</h2>
+                <p id="resultExamCode" class="text-xs text-slate-500 dark:text-slate-400 font-mono">CODE: -</p>
+            </div>
+            <div class="flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 p-5 rounded-2xl border shadow-lg backdrop-blur-md">
+                <div class="text-center">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">คะแนนที่ได้</span>
+                    <div id="scoreDisplay" class="text-3xl sm:text-4xl font-extrabold text-sky-600 dark:text-sky-400 font-mono">-- / --</div>
+                </div>
+                <div class="h-10 w-[1px] bg-slate-200 dark:bg-slate-800"></div>
+                <div class="text-center">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">อันดับในห้อง</span>
+                    <div id="rankDisplay" class="text-2xl sm:text-3xl font-extrabold text-amber-500 font-mono">#--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics & Comparison Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="hitech-card p-4 rounded-2xl text-center space-y-1">
+                <span class="text-xs text-slate-400 font-bold">📊 ค่าเฉลี่ยของห้องเรียน</span>
+                <div id="avgScoreDisplay" class="text-lg font-extrabold text-slate-800 dark:text-slate-200 font-mono">-- คะแนน</div>
+            </div>
+            <div class="hitech-card p-4 rounded-2xl text-center space-y-1">
+                <span class="text-xs text-slate-400 font-bold">🏆 คะแนนสูงสุดในห้อง</span>
+                <div id="maxScoreDisplay" class="text-lg font-extrabold text-emerald-600 font-mono">-- คะแนน</div>
+            </div>
+            <div class="hitech-card p-4 rounded-2xl text-center space-y-1">
+                <span class="text-xs text-slate-400 font-bold">📈 เปอร์เซ็นต์ความสำเร็จ</span>
+                <div id="percentDisplay" class="text-lg font-extrabold text-sky-600 font-mono">--%</div>
+            </div>
+        </div>
+
+        <!-- AI Diagnostic Report (จุดแข็ง จุดอ่อน คำแนะนำ) -->
+        <div class="hitech-card p-6 rounded-2xl space-y-5 border-l-4 border-l-sky-500">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-md">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-base text-slate-900 dark:text-white">AI Diagnostic & Learning Insights</h3>
+                    <p class="text-xs text-slate-500">การวิเคราะห์ทักษะเชิงลึก จุดแข็ง จุดอ่อน และคำแนะนำเฉพาะตัวบุคคล</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- จุดแข็ง -->
+                <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2">
+                    <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <i class="fas fa-circle-check"></i> จุดแข็งของคุณ (Strengths)
+                    </h4>
+                    <p id="aiStrengthsText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์ข้อมูล...</p>
+                </div>
+
+                <!-- จุดที่ควรพัฒนา / ทบทวน -->
+                <div class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl space-y-2">
+                    <h4 class="font-bold text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                        <i class="fas fa-triangle-exclamation"></i> หัวข้อเร่งด่วนที่ควรกลับไปทบทวน (Priority Review)
+                    </h4>
+                    <p id="aiWeaknessesText" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">กำลังวิเคราะห์ข้อมูล...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const examId = urlParams.get('exam_id');
+
+        async function initStudentResult() {
+            if (!examId) {
+                Swal.fire('ไม่พบข้อมูลข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
+                return;
+            }
+
+            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
+
+            // 1. ดึงข้อมูลชุดข้อสอบและคำถาม พร้อมเฉลย
+            const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
+            
+            if (!exam || !questions) return;
+
+            document.getElementById('resultExamTitle').textContent = exam.title;
+            document.getElementById('resultExamCode').textContent = `CODE: ${exam.exam_code || 'EXAM'}`;
+
+            // 2. ดึงคำตอบล่าสุดของนักเรียน
+            const { data: subs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId).eq('student_id', studentId).order('created_at', { ascending: false }).limit(1);
+
+            let studentAnswers = {};
+            if (subs && subs.length > 0) {
+                studentAnswers = subs[0].answers || {};
+            }
+
+            // 3. ตรวจคะแนนอัตโนมัติเทียบกับเฉลย (correct_answer)
+            let totalScore = 0;
+            let maxScore = questions.length * (exam.score_per_question || 1);
+            let categoryScores = {};
+
+            questions.forEach(q => {
+                const catName = q.category_name || q.section_title || 'หมวดทั่วไป';
+                if (!categoryScores[catName]) categoryScores[catName] = { correct: 0, total: 0 };
+                categoryScores[catName].total++;
+
+                const studentAns = studentAnswers[q.id];
+                const correctAns = q.correct_answer;
+
+                if (studentAns !== undefined && String(studentAns) === String(correctAns)) {
+                    totalScore += (q.score || 1);
+                    categoryScores[catName].correct++;
+                }
+            });
+
+            const percent = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+            document.getElementById('scoreDisplay').textContent = `${totalScore} / ${maxScore}`;
+            document.getElementById('percentDisplay').textContent = `${percent}%`;
+
+            // 4. ดึงสถิติห้องเรียนทั้งหมดเพื่อคำนวณค่าเฉลี่ย คะแนนสูงสุด และอันดับ (Ranking)
+            const { data: allSubs } = await mySupabase.from('exam_submissions').select('*').eq('exam_id', examId);
+            
+            // จำลองการคำนวณคะแนนเพื่อนๆ ในห้อง
+            let allScores = (allSubs || []).map(s => {
+                let sScore = 0;
+                questions.forEach(q => {
+                    if (s.answers && String(s.answers[q.id]) === String(q.correct_answer)) sScore += (q.score || 1);
+                });
+                return { studentId: s.student_id, score: sScore };
+            });
+
+            // เพิ่มคะแนนตัวเองเข้าไปถ้ายังไม่มีในลิสต์
+            if (!allScores.some(s => s.studentId === studentId)) {
+                allScores.push({ studentId: studentId, score: totalScore });
+            }
+
+            allScores.sort((a, b) => b.score - a.score);
+            const myRank = allScores.findIndex(s => s.studentId === studentId) + 1;
+            const avgScore = allScores.length > 0 ? (allScores.reduce((acc, curr) => acc + curr.score, 0) / allScores.length).toFixed(1) : totalScore;
+            const maxScoreRoom = allScores.length > 0 ? allScores[0].score : totalScore;
+
+            document.getElementById('rankDisplay').textContent = `#${myRank}`;
+            document.getElementById('avgScoreDisplay').textContent = `${avgScore} คะแนน`;
+            document.getElementById('maxScoreDisplay').textContent = `${maxScoreRoom} คะแนน`;
+
+            // 5. โอนคะแนน/อัปเดตสถิติลำดับและภาพรวมกลับไปเก็บในตารางห้องเรียนสำหรับหน้า admin_analytics.html
+            await mySupabase.from('exam_analytics_summary').upsert([{
+                exam_id: examId,
+                avg_score: parseFloat(avgScore),
+                max_score: maxScoreRoom,
+                total_submissions: allScores.length,
+                updated_at: new Date().toISOString()
+            }], { onConflict: 'exam_id' });
+
+            // 6. AI Diagnostic Analysis (วิเคราะห์จุดแข็ง จุดอ่อน ตามหมวดหมู่)
+            let bestCat = '-';
+            let worstCat = '-';
+            let bestRatio = -1;
+            let worstRatio = 2;
+
+            Object.keys(categoryScores).forEach(cat => {
+                const ratio = categoryScores[cat].correct / categoryScores[cat].total;
+                if (ratio > bestRatio) { bestRatio = ratio; bestCat = cat; }
+                if (ratio < worstRatio) { worstRatio = ratio; worstCat = cat; }
+            });
+
+            document.getElementById('aiStrengthsText').textContent = `คุณทำคะแนนได้ดีเยี่ยมในหมวด "${bestCat}" (${Math.round(bestRatio*100)}% ความถูกต้อง) แสดงถึงความเข้าใจเนื้อหาในส่วนนี้อย่างถ่องแท้`;
+            document.getElementById('aiWeaknessesText').textContent = `ควรกลับไปทบทวนและฝึกฝนเพิ่มเติมในหมวด "${worstCat}" (${Math.round(worstRatio*100)}% ความถูกต้อง) เพื่อเสริมความเข้าใจและยกระดับคะแนนในภาพรวม`;
+        }
+
+        initStudentResult();
+    </script>
+</body>
+</html>
