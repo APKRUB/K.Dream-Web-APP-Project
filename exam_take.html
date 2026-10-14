@@ -35,7 +35,7 @@
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <span class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-sm"><i class="fas fa-file-signature"></i></span>
+                <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="examTitleNav">กำลังโหลดข้อสอบ...</h1>
                     <p class="text-[11px] text-slate-500">ระบบสอบออนไลน์ระบบปิด Hi-Tech</p>
@@ -98,16 +98,17 @@
             // ดึงข้อมูลชุดข้อสอบ
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (!exam) {
-                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error');
+                Swal.fire('ไม่พบข้อมูลชุดข้อสอบ', '', 'error').then(() => window.location.href = 'student.html');
                 return;
             }
 
             document.getElementById('examTitleNav').textContent = exam.title;
             timeLeftSeconds = (exam.time_limit || 60) * 60;
 
-            // ตรวจสอบหรือสร้าง Attempt
+            // ตรวจสอบว่ามี Attempt ที่ค้างอยู่ (in_progress) หรือไม่
             let { data: existingAttempt } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId).eq('student_id', studentId).eq('status', 'in_progress').single();
 
+            // หากไม่มี (เนื่องจากถูกลบสิทธิ์ไปแล้ว หรือยังไม่เคยทำ) ให้สร้างใหม่ทันที
             if (!existingAttempt) {
                 const { data: newAtt, error } = await mySupabase.from('exam_attempts').insert([{
                     exam_id: examId,
@@ -117,7 +118,7 @@
                 }]).select().single();
 
                 if (error) {
-                    Swal.fire('ไม่สามารถเริ่มทำข้อสอบได้', error.message, 'error');
+                    Swal.fire('ไม่สามารถเริ่มทำข้อสอบได้', error.message, 'error').then(() => window.location.href = 'student.html');
                     return;
                 }
                 attemptId = newAtt.id;
@@ -173,7 +174,6 @@
 
         async function saveAnswer(questionId, optionIndex) {
             if (!attemptId) return;
-            // บันทึกคำตอบแบบเรียลไทม์
             await mySupabase.from('exam_answers').upsert({
                 attempt_id: attemptId,
                 question_id: questionId,
@@ -213,7 +213,6 @@
             clearInterval(timerInterval);
             Swal.fire({ title: 'กำลังประมวลผลคะแนน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // ดึงคำตอบทั้งหมดและเฉลยเพื่อคำนวณคะแนนรวม
             const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', attemptId);
             
             let totalScore = 0;
@@ -227,7 +226,7 @@
             const submitPayload = {
                 status: 'submitted',
                 score: totalScore,
-                submission_time: new Date().toISOString() // บันทึกเวลาแบบ timestamptz สมบูรณ์
+                submission_time: new Date().toISOString()
             };
 
             const { error } = await mySupabase.from('exam_attempts').update(submitPayload).eq('id', attemptId);
