@@ -145,28 +145,47 @@
         });
 
 // ฟังก์ชันตรวจสิทธิ์การเข้าใช้งาน (Security Guard)
-function checkStudentAuth() {
-    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id');
-    const studentName = localStorage.getItem('full_name') || localStorage.getItem('user_name');
+// ฟังก์ชันตรวจสอบสิทธิ์การเข้าใช้งานฝั่ง Admin / คุณครูแบบครอบคลุม
+function checkAdminAuth() {
+    // 1. เช็ก Key ทั่วไปที่ระบบแอดมินอาจจะใช้บันทึก (เช่น role, admin, admin_logged, user_role, is_admin)
+    const role = localStorage.getItem('role') || localStorage.getItem('admin_role') || localStorage.getItem('user_role');
+    const adminFlag = localStorage.getItem('admin_logged') || localStorage.getItem('is_admin') || localStorage.getItem('admin');
+    const userId = localStorage.getItem('admin_id') || localStorage.getItem('user_id') || localStorage.getItem('user');
 
-    // ถ้าไม่มีข้อมูลการ Login ในระบบ ให้ดีดกลับหน้าแรกทันที
-    if (!studentId || !studentName) {
+    // 2. เช็กกรณีหน้า Login บันทึกข้อมูลแบบ Object JSON (เช่น localStorage.setItem('user_data', JSON.stringify({role: 'admin'})))
+    let userData = null;
+    try {
+        userData = JSON.parse(localStorage.getItem('user_data') || localStorage.getItem('user') || localStorage.getItem('current_user'));
+    } catch(e) {}
+
+    // ตรวจสอบเงื่อนไขความเป็นแอดมิน
+    const isAdminRole = (role && (role.toLowerCase() === 'admin' || role.toLowerCase() === 'teacher')) ||
+                        (adminFlag === 'true' || adminFlag === '1' || adminFlag === true) ||
+                        (userData && (userData.role === 'admin' || userData.role === 'teacher' || userData.is_admin === true));
+
+    // [สำหรับตรวจสอบผ่าน F12 Console] ดูค่าที่เช็กได้
+    console.log("Admin Auth Check:", { role, adminFlag, userId, userData, isAdminRole });
+
+    // ถ้าตรวจสอบแล้วไม่ใช่แอดมิน ให้แจ้งเตือนและดีดกลับไปหน้า Login ทันที
+    if (!isAdminRole && !userId) {
         Swal.fire({
             icon: 'error',
-            title: 'ยังไม่ได้เข้าสู่ระบบ',
-            text: 'กรุณาเข้าสู่ระบบก่อนใช้งานหน้านี้',
+            title: 'ไม่มีสิทธิ์เข้าถึง',
+            text: 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบ (Admin/Teacher) ก่อน',
             confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
             allowOutsideClick: false
         }).then(() => {
-            window.location.href = 'index.html'; // หรือเปลี่ยนเป็นหน้า Login ของคุณ AP
+            // ปรับเปลี่ยน path หน้า Login แอดมินของคุณ AP ตรงนี้ได้เลยครับ (เช่น index.html หรือ admin_login.html)
+            window.location.href = 'index.html'; 
         });
         return false;
     }
+
     return true;
 }
         
         async function initPage() {
-            if (!checkStudentAuth()) return;
+            if (!checkAdminAuth()) return;
             const { data: { session } } = await mySupabase.auth.getSession();
             if (session) {
                 const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', session.user.id).single();
