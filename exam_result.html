@@ -86,6 +86,7 @@ function checkStudentAuth() {
 }
         
         async function initPage() {
+            if (!checkStudentAuth()) return;
             if (!attemptId) { window.location.href = 'student.html'; return; }
             const { data: attempt } = await mySupabase.from('exam_attempts').select('*, exams(*)').eq('id', attemptId).single();
             currentAttempt = attempt;
