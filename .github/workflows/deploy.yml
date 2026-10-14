@@ -1,0 +1,41 @@
+name: Deploy Static Content to Pages
+
+on:
+  push:
+    branches: ["main"] # หรือถ้า branch หลักของคุณชื่อ "master" ให้แก้คำว่า main เป็น master ครับ
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-running: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject Gemini API Key
+        run: |
+          # ค้นหาและแทนที่ __GEMINI_API_KEY__ ด้วยค่าจาก GitHub Secrets ในไฟล์ html
+          find . -name "*.html" -type f -exec sed -i 's/__GEMINI_API_KEY__/${{ secrets.GEMINI_API_KEY }}/g' {} +
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
