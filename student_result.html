@@ -99,10 +99,10 @@
             </div>
         </div>
 
-        <!-- เลย์เอาต์หลัก 2 คอลัมน์: ฝั่งซ้าย PDF ข้อสอบ | ฝั่งขวา เฉลยคำตอบ & ตัวกรอง -->
+        <!-- เลย์เอาต์หลัก 2 คอลัมน์ -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: PDF Viewer ข้อสอบย้อนหลัง (ห้ามดาวน์โหลด) -->
+            <!-- ฝั่งซ้าย: PDF Viewer ข้อสอบย้อนหลัง -->
             <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบทบทวน (ความคมชัดสูง)</h3>
@@ -120,7 +120,7 @@
                         <i class="fas fa-list-check text-sky-500"></i> เฉลยคำตอบและผลการทำข้อสอบ
                     </h3>
                     
-                    <!-- แท็บกรองหมวดหมู่: ทั้งหมด / ตอบถูก / ตอบผิด -->
+                    <!-- แท็บกรองหมวดหมู่ -->
                     <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                         <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm">ทั้งหมด (<span id="count-all">0</span>)</button>
                         <button onclick="setFilter('correct')" id="filter-correct" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-emerald-500">ตอบถูก (<span id="count-correct">0</span>)</button>
@@ -139,11 +139,12 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOiJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const attemptId = urlParams.get('attempt_id');
+        // รองรับทั้งพารามิเตอร์ attempt_id หรือ id
+        const attemptId = urlParams.get('attempt_id') || urlParams.get('id');
 
         let globalQuestions = [];
         let globalAnswerMap = {};
@@ -172,22 +173,47 @@
         });
 
         async function initResultPage() {
-            if (!attemptId) {
-                Swal.fire('ไม่พบรหัสผลการสอบ (Attempt ID)', '', 'error').then(() => window.location.href = 'student.html');
+            let attempt = null;
+
+            if (attemptId) {
+                // ค้นหาตาม ID ที่ส่งมาใน URL ก่อน
+                const { data } = await mySupabase
+                    .from('exam_attempts')
+                    .select('*')
+                    .eq('id', attemptId)
+                    .single();
+                attempt = data;
+            }
+
+            // ถ้ายังไม่พบ ให้ดึงประวัติการส่งข้อสอบล่าสุดของผู้ใช้คนนี้โดยอัตโนมัติ
+            if (!attempt) {
+                let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('userId');
+                if (studentId) {
+                    const { data: latestList } = await mySupabase
+                        .from('exam_attempts')
+                        .select('*')
+                        .eq('student_id', studentId)
+                        .order('submission_time', { ascending: false })
+                        .limit(1);
+                    if (latestList && latestList.length > 0) {
+                        attempt = latestList[0];
+                    }
+                }
+            }
+
+            if (!attempt) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่พบข้อมูลผลการสอบ',
+                    text: 'กรุณาเลือกผลการสอบจากประวัติการทำข้อสอบของคุณ',
+                    confirmButtonText: 'กลับหน้าหลัก'
+                }).then(() => window.location.href = 'student.html');
                 return;
             }
 
-            const { data: attempt, error: attErr } = await mySupabase
-                .from('exam_attempts')
-                .select('*')
-                .eq('id', attemptId)
-                .single();
+            const currentAttemptId = attempt.id;
 
-            if (attErr || !attempt) {
-                Swal.fire('ไม่พบข้อมูลผลการสอบ', '', 'error').then(() => window.location.href = 'student.html');
-                return;
-            }
-
+            // ดึงข้อมูลชุดข้อสอบ (exams)
             const { data: exam } = await mySupabase
                 .from('exams')
                 .select('*')
@@ -206,37 +232,38 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
+            // ดึงคำถามทั้งหมดของชุดข้อสอบนี้
             const { data: questions } = await mySupabase
                 .from('questions')
                 .select('*')
                 .eq('exam_id', attempt.exam_id)
                 .order('question_number', { ascending: true });
 
-            // ดึงข้อมูลคำตอบจากตาราง exam_answers โดยตรง และรองรับการดึงจาก answer_saved ใน attempt เผื่อกรณีสำรอง
+            // ดึงคำตอบจากตาราง exam_answers
             const { data: answers } = await mySupabase
                 .from('exam_answers')
                 .select('*')
-                .eq('attempt_id', attemptId);
+                .eq('attempt_id', currentAttemptId);
 
             globalQuestions = questions || [];
             globalAnswerMap = {};
 
-            // 1. อ่านจากตาราง exam_answers ก่อน
+            // 1. อ่านจากตาราง exam_answers
             (answers || []).forEach(ans => {
                 globalAnswerMap[ans.question_id] = {
-                    selected_option_index: ans.selected_option_index !== undefined ? ans.selected_option_index : (ans.selected_answer !== undefined ? parseInt(ans.selected_answer) : null),
+                    selected_option_index: ans.selected_option_index !== undefined && ans.selected_option_index !== null ? parseInt(ans.selected_option_index) : null,
                     subjective_answer: ans.subjective_answer
                 };
             });
 
-            // 2. หากตาราง exam_answers ว่าง ให้ลองแปลงจาก JSON ใน attempt.answer_saved
+            // 2. สำรองข้อมูลจาก attempt.answer_saved (JSON)
             if (Object.keys(globalAnswerMap).length === 0 && attempt.answer_saved) {
                 try {
                     const savedObj = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
                     Object.keys(savedObj).forEach(qId => {
                         const val = savedObj[qId];
                         globalAnswerMap[qId] = {
-                            selected_option_index: !isNaN(val) ? parseInt(val) : null,
+                            selected_option_index: val !== null && val !== '' && !isNaN(val) ? parseInt(val) : null,
                             subjective_answer: isNaN(val) ? val : null
                         };
                     });
@@ -301,8 +328,8 @@
                 const isEssay = q.question_type === 'essay';
                 if (!isEssay) {
                     const studentIdx = ans.selected_option_index;
-                    const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                    if (studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx)) {
+                    const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
+                    if (studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx) {
                         correctCount++;
                     } else {
                         wrongCount++;
@@ -324,14 +351,14 @@
                 return;
             }
 
-            const filtered = globalQuestions.filter((q, idx) => {
+            const filtered = globalQuestions.filter((q) => {
                 const ans = globalAnswerMap[q.id] || {};
                 const isEssay = q.question_type === 'essay';
                 if (isEssay) return currentFilter === 'all';
 
                 const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                const isCorrect = (studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx));
+                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
+                const isCorrect = (studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx);
 
                 if (currentFilter === 'correct') return isCorrect;
                 if (currentFilter === 'wrong') return !isCorrect;
@@ -343,7 +370,7 @@
                 return;
             }
 
-            container.innerHTML = filtered.map((q, idx) => {
+            container.innerHTML = filtered.map((q) => {
                 const qNum = q.question_number || (globalQuestions.indexOf(q) + 1);
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
@@ -351,7 +378,7 @@
                 
                 const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
                 const correctChoiceIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = !isEssay && studentChoiceIdx !== null && String(studentChoiceIdx) === String(correctChoiceIdx);
+                const isCorrect = !isEssay && studentChoiceIdx !== null && studentChoiceIdx === correctChoiceIdx;
 
                 if (isEssay) {
                     return `
@@ -438,8 +465,8 @@
 
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && String(studentIdx) === String(correctIdx);
+                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
+                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
 
                 if (isCorrect) {
                     categoryStats[tag].correct++;
@@ -449,7 +476,7 @@
                 }
             });
 
-            const percentage = Math.round((score / total) * 100);
+            const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
             let performanceSummary = '';
             let recommendation = '';
 
@@ -465,7 +492,7 @@
             }
 
             let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
-                const p = Math.round((stat.correct / stat.total) * 100);
+                const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
                 return `<li class="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 dark:border-slate-800/50">
                     <span>🏷️ <b>${tag}</b></span>
                     <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
