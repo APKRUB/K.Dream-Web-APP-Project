@@ -9,6 +9,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL ข้ามหน้าโดยไม่ได้รับอนุญาต -->
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) {
+                        hasSession = true;
+                        break;
+                    }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) {
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = { 
             darkMode: 'class', 
@@ -630,7 +652,7 @@
                     .upload(fileName, file, { cacheControl: '3600', upsert: true, contentType: 'application/pdf' });
 
                 if (uploadError) {
-                    Swal.fire('อัปโหลดล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block p-2 bg-slate-900 rounded">${uploadError.message}</code>`, 'error');
+                    Swal.fire('อัปโหลดล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block p-2 bg-slate-900">${uploadError.message}</code>`, 'error');
                     return;
                 }
 
