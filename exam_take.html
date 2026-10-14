@@ -481,7 +481,7 @@ async function submitExam(isTimeout = false) {
         didOpen: () => Swal.showLoading()
     });
 
-    // 1) คำนวณคะแนนรวม
+    // 1) คำนวณคะแนนรวม (total_score)
     let totalScore = 0;
     currentQuestions.forEach(q => {
         const studentAns = studentAnswers[q.id];
@@ -493,20 +493,26 @@ async function submitExam(isTimeout = false) {
         }
     });
 
-    // ดึง student_id
-    const studentId = localStorage.getItem('student_id') || 
-                      localStorage.getItem('user_id') || 
-                      localStorage.getItem('id') || null;
+    // 2) ดึง student_id จากคีย์ 'id' ใน LocalStorage (ตามทางเลือก A)
+    let studentId = localStorage.getItem('id') || 
+                      localStorage.getItem('student_id') || 
+                      localStorage.getItem('user_id') || null;
 
-    // Payload ที่ส่งไป (ใช้ชื่อ total_score และ submission_time ตามที่คุณ AP กำหนด)
+    // ตรวจสอบรูปแบบ UUID ให้ถูกต้องก่อนบันทึกป้องกันติด Foreign Key Constraint
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!studentId || !uuidRegex.test(studentId) || studentId === '00000000-0000-0000-0000-000000000000') {
+        studentId = null;
+    }
+
+    // 3) จัดเตรียม 5 ค่าครบถ้วนตามต้องการ
     const attemptPayload = {
         exam_id: examId,
         status: 'submitted',
-        student_id: studentId,
-        answer_saved: JSON.stringify(studentAnswers),
-        remaining_time: currentRemainingSeconds,
-        total_score: totalScore,
-        submission_time: new Date().toISOString()
+        student_id: studentId,                           // 1) student_id (ดึงจาก id)
+        answer_saved: JSON.stringify(studentAnswers),    // 2) answer_saved
+        remaining_time: currentRemainingSeconds,         // 3) remaining_time
+        total_score: totalScore,                         // 4) total_score
+        submission_time: new Date().toISOString()        // 5) submission_time
     };
 
     const { data: newAttempt, error: attemptError } = await mySupabase
@@ -515,7 +521,6 @@ async function submitExam(isTimeout = false) {
         .select()
         .single();
 
-    // ถ้ายังพัง ตรงนี้จะแสดงข้อความ Error ชัดเจนว่าติดคอลัมน์ไหนในตาราง exam_attempts
     if (attemptError || !newAttempt) {
         console.error("Attempt Error:", attemptError);
         Swal.fire({
