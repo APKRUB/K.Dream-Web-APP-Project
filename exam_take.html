@@ -475,13 +475,21 @@ async function submitExam(isTimeout = false) {
         return;
     }
 
+    // เปิดดูข้อมูลทั้งหมดใน LocalStorage ผ่าน Console (สามารถกด F12 เพื่อดูได้ เพราะเราจะเช็คเฉพาะตอนนี้)
+    console.log("--- DEBUG LOCALSTORAGE ---");
+    console.log("All LocalStorage Keys:", Object.keys(localStorage));
+    console.log("id:", localStorage.getItem('id'));
+    console.log("student_id:", localStorage.getItem('student_id'));
+    console.log("user_id:", localStorage.getItem('user_id'));
+    console.log("user:", localStorage.getItem('user'));
+    console.log("profile:", localStorage.getItem('profile'));
+
     Swal.fire({
         title: 'กำลังบันทึกและประมวลผลคำตอบ...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
     });
 
-    // 1) คำนวณคะแนนรวม (total_score)
     let totalScore = 0;
     currentQuestions.forEach(q => {
         const studentAns = studentAnswers[q.id];
@@ -493,18 +501,27 @@ async function submitExam(isTimeout = false) {
         }
     });
 
-    // 2) ดึง student_id จาก LocalStorage โดยตรง (รองรับทั้ง id และ student_id)
-    let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || null;
+    // ดึงค่าไอดีจากคีย์ที่น่าจะเป็นไปได้ทั้งหมด
+    let studentId = localStorage.getItem('id') || 
+                      localStorage.getItem('student_id') || 
+                      localStorage.getItem('user_id') || null;
 
-    // 3) จัดเตรียม 5 ค่าครบถ้วน
+    // ถ้ายังเป็น null ให้ลองดึงจาก Object 'user' หรือ 'profile' ใน LocalStorage (เผื่อระบบเดิมเก็บเป็น JSON)
+    if (!studentId) {
+        try {
+            const userObj = JSON.parse(localStorage.getItem('user') || localStorage.getItem('profile') || '{}');
+            studentId = userObj.id || userObj.student_id || userObj.uid || null;
+        } catch(e) {}
+    }
+
     const attemptPayload = {
         exam_id: examId,
         status: 'submitted',
-        student_id: studentId,                           // 1) student_id (ดึงค่ามาใส่ตรงๆ)
-        answer_saved: JSON.stringify(studentAnswers),    // 2) answer_saved
-        remaining_time: currentRemainingSeconds,         // 3) remaining_time
-        total_score: totalScore,                         // 4) total_score
-        submission_time: new Date().toISOString()        // 5) submission_time
+        student_id: studentId,
+        answer_saved: JSON.stringify(studentAnswers),
+        remaining_time: currentRemainingSeconds,
+        total_score: totalScore,
+        submission_time: new Date().toISOString()
     };
 
     const { data: newAttempt, error: attemptError } = await mySupabase
