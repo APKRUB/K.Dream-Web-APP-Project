@@ -35,7 +35,6 @@
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         .dark .swal2-title, .dark .swal2-html-container { color: #f8fafc !important; }
         
-        /* OMR Bubble Style */
         .omr-bubble {
             width: 36px;
             height: 36px;
@@ -214,13 +213,11 @@
             }).join('');
         }
 
-        // ฝนวงกลมเปลี่ยนเฉลยรวดเร็ว (Quick OMR Answer Setting)
         async function updateQuickCorrectAnswer(qId, cIdx) {
             await mySupabase.from('questions').update({ correct_answer: String(cIdx) }).eq('id', qId);
             loadQuestions();
         }
 
-        // เจนกระดาษคำตอบ OMR พร้อมจัดการ Schema ป้องกันการล้มเหลว
         async function openAutoAnswerSheetModal() {
             const { value: formValues } = await Swal.fire({
                 title: '⚡ เจนกระดาษคำตอบ OMR',
@@ -264,6 +261,7 @@
                         exam_id: examId,
                         question_number: i,
                         question_text: formValues.tag ? `[${formValues.tag}] ข้อที่ ${i}` : `ข้อที่ ${i}`,
+                        question_type: 'multiple_choice', // เพิ่มฟิลด์ป้องกัน Not-null Constraint
                         options: ['ก', 'ข', 'ค', 'ง'],
                         correct_answer: '0'
                     });
@@ -275,7 +273,7 @@
                     Swal.fire({ icon: 'success', title: `สร้างกระดาษคำตอบ OMR ${newQuestions.length} ข้อ เรียบร้อย!`, timer: 1200, showConfirmButton: false });
                     loadQuestions();
                 } else {
-                    Swal.fire('สร้างล้มเหลว', `กรุณารัน SQL Script ใน Supabase SQL Editor ก่อนครับ<br><br><code class="text-xs text-red-400">${error.message}</code>`, 'error');
+                    Swal.fire('สร้างล้มเหลว', `เกิดข้อผิดพลาด:<br><code class="text-xs text-red-400">${error.message}</code>`, 'error');
                 }
             }
         }
@@ -328,6 +326,7 @@
                         exam_id: examId,
                         question_number: parseInt(document.getElementById('qNum').value) || 1,
                         question_text: document.getElementById('qText').value,
+                        question_type: 'multiple_choice',
                         options: [
                             document.getElementById('opt0').value,
                             document.getElementById('opt1').value,
