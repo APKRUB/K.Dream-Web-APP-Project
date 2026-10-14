@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ผลการสอบและ AI วิเคราะห์ผล</title>
+    <title>LMS | ผลการสอบและ AI วิเคราะห์เชิงลึกรายข้อ</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,6 +39,8 @@
         .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.15); }
         .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; }
         .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; }
+        
+        .ai-pulse-glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
@@ -50,7 +52,7 @@
                     <i class="fas fa-arrow-left text-sm"></i>
                 </button>
                 <div>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="resultTitleNav">ผลการสอบและ AI วิเคราะห์ผล</h1>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="resultTitleNav">ผลการสอบ & AI วิเคราะห์เชิงลึกรายข้อ</h1>
                     <p class="text-[11px] text-slate-500">ระบบประเมินผลสัมฤทธิ์อัจฉริยะ Hi-Tech</p>
                 </div>
             </div>
@@ -83,19 +85,19 @@
             </div>
         </div>
 
-        <!-- AI วิเคราะห์ผลคะแนน & จุดแข็งจุดอ่อน -->
-        <div class="hitech-card p-6 rounded-3xl space-y-4 border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 via-transparent to-sky-500/5">
-            <div class="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-800">
-                <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-md">
-                    <i class="fas fa-robot"></i>
+        <!-- AI Tutor วิเคราะห์เชิงลึกภาพรวมและรายข้อ -->
+        <div class="hitech-card ai-pulse-glow p-6 rounded-3xl space-y-4 border-indigo-500/40 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-500/10">
+            <div class="flex items-center gap-2.5 pb-3 border-b border-indigo-500/20">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-500/30">
+                    <i class="fas fa-brain"></i>
                 </div>
                 <div>
-                    <h3 class="font-extrabold text-sm text-indigo-600 dark:text-indigo-400">AI Tutor สรุปผลการประเมินและวิเคราะห์เชิงลึก</h3>
-                    <p class="text-[11px] text-slate-400">วิเคราะห์จากสถิติการตอบ จุดแข็ง และจุดที่ต้องพัฒนาเพิ่มเติม</p>
+                    <h3 class="font-extrabold text-sm text-indigo-600 dark:text-indigo-300">AI Tutor Diagnostic Engine (วิเคราะห์เจาะลึกรายข้อ & จุดที่ต้องเสริม)</h3>
+                    <p class="text-[11px] text-slate-400">ปัญญาประดิษฐ์ตรวจวิเคราะห์ข้อที่ทำผิดพลาด พร้อมแนะนำสูตร/เทคนิคจำเฉพาะประเด็น</p>
                 </div>
             </div>
-            <div id="aiAnalysisContainer" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
-                <div class="text-slate-400 py-4 text-center">กำลังประมวลผลวิเคราะห์ข้อมูลด้วย AI...</div>
+            <div id="aiAnalysisContainer" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
+                <div class="text-slate-400 py-6 text-center"><i class="fas fa-spinner fa-spin mr-2"></i> AI กำลังประมวลผลวิเคราะห์คำตอบรายข้อ...</div>
             </div>
         </div>
 
@@ -139,11 +141,10 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOiJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        // รองรับทั้งพารามิเตอร์ attempt_id หรือ id
         const attemptId = urlParams.get('attempt_id') || urlParams.get('id');
 
         let globalQuestions = [];
@@ -176,49 +177,26 @@
             let attempt = null;
 
             if (attemptId) {
-                // ค้นหาตาม ID ที่ส่งมาใน URL ก่อน
-                const { data } = await mySupabase
-                    .from('exam_attempts')
-                    .select('*')
-                    .eq('id', attemptId)
-                    .single();
+                const { data } = await mySupabase.from('exam_attempts').select('*').eq('id', attemptId).single();
                 attempt = data;
             }
 
-            // ถ้ายังไม่พบ ให้ดึงประวัติการส่งข้อสอบล่าสุดของผู้ใช้คนนี้โดยอัตโนมัติ
             if (!attempt) {
-                let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('userId');
+                let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
                 if (studentId) {
-                    const { data: latestList } = await mySupabase
-                        .from('exam_attempts')
-                        .select('*')
-                        .eq('student_id', studentId)
-                        .order('submission_time', { ascending: false })
-                        .limit(1);
-                    if (latestList && latestList.length > 0) {
-                        attempt = latestList[0];
-                    }
+                    const { data: latestList } = await mySupabase.from('exam_attempts').select('*').eq('student_id', studentId).order('submission_time', { ascending: false }).limit(1);
+                    if (latestList && latestList.length > 0) attempt = latestList[0];
                 }
             }
 
             if (!attempt) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'ไม่พบข้อมูลผลการสอบ',
-                    text: 'กรุณาเลือกผลการสอบจากประวัติการทำข้อสอบของคุณ',
-                    confirmButtonText: 'กลับหน้าหลัก'
-                }).then(() => window.location.href = 'student.html');
+                Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผลการสอบ', confirmButtonText: 'กลับหน้าหลัก' }).then(() => window.location.href = 'student.html');
                 return;
             }
 
             const currentAttemptId = attempt.id;
 
-            // ดึงข้อมูลชุดข้อสอบ (exams)
-            const { data: exam } = await mySupabase
-                .from('exams')
-                .select('*')
-                .eq('id', attempt.exam_id)
-                .single();
+            const { data: exam } = await mySupabase.from('exams').select('*').eq('id', attempt.exam_id).single();
 
             document.getElementById('examTitleHeader').textContent = exam ? exam.title : 'ชุดข้อสอบออนไลน์';
             document.getElementById('resultTitleNav').textContent = exam ? exam.title : 'ผลการสอบ';
@@ -232,31 +210,19 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
-            // ดึงคำถามทั้งหมดของชุดข้อสอบนี้
-            const { data: questions } = await mySupabase
-                .from('questions')
-                .select('*')
-                .eq('exam_id', attempt.exam_id)
-                .order('question_number', { ascending: true });
-
-            // ดึงคำตอบจากตาราง exam_answers
-            const { data: answers } = await mySupabase
-                .from('exam_answers')
-                .select('*')
-                .eq('attempt_id', currentAttemptId);
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+            const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', currentAttemptId);
 
             globalQuestions = questions || [];
             globalAnswerMap = {};
 
-            // 1. อ่านจากตาราง exam_answers
             (answers || []).forEach(ans => {
                 globalAnswerMap[ans.question_id] = {
-                    selected_option_index: ans.selected_option_index !== undefined && ans.selected_option_index !== null ? parseInt(ans.selected_option_index) : null,
+                    selected_option_index: ans.selected_option_index !== undefined && ans.selected_option_index !== null ? parseInt(ans.selected_option_index) : (ans.selected_answer !== undefined && ans.selected_answer !== '' ? parseInt(ans.selected_answer) : null),
                     subjective_answer: ans.subjective_answer
                 };
             });
 
-            // 2. สำรองข้อมูลจาก attempt.answer_saved (JSON)
             if (Object.keys(globalAnswerMap).length === 0 && attempt.answer_saved) {
                 try {
                     const savedObj = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
@@ -441,6 +407,14 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">
                                 ${bubblesHtml}
                             </div>
+
+                            <!-- ส่วน AI เจาะลึกรายข้อสำหรับข้อที่ผิด -->
+                            ${!isCorrect ? `
+                                <div class="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-[11px] space-y-1">
+                                    <div class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1"><i class="fas fa-lightbulb"></i> AI Tutor วิเคราะห์ข้อนี้:</div>
+                                    <p class="text-slate-700 dark:text-slate-300">คุณตอบตัวเลือก <b>${studentChoiceIdx !== null ? String.fromCharCode(65 + studentChoiceIdx) : 'ไม่ได้ตอบ'}</b> แต่คำตอบที่ถูกต้องคือ <b>${correctChoiceIdx !== null ? String.fromCharCode(65 + correctChoiceIdx) : '-'}</b> แนะนำให้ทบทวนหลักการในหัวข้อ <b>${q.category_tag || 'ทั่วไป'}</b> โดยระวังความคลาดเคลื่อนในการตีความโจทย์ในลักษณะนี้</p>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 }
@@ -455,10 +429,9 @@
             }
 
             let categoryStats = {};
-            let wrongTopics = new Set();
-            let strongTopics = new Set();
+            let wrongItemsList = [];
 
-            questions.forEach(q => {
+            questions.forEach((q, idx) => {
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
                 if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
                 categoryStats[tag].total++;
@@ -470,25 +443,26 @@
 
                 if (isCorrect) {
                     categoryStats[tag].correct++;
-                    strongTopics.add(tag);
                 } else {
-                    wrongTopics.add(tag);
+                    wrongItemsList.push({
+                        qNum: q.question_number || (idx + 1),
+                        tag: tag,
+                        questionText: q.question_text || q.content || 'โจทย์คำถาม',
+                        studentChoice: studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
+                        correctChoice: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-'
+                    });
                 }
             });
 
             const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
             let performanceSummary = '';
-            let recommendation = '';
 
             if (percentage >= 80) {
-                performanceSummary = `ยอดเยี่ยมมาก! คุณทำคะแนนได้ ${score}/${total} (${percentage}%) แสดงถึงความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม`;
-                recommendation = 'รักษามาตรฐานนี้ไว้ และลองท้าทายตนเองด้วยโจทย์ขั้นสูงในหมวดหมู่ที่สนใจเพิ่มเติม';
+                performanceSummary = `ยอดเยี่ยมมาก! คุณทำคะแนนได้ ${score}/${total} (${percentage}%) มีความแม่นยำสูงในเกือบทุกหมวดหมู่`;
             } else if (percentage >= 50) {
-                performanceSummary = `ทำผลงานได้ดีพอสมควร ได้คะแนน ${score}/${total} (${percentage}%) มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ยังคลาดเคลื่อน`;
-                recommendation = `ควรกลับไปทบทวนเนื้อหาในหมวดหมู่ที่ยังทำผิดพลาด เพื่อความแม่นยำยิ่งขึ้น`;
+                performanceSummary = `ทำผลงานได้ปานกลาง ได้คะแนน ${score}/${total} (${percentage}%) มีจุดที่ต้องเก็บตกและระมัดระวังเพิ่มขึ้น`;
             } else {
-                performanceSummary = `คุณทำคะแนนได้ ${score}/${total} (${percentage}%) อยู่ในเกณฑ์ที่ต้องฝึกฝนและทบทวนเนื้อหาเพิ่มเติมอย่างจริงจัง`;
-                recommendation = `แนะนำให้อ่านสรุปเนื้อหาและเปิดดูเอกสาร PDF ข้อสอบควบคู่กับการทำแบบฝึกหัดซ้ำอีกรอบ`;
+                performanceSummary = `ทำคะแนนได้ ${score}/${total} (${percentage}%) ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ`;
             }
 
             let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
@@ -498,6 +472,26 @@
                     <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
                 </li>`;
             }).join('');
+
+            let wrongAnalysisHtml = '';
+            if (wrongItemsList.length > 0) {
+                wrongAnalysisHtml = `
+                    <div class="space-y-2 pt-2 border-t border-indigo-500/20">
+                        <span class="font-bold text-xs text-indigo-600 dark:text-indigo-400 block"><i class="fas fa-exclamation-triangle mr-1"></i> AI เจาะลึกข้อที่ทำผิดพลาด (${wrongItemsList.length} ข้อ):</span>
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            ${wrongItemsList.map(item => `
+                                <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border text-[11px] space-y-1">
+                                    <div class="font-bold text-red-500">ข้อที่ ${item.qNum} [หมวด: ${item.tag}]</div>
+                                    <div class="text-slate-600 dark:text-slate-300 line-clamp-1">โจทย์: ${item.questionText}</div>
+                                    <div class="text-slate-500 text-[10px]">คุณตอบ <b>${item.studentChoice}</b> \vert{} เฉลยที่ถูกคือ <b>${item.correctChoice}</b> ➔ <i>คำแนะนำ: ทบทวนหลักการและสูตรคำนวณในหัวข้อนี้เพิ่มเติม</i></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                wrongAnalysisHtml = `<div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! คุณทำข้อสอบถูกทุกข้อ ไม่มีข้อผิดพลาด</div>`;
+            }
 
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -511,11 +505,8 @@
                     </div>
 
                     <div class="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
-                        <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-lightbulb"></i> ข้อเสนอแนะจาก AI Tutor</h4>
-                        <div class="space-y-2 text-xs">
-                            <p class="text-slate-700 dark:text-slate-300"><b>🎯 จุดที่ต้องพัฒนาเพิ่ม:</b> ${recommendation}</p>
-                            <p class="text-slate-700 dark:text-slate-300"><b>💡 คำแนะนำ:</b> ใช้ฟังก์ชันตัวกรองด้านขวาเพื่อตรวจสอบเฉลยข้อที่ตอบผิด และเปิดเอกสาร PDF ด้านซ้ายทบทวนสูตรหรือเนื้อหาควบคู่กันไปเพื่อให้เกิดการเรียนรู้สูงสุด</p>
-                        </div>
+                        <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-stethoscope"></i> AI Diagnostic Breakdown</h4>
+                        ${wrongAnalysisHtml}
                     </div>
                 </div>
             `;
