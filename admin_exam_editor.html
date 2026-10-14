@@ -69,6 +69,32 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 pt-20 space-y-6">
+        
+        <!-- แผงอัปโหลด PDF โจทย์ข้อสอบ -->
+        <div id="pdfUploadCard" class="hitech-card p-5 rounded-2xl space-y-3 border-l-4 border-l-red-500">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <i class="fas fa-file-pdf text-base"></i> อัปโหลดไฟล์ PDF โจทย์ข้อสอบ
+                </h3>
+                <span id="pdfStatusBadge" class="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold">ยังไม่ได้แนบ PDF</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                <div class="md:col-span-8 flex items-center gap-2">
+                    <input type="text" id="pdfUrlInput" onchange="markAsModified()" class="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-mono outline-none" placeholder="วาง URL ลิงก์ PDF หรือกดปุ่มอัปโหลดด้านขวา...">
+                    <button onclick="previewPdf()" id="previewPdfBtn" class="px-3 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold shrink-0 hidden" title="ดูไฟล์ PDF"><i class="fas fa-external-link-alt"></i></button>
+                </div>
+                
+                <div class="md:col-span-4 flex gap-2">
+                    <label class="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-red-500/20 transition-all">
+                        <i class="fas fa-cloud-arrow-up text-sm"></i> เลือกไฟล์ PDF
+                        <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="uploadPdfFile(this)">
+                    </label>
+                    <button onclick="savePdfUrl()" class="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold rounded-xl text-xs transition-all hover:bg-slate-800">บันทึก URL</button>
+                </div>
+            </div>
+        </div>
+
         <div class="hitech-card p-4 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-l-4 border-l-sky-500">
             <div>
                 <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2">
@@ -81,19 +107,6 @@
             </button>
         </div>
 
-        <div id="pdfUploadCard" class="hitech-card p-4 rounded-2xl space-y-2 border-l-4 border-l-red-500">
-            <h3 class="font-bold text-xs flex items-center gap-2 text-red-600 dark:text-red-400"><i class="fas fa-file-pdf"></i> ไฟล์โจทย์ PDF ข้อสอบ</h3>
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
-                <input type="text" id="pdfUrlInput" onchange="markAsModified()" class="md:col-span-8 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs" placeholder="วาง URL ลิงก์ PDF...">
-                <label class="md:col-span-2 px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5">
-                    <i class="fas fa-upload"></i> อัปโหลด PDF
-                    <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="uploadPdfFile(this)">
-                </label>
-                <button onclick="savePdfUrl()" class="md:col-span-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-all">อัปเดต PDF</button>
-            </div>
-        </div>
-
-        <!-- ชิปสรุปสัดส่วนหมวดหมู่โจทย์ -->
         <div id="categorySummaryChips" class="flex flex-wrap gap-2 pt-1"></div>
 
         <div class="hitech-card p-6 rounded-2xl space-y-4">
@@ -165,12 +178,14 @@
 
         function markAsModified() {
             hasUnsavedChanges = true;
-            document.getElementById('floatingSaveBanner').classList.add('show');
+            const banner = document.getElementById('floatingSaveBanner');
+            if (banner) banner.classList.add('show');
         }
 
         function clearModifiedFlag() {
             hasUnsavedChanges = false;
-            document.getElementById('floatingSaveBanner').classList.remove('show');
+            const banner = document.getElementById('floatingSaveBanner');
+            if (banner) banner.classList.remove('show');
         }
 
         async function initPage() {
@@ -187,7 +202,19 @@
             if (data) {
                 document.getElementById('examTitleHeader').textContent = `${data.title}`;
                 document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | โหมด: ${data.delivery_type === 'online' ? 'พิมพ์โจทย์ลงระบบ' : 'ไฟล์ PDF'}`;
-                if (data.pdf_url) document.getElementById('pdfUrlInput').value = data.pdf_url;
+                
+                if (data.pdf_url) {
+                    const pdfInput = document.getElementById('pdfUrlInput');
+                    const previewBtn = document.getElementById('previewPdfBtn');
+                    const badge = document.getElementById('pdfStatusBadge');
+
+                    if (pdfInput) pdfInput.value = data.pdf_url;
+                    if (previewBtn) previewBtn.classList.remove('hidden');
+                    if (badge) {
+                        badge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-300";
+                        badge.textContent = "พร้อมใช้งาน PDF";
+                    }
+                }
             }
         }
 
@@ -195,7 +222,6 @@
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             cachedQuestions = questions || [];
 
-            // สรุปสัดส่วนหมวดหมู่โจทย์เป็น Chip ด้านบน
             const tagCounts = {};
             cachedQuestions.forEach(q => {
                 const tag = q.category_tag || 'ทั่วไป';
@@ -203,15 +229,19 @@
             });
 
             const chipsSec = document.getElementById('categorySummaryChips');
-            chipsSec.innerHTML = Object.keys(tagCounts).map(tag => `
-                <span class="px-3 py-1 bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-full font-bold text-xs border border-sky-300 dark:border-sky-800">
-                    🏷️ ${tag}: ${tagCounts[tag]} ข้อ
-                </span>
-            `).join('');
+            if (chipsSec) {
+                chipsSec.innerHTML = Object.keys(tagCounts).map(tag => `
+                    <span class="px-3 py-1 bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 rounded-full font-bold text-xs border border-sky-300 dark:border-sky-800">
+                        🏷️ ${tag}: ${tagCounts[tag]} ข้อ
+                    </span>
+                `).join('');
+            }
 
             const tags = Array.from(new Set(cachedQuestions.map(q => q.category_tag).filter(Boolean)));
             const dd = document.getElementById('categoryFilterDropdown');
-            dd.innerHTML = '<option value="ALL">📂 แสดงหมวดหมู่โจทย์ทั้งหมด</option>' + tags.map(t => `<option value="${t}">🏷️ หมวดหมู่: ${t}</option>`).join('');
+            if (dd) {
+                dd.innerHTML = '<option value="ALL">📂 แสดงหมวดหมู่โจทย์ทั้งหมด</option>' + tags.map(t => `<option value="${t}">🏷️ หมวดหมู่: ${t}</option>`).join('');
+            }
 
             renderOmrGrid();
             renderQuestionAccordions();
@@ -219,6 +249,8 @@
 
         function renderOmrGrid() {
             const container = document.getElementById('omrGridContainer');
+            if (!container) return;
+
             if (cachedQuestions.length === 0) {
                 container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">ยังไม่มีกระดาษคำตอบ OMR</div>`;
                 return;
@@ -255,7 +287,10 @@
 
         function renderQuestionAccordions() {
             const container = document.getElementById('questionAccordionContainer');
-            const filterTag = document.getElementById('categoryFilterDropdown').value;
+            if (!container) return;
+
+            const filterDropdown = document.getElementById('categoryFilterDropdown');
+            const filterTag = filterDropdown ? filterDropdown.value : 'ALL';
 
             const filtered = filterTag === 'ALL' 
                 ? cachedQuestions 
@@ -318,12 +353,14 @@
         function toggleAccordion(accId) {
             const body = document.getElementById(accId);
             const icon = document.getElementById(`icon-${accId}`);
-            if (body.classList.contains('hidden')) {
-                body.classList.remove('hidden');
-                icon.classList.add('rotate-180');
-            } else {
-                body.classList.add('hidden');
-                icon.classList.remove('rotate-180');
+            if (body && icon) {
+                if (body.classList.contains('hidden')) {
+                    body.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                } else {
+                    body.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
             }
         }
 
@@ -479,16 +516,20 @@
         }
 
         window.toggleQuestionTypeModal = function(val) {
-            document.getElementById('mcSection').className = val === 'essay' ? 'hidden' : 'space-y-2 pt-2 border-t dark:border-slate-800';
-            document.getElementById('essaySection').className = val === 'essay' ? 'space-y-3 pt-2 border-t dark:border-slate-800' : 'hidden';
+            const mcSec = document.getElementById('mcSection');
+            const esSec = document.getElementById('essaySection');
+            if (mcSec) mcSec.className = val === 'essay' ? 'hidden' : 'space-y-2 pt-2 border-t dark:border-slate-800';
+            if (esSec) esSec.className = val === 'essay' ? 'space-y-3 pt-2 border-t dark:border-slate-800' : 'hidden';
         }
 
         window.toggleGradingTypeSec = function(val) {
-            document.getElementById('keywordSec').className = val === 'keyword' ? 'space-y-2' : 'hidden';
+            const kwSec = document.getElementById('keywordSec');
+            if (kwSec) kwSec.className = val === 'keyword' ? 'space-y-2' : 'hidden';
         }
 
         window.addOptionField = function() {
             const container = document.getElementById('optionsInputsContainer');
+            if (!container) return;
             const currentCount = container.querySelectorAll('.option-row').length;
             if (currentCount >= 5) { Swal.fire('ข้อจำกัด', 'เพิ่มตัวเลือกได้สูงสุด 5 ตัวเลือกเท่านั้น', 'info'); return; }
 
@@ -506,6 +547,7 @@
 
         window.addKeywordField = function() {
             const container = document.getElementById('keywordsContainer');
+            if (!container) return;
             const div = document.createElement('div');
             div.className = 'flex items-center gap-2 keyword-row';
             div.innerHTML = `
@@ -522,11 +564,14 @@
         async function uploadQuestionImage(input) {
             const file = input.files[0];
             if (!file) return;
-            const fileName = `img_${Date.now()}_${file.name}`;
+            const fileName = `img_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9_.-]/g, '_')}`;
             const { error } = await mySupabase.storage.from('exam_images').upload(fileName, file);
             if (!error) {
                 const { data } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
-                if (data) document.getElementById('qImageUrl').value = data.publicUrl;
+                if (data) {
+                    const imgInp = document.getElementById('qImageUrl');
+                    if (imgInp) imgInp.value = data.publicUrl;
+                }
             } else { Swal.fire('อัปโหลดล้มเหลว', error.message, 'error'); }
         }
 
@@ -547,7 +592,76 @@
             }
         }
 
-        // เจน OMR พร้อมเลือกหมวดหมู่ย่อยได้ตามต้องการ
+        // ฟังก์ชันอัปโหลด PDF ฉบับแก้ไข รันปลอดภัย 100%
+        async function uploadPdfFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 25 * 1024 * 1024) {
+                Swal.fire('ไฟล์มีขนาดใหญ่เกินไป', 'กรุณาอัปโหลดไฟล์ PDF ขนาดไม่เกิน 25MB', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังอัปโหลดไฟล์ PDF...',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังบันทึกลง Supabase Storage...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const cleanName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+            const fileName = `pdf_${Date.now()}_${cleanName}`;
+
+            try {
+                const { error: uploadError } = await mySupabase.storage
+                    .from('exam_images')
+                    .upload(fileName, file, { cacheControl: '3600', upsert: true, contentType: 'application/pdf' });
+
+                if (uploadError) {
+                    Swal.fire('อัปโหลดล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block p-2 bg-slate-900 rounded">${uploadError.message}</code>`, 'error');
+                    return;
+                }
+
+                const { data: urlData } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
+                
+                if (urlData && urlData.publicUrl) {
+                    const pdfUrl = urlData.publicUrl;
+                    const pdfInput = document.getElementById('pdfUrlInput');
+                    if (pdfInput) pdfInput.value = pdfUrl;
+
+                    await mySupabase.from('exams').update({ pdf_url: pdfUrl }).eq('id', examId);
+
+                    const previewBtn = document.getElementById('previewPdfBtn');
+                    const badge = document.getElementById('pdfStatusBadge');
+
+                    if (previewBtn) previewBtn.classList.remove('hidden');
+                    if (badge) {
+                        badge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-300";
+                        badge.textContent = "พร้อมใช้งาน PDF";
+                    }
+
+                    markAsModified();
+                    Swal.fire({ icon: 'success', title: 'อัปโหลดและบันทึก PDF เรียบร้อย!', timer: 1200, showConfirmButton: false });
+                }
+            } catch (err) {
+                Swal.fire('เกิดข้อผิดพลาดไม่คาดคิด', err.message || 'ไม่สามารถอัปโหลดไฟล์ได้', 'error');
+            }
+        }
+
+        async function savePdfUrl() {
+            const pdfInput = document.getElementById('pdfUrlInput');
+            const pdf_url = pdfInput ? pdfInput.value : '';
+            await mySupabase.from('exams').update({ pdf_url }).eq('id', examId);
+            markAsModified();
+            Swal.fire({ icon: 'success', title: 'บันทึกลิงก์ PDF เรียบร้อย!', timer: 1000, showConfirmButton: false });
+        }
+
+        function previewPdf() {
+            const pdfInput = document.getElementById('pdfUrlInput');
+            const url = pdfInput ? pdfInput.value : '';
+            if (url) window.open(url, '_blank');
+        }
+
         async function openAutoAnswerSheetModal() {
             const { value: formValues } = await Swal.fire({
                 title: '⚡ เจนกระดาษคำตอบ OMR',
@@ -602,84 +716,6 @@
         function openPreviewStudentModal() {
             window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
-
-        async function savePdfUrl() {
-            const pdf_url = document.getElementById('pdfUrlInput').value;
-            await mySupabase.from('exams').update({ pdf_url }).eq('id', examId);
-            markAsModified();
-        }
-
-// ฟังก์ชันอัปโหลดไฟล์ PDF โจทย์ลง Supabase Storage พร้อมดักจับ Error รายละเอียด
-async function uploadPdfFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-
-    // ตรวจสอบขนาดไฟล์ (เช่น ไม่เกิน 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-        Swal.fire('ไฟล์มีขนาดใหญ่เกินไป', 'กรุณาอัปโหลดไฟล์ PDF ขนาดไม่เกิน 20MB', 'warning');
-        return;
-    }
-
-    Swal.fire({
-        title: 'กำลังอัปโหลดไฟล์ PDF...',
-        html: '<div class="text-xs text-slate-400 mt-1">กำลังบันทึกลง Supabase Storage...</div>',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-    });
-
-    // สร้างชื่อไฟล์ป้องกันภาษาไทยหรืออักขระพิเศษ
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
-    const fileName = `pdf_${Date.now()}_${cleanFileName}`;
-
-    try {
-        // อัปโหลดไปยัง Bucket exam_images
-        const { data: uploadData, error: uploadError } = await mySupabase.storage
-            .from('exam_images')
-            .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: 'application/pdf'
-            });
-
-        if (uploadError) {
-            console.error('Supabase Storage Error:', uploadError);
-            Swal.fire({
-                icon: 'error',
-                title: 'อัปโหลด PDF ล้มเหลว',
-                html: `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block p-2 bg-slate-900 rounded">${uploadError.message}</code><div class="text-[11px] text-slate-400 mt-2">กรุณาเช็กสิทธิ์ RLS Policy หรือ MIME Type ใน Bucket "exam_images"</div>`
-            });
-            return;
-        }
-
-        // ดึง Public URL ของไฟล์ที่อัปโหลดสำเร็จ
-        const { data: urlData } = mySupabase.storage.from('exam_images').getPublicUrl(fileName);
-        
-        if (urlData && urlData.publicUrl) {
-            const pdfUrl = urlData.publicUrl;
-            document.getElementById('pdfUrlInput').value = pdfUrl;
-
-            // บันทึกลิงก์ PDF ลงในตาราง exams ทันที
-            const { error: dbError } = await mySupabase.from('exams').update({ pdf_url: pdfUrl }).eq('id', examId);
-
-            if (dbError) {
-                Swal.fire('บันทึกลงฐานข้อมูลล้มเหลว', dbError.message, 'error');
-                return;
-            }
-
-            // อัปเดต UI
-            document.getElementById('previewPdfBtn').classList.remove('hidden');
-            const badge = document.getElementById('pdfStatusBadge');
-            badge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-300";
-            badge.textContent = "พร้อมใช้งาน PDF";
-
-            markAsModified();
-            Swal.fire({ icon: 'success', title: 'อัปโหลดและบันทึก PDF สำเร็จ!', timer: 1200, showConfirmButton: false });
-        }
-    } catch (err) {
-        console.error('Unexpected Upload Error:', err);
-        Swal.fire('เกิดข้อผิดพลาดไม่คาดคิด', err.message || 'ไม่สามารถเชื่อมต่อระบบไฟล์ได้', 'error');
-    }
-}
 
         async function saveAllChangesSticky() {
             Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
