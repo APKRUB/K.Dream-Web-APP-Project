@@ -234,8 +234,8 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ฟังก์ชันกลางกวาดหาและตรวจสอบ Student ID จากคีย์ทั้งหมดใน LocalStorage อย่างแม่นยำ
-        function getValidatedStudentId() {
+        // ฟังก์ชันกวาดหาและตรวจสอบ Student ID จาก localStorage หรือ Supabase Session สดๆ
+        async function getValidatedStudentId() {
             let studentId = localStorage.getItem('id') || 
                             localStorage.getItem('student_id') || 
                             localStorage.getItem('user_id') || 
@@ -247,12 +247,25 @@
                     studentId = userObj.id || userObj.student_id || userObj.uid || null;
                 } catch(e) {}
             }
+
+            // ถ้าใน localStorage ยังไม่มี ให้ดึงตรงๆ จาก Supabase Session สดๆ
+            if (!studentId) {
+                try {
+                    const { data: { session } } = await mySupabase.auth.getSession();
+                    if (session && session.user) {
+                        studentId = session.user.id;
+                        localStorage.setItem('id', studentId);
+                        localStorage.setItem('student_id', studentId);
+                    }
+                } catch(e) {}
+            }
+
             return studentId;
         }
 
         // ระบบ Auth Guard ป้องกันคนไม่ได้ Login เข้ามาใช้งานอย่างเด็ดขาด
-        function checkStudentAuth() {
-            const studentId = getValidatedStudentId();
+        async function checkStudentAuth() {
+            const studentId = await getValidatedStudentId();
             if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
                 Swal.fire({
                     icon: 'warning',
@@ -270,7 +283,6 @@
                                     localStorage.getItem('user_name') || 
                                     localStorage.getItem('account_name') || 
                                     localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
                                     'นักเรียน';
 
             localStorage.setItem('student_username', currentUsername);
@@ -278,7 +290,9 @@
         }
         
         async function initStudentPortal() {
-            if (!checkStudentAuth()) return;
+            const isAuthValid = await checkStudentAuth();
+            if (!isAuthValid) return;
+
             const fullName = localStorage.getItem('full_name') || localStorage.getItem('user_name') || localStorage.getItem('student_username') || 'นักเรียน';
             document.getElementById('studentDisplayName').textContent = fullName;
 
@@ -292,7 +306,7 @@
         }
 
         async function fetchStudentData() {
-            const studentId = getValidatedStudentId();
+            const studentId = await getValidatedStudentId();
             
             let query = mySupabase.from('exam_attempts').select('exam_id, created_at, status, id, student_id');
             if (studentId) {
@@ -303,7 +317,7 @@
         }
 
         async function fetchExamsList() {
-            const { data, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
+            const { data } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
 
             cachedExams = (data || []).filter(e => {
                 if (e.is_hidden === true || e.is_active === false || e.status === 'hidden' || e.status === 'draft') return false;
@@ -545,7 +559,7 @@
         }
 
         async function initAnalyticsData() {
-            const studentId = getValidatedStudentId();
+            const studentId = await getValidatedStudentId();
             
             const { data: exams } = await mySupabase.from('exams').select('*');
             allExamsData = exams || [];
@@ -671,7 +685,13 @@
         }
 
         function logoutStudent() {
-            Swal.fire({ title: 'ออกจากระบบ?', icon: 'question', showCancelButton: true, confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' }).then(res => { if (res.isConfirmed) window.location.href = 'index.html'; });
+            Swal.fire({ title: 'ออกจากระบบ?', icon: 'question', showCancelButton: true, confirmButtonText: 'ออกจากระบบ', cancelButtonText: 'ยกเลิก' }).then(async (res) => {
+                if (res.isConfirmed) {
+                    await mySupabase.auth.signOut();
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                }
+            });
         }
 
         initStudentPortal();
