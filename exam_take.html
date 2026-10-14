@@ -489,47 +489,61 @@
         }
 
         // กระบวนการส่งข้อสอบและคัดIแยกเส้นทางตามประเภทข้อสอบ (มีอัตนัย vs ปรนัยล้วน)
-        async function submitExamProcess() {
-            clearInterval(timerInterval);
-            
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
-            const hasEssay = questionsData.some(q => q.question_type === 'essay');
+async function submitExamProcess() {
+    clearInterval(timerInterval);
+    
+    // ดึงรหัสประจำตัวนักเรียนจาก LocalStorage (ถ้าไม่มีให้ใช้ Guest หรือ ID จำลอง)
+    const studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || 'student_guest';
+    const hasEssay = questionsData.some(q => q.question_type === 'essay');
 
-            // บันทึกคำตอบลง Supabase ตาราง exam_submissions
-            const submissionPayload = {
-                exam_id: examId,
-                student_id: studentId,
-                answers: studentAnswers,
-                status: hasEssay ? 'pending_grading' : 'graded',
-                submitted_at: new Date().toISOString()
-            };
+    // 🔴 ตรวจสอบและดึงคำตอบล่าสุดจาก LocalStorage เพื่อให้มั่นใจว่าไม่หาย
+    let finalAnswers = studentAnswers;
+    const savedAns = localStorage.getItem(`exam_ans_${examId}`);
+    if (savedAns) {
+        try { finalAnswers = JSON.parse(savedAns); } catch(e) {}
+    }
 
-            await mySupabase.from('exam_submissions').insert([submissionPayload]);
-            localStorage.removeItem(`exam_ans_${examId}`);
+    // บันทึกคำตอบลง Supabase ตาราง exam_submissions พร้อมเก็บลงคอลัมน์ answers จริงๆ
+    const submissionPayload = {
+        exam_id: examId,
+        student_id: studentId,
+        answers: finalAnswers, // บันทึก Object คำตอบของนักเรียนที่นี่
+        status: hasEssay ? 'pending_grading' : 'graded',
+        submitted_at: new Date().toISOString()
+    };
 
-            if (hasEssay) {
-                // กรณีมีข้ออัตนัย -> เด้งไปหน้าตรวจของครู / แจ้งเตือนรอตรวจ
-                Swal.fire({
-                    icon: 'info',
-                    title: 'ส่งข้อสอบสำเร็จ!',
-                    text: 'ชุดข้อสอบนี้มีข้ออัตนัย ระบบได้ส่งข้อมูลไปยังหน้าตรวจของครูเรียบร้อยแล้ว รอคุณครูตรวจเพื่อสรุปคะแนนและผลวิเคราะห์ AI เต็มรูปแบบ',
-                    confirmButtonText: 'กลับสู่หน้าหลัก'
-                }).then(() => {
-                    window.location.href = 'student.html';
-                });
-            } else {
-                // กรณีปรนัยล้วน -> ส่งคะแนนเข้า admin_analytics.html และพาไปหน้าแสดงผลเปรียบเทียบ + AI Diagnostic
-                Swal.fire({
-                    icon: 'success',
-                    title: 'ส่งข้อสอบและตรวจผลสำเร็จ!',
-                    text: 'ระบบกำลังพาคุณไปยังหน้าสรุปคะแนนและวิเคราะห์ผล AI...',
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
-                    window.location.href = `student_result.html?exam_id=${examId}`;
-                });
-            }
-        }
+    // ส่งข้อมูลไปบันทึกใน Supabase
+    const { error } = await mySupabase.from('exam_submissions').insert([submissionPayload]);
+    
+    if (error) {
+        console.error('Error saving submission:', error);
+    }
+
+    // ล้างข้อมูลคำตอบชั่วคราวของข้อสอบชุดนี้
+    localStorage.removeItem(`exam_ans_${examId}`);
+
+    if (hasEssay) {
+        Swal.fire({
+            icon: 'info',
+            title: 'ส่งข้อสอบสำเร็จ!',
+            text: 'ชุดข้อสอบนี้มีข้ออัตนัย ระบบได้ส่งข้อมูลไปยังหน้าตรวจของครูเรียบร้อยแล้ว รอคุณครูตรวจเพื่อสรุปคะแนนและผลวิเคราะห์ AI เต็มรูปแบบ',
+            confirmButtonText: 'กลับสู่หน้าหลัก'
+        }).then(() => {
+            window.location.href = 'student.html';
+        });
+    } else {
+        Swal.fire({
+            icon: 'success',
+            title: 'ส่งข้อสอบและตรวจผลสำเร็จ!',
+            text: 'ระบบกำลังพาคุณไปยังหน้าสรุปคะแนนและวิเคราะห์ผล AI...',
+            timer: 1500,
+            showConfirmButton: false
+        }).then(() => {
+            // ส่ง exam_id และ student_id ไปด้วยเพื่อให้หน้าผลคะแนนดึงข้อมูลมาแสดงได้ถูกต้อง
+            window.location.href = `student_result.html?exam_id=${examId}&student_id=${studentId}`;
+        });
+    }
+}
 
         initExamTake();
     </script>
