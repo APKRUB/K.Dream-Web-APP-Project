@@ -21,7 +21,7 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; }
+        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.95); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
         .hitech-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
@@ -51,7 +51,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-16">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-16" oncontextmenu="return false;">
 
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
@@ -86,16 +86,16 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- ฝั่งซ้าย: PDF โจทย์ (บล็อกคลิกขวาและป้องกันการบันทึก) -->
+            <!-- ฝั่งซ้าย: PDF โจทย์ (บล็อกคลิกขวาและป้องกันการดาวน์โหลด 100%) -->
             <div id="pdfViewerCard" class="hidden lg:col-span-8 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ PDF (ห้ามดาวน์โหลด)</h3>
-                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ป้องกันการดาวน์โหลด</span>
+                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบ PDF (ห้ามดาวน์โหลด / ห้ามคลิกขวา)</h3>
+                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ป้องกันความปลอดภัยสูงสุด</span>
                 </div>
                 <div class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-hidden border relative" oncontextmenu="return false;">
-                    <!-- เลเยอร์โปร่งใสทับบล็อกการคลิกขวาเซฟไฟล์ -->
-                    <div class="absolute inset-0 z-10 bg-transparent"></div>
-                    <iframe id="pdfFrame" src="" class="w-full h-full border-0"></iframe>
+                    <!-- เลเยอร์โปร่งใสทับเพื่อบล็อกการคลิกขวาและเซฟไฟล์บนกรอบ PDF โดยตรง -->
+                    <div class="absolute inset-0 z-20 bg-transparent" style="pointer-events: none;"></div>
+                    <iframe id="pdfFrame" src="" class="w-full h-full border-0 select-none"></iframe>
                 </div>
             </div>
 
@@ -150,14 +150,15 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // บล็อกคลิกขวาและคีย์ลัดเซฟ/พิมพ์ทั้งหน้าเว็บ
+        // บล็อกการคลิกขวาและคีย์ลัดดาวน์โหลด/พิมพ์/แคปจออย่างเข้มงวด
         document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('mousedown', e => { if (e.button === 2) e.preventDefault(); });
         document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'a')) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'a' || e.key === 'i')) {
                 e.preventDefault();
                 Swal.fire({ icon: 'warning', text: 'ไม่อนุญาตให้ดำเนินการดังกล่าวในหน้าข้อสอบ', timer: 1200, showConfirmButton: false });
             }
-            if (e.key === 'F12') {
+            if (e.key === 'F12' || e.key === 'PrintScreen') {
                 e.preventDefault();
             }
         });
@@ -224,7 +225,7 @@
                 }
             }
 
-            // โหลด PDF พร้อมพารามิเตอร์บล็อกเครื่องมือดาวน์โหลด/พิมพ์
+            // โหลด PDF พร้อมพารามิเตอร์ซ่อน Toolbar และปุ่มดาวน์โหลด/พิมพ์ของเบราว์เซอร์
             if (exam.pdf_url) {
                 const pdfCard = document.getElementById('pdfViewerCard');
                 const rightCard = document.getElementById('rightAnswerCard');
@@ -233,7 +234,8 @@
                 if (pdfCard && pdfFrame) {
                     pdfCard.classList.remove('hidden');
                     if (rightCard) rightCard.className = 'lg:col-span-4 hitech-card p-5 rounded-3xl space-y-5';
-                    pdfFrame.src = `${exam.pdf_url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+                    // ปิดการแสดงผลเครื่องมือแถบด้านบนของ PDF
+                    pdfFrame.src = `${exam.pdf_url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&statusbar=0`;
                 }
             }
 
@@ -365,7 +367,7 @@
         }
 
         async function setupAttempt() {
-            let studentId = localStorage.getItem('student_id');
+            let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('id');
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             if (!uuidRegex.test(studentId)) {
                 studentId = null;
@@ -385,7 +387,6 @@
                 attemptId = data.id;
             }
 
-            // ระบบจับเวลาสากล บันทึกเวลาเริ่มลง localStorage ไม่หยุดแม้ปิดหน้าเว็บ
             const timerKey = `exam_start_time_${examId}`;
             let startTime = localStorage.getItem(timerKey);
             if (!startTime) {
@@ -480,7 +481,7 @@
             });
 
             if (!attemptId) {
-                let studentId = localStorage.getItem('student_id');
+                let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || localStorage.getItem('id');
                 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
                 if (!uuidRegex.test(studentId)) studentId = null;
 
