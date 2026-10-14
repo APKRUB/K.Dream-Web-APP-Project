@@ -26,6 +26,18 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        
+        .upcoming-banner-card {
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.6) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+        }
+        .dark .upcoming-banner-card {
+            background: linear-gradient(135deg, rgba(69, 26, 3, 0.6) 0%, rgba(120, 53, 15, 0.4) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+        }
+
         .glow-badge-sky { background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
         .dark .glow-badge-sky { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
@@ -55,20 +67,24 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-6">
+        
+        <!-- Section ลอยด้านบนสุด: แสดงข้อสอบที่จะเปิดบริการภายใน 24–48 ชั่วโมงข้างหน้า -->
         <div id="upcomingExamSection" class="hidden space-y-3">
-            <h3 class="font-extrabold text-xs text-amber-500 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-hourglass-start animate-spin"></i> ข้อสอบเตรียมเปิดบริการ (ภายใน 24 ชม.)
-            </h3>
+            <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <i class="fas fa-hourglass-start text-sm"></i> ข้อสอบกำลังจะเปิดบริการ (ภายใน 24 - 48 ชั่วโมงนี้)
+            </div>
             <div id="upcomingExamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
+        <!-- Section หลัก: จัดกลุ่มชุดข้อสอบสไตล์ Google Classroom -->
         <div class="space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hitech-card p-5 rounded-2xl">
                 <div>
                     <h2 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fas fa-layer-group text-sky-500"></i> คลังชุดข้อสอบ (Google Classroom Layout)
                     </h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">จัดการรูปแบบข้อสอบ เวลาเปิด-ปิด และสิทธิ์การเข้าทำได้อิสระ</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">แบ่งกลุ่มหมวดหมู่รายวิชา รองรับทั้งโหมด PDF และโจทย์พิมพ์ลงระบบออนไลน์</p>
                 </div>
                 
                 <div class="flex items-center gap-2 shrink-0">
@@ -125,9 +141,55 @@
                 return;
             }
 
+            // กรองข้อสอบสถานะ Countdown ที่จะเปิดภายใน 24-48 ชั่วโมงข้างหน้า
+            const now = new Date();
+            const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+            
+            const upcomingExams = exams.filter(e => {
+                if (e.status === 'countdown' && e.start_time) {
+                    const st = new Date(e.start_time);
+                    return st > now && st <= in48Hours;
+                }
+                return false;
+            });
+
+            const upcomingSec = document.getElementById('upcomingExamSection');
+            const upcomingGrid = document.getElementById('upcomingExamsGrid');
+
+            if (upcomingExams.length > 0) {
+                upcomingSec.classList.remove('hidden');
+                upcomingGrid.innerHTML = upcomingExams.map(e => {
+                    const st = new Date(e.start_time);
+                    const diffHours = Math.round((st - now) / (1000 * 60 * 60));
+                    return `
+                        <div class="upcoming-banner-card p-4 rounded-2xl space-y-2 border-l-4 border-l-amber-500">
+                            <div class="flex justify-between items-start">
+                                <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
+                                    <i class="fas fa-clock mr-1"></i> อีก ~${diffHours} ชม. จะเปิดบริการ
+                                </span>
+                                <span class="font-mono text-xs text-amber-600 dark:text-amber-400 font-bold">${e.exam_code || 'CODE'}</span>
+                            </div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm">${e.title}</h4>
+                            <div class="text-[11px] text-slate-600 dark:text-slate-300">
+                                📅 เปิดสอบ: ${st.toLocaleString('th-TH')}
+                            </div>
+                            <div class="pt-2">
+                                <button onclick="window.location.href='admin_exam_editor.html?id=${e.id}'" class="w-full py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm">
+                                    เตรียมโจทย์ & เฉลย OMR
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                upcomingSec.classList.add('hidden');
+            }
+
+            // ตรวจสอบชุดข้อสอบที่มีข้อสอบประเภทอัตนัย
             const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
             const examsWithEssay = new Set((essayQuestions || []).map(q => q.exam_id));
 
+            // จัดกลุ่มตามหมวดหมู่
             const grouped = {};
             exams.forEach(e => {
                 const catName = e.exam_categories?.name || 'ข้อสอบทั่วไป';
@@ -163,7 +225,7 @@
                                     ${deliveryBadge}
                                     <span><i class="far fa-clock text-sky-500 mr-1"></i>${e.time_limit || 60} นาที</span>
                                 </div>
-                                ${e.due_date ? `<div class="text-[10px] text-amber-500 font-bold"><i class="far fa-calendar-xmark mr-1"></i>Due Date: ${new Date(e.due_date).toLocaleString('th-TH')} (${e.due_date_policy === 'late_allowed' ? 'ส่งช้าได้' : 'ห้ามส่งช้า'})</div>` : ''}
+                                ${e.due_date ? `<div class="text-[10px] text-amber-500 font-bold"><i class="far fa-calendar-xmark mr-1"></i>Due Date: ${new Date(e.due_date).toLocaleString('th-TH')}</div>` : ''}
                             </div>
 
                             <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
@@ -265,13 +327,11 @@
                             </select>
                         </div>
 
-                        <!-- แสดงช่องเลือกเวลา Countdown ทันที -->
                         <div id="countdownTimeBox" class="${examData?.status === 'countdown' ? '' : 'hidden'}">
                             <label class="block font-bold mb-1 text-amber-500"><i class="fas fa-clock mr-1"></i> วันเวลาเริ่มเปิดบริการ (Start Time)</label>
                             <input type="datetime-local" id="swalStartTime" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData?.start_time ? new Date(new Date(examData.start_time).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
                         </div>
 
-                        <!-- Checkbox เลือกกำหนด Due Date พร้อมเลือก Policy -->
                         <div class="pt-2 border-t dark:border-slate-800 space-y-2">
                             <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-800 dark:text-slate-200">
                                 <input type="checkbox" id="hasDueDateCheck" onchange="toggleDueDateInput(this.checked)" ${examData?.due_date ? 'checked' : ''} class="w-4 h-4 rounded text-sky-600">
@@ -280,13 +340,6 @@
                             
                             <div id="dueDateBox" class="${examData?.due_date ? '' : 'hidden'} space-y-2">
                                 <input type="datetime-local" id="swalDueDate" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData?.due_date ? new Date(new Date(examData.due_date).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
-                                <div>
-                                    <label class="block font-bold mb-1">เงื่อนไขเมื่อเกิน Due Date:</label>
-                                    <select id="swalDueDatePolicy" class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none text-[11px]">
-                                        <option value="strict" ${examData?.due_date_policy === 'strict' ? 'selected' : ''}>ห้ามเข้าทำข้อสอบเด็ดขาด (Strict Lock)</option>
-                                        <option value="late_allowed" ${examData?.due_date_policy === 'late_allowed' ? 'selected' : ''}>อนุญาตให้ส่งได้ แต่จะบันทึกป้ายกำกับว่า "ส่งช้า (Late)"</option>
-                                    </select>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -294,12 +347,13 @@
                 showCancelButton: true,
                 confirmButtonText: 'บันทึกข้อมูล',
                 cancelButtonText: 'ยกเลิก',
-                preConfirm: async () => {
-                    const title = document.getElementById('swalTitle').value;
+                preConfirm: () => {
+                    const title = document.getElementById('swalTitle').value.trim();
                     const exam_code = document.getElementById('swalExamCode').value.trim().toUpperCase();
                     const delivery_type = document.querySelector('input[name="swalDeliveryType"]:checked')?.value || 'pdf';
                     const status = document.getElementById('swalStatus').value;
                     const hasDueDate = document.getElementById('hasDueDateCheck').checked;
+                    const catVal = document.getElementById('swalCategory').value;
 
                     if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อชุดข้อสอบ'); return false; }
 
@@ -307,13 +361,12 @@
                         title,
                         exam_code: exam_code || `EXAM-${Math.floor(Math.random()*9000+1000)}`,
                         delivery_type,
-                        category_id: document.getElementById('swalCategory').value || null,
+                        category_id: catVal ? catVal : null,
                         time_limit: parseInt(document.getElementById('swalTimeLimit').value) || 60,
                         max_attempts: parseInt(document.getElementById('swalMaxAttempts').value) || 0,
                         status: status,
                         start_time: (status === 'countdown' && document.getElementById('swalStartTime').value) ? new Date(document.getElementById('swalStartTime').value).toISOString() : null,
-                        due_date: (hasDueDate && document.getElementById('swalDueDate').value) ? new Date(document.getElementById('swalDueDate').value).toISOString() : null,
-                        due_date_policy: hasDueDate ? document.getElementById('swalDueDatePolicy').value : 'strict'
+                        due_date: (hasDueDate && document.getElementById('swalDueDate').value) ? new Date(document.getElementById('swalDueDate').value).toISOString() : null
                     };
 
                     return payload;
@@ -321,13 +374,23 @@
             });
 
             if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                let resError = null;
                 if (isEdit) {
-                    await mySupabase.from('exams').update(formValues).eq('id', examData.id);
+                    const { error } = await mySupabase.from('exams').update(formValues).eq('id', examData.id);
+                    resError = error;
                 } else {
-                    await mySupabase.from('exams').insert([formValues]);
+                    const { error } = await mySupabase.from('exams').insert([formValues]);
+                    resError = error;
                 }
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1000, showConfirmButton: false });
-                loadExams();
+
+                if (!resError) {
+                    Swal.fire({ icon: 'success', title: 'บันทึกชุดข้อสอบสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    loadExams();
+                } else {
+                    Swal.fire('บันทึกล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase Database:<br><code class="text-xs text-red-400 font-mono mt-2 block">${resError.message}</code>`, 'error');
+                }
             }
         }
 
