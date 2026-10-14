@@ -36,7 +36,7 @@
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <button onclick="window.location.href='student_dashboard.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
+                <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white">รายงานผลการสอบ & วิเคราะห์จุดอ่อน</h1>
                     <p id="examSubTitle" class="text-[11px] text-slate-500">กำลังโหลดข้อมูล...</p>
@@ -163,7 +163,7 @@
 
         async function initPage() {
             if (!attemptId) {
-                Swal.fire('ไม่พบรหัสผลการสอบ', '', 'warning').then(() => window.location.href = 'student_dashboard.html');
+                Swal.fire('ไม่พบรหัสผลการสอบ', '', 'warning').then(() => window.location.href = 'student.html');
                 return;
             }
 
