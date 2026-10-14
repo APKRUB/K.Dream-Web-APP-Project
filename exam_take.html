@@ -479,10 +479,22 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // เอาฟิลด์ score ออกเพื่อไม่ให้ติดปัญหาคอลัมน์ score ไม่มีในตาราง exam_attempts
+            // คำนวณคะแนนรวมล่วงหน้า เพื่อบันทึกลงฟิลด์ score ในตาราง exam_attempts
+            let totalScore = 0;
+            currentQuestions.forEach(q => {
+                const studentAns = studentAnswers[q.id];
+                const isEssay = q.question_type === 'essay';
+                if (!isEssay) {
+                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                        totalScore += 1;
+                    }
+                }
+            });
+
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
+                score: totalScore,
                 submit_time: new Date().toISOString()
             };
 
@@ -503,7 +515,6 @@
             }
 
             const attemptId = newAttempt.id;
-            let totalScore = 0;
 
             for (const q of currentQuestions) {
                 const studentAns = studentAnswers[q.id];
@@ -513,7 +524,6 @@
                 if (!isEssay) {
                     if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
                         qScore = 1;
-                        totalScore += 1;
                     }
                 }
 
