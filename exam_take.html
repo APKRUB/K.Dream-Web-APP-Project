@@ -491,7 +491,7 @@
                 }
             });
 
-            // ส่งข้อมูลบันทึกเฉพาะฟิลด์ที่มีจริงในตาราง exam_attempts
+            // ส่งเฉพาะฟิลด์พื้นฐานที่จำเป็น (exam_id, status, score) ปราศจาก submit_time
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
