@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ผลการสอบและ AI วิเคราะห์เชิงลึกรายข้อ</title>
+    <title>LMS | ผลการสอบและ AI Gemini วิเคราะห์เชิงลึก</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,8 +39,7 @@
         .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.15); }
         .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; }
         .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; }
-        
-        .ai-pulse-glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+        .ai-pulse-glow { box-shadow: 0 0 25px rgba(99, 102, 241, 0.25); }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
@@ -52,7 +51,7 @@
                     <i class="fas fa-arrow-left text-sm"></i>
                 </button>
                 <div>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="resultTitleNav">ผลการสอบ & AI วิเคราะห์เชิงลึกรายข้อ</h1>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="resultTitleNav">ผลการสอบ & AI Gemini วิเคราะห์เชิงลึก</h1>
                     <p class="text-[11px] text-slate-500">ระบบประเมินผลสัมฤทธิ์อัจฉริยะ Hi-Tech</p>
                 </div>
             </div>
@@ -85,19 +84,22 @@
             </div>
         </div>
 
-        <!-- AI Tutor วิเคราะห์เชิงลึกภาพรวมและรายข้อ -->
+        <!-- AI Gemini Tutor วิเคราะห์เชิงลึกภาพรวมและรายข้อ -->
         <div class="hitech-card ai-pulse-glow p-6 rounded-3xl space-y-4 border-indigo-500/40 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-500/10">
-            <div class="flex items-center gap-2.5 pb-3 border-b border-indigo-500/20">
-                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-500/30">
-                    <i class="fas fa-brain"></i>
+            <div class="flex items-center justify-between pb-3 border-b border-indigo-500/20">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-500/30">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-sm text-indigo-600 dark:text-indigo-300">AI Gemini Tutor Diagnostic Engine</h3>
+                        <p class="text-[11px] text-slate-400">วิเคราะห์ผลการสอบรายข้อแบบเรียลไทม์ด้วยปัญญาประดิษฐ์</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="font-extrabold text-sm text-indigo-600 dark:text-indigo-300">AI Tutor Diagnostic Engine (วิเคราะห์เจาะลึกรายข้อ & จุดที่ต้องเสริม)</h3>
-                    <p class="text-[11px] text-slate-400">ปัญญาประดิษฐ์ตรวจวิเคราะห์ข้อที่ทำผิดพลาด พร้อมแนะนำสูตร/เทคนิคจำเฉพาะประเด็น</p>
-                </div>
+                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-xl text-[10px] font-bold"><i class="fas fa-bolt mr-1"></i> Powered by Gemini 1.5 Flash</span>
             </div>
-            <div id="aiAnalysisContainer" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-4">
-                <div class="text-slate-400 py-6 text-center"><i class="fas fa-spinner fa-spin mr-2"></i> AI กำลังประมวลผลวิเคราะห์คำตอบรายข้อ...</div>
+            <div id="aiAnalysisContainer" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
+                <div class="text-slate-400 py-8 text-center"><i class="fas fa-spinner fa-spin mr-2"></i> AI กำลังเชื่อมต่อและวิเคราะห์คำตอบของคุณ...</div>
             </div>
         </div>
 
@@ -141,7 +143,11 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOiJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
+        // 🔑 ใส่ Gemini API Key ของคุณที่นี่ (สามารถสมัครรับฟรีได้ที่ Google AI Studio)
+        const GEMINI_API_KEY = ""; 
+
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -195,7 +201,6 @@
             }
 
             const currentAttemptId = attempt.id;
-
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', attempt.exam_id).single();
 
             document.getElementById('examTitleHeader').textContent = exam ? exam.title : 'ชุดข้อสอบออนไลน์';
@@ -243,7 +248,7 @@
             document.getElementById('totalScoreDisplay').textContent = totalQ;
 
             updateCountsAndRender();
-            generateAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ);
+            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, exam ? exam.title : 'ข้อสอบ');
         }
 
         async function renderSecurePDF(url) {
@@ -407,109 +412,81 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">
                                 ${bubblesHtml}
                             </div>
-
-                            <!-- ส่วน AI เจาะลึกรายข้อสำหรับข้อที่ผิด -->
-                            ${!isCorrect ? `
-                                <div class="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-[11px] space-y-1">
-                                    <div class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1"><i class="fas fa-lightbulb"></i> AI Tutor วิเคราะห์ข้อนี้:</div>
-                                    <p class="text-slate-700 dark:text-slate-300">คุณตอบตัวเลือก <b>${studentChoiceIdx !== null ? String.fromCharCode(65 + studentChoiceIdx) : 'ไม่ได้ตอบ'}</b> แต่คำตอบที่ถูกต้องคือ <b>${correctChoiceIdx !== null ? String.fromCharCode(65 + correctChoiceIdx) : '-'}</b> แนะนำให้ทบทวนหลักการในหัวข้อ <b>${q.category_tag || 'ทั่วไป'}</b> โดยระวังความคลาดเคลื่อนในการตีความโจทย์ในลักษณะนี้</p>
-                                </div>
-                            ` : ''}
                         </div>
                     `;
                 }
             }).join('');
         }
 
-        function generateAIAnalysis(questions, answerMap, score, total) {
+        // ฟังก์ชันเรียก Google Gemini API วิเคราะห์ผลการสอบจริง
+        async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle) {
             const container = document.getElementById('aiAnalysisContainer');
-            if (!questions || questions.length === 0) {
-                container.innerHTML = '<p class="text-slate-400">ไม่มีข้อมูลเพียงพอสำหรับวิเคราะห์</p>';
+            
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
+                container.innerHTML = `
+                    <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-600 dark:text-amber-400 space-y-2">
+                        <p class="font-bold"><i class="fas fa-exclamation-triangle mr-1"></i> ยังไม่ได้ใส่ Gemini API Key</p>
+                        <p>กรุณาใส่ API Key ของคุณที่ตัวแปร <code>GEMINI_API_KEY</code> ในโค้ดสคริปต์ด้านล่าง เพื่อเปิดใช้งาน AI วิเคราะห์ผลการสอบแบบเรียลไทม์</p>
+                    </div>
+                `;
                 return;
             }
 
-            let categoryStats = {};
-            let wrongItemsList = [];
-
-            questions.forEach((q, idx) => {
-                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
-                if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
-                categoryStats[tag].total++;
-
+            // รวบรวมข้อมูลโจทย์และคำตอบเพื่อส่งให้ AI วิเคราะห์
+            let summaryData = questions.map((q, idx) => {
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
+                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-
-                if (isCorrect) {
-                    categoryStats[tag].correct++;
-                } else {
-                    wrongItemsList.push({
-                        qNum: q.question_number || (idx + 1),
-                        tag: tag,
-                        questionText: q.question_text || q.content || 'โจทย์คำถาม',
-                        studentChoice: studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
-                        correctChoice: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-'
-                    });
-                }
+                return {
+                    ข้อที่: q.question_number || (idx + 1),
+                    หมวดหมู่: q.category_tag || 'ทั่วไป',
+                    โจทย์: q.question_text || q.content || 'คำถาม',
+                    นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
+                    เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
+                    สถานะ: isCorrect ? 'ถูก' : 'ผิด'
+                };
             });
 
-            const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-            let performanceSummary = '';
+            const prompt = `
+คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการศึกษาและการวิเคราะห์ข้อสอบ
+นี่คือข้อมูลผลการสอบของนักเรียนในชุดข้อสอบ "${examTitle}"
+คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
+รายละเอียดการตอบรายข้อ:
+${JSON.stringify(summaryData, null, 2)}
 
-            if (percentage >= 80) {
-                performanceSummary = `ยอดเยี่ยมมาก! คุณทำคะแนนได้ ${score}/${total} (${percentage}%) มีความแม่นยำสูงในเกือบทุกหมวดหมู่`;
-            } else if (percentage >= 50) {
-                performanceSummary = `ทำผลงานได้ปานกลาง ได้คะแนน ${score}/${total} (${percentage}%) มีจุดที่ต้องเก็บตกและระมัดระวังเพิ่มขึ้น`;
-            } else {
-                performanceSummary = `ทำคะแนนได้ ${score}/${total} (${percentage}%) ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ`;
+กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โครงสร้างกระชับ เข้าใจง่าย และให้กำลังใจนักเรียน โดยแบ่งเป็น:
+1. สรุปภาพรวมและประเมินระดับความเข้าใจ (Performance Overview)
+2. จุดแข็ง (Strengths) และจุดที่ต้องพัฒนาเพิ่มเติม (Weaknesses) แยกตามหมวดหมู่
+3. คำแนะนำและเทคนิคจำ/แนวทางทบทวนเฉพาะข้อที่ทำผิด (หากทำถูกหมดให้ชมเชย)
+ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสมเพื่อให้แสดงผลสวยงามบนเว็บ)
+`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    let aiText = data.candidates[0].content.parts[0].text;
+                    // ทำความสะอาด Markdown codeblock ถ้ามี
+                    aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
+                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
+                } else {
+                    container.innerHTML = `<div class="text-red-500 text-xs">AI ไม่สามารถประมวลผลข้อมูลได้ในขณะนี้</div>`;
+                }
+            } catch (err) {
+                console.error("Gemini API Error:", err);
+                container.innerHTML = `<div class="text-red-500 text-xs">เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini AI API</div>`;
             }
-
-            let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
-                const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
-                return `<li class="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 dark:border-slate-800/50">
-                    <span>🏷️ <b>${tag}</b></span>
-                    <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
-                </li>`;
-            }).join('');
-
-            let wrongAnalysisHtml = '';
-            if (wrongItemsList.length > 0) {
-                wrongAnalysisHtml = `
-                    <div class="space-y-2 pt-2 border-t border-indigo-500/20">
-                        <span class="font-bold text-xs text-indigo-600 dark:text-indigo-400 block"><i class="fas fa-exclamation-triangle mr-1"></i> AI เจาะลึกข้อที่ทำผิดพลาด (${wrongItemsList.length} ข้อ):</span>
-                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                            ${wrongItemsList.map(item => `
-                                <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border text-[11px] space-y-1">
-                                    <div class="font-bold text-red-500">ข้อที่ ${item.qNum} [หมวด: ${item.tag}]</div>
-                                    <div class="text-slate-600 dark:text-slate-300 line-clamp-1">โจทย์: ${item.questionText}</div>
-                                    <div class="text-slate-500 text-[10px]">คุณตอบ <b>${item.studentChoice}</b> \vert{} เฉลยที่ถูกคือ <b>${item.correctChoice}</b> ➔ <i>คำแนะนำ: ทบทวนหลักการและสูตรคำนวณในหัวข้อนี้เพิ่มเติม</i></div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            } else {
-                wrongAnalysisHtml = `<div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! คุณทำข้อสอบถูกทุกข้อ ไม่มีข้อผิดพลาด</div>`;
-            }
-
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
-                        <h4 class="font-bold text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม</h4>
-                        <p class="text-slate-700 dark:text-slate-300 leading-relaxed">${performanceSummary}</p>
-                        <div class="pt-2">
-                            <span class="text-[11px] font-bold text-slate-400 block mb-1">สถิติแยกตามหมวดหมู่:</span>
-                            <ul class="space-y-1">${breakdownHtml}</ul>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
-                        <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-stethoscope"></i> AI Diagnostic Breakdown</h4>
-                        ${wrongAnalysisHtml}
-                    </div>
-                </div>
-            `;
         }
 
         initResultPage();
