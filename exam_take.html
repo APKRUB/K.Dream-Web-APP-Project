@@ -479,7 +479,7 @@
                 didOpen: () => Swal.showLoading()
             });
 
-            // คำนวณคะแนนรวมล่วงหน้า เพื่อบันทึกลงฟิลด์ score ในตาราง exam_attempts
+            // คำนวณคะแนนรวมล่วงหน้า
             let totalScore = 0;
             currentQuestions.forEach(q => {
                 const studentAns = studentAnswers[q.id];
@@ -491,11 +491,11 @@
                 }
             });
 
+            // ส่งข้อมูลบันทึกเฉพาะฟิลด์ที่มีจริงในตาราง exam_attempts
             const attemptPayload = {
                 exam_id: examId,
                 status: 'submitted',
-                score: totalScore,
-                submit_time: new Date().toISOString()
+                score: totalScore
             };
 
             const { data: newAttempt, error: attemptError } = await mySupabase
