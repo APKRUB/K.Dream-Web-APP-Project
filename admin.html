@@ -231,6 +231,8 @@ function checkStudentAuth() {
 }
         
         async function initAdminDashboard() {
+
+            if (!checkStudentAuth()) return;
             // ดึงชื่อ Username จากการล็อกอินจริง
             const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || localStorage.getItem('account_name') || 'ผู้ดูแลระบบ';
             document.getElementById('displayAdminName').textContent = currentUsername;
