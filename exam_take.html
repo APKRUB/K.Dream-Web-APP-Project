@@ -472,93 +472,108 @@
             }
         }
 
-        async function submitExam(isTimeout = false) {
-            if (timerInterval) clearInterval(timerInterval);
-            localStorage.removeItem(`exam_start_time_${examId}`);
+async function submitExam(isTimeout = false) {
+    if (timerInterval) clearInterval(timerInterval);
+    localStorage.removeItem(`exam_start_time_${examId}`);
 
-            if (isPreview) {
-                Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
-                return;
+    try {
+        let progress = JSON.parse(localStorage.getItem('student_in_progress_exams') || '{}');
+        delete progress[examId];
+        localStorage.setItem('student_in_progress_exams', JSON.stringify(progress));
+    } catch(e) {}
+
+    if (isPreview) {
+        Swal.fire('ส่งข้อสอบจำลองสำเร็จ', 'นี่คือโหมด Preview คะแนนไม่ถูกบันทึก', 'success').then(() => window.close());
+        return;
+    }
+
+    Swal.fire({
+        title: 'กำลังบันทึกและประมวลผลคำตอบ...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // ดึง student_id ให้ชัวร์ที่สุดจากทุกแหล่งใน LocalStorage
+    let studentId = localStorage.getItem('student_id') || 
+                    localStorage.getItem('user_id') || 
+                    localStorage.getItem('user') || 
+                    localStorage.getItem('id') || null;
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!studentId || !uuidRegex.test(studentId)) {
+        studentId = null;
+    }
+
+    // สร้างข้อมูล payload สำหรับบันทึกattempt โดยบังคับใส่ student_id เสมอ
+    const attemptPayload = {
+        exam_id: examId,
+        status: 'submitted',
+        score: 0,
+        submit_time: new Date().toISOString()
+    };
+    
+    if (studentId) {
+        attemptPayload.student_id = studentId;
+    }
+
+    const { data: newAttempt, error: attemptError } = await mySupabase
+        .from('exam_attempts')
+        .insert([attemptPayload])
+        .select()
+        .single();
+
+    if (attemptError || !newAttempt) {
+        console.error("Attempt Error:", attemptError);
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
+        return;
+    }
+
+    const attemptId = newAttempt.id;
+    let totalScore = 0;
+
+    for (const q of currentQuestions) {
+        const studentAns = studentAnswers[q.id];
+        const isEssay = q.question_type === 'essay';
+        let qScore = 0;
+
+        if (!isEssay) {
+            if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
+                qScore = 1;
+                totalScore += 1;
             }
-
-            Swal.fire({
-                title: 'กำลังบันทึกและประมวลผลคำตอบ...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            let studentId = localStorage.getItem('student_id') || localStorage.getItem('user_id') || null;
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-            if (!studentId || !uuidRegex.test(studentId)) {
-                studentId = null;
-            }
-
-            const attemptPayload = {
-                exam_id: examId,
-                status: 'submitted',
-                score: 0,
-                submit_time: new Date().toISOString()
-            };
-            if (studentId) attemptPayload.student_id = studentId;
-
-            const { data: newAttempt, error: attemptError } = await mySupabase
-                .from('exam_attempts')
-                .insert([attemptPayload])
-                .select()
-                .single();
-
-            if (attemptError || !newAttempt) {
-                console.error("Attempt Error:", attemptError);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกผลการสอบได้ กรุณาลองใหม่อีกครั้ง', 'error');
-                return;
-            }
-
-            const attemptId = newAttempt.id;
-            let totalScore = 0;
-
-            for (const q of currentQuestions) {
-                const studentAns = studentAnswers[q.id];
-                const isEssay = q.question_type === 'essay';
-                let qScore = 0;
-
-                if (!isEssay) {
-                    if (studentAns !== undefined && studentAns !== null && String(studentAns) === String(q.correct_answer)) {
-                        qScore = 1;
-                        totalScore += 1;
-                    }
-                }
-
-                const answerPayload = {
-                    attempt_id: attemptId,
-                    question_id: q.id,
-                    score: qScore
-                };
-
-                if (!isEssay) {
-                    answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
-                    answerPayload.subjective_answer = null;
-                } else {
-                    answerPayload.selected_option_index = null;
-                    answerPayload.subjective_answer = studentAns || '';
-                }
-
-                await mySupabase.from('exam_answers').insert([answerPayload]);
-            }
-
-            await mySupabase.from('exam_attempts').update({
-                score: totalScore
-            }).eq('id', attemptId);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'ส่งข้อสอบสำเร็จ!',
-                text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`,
-                confirmButtonText: 'ดูผลการสอบและเฉลย',
-                allowOutsideClick: false
-            }).then(() => {
-                window.location.href = `student_result.html?attempt_id=${attemptId}`;
-            });
         }
+
+        const answerPayload = {
+            attempt_id: attemptId,
+            question_id: q.id,
+            score: qScore
+        };
+
+        if (!isEssay) {
+            answerPayload.selected_option_index = (studentAns !== undefined && studentAns !== null && studentAns !== '') ? parseInt(studentAns) : null;
+            answerPayload.subjective_answer = null;
+        } else {
+            answerPayload.selected_option_index = null;
+            answerPayload.subjective_answer = studentAns || '';
+        }
+
+        await mySupabase.from('exam_answers').insert([answerPayload]);
+    }
+
+    await mySupabase.from('exam_attempts').update({
+        score: totalScore
+    }).eq('id', attemptId);
+
+    Swal.fire({
+        icon: 'success',
+        title: 'ส่งข้อสอบสำเร็จ!',
+        text: `คะแนนของคุณ: ${totalScore} / ${currentQuestions.length}`,
+        confirmButtonText: 'ดูผลการสอบและเฉลย',
+        allowOutsideClick: false
+    }).then(() => {
+        window.location.href = `student_result.html?attempt_id=${attemptId}`;
+    });
+}
 
         initPage();
     </script>
