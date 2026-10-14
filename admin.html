@@ -53,7 +53,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
-    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
@@ -68,7 +67,6 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <!-- ปุ่ม Notifications ดึงข้อมูลสดจาก Database -->
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -88,7 +86,6 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Hero Welcome Banner (แสดงชื่อตามรหัสที่ Login) -->
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
@@ -102,17 +99,16 @@
 
             <div class="grid grid-cols-2 gap-3 relative z-10 w-full md:w-auto shrink-0">
                 <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
-                    <div id="statTotalExams" class="text-xl font-extrabold text-sky-600 dark:text-sky-400">--</div>
+                    <div id="statTotalExams" class="text-xl font-extrabold text-sky-600 dark:text-sky-400">0</div>
                     <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">ชุดข้อสอบทั้งหมด</div>
                 </div>
                 <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
-                    <div id="statTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">--</div>
+                    <div id="statTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0</div>
                     <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนส่งข้อสอบ</div>
                 </div>
             </div>
         </div>
 
-        <!-- Section: เมนูหลักผู้ดูแลระบบ -->
         <div class="space-y-4">
             <h3 class="font-extrabold text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <i class="fas fa-th-large text-sky-500"></i> ฟังก์ชันหลักระบบผู้ดูแลระบบ (Admin Modules)
@@ -210,7 +206,6 @@
 
         let liveNotifications = [];
 
-        // Theme Toggle Setup
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -225,7 +220,6 @@
         });
 
         async function initAdminDashboard() {
-            // ดึงชื่อผู้ใช้ที่ Login จาก LocalStorage / Session
             const loggedName = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'AP';
             document.getElementById('displayAdminName').textContent = loggedName;
 
@@ -236,73 +230,75 @@
                 const { count: subCount } = await mySupabase.from('exam_submissions').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
-                // ดึงการแจ้งเตือนสด Real-time จาก 4 แหล่ง
                 await fetchLiveNotifications();
             } catch (err) {
                 console.error(err);
             }
         }
 
-        // ระบบดึง Notifications สดจาก Database ทั้ง 4 หมวด
+        // ดึงการแจ้งเตือนสด Real-time จากฐานข้อมูล Supabase แท้ๆ เท่านั้น (ไม่มีของเก่าค้าง)
         async function fetchLiveNotifications() {
             liveNotifications = [];
 
-            // 1. หมวดคำถาม Consult (Pending Questions)
-            const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
-            if (consults) {
-                consults.forEach(c => {
-                    liveNotifications.push({
-                        type: 'question',
-                        title: `คำถามใหม่จาก ${c.student_name || 'นักเรียน'}`,
-                        desc: c.topic || 'สอบถามรายละเอียดเรื่องการเรียน/ข้อสอบ',
-                        time: new Date(c.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                        targetUrl: 'admin_consult.html'
+            try {
+                // 1. หมวดคำถาม Consult (Pending)
+                const { data: consults } = await mySupabase.from('consult_threads').select('*').eq('status', 'pending').limit(5);
+                if (consults && consults.length > 0) {
+                    consults.forEach(c => {
+                        liveNotifications.push({
+                            type: 'question',
+                            title: `คำถามใหม่จาก ${c.student_name || 'นักเรียน'}`,
+                            desc: c.topic || 'สอบถามรายละเอียดเรื่องการเรียน/ข้อสอบ',
+                            time: new Date(c.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                            targetUrl: 'admin_consult.html'
+                        });
                     });
-                });
-            }
+                }
 
-            // 2. หมวดส่งข้อสอบ (Recent Submissions)
-            const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
-            if (subs) {
-                subs.forEach(s => {
-                    liveNotifications.push({
-                        type: 'submit',
-                        title: 'นักเรียนส่งข้อสอบใหม่',
-                        desc: `${s.profiles?.full_name || 'นักเรียน'} ส่งข้อสอบ (คะแนน: ${s.score || 0})`,
-                        time: new Date(s.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                        targetUrl: 'admin_analytics.html'
+                // 2. หมวดส่งข้อสอบ (Recent Submissions)
+                const { data: subs } = await mySupabase.from('exam_submissions').select('*, profiles(full_name)').order('created_at', {ascending: false}).limit(5);
+                if (subs && subs.length > 0) {
+                    subs.forEach(s => {
+                        liveNotifications.push({
+                            type: 'submit',
+                            title: 'นักเรียนส่งข้อสอบใหม่',
+                            desc: `${s.profiles?.full_name || 'นักเรียน'} ส่งข้อสอบแล้ว`,
+                            time: new Date(s.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                            targetUrl: 'admin_analytics.html'
+                        });
                     });
-                });
-            }
+                }
 
-            // 3. หมวดประกาศข่าวสาร (Latest Announcements)
-            const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
-            if (anns) {
-                anns.forEach(a => {
-                    liveNotifications.push({
-                        type: 'general',
-                        title: `ประกาศล่าสุด: ${a.title}`,
-                        desc: a.content || 'มีประกาศข่าวสารใหม่ในระบบ',
-                        time: new Date(a.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
-                        targetUrl: 'admin_announcements.html'
+                // 3. หมวดประกาศข่าวสาร (Latest Announcements)
+                const { data: anns } = await mySupabase.from('announcements').select('*').order('created_at', {ascending: false}).limit(3);
+                if (anns && anns.length > 0) {
+                    anns.forEach(a => {
+                        liveNotifications.push({
+                            type: 'general',
+                            title: `ประกาศล่าสุด: ${a.title}`,
+                            desc: a.content || 'ประกาศข่าวสารใหม่ในระบบ',
+                            time: new Date(a.created_at).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                            targetUrl: 'admin_announcements.html'
+                        });
                     });
-                });
+                }
+
+                // 4. หมวดข้อสอบที่ต้องตรวจ (Essay Questions)
+                const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
+                if (essayQuestions && essayQuestions.length > 0) {
+                    const examIds = Array.from(new Set(essayQuestions.map(q => q.exam_id)));
+                    liveNotifications.push({
+                        type: 'grading',
+                        title: 'มีข้อสอบอัตนัยที่รอตรวจ',
+                        desc: `มีข้อสอบข้อเขียนจำนวน ${examIds.length} ชุดที่รอตรวจคะแนน`,
+                        time: 'เรียลไทม์',
+                        targetUrl: 'admin_exams.html'
+                    });
+                }
+            } catch(e) {
+                console.log('Error loading notifications from Database', e);
             }
 
-            // 4. หมวดข้อสอบที่ต้องตรวจ (Essay Grading)
-            const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
-            if (essayQuestions && essayQuestions.length > 0) {
-                const examIds = Array.from(new Set(essayQuestions.map(q => q.exam_id)));
-                liveNotifications.push({
-                    type: 'grading',
-                    title: 'มีข้อสอบอัตนัยที่รอตรวจ',
-                    desc: `มีข้อสอบข้อเขียนในคลัง ${examIds.length} ชุดที่ต้องตรวจให้คะแนน`,
-                    time: 'วันนี้',
-                    targetUrl: 'admin_exams.html'
-                });
-            }
-
-            // อัปเดต Badge สีแดง
             const badge = document.getElementById('notifBadge');
             if (liveNotifications.length > 0) {
                 badge.textContent = liveNotifications.length;
@@ -327,7 +323,7 @@
                         </div>
 
                         <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
-                            ${liveNotifications.length > 0 ? liveNotifications.map(n => renderNotifCard(n)).join('') : '<div class="text-center py-6 text-slate-400">ยังไม่มีรายการแจ้งเตือนใหม่</div>'}
+                            ${liveNotifications.length > 0 ? liveNotifications.map(n => renderNotifCard(n)).join('') : '<div class="text-center py-8 text-slate-400">🎉 ยังไม่มีรายการแจ้งเตือนใหม่ในระบบ</div>'}
                         </div>
                     </div>
                 `,
