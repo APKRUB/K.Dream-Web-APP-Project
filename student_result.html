@@ -328,13 +328,21 @@
         }
 
         async function loadClassAnalytics(examId, studentScore, totalQuestions) {
-            // ดึงข้อมูลการสอบทั้งหมดของ exam_id นี้โดยไม่จำกัดเงื่อนไขสถานะ เพื่อให้ได้ครบทุกจำนวนคนสอบจริง
-            const { data: attempts, error } = await mySupabase
+            // ดึงข้อมูลการสอบทั้งหมดของ exam_id นี้โดยไม่จำกัดเงื่อนไข เพื่อให้ได้สถิติผู้เข้าสอบทั้งหมด
+            let { data: attempts, error } = await mySupabase
                 .from('exam_attempts')
-                .select('total_score, score, student_id')
+                .select('*')
                 .eq('exam_id', examId);
 
             if (error || !attempts || attempts.length === 0) {
+                // กรณีดึงตรงๆ ไม่พบ ลองดึงทั้งหมดมาคัดกรองฝั่ง Client
+                const { data: allAttempts } = await mySupabase.from('exam_attempts').select('*');
+                if (allAttempts) {
+                    attempts = allAttempts.filter(a => String(a.exam_id) === String(examId));
+                }
+            }
+
+            if (!attempts || attempts.length === 0) {
                 document.getElementById('rankDisplay').textContent = `#1 / 1`;
                 document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
                 document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
@@ -344,10 +352,12 @@
                 return;
             }
 
-            // รวบรวมคะแนนทั้งหมด ดึงค่าสูงสุดหรือค่าที่บันทึกของแต่ละแถว
-            const scores = attempts.map(a => a.total_score !== undefined && a.total_score !== null ? Number(a.total_score) : Number(a.score || 0));
-            const totalStudents = scores.length;
+            const scores = attempts.map(a => {
+                let s = a.total_score !== undefined && a.total_score !== null ? a.total_score : a.score;
+                return s !== undefined && s !== null ? Number(s) : 0;
+            });
 
+            const totalStudents = scores.length;
             const sortedScores = [...scores].sort((a, b) => b - a);
             const rank = sortedScores.indexOf(studentScore) + 1;
 
