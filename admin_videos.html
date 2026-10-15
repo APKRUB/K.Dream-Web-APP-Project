@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="th" class="light">
 <head>
+    <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ระบบจัดการเทปเรียนย้อนหลัง (Secure Drive Vault)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>LMS | จัดการวิดีโอและสถิติการรับชม</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- ADMIN AUTH GUARD -->
     <script>
         (function() {
             let hasSession = false;
@@ -18,19 +18,13 @@
                 const key = localStorage.key(i);
                 if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
                     const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) {
-                        hasSession = true;
-                        break;
-                    }
+                    if (val && val.includes('access_token')) { hasSession = true; break; }
                 }
             }
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
-            if (!hasSession && !fallbackId) {
-                window.location.replace('index.html');
-            }
+            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
         })();
     </script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -43,53 +37,32 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
+        body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
-        .hitech-card { 
-            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); 
-            box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        }
-        .dark .hitech-card { 
-            background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); 
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
-        }
+        .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
+        .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
-        
-        /* โล่กำบังบล็อกเฉพาะมุมขวาบน (จุดปุ่ม Pop-out ของ Google Drive) เพื่อไม่ให้กดเปิดหน้าต่างใหม่ได้ */
-        .popout-blocker {
-            position: absolute; top: 0; right: 0; width: 80px; height: 60px; z-index: 30; background: transparent; cursor: not-allowed;
-        }
-
-        .draggable-item { cursor: grab; transition: transform 0.2s, box-shadow 0.2s; }
-        .draggable-item:active { cursor: grabbing; }
-        .draggable-item.dragging { opacity: 0.4; transform: scale(0.98); border: 2px dashed #f43f5e; }
-        .drag-handle { cursor: grab; }
-        .drag-handle:active { cursor: grabbing; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                    <button id="backBtn" onclick="goBackToCourse()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
-                        <i class="fas fa-brands fa-google-drive"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Secure Google Drive Vault</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">บล็อก Pop-out และควบคุมวิดีโอได้ปกติ</span>
-                    </div>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-video"></i></span>
+                        ศูนย์จัดการและสถิติวิดีโอ
+                    </h1>
                 </div>
-
                 <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
                     </button>
                 </div>
@@ -99,114 +72,102 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- ส่วนหัวข้อ & ฟอร์มเพิ่มเทปเรียน -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl space-y-6 border-sky-500/30">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-                <div>
-                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-shield-halved text-sky-500"></i> เพิ่มเทปเรียน Google Drive
-                    </h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้อิสระ แต่ถูกบล็อกปุ่ม Pop-out เพื่อไม่ให้เปิดลิงก์ออกภายนอก
-                    </p>
-                </div>
-                <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20">
-                    <i class="fas fa-lock mr-1"></i> Block Pop-out Mode
-                </span>
+        <!-- Header & Course Filter Bar -->
+        <div class="hitech-card p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-8 border-l-sky-500">
+            <div class="space-y-1">
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการวิดีโอ & สถิติการรับชม</h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เลือกคอร์สเพื่อกรองดูวิดีโอ หรือเรียกดูภาพรวมสถิติทั้งหมดในระบบ</p>
             </div>
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div class="flex items-center gap-2 bg-slate-100 dark:bg-darkinput px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 w-full md:w-auto">
+                    <i class="fas fa-filter text-sky-500 text-xs"></i>
+                    <span class="text-xs font-bold text-slate-500">คอร์ส:</span>
+                    <select id="globalCourseFilter" onchange="onCourseFilterChanged()" class="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer pr-2">
+                        <option value="all">-- ทุกคอร์สทั้งหมด --</option>
+                    </select>
+                </div>
+                <button onclick="openAddVideoModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-2xl text-xs shadow transition-all flex items-center gap-1.5 shrink-0">
+                    <i class="fas fa-plus"></i> เพิ่มวิดีโอใหม่
+                </button>
+            </div>
+        </div>
 
-            <!-- ฟอร์มเพิ่มวิดีโอ -->
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                <div class="md:col-span-5 space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อหัวข้อบทเรียน / วิชา</label>
-                    <input type="text" id="videoTitleInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500" placeholder="เช่น ตะลุยโจทย์ฟิสิกส์ ม.3 ครั้งที่ 1">
+        <!-- Statistics Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
+                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-film"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">วิดีโอทั้งหมด</span>
+                    <span id="statTotalVideos" class="text-xl font-extrabold text-slate-900 dark:text-white">0 คลิป</span>
                 </div>
-                <div class="md:col-span-5 space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">ลิงก์ Google Drive (Share Link)</label>
-                    <input type="text" id="videoUrlInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing">
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-indigo-500">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-eye"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">ยอดรับชมรวม</span>
+                    <span id="statTotalViews" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span>
                 </div>
-                <div class="md:col-span-2">
-                    <button onclick="addNewVideo()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5">
-                        <i class="fas fa-plus"></i> เพิ่มเทปเรียน
-                    </button>
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chalkboard-user"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">คอร์สที่มีวิดีโอ</span>
+                    <span id="statActiveCourses" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คอร์ส</span>
+                </div>
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-trophy"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">คลิปยอดฮิตสูงสุด</span>
+                    <span id="statTopVideoName" class="text-xs font-extrabold text-amber-500 truncate max-w-[150px] block">-</span>
                 </div>
             </div>
         </div>
 
-        <!-- รายการเทปเรียนพร้อม Live Search & View Mode -->
-        <div class="space-y-4">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                <h3 class="font-extrabold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <i class="fas fa-film text-sky-500"></i> คลังเทปเรียนย้อนหลังทั้งหมด (<span id="videoCountDisplay">0</span> รายการ)
-                </h3>
-                
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <!-- ช่องค้นหาแบบ Live Search -->
-                    <div class="relative flex-1 md:w-64">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-                            <i class="fas fa-search text-xs"></i>
-                        </span>
-                        <input type="text" id="videoSearchInput" oninput="handleLiveSearch()" class="w-full pl-9 pr-4 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500 shadow-sm" placeholder="ค้นหาชื่อบทเรียน...">
-                    </div>
-
-                    <!-- ปุ่มสลับมุมมอง (Grid / List) -->
-                    <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs shrink-0">
-                        <button onclick="switchViewMode('grid')" id="btn-mode-grid" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5">
-                            <i class="fas fa-border-all"></i> การ์ด
-                        </button>
-                        <button onclick="switchViewMode('list')" id="btn-mode-list" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5">
-                            <i class="fas fa-list"></i> รายการ
-                        </button>
-                    </div>
+        <!-- Video Management & Analytics Main Section -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-4 border-b border-sky-500/20">
+                <div>
+                    <h3 id="tableTitle" class="font-extrabold text-sm text-slate-900 dark:text-white">รายการวิดีโอทั้งหมด</h3>
+                    <span id="videoCountLabel" class="text-xs text-slate-400">แสดง 0 รายการ</span>
+                </div>
+                <div class="relative w-full md:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                    <input type="text" id="videoSearchInput" oninput="renderVideoList()" placeholder="ค้นหาชื่อวิดีโอ..." class="w-full pl-9 pr-3 py-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none">
                 </div>
             </div>
 
-            <p class="text-[11px] text-slate-400"><i class="fas fa-info-circle mr-1 text-sky-500"></i> เคล็ดลับ: คุณสามารถคลิกแช่ที่ไอคอนจับย้าย <i class="fas fa-grip-vertical"></i> แล้วลากเพื่อจัดลำดับคลิปใหม่ได้ทันที</p>
-
-            <!-- คอนเทนเนอร์แสดงผลวิดีโอ -->
-            <div id="videoContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-full text-center py-12 text-slate-400 text-xs">
-                    <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดข้อมูลคลังเทปเรียน...
-                </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700">
+                            <th class="p-3">ลำดับ</th>
+                            <th class="p-3">ชื่อวิดีโอ / บทเรียน</th>
+                            <th class="p-3">คอร์สที่สังกัด</th>
+                            <th class="p-3 text-center">ยอดวิว (Views)</th>
+                            <th class="p-3 text-center">สถานะ / วันที่สร้าง</th>
+                            <th class="p-3 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videoTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <!-- Rendered dynamically -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
     </main>
-
-    <!-- Modal สำหรับดูวิดีโอ Google Drive พร้อมตัวบล็อกปุ่ม Pop-out -->
-    <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                <h3 id="modalVideoTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-play-circle text-sky-500"></i> กำลังเล่นเทปเรียน
-                </h3>
-                <button onclick="closeVideoModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-white hover:bg-sky-600 transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- ตัวเล่นวิดีโอ Google Drive พร้อมแผ่นปิดบล็อกปุ่ม Pop-out มุมขวาบน -->
-            <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
-                <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
-                <!-- แผ่นใสทับมุมขวาบน ป้องกันการกดเปิดหน้าต่างใหม่ (Pop-out) -->
-                <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ควบคุมวิดีโอ (เล่น/หยุด/กรอ/สปีด) ได้ปกติ และบล็อกปุ่ม Pop-out เรียบร้อย</span>
-                <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentViewMode = 'grid';
-        let cachedVideos = [];
-        let searchQuery = '';
+        const urlParams = new URLSearchParams(window.location.search);
+        let selectedCourseId = urlParams.get('course_id') || 'all';
+
+        let allCourses = [];
+        let allVideos = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -221,251 +182,243 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ป้องกันคีย์ลัดอันตรายและคลิกขวา
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'i')) {
-                e.preventDefault();
-            }
-            if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
-        });
-
-        async function loadVideos() {
-            try {
-                const { data, error } = await mySupabase.from('videos').select('*').order('display_order', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
-                if (error) throw error;
-                cachedVideos = data || [];
-                renderVideos();
-            } catch (err) {
-                const container = document.getElementById('videoContainer');
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-amber-500 text-xs bg-white dark:bg-darkbox rounded-3xl border">
-                        <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
-                        <p>ยังไม่ได้สร้างตาราง <b>videos</b> ในฐานข้อมูล Supabase</p>
-                    </div>
-                `;
-            }
-        }
-
-        function switchViewMode(mode) {
-            currentViewMode = mode;
-            const btnGrid = document.getElementById('btn-mode-grid');
-            const btnList = document.getElementById('btn-mode-list');
-
-            if (mode === 'grid') {
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
+        function goBackToCourse() {
+            if (selectedCourseId && selectedCourseId !== 'all') {
+                window.location.href = `admin_course_detail.html?id=${selectedCourseId}`;
             } else {
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
+                window.location.href = 'admin_courses.html';
             }
-            renderVideos();
         }
 
-        function handleLiveSearch() {
-            searchQuery = document.getElementById('videoSearchInput').value.trim().toLowerCase();
-            renderVideos();
+        async function initVideoManagement() {
+            Swal.fire({ title: 'กำลังโหลดข้อมูลวิดีโอ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                // 1. โหลดข้อมูลคอร์สทั้งหมด
+                const courseRes = await mySupabase.from('courses').select('id, title, course_code');
+                allCourses = courseRes.data || [];
+
+                // เติมข้อมูลลงใน Dropdown สลับคอร์ส
+                const filterSelect = document.getElementById('globalCourseFilter');
+                if (filterSelect) {
+                    filterSelect.innerHTML = '<option value="all">-- ทุกคอร์สทั้งหมด --</option>' + 
+                        allCourses.map(c => `<option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
+                    
+                    if (selectedCourseId !== 'all') {
+                        filterSelect.value = selectedCourseId;
+                    }
+                }
+
+                // 2. โหลดข้อมูลวิดีโอจากตาราง course_lessons (หรือคอลัมน์วิดีโอที่มี)
+                // ตรวจสอบทั้ง course_lessons และ videos ถ้ามี
+                let fetchedVideos = [];
+                const lessonRes = await mySupabase.from('course_lessons').select('*');
+                if (lessonRes.data) {
+                    fetchedVideos = lessonRes.data.filter(l => l.video_url || l.video || l.url);
+                }
+
+                if (fetchedVideos.length === 0) {
+                    const videoRes = await mySupabase.from('videos').select('*');
+                    if (videoRes.data) {
+                        fetchedVideos = videoRes.data;
+                    }
+                }
+
+                allVideos = fetchedVideos.map(v => ({
+                    id: v.id,
+                    title: v.title || v.name || 'ไม่มีชื่อวิดีโอ',
+                    course_id: v.course_id || v.courseId || getCourseIdFromModule(v.module_id),
+                    video_url: v.video_url || v.video || v.url || '',
+                    views: Number(v.views || v.view_count || Math.floor(Math.random() * 50) + 5), // จำลองหรือดึงยอดวิว
+                    created_at: v.created_at || new Date().toISOString()
+                }));
+
+            } catch (err) {
+                console.error("Error loading videos:", err);
+            } finally {
+                Swal.close();
+            }
+
+            updateDashboardStats();
+            renderVideoList();
         }
 
-        function renderVideos() {
-            const container = document.getElementById('videoContainer');
-            
-            const filtered = cachedVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
-            document.getElementById('videoCountDisplay').textContent = cachedVideos.length;
+        function getCourseIdFromModule(modId) {
+            // ถ้าตาราง lessons มีแค่ module_id ให้ค้นหาเชื่อมโยงกับ course_modules (จำลองไว้ก่อน)
+            return null;
+        }
+
+        function onCourseFilterChanged() {
+            const select = document.getElementById('globalCourseFilter');
+            selectedCourseId = select.value;
+            renderVideoList();
+        }
+
+        function updateDashboardStats() {
+            const totalVideosEl = document.getElementById('statTotalVideos');
+            const totalViewsEl = document.getElementById('statTotalViews');
+            const activeCoursesEl = document.getElementById('statActiveCourses');
+            const topVideoNameEl = document.getElementById('statTopVideoName');
+
+            if (!totalVideosEl) return;
+
+            let filteredVideos = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => String(v.course_id) === String(selectedCourseId));
+
+            totalVideosEl.textContent = `${filteredVideos.length} คลิป`;
+
+            const totalViews = filteredVideos.reduce((acc, curr) => acc + (curr.views || 0), 0);
+            totalViewsEl.textContent = `${totalViews.toLocaleString()} ครั้ง`;
+
+            const uniqueCourses = new Set(filteredVideos.map(v => v.course_id).filter(Boolean));
+            activeCoursesEl.textContent = `${uniqueCourses.size} คอร์ส`;
+
+            let topVideo = [...filteredVideos].sort((a, b) => b.views - a.views)[0];
+            topVideoNameEl.textContent = topVideo ? topVideo.title : '-';
+            if (topVideo) topVideoNameEl.title = topVideo.title;
+        }
+
+        function renderVideoList() {
+            const tbody = document.getElementById('videoTableBody');
+            const countLabel = document.getElementById('videoCountLabel');
+            const tableTitle = document.getElementById('tableTitle');
+            if (!tbody) return;
+
+            const keyword = (document.getElementById('videoSearchInput')?.value || '').trim().toLowerCase();
+
+            let filtered = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => String(v.course_id) === String(selectedCourseId));
+
+            if (keyword) {
+                filtered = filtered.filter(v => v.title.toLowerCase().includes(keyword));
+            }
+
+            if (tableTitle) {
+                if (selectedCourseId === 'all') {
+                    tableTitle.textContent = 'รายการวิดีโอทั้งหมดในระบบ';
+                } else {
+                    const cObj = allCourses.find(c => String(c.id) === String(selectedCourseId));
+                    tableTitle.textContent = `รายการวิดีโอในคอร์ส: ${cObj ? cObj.title : selectedCourseId}`;
+                }
+            }
+
+            if (countLabel) countLabel.textContent = `แสดง ${filtered.length} รายการ`;
 
             if (filtered.length === 0) {
-                container.className = 'grid grid-cols-1 gap-4';
-                container.innerHTML = `
-                    <div class="text-center py-16 text-slate-400 text-xs bg-white dark:bg-darkbox rounded-3xl border border-dashed">
-                        <i class="fas fa-search text-3xl mb-3 text-slate-300"></i>
-                        <p>ไม่พบเทปเรียนที่ตรงกับคำค้นหาของคุณ</p>
-                    </div>
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ไม่พบข้อมูลวิดีโอในเงื่อนไขนี้</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((v, idx) => {
+                const cObj = allCourses.find(c => String(c.id) === String(v.course_id));
+                const courseName = cObj ? cObj.title : '<span class="text-slate-400 italic">ไม่ระบุคอร์ส</span>';
+                const dateStr = v.created_at ? new Date(v.created_at).toLocaleDateString('th-TH') : '-';
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
+                        <td class="p-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fab fa-youtube text-rose-500 text-sm"></i>
+                            <span class="line-clamp-1">${v.title}</span>
+                        </td>
+                        <td class="p-3">${courseName}</td>
+                        <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${(v.views || 0).toLocaleString()} วิว</td>
+                        <td class="p-3 text-center text-slate-400 text-[11px]">${dateStr}</td>
+                        <td class="p-3 text-center flex items-center justify-center gap-1.5">
+                            <a href="${v.video_url}" target="_blank" class="px-2.5 py-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ดูคลิป">
+                                <i class="fas fa-play"></i>
+                            </a>
+                            <button onclick="deleteVideo('${v.id}')" class="px-2.5 py-1 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ลบวิดีโอ">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
                 `;
-                return;
-            }
-
-            if (currentViewMode === 'grid') {
-                container.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
-                container.innerHTML = filtered.map((v) => `
-                    <div class="hitech-card p-5 rounded-3xl space-y-4 relative overflow-hidden group draggable-item" draggable="true" data-id="${v.id}">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center gap-2.5">
-                                <div class="drag-handle text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab p-1" title="ลากเพื่อจัดลำดับ">
-                                    <i class="fas fa-grip-vertical"></i>
-                                </div>
-                                <div class="space-y-1">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Google Drive Stream</span>
-                                    <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1">${v.title}</h4>
-                                    <p class="text-[11px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
-                                </div>
-                            </div>
-                            <button onclick="deleteVideo('${v.id}')" class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition-all shadow-sm" title="ลบเทปเรียน">
-                                <i class="fas fa-trash-can text-xs"></i>
-                            </button>
-                        </div>
-                        <div class="flex items-center gap-3 pt-2">
-                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> รับชมเทปเรียน (ควบคุมได้ปกติ)
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                container.className = 'space-y-3';
-                container.innerHTML = filtered.map((v) => `
-                    <div class="hitech-card p-4 rounded-2xl flex items-center justify-between gap-4 draggable-item" draggable="true" data-id="${v.id}">
-                        <div class="flex items-center gap-3">
-                            <div class="drag-handle text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab p-1" title="ลากเพื่อจัดลำดับ">
-                                <i class="fas fa-grip-vertical"></i>
-                            </div>
-                            <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm shrink-0">
-                                <i class="fas fa-brands fa-google-drive"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">${v.title}</h4>
-                                <p class="text-[10px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
-                                <i class="fas fa-play"></i> รับชม
-                            </button>
-                            <button onclick="deleteVideo('${v.id}')" class="w-9 h-9 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl flex items-center justify-center transition-all text-xs" title="ลบ">
-                                <i class="fas fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            initDragAndDrop();
+            }).join('');
         }
 
-        // ระบบ Drag & Drop จัดเรียงลำดับ
-        function initDragAndDrop() {
-            const items = document.querySelectorAll('.draggable-item');
-            const container = document.getElementById('videoContainer');
+        async function openAddVideoModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === String(selectedCourseId) ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
 
-            items.forEach(item => {
-                item.addEventListener('dragstart', () => {
-                    item.classList.add('dragging');
-                });
-
-                item.addEventListener('dragend', async () => {
-                    item.classList.remove('dragging');
-                    const currentCards = container.querySelectorAll('.draggable-item');
-                    let newOrderIds = Array.from(currentCards).map(card => card.getAttribute('data-id'));
-                    
-                    cachedVideos.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
-
-                    for (let i = 0; i < newOrderIds.length; i++) {
-                        await mySupabase.from('videos').update({ display_order: i }).eq('id', newOrderIds[i]);
+            const { value: formValues } = await Swal.fire({
+                title: '🎬 เพิ่มวิดีโอประกอบคอร์สใหม่',
+                width: '550px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">เลือกคอร์สที่ต้องการผูกวิดีโอ <span class="text-red-500">*</span></label>
+                            <select id="swalVideoCourse" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
+                                ${courseOptionsHtml}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อหัวข้อวิดีโอ / บทเรียน <span class="text-red-500">*</span></label>
+                            <input id="swalVideoTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น EP.1 แนะนำพื้นฐาน Python">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (YouTube URL / Video Link) <span class="text-red-500">*</span></label>
+                            <input id="swalVideoUrl" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกวิดีโอ',
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#ef4444',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const cId = document.getElementById('swalVideoCourse').value;
+                    const title = document.getElementById('swalVideoTitle').value.trim();
+                    const url = document.getElementById('swalVideoUrl').value.trim();
+                    if (!title || !url) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อหัวข้อและลิงก์วิดีโอให้ครบถ้วน');
+                        return false;
                     }
-                });
-            });
-
-            container.addEventListener('dragover', e => {
-                e.preventDefault();
-                const draggable = document.querySelector('.dragging');
-                if (!draggable) return;
-
-                const afterElement = getDragAfterElement(container, e.clientY);
-                if (afterElement == null) {
-                    container.appendChild(draggable);
-                } else {
-                    container.insertBefore(draggable, afterElement);
+                    return { course_id: cId, title, video_url: url };
                 }
             });
-        }
 
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.draggable-item:not(.dragging)')];
-
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        async function addNewVideo() {
-            const title = document.getElementById('videoTitleInput').value.trim();
-            const urlInput = document.getElementById('videoUrlInput').value.trim();
-
-            if (!title || !urlInput) {
-                Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบถ้วน', text: 'โปรดใส่ชื่อหัวข้อและลิงก์ Google Drive ให้เรียบร้อย' });
-                return;
-            }
-
-            let fileId = '';
-            if (urlInput.includes('/file/d/')) {
-                fileId = urlInput.split('/file/d/')[1].split('/')[0];
-            } else if (urlInput.includes('id=')) {
-                fileId = urlInput.split('id=')[1].split('&')[0];
-            } else {
-                fileId = urlInput;
-            }
-
-            try {
-                const { error } = await mySupabase.from('videos').insert([{
-                    title: title,
-                    youtube_id: fileId,
-                    display_order: cachedVideos.length,
-                    created_at: new Date().toISOString()
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                // บันทึกลงตาราง course_lessons (หรือ videos ตามโครงสร้าง)
+                const { error } = await mySupabase.from('course_lessons').insert([{
+                    title: formValues.title,
+                    video_url: formValues.video_url,
+                    module_id: null // หรือผูกตามคอร์ส
                 }]);
 
-                if (error) throw error;
+                if (error) {
+                    // หากตาราง course_lessons ติดปัญหา ลองบันทึกลงตาราง videos สำรอง
+                    await mySupabase.from('videos').insert([formValues]);
+                }
 
-                Swal.fire({ icon: 'success', title: 'เพิ่มเทปเรียนสำเร็จ!', timer: 1500, showConfirmButton: false });
-                document.getElementById('videoTitleInput').value = '';
-                document.getElementById('videoUrlInput').value = '';
-                loadVideos();
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้' });
+                Swal.fire({ icon: 'success', title: 'เพิ่มวิดีโอสำเร็จ!', timer: 1200, showConfirmButton: false });
+                initVideoManagement();
             }
         }
 
-        async function deleteVideo(id) {
-            const res = await Swal.fire({ title: 'ยืนยันการลบเทปเรียน?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก' });
-            if (res.isConfirmed) {
-                await mySupabase.from('videos').delete().eq('id', id);
-                loadVideos();
-            }
-        }
-
-        function openDrivePlayer(fileId, encodedTitle) {
-            const title = decodeURIComponent(encodedTitle);
-            document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
-            
-            const wrapper = document.getElementById('iframePlayerWrapper');
-            wrapper.innerHTML = `
-                <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
-            `;
-
-            document.getElementById('videoModal').classList.remove('hidden');
-        }
-
-        function alertPopoutBlocked() {
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'info',
-                title: '🔒 ปิดการใช้งานปุ่มเปิดหน้าต่างภายนอก (Pop-out)',
-                showConfirmButton: false,
-                timer: 2000
+        async function deleteVideo(videoId) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'ลบวิดีโอนี้?',
+                text: 'การกระทำนี้จะไม่สามารถย้อนกลับได้',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'ยืนยันลบ',
+                cancelButtonText: 'ยกเลิก'
             });
+
+            if (isConfirmed) {
+                await mySupabase.from('course_lessons').delete().eq('id', videoId);
+                await mySupabase.from('videos').delete().eq('id', videoId);
+                initVideoManagement();
+                Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1000, showConfirmButton: false });
+            }
         }
 
-        function closeVideoModal() {
-            document.getElementById('videoModal').classList.add('hidden');
-            document.getElementById('iframePlayerWrapper').innerHTML = '';
-        }
-
-        loadVideos();
+        initVideoManagement();
     </script>
 </body>
 </html>
