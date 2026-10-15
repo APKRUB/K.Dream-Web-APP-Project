@@ -57,11 +57,6 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
-        /* Anti-Download & Anti-Direct-Link Shield Overlay */
-        .video-secure-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; background: transparent; pointer-events: auto;
-        }
-        
         /* Drag & Drop Styling */
         .draggable-item { cursor: grab; transition: transform 0.2s, box-shadow 0.2s; }
         .draggable-item:active { cursor: grabbing; }
@@ -85,7 +80,7 @@
                     </div>
                     <div>
                         <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Secure Video Vault</h1>
-                        <span class="text-[10px] text-rose-600 dark:text-rose-400 font-bold tracking-wider uppercase">ระบบจัดการเทปเรียนย้อนหลัง (Anti-Download & Drag)</span>
+                        <span class="text-[10px] text-rose-600 dark:text-rose-400 font-bold tracking-wider uppercase">ระบบจัดการเทปเรียนย้อนหลัง</span>
                     </div>
                 </div>
 
@@ -108,11 +103,11 @@
                         <i class="fas fa-shield-halved text-rose-500"></i> อัปโหลดและจัดการเทปเรียนย้อนหลัง
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        ระบบซ่อนลิงก์ ป้องกันคลิกออก YouTube ภายนอก ล็อกดาวน์โหลด และรองรับการลากสลับลำดับคลิป (Drag & Drop)
+                        นักเรียนสามารถกดเล่น กรอคลิป และปรับความเร็วได้ปกติ พร้อมระบบซ่อนลิงก์และป้องกันการดาวน์โหลด
                     </p>
                 </div>
                 <span class="px-3 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-rose-500/20">
-                    <i class="fas fa-lock mr-1"></i> Secure Encryption Mode
+                    <i class="fas fa-lock mr-1"></i> Secure Player Mode
                 </span>
             </div>
 
@@ -174,7 +169,7 @@
 
     </main>
 
-    <!-- Modal สำหรับดูวิดีโอพร้อมระบบป้องกันการดูดคลิป -->
+    <!-- Modal สำหรับดูวิดีโอ -->
     <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -186,15 +181,13 @@
                 </button>
             </div>
 
-            <!-- ตัวเล่นวิดีโอพร้อมโล่ป้องกันการดูดคลิป -->
+            <!-- ตัวเล่นวิดีโอ (อนุญาตให้กดปุ่ม ควบคุม เล่น/หยุด กรอ และปรับสปีดได้ปกติ) -->
             <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
-                <div id="iframePlayerWrapper" class="w-full h-full relative">
-                    <div class="video-secure-overlay" title="ระบบความปลอดภัยเปิดใช้งาน ห้ามคลิกออกนอกกรอบ"></div>
-                </div>
+                <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
             </div>
 
             <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> โหมดป้องกันการดูดคลิปและคลิกออกภายนอกทำงานเต็มรูปแบบ</span>
+                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ผู้เรียนสามารถกดเล่น หยุด กรอ และปรับความเร็ววิดีโอได้อิสระ</span>
                 <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
             </div>
         </div>
@@ -306,7 +299,7 @@
                         </div>
                         <div class="flex items-center gap-3 pt-2">
                             <button onclick="openSecurePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> รับชมเทปเรียน (ระบบป้องกัน)
+                                <i class="fas fa-play"></i> รับชมเทปเรียน (ควบคุมได้ปกติ)
                             </button>
                         </div>
                     </div>
@@ -354,14 +347,11 @@
 
                 item.addEventListener('dragend', async () => {
                     item.classList.remove('dragging');
-                    // อัปเดตลำดับใหม่ใน Array และบันทึกลง Supabase
                     const currentCards = container.querySelectorAll('.draggable-item');
                     let newOrderIds = Array.from(currentCards).map(card => card.getAttribute('data-id'));
                     
-                    // อัปเดต cachedVideos ตามลำดับใหม่
                     cachedVideos.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
 
-                    // บันทึกลง Database
                     for (let i = 0; i < newOrderIds.length; i++) {
                         await mySupabase.from('videos').update({ display_order: i }).eq('id', newOrderIds[i]);
                     }
@@ -448,10 +438,9 @@
             document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-rose-500"></i> ${title}`;
             
             const wrapper = document.getElementById('iframePlayerWrapper');
-            // ล็อกไม่ให้คลิกออกไปหน้า YouTube ภายนอกด้วย nocookie และคอนטרอลขั้นสูง
+            // อนุญาตให้ผู้ใช้กดควบคุม (เล่น, หยุด, กรอ, ปรับความเร็ว) ได้ปกติ แต่ใช้ nocookie และซ่อนโลโก้เพื่อความเรียบร้อย
             wrapper.innerHTML = `
-                <iframe class="w-full h-full pointer-events-none" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3" title="Secure Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
-                <div class="video-secure-overlay" title="ระบบความปลอดภัยเปิดใช้งาน ห้ามคลิกออกนอกกรอบ"></div>
+                <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3" title="Secure Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             `;
 
             document.getElementById('videoModal').classList.remove('hidden');
@@ -459,7 +448,7 @@
 
         function closeVideoModal() {
             document.getElementById('videoModal').classList.add('hidden');
-            document.getElementById('iframePlayerWrapper').innerHTML = '<div class="video-secure-overlay"></div>';
+            document.getElementById('iframePlayerWrapper').innerHTML = '';
         }
 
         loadVideos();
