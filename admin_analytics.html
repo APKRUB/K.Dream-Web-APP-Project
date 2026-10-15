@@ -4,12 +4,13 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์วิเคราะห์ผลคะแนนภาพรวม</title>
+    <title>LMS | ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Executive Dashboard)</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         (function() {
@@ -56,58 +57,80 @@
                     </button>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-indigo-500 to-sky-500 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-pie"></i></span>
-                        ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Admin Dashboard)
+                        ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Executive Dashboard)
                     </h1>
                 </div>
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
-                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
-                </button>
+                <div class="flex items-center gap-3">
+                    <button onclick="exportGlobalCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5">
+                        <i class="fas fa-file-excel"></i> Export ภาพรวม CSV
+                    </button>
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-8">
         
-        <!-- ส่วนที่ 1: ภาพรวมระดับระบบทั้งหมด (System-wide KPIs) -->
-        <div class="space-y-4">
-            <h2 class="font-extrabold text-sm text-slate-500 uppercase tracking-wider"><i class="fas fa-globe text-sky-500 mr-1"></i> ภาพรวมระบบ LMS ทั้งหมด</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div>
-                    <div>
-                        <span class="text-xs text-slate-400 font-bold block">ชุดข้อสอบทั้งหมด</span>
-                        <span id="globalTotalExams" class="text-2xl font-extrabold text-slate-900 dark:text-white">0 ชุด</span>
-                    </div>
+        <!-- ส่วนที่ 1: Executive KPI Cards สรุปภาพรวมระดับระบบ -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
+                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">ชุดข้อสอบที่เปิดแล้ว</span>
+                    <span id="globalTotalExams" class="text-xl font-extrabold text-slate-900 dark:text-white">0 ชุด</span>
                 </div>
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-users"></i></div>
-                    <div>
-                        <span class="text-xs text-slate-400 font-bold block">จำนวนการส่งข้อสอบรวม</span>
-                        <span id="globalTotalSubmissions" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span>
-                    </div>
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-indigo-500">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-paper-plane"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">จำนวนการส่งข้อสอบรวม</span>
+                    <span id="globalTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span>
                 </div>
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div>
-                    <div>
-                        <span class="text-xs text-slate-400 font-bold block">คะแนนเฉลี่ยภาพรวม</span>
-                        <span id="globalAvgScore" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">--</span>
-                    </div>
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-users"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">ผู้เข้าสอบที่ไม่ซ้ำกัน</span>
+                    <span id="globalUniqueStudents" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คน</span>
+                </div>
+            </div>
+            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-trophy"></i></div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold block">คะแนนเฉลี่ยภาพรวม</span>
+                    <span id="globalAvgScore" class="text-xl font-extrabold text-amber-500">--</span>
                 </div>
             </div>
         </div>
 
-        <!-- ส่วนที่ 2: รายการชุดข้อสอบแยกตามหมวดหมู่ (คลิกเพื่อเข้าไปดูสถิติรายข้อสอบ) -->
+        <!-- ส่วนที่ 2: กราฟภาพรวมคะแนนเฉลี่ยเทียบแต่ละชุดข้อสอบ -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-chart-line text-sky-500"></i> กราฟเปรียบเทียบคะแนนเฉลี่ยของแต่ละชุดข้อสอบที่เปิดใช้งาน
+                </h3>
+                <span class="text-xs text-slate-400 font-medium">ภาพรวมระดับคลาส</span>
+            </div>
+            <div class="relative h-72 w-full">
+                <canvas id="globalTrendChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ส่วนที่ 3: รายการชุดข้อสอบทั้งหมด แยกตามหมวดหมู่ พร้อมแสดงสถิติย่อย -->
         <div class="space-y-4 pt-2">
             <div class="flex justify-between items-center">
                 <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-folder-open text-sky-500"></i> เลือกชุดข้อสอบเพื่อดูสถิติเชิงลึกรายบุคคล
+                    <i class="fas fa-folder-open text-sky-500"></i> ชุดข้อสอบทั้งหมด (แยกตามหมวดหมู่) - คลิกเพื่อดูผลเจาะลึก
                 </h2>
                 <span id="examCountBadge" class="text-xs text-slate-400 font-bold">0 ชุดข้อสอบ</span>
             </div>
 
             <div id="examsCatalogGroupContainer" class="space-y-6">
                 <div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดรายการชุดข้อสอบ...
+                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังประมวลผลข้อมูลชุดข้อสอบ...
                 </div>
             </div>
         </div>
@@ -121,6 +144,8 @@
 
         let allExams = [];
         let categoriesMap = {};
+        let allAttempts = [];
+        let globalTrendChartInstance = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -136,42 +161,94 @@
         });
 
         async function initDashboard() {
-            // โหลดหมวดหมู่
+            Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // 1. โหลดหมวดหมู่
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
             }
 
-            // โหลดชุดข้อสอบ
+            // 2. โหลดชุดข้อสอบ
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             allExams = exams || [];
-            document.getElementById('globalTotalExams').textContent = `${allExams.length} ชุด`;
-            document.getElementById('examCountBadge').textContent = `${allExams.length} ชุดข้อสอบ`;
+            
+            const activeExams = allExams.filter(e => e.status !== 'draft');
+            document.getElementById('globalTotalExams').textContent = `${activeExams.length} ชุด`;
+            document.getElementById('examCountBadge').textContent = `${activeExams.length} ชุดข้อสอบ`;
 
-            // โหลดสถิติรวมทั้งหมดจาก exam_attempts
-            const { data: attempts } = await mySupabase.from('exam_attempts').select('score, total_score');
-            if (attempts && attempts.length > 0) {
-                document.getElementById('globalTotalSubmissions').textContent = `${attempts.length} ครั้ง`;
-                const scores = attempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
-                const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
-                document.getElementById('globalAvgScore').textContent = `${avg} คะแนน`;
-            } else {
-                document.getElementById('globalTotalSubmissions').textContent = `0 ครั้ง`;
-                document.getElementById('globalAvgScore').textContent = `0 คะแนน`;
-            }
+            // 3. โหลดผลการทำข้อสอบทั้งหมดจาก exam_attempts
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
+            allAttempts = attempts || [];
 
-            renderExamsCatalogByCategories();
+            Swal.close();
+
+            calculateGlobalKPIs(activeExams);
+            renderGlobalTrendChart(activeExams);
+            renderExamsCatalogByCategories(activeExams);
         }
 
-        function renderExamsCatalogByCategories() {
+        function calculateGlobalKPIs(activeExams) {
+            const totalSubmissions = allAttempts.length;
+            document.getElementById('globalTotalSubmissions').textContent = `${totalSubmissions} ครั้ง`;
+
+            const uniqueStudents = new Set(allAttempts.map(a => a.student_id)).size;
+            document.getElementById('globalUniqueStudents').textContent = `${uniqueStudents} คน`;
+
+            if (totalSubmissions > 0) {
+                const scores = allAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
+                const sum = scores.reduce((a, b) => a + b, 0);
+                const avg = (sum / totalSubmissions).toFixed(1);
+                document.getElementById('globalAvgScore').textContent = `${avg} คะแนน`;
+            } else {
+                document.getElementById('globalAvgScore').textContent = `0 คะแนน`;
+            }
+        }
+
+        function renderGlobalTrendChart(activeExams) {
+            const ctx = document.getElementById('globalTrendChart').getContext('2d');
+            if (globalTrendChartInstance) globalTrendChartInstance.destroy();
+
+            const labels = activeExams.map(e => e.title);
+            const avgScores = activeExams.map(e => {
+                const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
+                if (matched.length === 0) return 0;
+                const sum = matched.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0);
+                return (sum / matched.length).toFixed(1);
+            });
+
+            globalTrendChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'คะแนนเฉลี่ยของชุดข้อสอบ',
+                        data: avgScores,
+                        backgroundColor: '#0284c7',
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
-            if (allExams.length === 0) {
-                container.innerHTML = `<div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ</div>`;
+            if (activeExams.length === 0) {
+                container.innerHTML = `<div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบที่เปิดใช้งานในระบบ</div>`;
                 return;
             }
 
             let grouped = {};
-            allExams.forEach(exam => {
+            activeExams.forEach(exam => {
                 const catId = exam.category_id || 'uncategorized';
                 if (!grouped[catId]) grouped[catId] = [];
                 grouped[catId].push(exam);
@@ -189,19 +266,23 @@
                 `;
 
                 examsList.forEach(exam => {
+                    const matchedAttempts = allAttempts.filter(a => String(a.exam_id) === String(exam.id));
+                    const submittedCount = matchedAttempts.length;
+                    const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0) / submittedCount).toFixed(1) : '-';
+
                     html += `
                         <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="hitech-card exam-card-hover p-4 rounded-xl cursor-pointer flex flex-col justify-between space-y-3 border border-slate-200 dark:border-slate-800">
                             <div class="space-y-1">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] font-bold px-2 py-0.5 bg-sky-500/10 text-sky-600 rounded-md">${exam.exam_code || 'EXAM'}</span>
-                                    <span class="text-[11px] text-slate-400"><i class="fas fa-clock mr-1"></i> ${exam.duration || 'ไม่จำกัด'} นาที</span>
+                                    <span class="text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 px-2 py-0.5 rounded-md"><i class="fas fa-users mr-1"></i> ส่งแล้ว ${submittedCount} คน</span>
                                 </div>
                                 <h4 class="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1">${exam.title}</h4>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${exam.description || 'ไม่มีคำอธิบาย'}</p>
                             </div>
-                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold text-sky-600 dark:text-sky-400">
-                                <span><i class="fas fa-chart-line mr-1"></i> ดูสถิติและคะแนนรายบุคคล</span>
-                                <i class="fas fa-arrow-right"></i>
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold">
+                                <span class="text-slate-400">คะแนนเฉลี่ย: <strong class="text-indigo-600 dark:text-indigo-400">${avgExamScore}</strong></span>
+                                <span class="text-sky-600 dark:text-sky-400 flex items-center gap-1">ดูสถิติ <i class="fas fa-arrow-right"></i></span>
                             </div>
                         </div>
                     `;
@@ -211,6 +292,33 @@
             }
 
             container.innerHTML = html;
+        }
+
+        function exportGlobalCSV() {
+            if (allExams.length === 0) {
+                Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลชุดข้อสอบสำหรับ Export', 'info');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "รหัสข้อสอบ,ชื่อชุดข้อสอบ,หมวดหมู่,จำนวนคนส่ง,คะแนนเฉลี่ย\n";
+
+            allExams.forEach(exam => {
+                const matchedAttempts = allAttempts.filter(a => String(a.exam_id) === String(exam.id));
+                const submittedCount = matchedAttempts.length;
+                const avgScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0) / submittedCount).toFixed(1) : 0;
+                const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
+
+                csvContent += `"${exam.exam_code || 'EXAM'}","${exam.title}","${catName}",${submittedCount},${avgScore}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `รายงานภาพรวมทุกชุดข้อสอบ_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         initDashboard();
