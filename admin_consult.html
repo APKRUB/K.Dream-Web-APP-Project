@@ -203,13 +203,25 @@
                         <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">ตัด Slot ว่างอัตโนมัติก่อนเริ่ม (ชั่วโมง)</label>
                         <input type="number" id="pruneHoursInput" value="24" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none text-slate-900 dark:text-white">
                     </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">เลือกคอร์สที่อนุญาตให้จอง Consult (เลือกได้หลายคอร์ส)</label>
-                        <div id="allowedCoursesCheckboxContainer" class="p-3 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl max-h-40 overflow-y-auto space-y-1.5 text-xs">
+
+                    <!-- 🎓 ช่องเลือกคอร์สที่มีสิทธิ์จอง Consult -->
+                    <div class="p-4 bg-sky-500/5 border border-sky-500/20 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="block font-extrabold text-xs text-sky-700 dark:text-sky-300">
+                                <i class="fas fa-book-bookmark mr-1"></i> คอร์สที่อนุญาตให้จอง Consult (เลือกได้หลายคอร์ส)
+                            </label>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="toggleAllAllowedCourses(true)" class="px-2 py-0.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded text-[10px] font-bold transition-all">เลือกทั้งหมด</button>
+                                <button type="button" onclick="toggleAllAllowedCourses(false)" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-rose-500 hover:text-white rounded text-[10px] font-bold transition-all">ล้าง</button>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400">นักเรียนจะต้องลงทะเบียนในคอร์สที่เลือกอย่างน้อย 1 คอร์ส ถึงจะมีสิทธิ์กดจองคิว Consult ได้ (1 สิทธิ์ต่อคน)</p>
+                        <div id="allowedCoursesCheckboxContainer" class="p-3 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl max-h-48 overflow-y-auto space-y-2 text-xs">
                             <span class="text-slate-400 italic">กำลังโหลดคอร์ส...</span>
                         </div>
                     </div>
                 </div>
+
                 <button onclick="saveSystemSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">บันทึกการตั้งค่าระบบ</button>
 
                 <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
@@ -311,12 +323,17 @@
             container.innerHTML = allCoursesList.map(c => {
                 const isChecked = allowedArr.includes(String(c.id)) ? 'checked' : '';
                 return `
-                    <label class="flex items-center gap-2 cursor-pointer hover:text-sky-500 transition-colors">
+                    <label class="flex items-center gap-2.5 cursor-pointer hover:text-sky-500 transition-colors p-1 rounded hover:bg-slate-50 dark:hover:bg-darkinput">
                         <input type="checkbox" name="allowedCourseCheck" value="${c.id}" ${isChecked} class="w-4 h-4 accent-sky-500 rounded">
                         <span class="font-bold text-slate-800 dark:text-slate-200">[${c.course_code || 'COURSE'}] ${c.title}</span>
                     </label>
                 `;
             }).join('');
+        }
+
+        function toggleAllAllowedCourses(state) {
+            const checkboxes = document.querySelectorAll('input[name="allowedCourseCheck"]');
+            checkboxes.forEach(cb => cb.checked = state);
         }
 
         function setupConsultRealtime() {
