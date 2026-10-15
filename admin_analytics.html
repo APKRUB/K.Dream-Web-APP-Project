@@ -67,15 +67,22 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                    <button id="backNavBtn" onclick="goBack()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <h1 id="navTitle" class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-indigo-500 to-sky-500 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-pie"></i></span>
                         ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Executive Dashboard)
                     </h1>
                 </div>
                 <div class="flex items-center gap-3">
+                    <!-- Dropdown เลือกคอร์ส (แสดงเฉพาะเมื่อเข้าผ่านหน้า Admin หลัก) -->
+                    <div id="courseSelectorWrapper" class="hidden">
+                        <select id="headerCourseSelect" onchange="onCourseFilterChange(this.value)" class="px-3 py-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold outline-none">
+                            <option value="">📚 ทุกคอร์ส (ภาพรวมระบบ)</option>
+                        </select>
+                    </div>
+
                     <button onclick="exportGlobalCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5">
                         <i class="fas fa-file-excel"></i> Export CSV
                     </button>
@@ -89,6 +96,20 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-8">
         
+        <!-- Course Filter Info Banner (แสดงเมื่อถูกกรองด้วยคอร์สใดคอร์สหนึ่ง) -->
+        <div id="courseFilterBanner" class="hidden hitech-card p-4 rounded-2xl bg-purple-500/10 border-l-4 border-l-purple-500 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center font-bold"><i class="fas fa-chalkboard"></i></div>
+                <div>
+                    <div class="text-xs text-purple-600 dark:text-purple-400 font-bold">กำลังแสดงสถิติวิเคราะห์เฉพาะคอร์ส:</div>
+                    <div id="filterCourseTitleName" class="font-extrabold text-sm text-slate-900 dark:text-white">...</div>
+                </div>
+            </div>
+            <button onclick="clearCourseFilter()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-bold transition-all">
+                <i class="fas fa-times mr-1"></i> แสดงทุกคอร์ส
+            </button>
+        </div>
+
         <!-- SECTION 1: 4 Executive KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
@@ -285,13 +306,18 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const urlParams = new URLSearchParams(window.location.search);
+        let filterCourseId = urlParams.get('course_id');
+
         let allExams = [];
         let categoriesMap = {};
+        let allCoursesList = [];
+        let coursesMap = {};
         let allAttempts = [];
         let allProfilesList = [];
         let allProfilesMap = {};
         let totalRegisteredStudents = 30;
-        let examQuestionsMap = {}; // 📌 เก็บจำนวนข้อของแต่ละข้อสอบ
+        let examQuestionsMap = {}; 
 
         let chart1 = null, chart2 = null, chart3 = null, chart4 = null;
 
@@ -307,6 +333,26 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
+
+        function goBack() {
+            if (filterCourseId) {
+                window.location.href = `admin_course_detail.html?id=${filterCourseId}`;
+            } else {
+                window.location.href = 'admin.html';
+            }
+        }
+
+        function clearCourseFilter() {
+            window.location.href = 'admin_analytics.html';
+        }
+
+        function onCourseFilterChange(val) {
+            if (val) {
+                window.location.href = `admin_analytics.html?course_id=${val}`;
+            } else {
+                window.location.href = 'admin_analytics.html';
+            }
+        }
 
         function getAttemptScore(att) {
             if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) return Number(att.total_score);
@@ -387,6 +433,27 @@
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+            // โหลดข้อมูลคอร์สทั้งหมดเพื่อใช้ทำ Dropdown และเช็คชื่อคอร์ส
+            const { data: courses } = await mySupabase.from('courses').select('id, title, course_code').order('title');
+            allCoursesList = courses || [];
+            coursesMap = {};
+            allCoursesList.forEach(c => { coursesMap[c.id] = c; });
+
+            if (!filterCourseId) {
+                // ถ้าไม่ได้เข้าผ่านคอร์ส ให้แสดง Dropdown เลือกคอร์สบน Navbar
+                document.getElementById('courseSelectorWrapper').classList.remove('hidden');
+                const sel = document.getElementById('headerCourseSelect');
+                sel.innerHTML = `<option value="">📚 ทุกคอร์ส (ภาพรวมระบบ)</option>` + allCoursesList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+            } else {
+                // ถ้าเข้าผ่านคอร์ส ให้แสดงแบนเนอร์บอกชื่อคอร์ส
+                const cObj = coursesMap[filterCourseId];
+                if (cObj) {
+                    document.getElementById('courseFilterBanner').classList.remove('hidden');
+                    document.getElementById('filterCourseTitleName').textContent = cObj.title;
+                    document.getElementById('navTitle').innerHTML = `<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-pie"></i></span> สถิติคอร์ส: ${cObj.title}`;
+                }
+            }
+
             const { data: profiles, error: profileErr } = await mySupabase.from('profiles').select('*');
             if (profileErr) console.error("Error loading profiles:", profileErr);
             
@@ -406,12 +473,24 @@
             }
 
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
-            allExams = exams || [];
+            let rawExams = exams || [];
+
+            // กรองข้อสอบเฉพาะคอร์สที่เลือก (ถ้ามี filterCourseId)
+            if (filterCourseId) {
+                rawExams = rawExams.filter(e => {
+                    if (!e.course_id) return false;
+                    if (Array.isArray(e.course_id)) {
+                        return e.course_id.includes(filterCourseId);
+                    }
+                    return String(e.course_id) === String(filterCourseId);
+                });
+            }
+
+            allExams = rawExams;
             const activeExams = allExams.filter(e => e.status !== 'draft');
             document.getElementById('globalTotalExams').textContent = `${activeExams.length} ชุด`;
             document.getElementById('examCountBadge').textContent = `${activeExams.length} ชุดข้อสอบ`;
 
-            // 🌟 ดึงข้อมูลคำถามทั้งหมดเพื่อมานับคะแนนเต็ม (Max Score) ของแต่ละชุดข้อสอบ
             const { data: allQuestions } = await mySupabase.from('questions').select('id, exam_id');
             if (allQuestions) {
                 allQuestions.forEach(q => {
@@ -421,7 +500,14 @@
             }
 
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
-            allAttempts = attempts || [];
+            let rawAttempts = attempts || [];
+
+            // กรอง attempts เฉพาะข้อสอบที่อยู่ในคอร์สนี้
+            if (filterCourseId) {
+                const activeExamIds = new Set(activeExams.map(e => String(e.id)));
+                rawAttempts = rawAttempts.filter(a => activeExamIds.has(String(a.exam_id)));
+            }
+            allAttempts = rawAttempts;
 
             Swal.close();
 
@@ -461,19 +547,16 @@
         function renderAllCharts(activeExams) {
             const labels = activeExams.map(e => e.title);
 
-            // 🌟 คำนวณคะแนนเฉลี่ยเป็นร้อยละ (%) ของคะแนนเต็มในแต่ละชุดข้อสอบ
             const avgPercentages = activeExams.map(e => {
                 const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
                 if (matched.length === 0) return 0;
                 
-                // คะแนนเต็มของชุดข้อสอบนี้ (หากไม่มีคำถามในระบบ ให้ใช้ 10 เป็นค่าสำรอง)
                 const maxScore = examQuestionsMap[String(e.id)] || 10;
                 if (maxScore === 0) return 0;
 
                 const sumScore = matched.reduce((acc, curr) => acc + getAttemptScore(curr), 0);
                 const avgScore = sumScore / matched.length;
                 
-                // คำนวณเป็นร้อยละ
                 const percentage = (avgScore / maxScore) * 100;
                 return Number(percentage.toFixed(1));
             });
@@ -489,7 +572,6 @@
                 return allAttempts.filter(a => String(a.exam_id) === String(e.id)).length;
             });
 
-            // 📊 Chart 1: ร้อยละคะแนนเฉลี่ยเปรียบเทียบ (%)
             const ctx1 = document.getElementById('globalTrendChart').getContext('2d');
             if (chart1) chart1.destroy();
             chart1 = new Chart(ctx1, {
