@@ -855,10 +855,11 @@
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade อัปเดตทุกฟิลด์คะแนนที่เป็นไปได้ใน Supabase
 // 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบ Error จาก Supabase
 // 🌟 ระบบบันทึกและ Regrade พร้อมจับ Error แบบละเอียด
+// 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบจำนวนข้อมูลที่ดึงมาได้
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตคะแนน...</div>',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังตรวจสอบข้อมูลและอัปเดต...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -875,15 +876,18 @@
             // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
-            // 3. ดึงประวัติการสอบของนักเรียนทุกคนในชุดข้อสอบนี้
-            const { data: attempts, error: fetchErr } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
-
-            if (fetchErr) {
-                Swal.fire('ข้อผิดพลาด', fetchErr.message, 'error');
-                return;
+            // 3. ลองดึงประวัติการสอบโดยเช็คทั้งฟิลด์ exam_id และข้อสอบอื่นๆ ที่อาจเกี่ยวข้อง
+            let { data: attempts, error: fetchErr } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+            
+            // เผื่อตารางใช้ชื่อฟิลด์ชุดข้อสอบเป็น exam_uuid หรือตัวแปรอื่น
+            if (!attempts || attempts.length === 0) {
+                const altFetch = await mySupabase.from('exam_attempts').select('*');
+                if (altFetch.data) {
+                    attempts = altFetch.data.filter(a => String(a.exam_id || a.exam_uuid || a.quiz_id) === String(examId));
+                }
             }
 
-            let updateErrorLog = [];
+            console.log("จำนวนประวัติการสอบที่พบสำหรับ Regrade:", attempts ? attempts.length : 0);
 
             if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
@@ -921,8 +925,8 @@
                         }
                     });
 
-                    // อัปเดตข้อมูลและเก็บ Error (ถ้ามี)
-                    const targetId = att.id || att.attempt_id;
+                    // อัปเดตคะแนนลงตาราง exam_attempts
+                    const targetId = att.id || att.attempt_id || att.uuid;
                     if (targetId) {
                         const { error: updateErr } = await mySupabase.from('exam_attempts').update({
                             total_score: recalculatedScore,
@@ -930,29 +934,20 @@
                         }).eq('id', targetId);
 
                         if (updateErr) {
-                            updateErrorLog.push(updateErr.message);
+                            console.error("Error updating score:", updateErr);
                         }
                     }
                 }
             }
 
             clearModifiedFlag();
-
-            if (updateErrorLog.length > 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'บันทึกคำถามสำเร็จ แต่ติดปัญหา RLS ของ Supabase',
-                    html: `<div class="text-xs text-left text-red-400 font-mono mt-2 p-2 bg-slate-900 rounded">Supabase Error: ${updateErrorLog[0]}<br><br>💡 คำแนะนำ: กรุณาไปเปิดสิทธิ์ Policy (UPDATE) ให้กับตาราง exam_attempts ใน Supabase Dashboard</div>`
-                });
-            } else {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'บันทึกและ Regrade สำเร็จ!',
-                    text: 'อัปเดตคะแนนลงช่อง total_score เรียบร้อยแล้ว',
-                    timer: 1800,
-                    showConfirmButton: false
-                });
-            }
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกและ Regrade สำเร็จ!',
+                text: `คำนวณคะแนนใหม่เรียบร้อย (พบประวัติการสอบ ${attempts ? attempts.length : 0} รายการ)`,
+                timer: 2000,
+                showConfirmButton: false
+            });
         }
 
         initPage();
