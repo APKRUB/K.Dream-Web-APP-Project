@@ -420,13 +420,13 @@
 
         // ฟังก์ชันเรียก Google Gemini API วิเคราะห์จุดแข็ง-จุดอ่อนเทียบ PDF พร้อมระบบสำรอง
 async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
-    const container = document.getElementById('aiAnalysisContainer');
-    
-    // เช็กให้โชว์บนจอเลยว่าคีย์ที่ GitHub Actions ส่งมาคืออะไร
-    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("__GEMINI_API_KEY__")) {
-        container.innerHTML = `<div class="p-4 bg-red-500/10 text-red-500 rounded-xl text-xs">⚠️ Debug: GitHub Actions ยังไม่ได้แทนที่ค่า API Key (ค่าปัจจุบันคือ: ${GEMINI_API_KEY})</div>`;
-        return;
-    }
+            const container = document.getElementById('aiAnalysisContainer');
+            
+            // เช็กเฉพาะถ้ายังเป็น Placeholder หรือค่าว่างเท่านั้น
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+                renderLocalAIAnalysis(questions, answerMap, score, total);
+                return;
+            }
 
             let pdfTextContent = "";
             if (pdfUrl) {
@@ -470,11 +470,11 @@ ${JSON.stringify(summaryData, null, 2)}
 
 กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โดย **"เน้นเจาะจงที่จุดแข็งและจุดอ่อนของนักเรียน โดยเทียบผลการตอบถูก-ผิดเข้ากับเนื้อหาใน PDF เป็นหลัก"** ตามโครงสร้างนี้เท่านั้น:
 
-1. 🎯 **จุดแข็ง (Strengths):** วิเคราะห์จากข้อที่นักเรียนทำถูก ว่านักเรียนมีความเข้าใจในหัวข้อหรือเงื่อนไขส่วนใดของเอกสาร PDF เป็นอย่างดีแล้ว (เช่น เข้าใจการจัดการสตริง การตัดคำ หรือเงื่อนไขตามโจทย์ใน PDF อย่างแม่นยำ)
-2. ⚠️ **จุดอ่อนและข้อผิดพลาด (Weaknesses):** วิเคราะห์จากข้อที่นักเรียนทำผิด ว่าไปพลาดตรงจุดไหนของเนื้อหาหรือเงื่อนไขใน PDF (เช่น ตกม้าตายเรื่องตัวพิมพ์เล็ก/ใหญ่, การข้ามเงื่อนไขพิเศษ, หรือการเรียงลำดับ)
+1. 🎯 **จุดแข็ง (Strengths):** วิเคราะห์จากข้อที่นักเรียนทำถูก ว่านักเรียนมีความเข้าใจในหัวข้อหรือเงื่อนไขส่วนใดของเอกสาร PDF เป็นอย่างดีแล้ว
+2. ⚠️ **จุดอ่อนและข้อผิดพลาด (Weaknesses):** วิเคราะห์จากข้อที่นักเรียนทำผิด ว่าไปพลาดตรงจุดไหนของเนื้อหาหรือเงื่อนไขใน PDF
 3. 💡 **คำแนะนำเฉพาะจุด (Actionable Advice):** แนะนำแนวทางสั้นๆ ว่าต้องกลับไปทบทวนหัวข้อใดใน PDF เพื่ออุดรอยรั่วนี้
 
-ตอบกลับในรูปแบบ HTML สั้นๆ กระชับ ชัดเจน (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม ห้ามเกริ่นหรือออกนอกประเด็นจุดแข็งจุดอ่อน)
+ตอบกลับในรูปแบบ HTML สั้นๆ กระชับ ชัดเจน (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
 `;
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -492,12 +492,18 @@ ${JSON.stringify(summaryData, null, 2)}
                     let aiText = data.candidates[0].content.parts[0].text;
                     aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
                     container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
+                } else if (data.error) {
+                    // แสดงข้อความ Error จาก Google ออกมาบนหน้าจอตรงๆ
+                    container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs space-y-1">
+                        <div class="font-bold">⚠️ Google Gemini API Error (${data.error.code || 'Uncaught'}):</div>
+                        <div>${data.error.message || 'ไม่สามารถประมวลผลคำตอบได้'}</div>
+                    </div>`;
                 } else {
                     renderLocalAIAnalysis(questions, answerMap, score, total);
                 }
             } catch (err) {
-                console.error("Gemini API Error, falling back to local analysis:", err);
-                renderLocalAIAnalysis(questions, answerMap, score, total);
+                console.error("Gemini API Error:", err);
+                container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">⚠️ Fetch Error: ${err.message || 'ไม่สามารถเชื่อมต่อกับ Gemini API ได้'}</div>`;
             }
         }
 
