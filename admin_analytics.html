@@ -261,7 +261,7 @@
             </div>
         </div>
 
-        <!-- 🌟 SECTION 5: Exam Catalog Grid (ปรับดีไซน์ใหม่และลิงก์ดูสถิติรายข้อสอบแต่ละข้ออย่างสมบูรณ์) -->
+        <!-- 🌟 SECTION 5: Exam Catalog Grid -->
         <div class="space-y-4 pt-2">
             <div class="flex justify-between items-center bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-transparent p-4 rounded-2xl border border-sky-500/20">
                 <h2 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
@@ -327,34 +327,39 @@
             return false;
         }
 
-        function formatAnswerText(ansValue) {
+        // 🌟 ฟังก์ชันแปลงค่าคำตอบตามชนิดตัวเลือก (choice_format) ของแต่ละชุดข้อสอบ
+        function formatAnswerText(ansValue, examObj = null) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
-            const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
-            if (typeof ansValue === 'number' || (!isNaN(ansValue) && String(ansValue).trim() !== '')) {
-                const idx = Number(ansValue);
-                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
+            const strVal = String(ansValue).trim();
+
+            const formatType = (examObj && examObj.choice_format) ? examObj.choice_format : 'num';
+            let labels = ['1', '2', '3', '4', '5'];
+            if (formatType === 'th_num') labels = ['ก', 'ข', 'ค', 'ง', 'จ'];
+            else if (formatType === 'upper') labels = ['A', 'B', 'C', 'D', 'E'];
+            else if (formatType === 'lower') labels = ['a', 'b', 'c', 'd', 'e'];
+
+            if (/^\d+$/.test(strVal)) {
+                const idx = Number(strVal);
+                if (idx >= 0 && idx < labels.length) {
+                    return labels[idx];
+                }
             }
-            const trimmed = String(ansValue).trim();
-            if (/^\d+$/.test(trimmed)) {
-                const idx = Number(trimmed);
-                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
-            }
-            return trimmed;
+            return strVal;
         }
 
-        function getCorrectAnswer(q) {
+        function getCorrectAnswer(q, examObj = null) {
             let raw = q.correct_answer !== undefined ? q.correct_answer : 
                     (q.answer !== undefined ? q.answer : 
                     (q.key !== undefined ? q.key : 
                     (q.solution !== undefined ? q.solution : '')));
-            return formatAnswerText(raw);
+            return formatAnswerText(raw, examObj);
         }
 
-        function extractStudentAnswer(att, q, index) {
+        function extractStudentAnswer(att, q, index, examObj = null) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
-            if (!raw) return null;
+            if (!raw) return '-';
             if (typeof raw === 'string') {
-                try { raw = JSON.parse(raw); } catch(e) { return null; }
+                try { raw = JSON.parse(raw); } catch(e) { return '-'; }
             }
 
             let val = null;
@@ -376,7 +381,7 @@
                 }
             }
 
-            return formatAnswerText(val);
+            return formatAnswerText(val, examObj);
         }
 
         async function initDashboard() {
@@ -746,8 +751,8 @@
             const score = att ? getAttemptScore(att) : 0;
 
             let questionsHtml = questions.map((q, index) => {
-                const userAns = att ? extractStudentAnswer(att, q, index) : '-';
-                const correctAns = getCorrectAnswer(q);
+                const userAns = att ? extractStudentAnswer(att, q, index, exam) : '-';
+                const correctAns = getCorrectAnswer(q, exam);
                 const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                 const correctAnsStr = String(correctAns).trim().toLowerCase();
                 const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
@@ -852,8 +857,8 @@
                 `);
 
                 questions.forEach((q, index) => {
-                    const userAns = att ? extractStudentAnswer(att, q, index) : '-';
-                    const correctAns = getCorrectAnswer(q);
+                    const userAns = att ? extractStudentAnswer(att, q, index, exam) : '-';
+                    const correctAns = getCorrectAnswer(q, exam);
                     const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                     const correctAnsStr = String(correctAns).trim().toLowerCase();
                     const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
@@ -932,7 +937,6 @@
             printWindow.document.close();
         }
 
-        // 🌟 renderExamsCatalogByCategories พร้อมลิงก์ไปหน้าวิเคราะห์รายชุดข้อสอบอย่างแม่นยำ
         function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (activeExams.length === 0) {
