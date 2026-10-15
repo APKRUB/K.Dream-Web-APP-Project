@@ -83,10 +83,28 @@
     <!-- Main Split View Layout -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
+        <!-- Course Selection Bar -->
+        <div class="hitech-card p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-l-8 border-l-sky-500">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-base shrink-0 font-bold">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div>
+                    <h2 class="text-xs text-slate-400 font-bold">เลือกคอร์สเรียนของคุณ</h2>
+                    <span id="activeCourseTitleDisplay" class="text-sm font-extrabold text-slate-900 dark:text-white">กำลังโหลดคอร์ส...</span>
+                </div>
+            </div>
+            <div class="w-full sm:w-72">
+                <select id="courseSelector" onchange="onCourseChanged()" class="w-full px-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
+                    <option value="">-- กำลังโหลดคอร์ส --</option>
+                </select>
+            </div>
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-5 items-start">
             
             <!-- ฝั่งซ้าย: รายการบทเรียน -->
-            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-120px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
+            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-210px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
                 <div class="space-y-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center">
                         <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -105,7 +123,7 @@
                 <!-- รายการวิดีโอแบบเลื่อนได้ -->
                 <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังตรวจสอบสิทธิ์และโหลดข้อมูล...
+                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดข้อมูล...
                     </div>
                 </div>
             </div>
@@ -143,7 +161,9 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let cachedVideos = [];
+        let allCourses = [];
+        let allVideos = [];
+        let currentCourseId = null;
         let searchQuery = '';
         let activeVideoId = null;
         let isSidebarOpen = true;
@@ -181,7 +201,6 @@
             if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
         });
 
-        // 🛡️ ระบบตรวจสอบสิทธิ์ความปลอดภัยขั้นสูง (Robust Auth Guard)
         async function verifyStudentAccess() {
             const studentId = localStorage.getItem('student_id') || localStorage.getItem('id');
             if (!studentId) {
@@ -195,14 +214,12 @@
                 return false;
             }
 
-            // ตรวจสอบว่ามี ID นี้อยู่ในตาราง profiles หรือ students จริงหรือไม่
             const { data: profile } = await mySupabase.from('profiles').select('id').eq('id', studentId).single();
             if (profile) return true;
 
             const { data: student } = await mySupabase.from('students').select('id').eq('id', studentId).single();
             if (student) return true;
 
-            // หากไม่พบข้อมูลในฐานข้อมูล ให้เตะออกทันที
             localStorage.removeItem('student_id');
             localStorage.removeItem('id');
             await Swal.fire({
@@ -220,22 +237,90 @@
             if (!isValid) return;
 
             try {
-                const { data, error } = await mySupabase.from('videos').select('*').order('display_order', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
-                if (error) throw error;
-                cachedVideos = data || [];
-                renderVideoList();
+                // 1. โหลดข้อมูลคอร์สทั้งหมด
+                const courseRes = await mySupabase.from('courses').select('id, title, course_code').order('title');
+                allCourses = courseRes.data || [];
 
-                if (cachedVideos.length > 0) {
-                    playVideo(cachedVideos[0].id, cachedVideos[0].youtube_id, cachedVideos[0].title, cachedVideos[0].created_at);
+                // 2. โหลดวิดีโอจากทั้ง course_lessons และ videos เพื่อความครอบคลุม
+                let fetchedVideos = [];
+                const lessonRes = await mySupabase.from('course_lessons').select('*');
+                if (lessonRes.data) {
+                    fetchedVideos = lessonRes.data.filter(l => l.video_url || l.video || l.url || l.youtube_id);
                 }
+
+                if (fetchedVideos.length === 0) {
+                    const videoRes = await mySupabase.from('videos').select('*');
+                    if (videoRes.data) {
+                        fetchedVideos = videoRes.data;
+                    }
+                }
+
+                // จัดรูปทรงข้อมูลวิดีโอให้เป็นมาตรฐานเดียวกัน
+                allVideos = fetchedVideos.map(v => ({
+                    id: v.id,
+                    title: v.title || v.name || 'ไม่มีชื่อบทเรียน',
+                    course_id: v.course_id || v.courseid || v.course || null,
+                    video_url: v.video_url || v.video || v.url || '',
+                    youtube_id: v.youtube_id || extractVideoId(v.video_url || v.video || v.url || ''),
+                    created_at: v.created_at || new Date().toISOString()
+                }));
+
+                populateCourseDropdown();
+
             } catch (err) {
-                const container = document.getElementById('videoListContainer');
-                container.innerHTML = `
+                console.error("Error loading video vault:", err);
+                document.getElementById('videoListContainer').innerHTML = `
                     <div class="text-center py-12 text-amber-500 text-xs">
                         <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
                         <p>ไม่สามารถโหลดรายการเทปเรียนได้ในขณะนี้</p>
                     </div>
                 `;
+            }
+        }
+
+        function extractVideoId(url) {
+            if (!url) return '';
+            if (!url.includes('http') && !url.includes('/')) return url; // กรณีเก็บเป็น ID ตรงๆ
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : url;
+        }
+
+        function populateCourseDropdown() {
+            const selector = document.getElementById('courseSelector');
+            if (!selector) return;
+
+            if (allCourses.length === 0) {
+                selector.innerHTML = '<option value="">-- ไม่พบคอร์สในระบบ --</option>';
+                document.getElementById('activeCourseTitleDisplay').textContent = 'ไม่มีคอร์สเรียน';
+                return;
+            }
+
+            selector.innerHTML = allCourses.map(c => `
+                <option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>
+            `).join('');
+
+            // ตั้งค่าคอร์สเริ่มต้นเป็นคอร์สแรก
+            currentCourseId = allCourses[0].id;
+            selector.value = currentCourseId;
+            updateActiveCourseHeader();
+            renderVideoList();
+        }
+
+        function onCourseChanged() {
+            const selector = document.getElementById('courseSelector');
+            currentCourseId = selector.value;
+            updateActiveCourseHeader();
+            renderVideoList();
+        }
+
+        function updateActiveCourseHeader() {
+            const courseObj = allCourses.find(c => String(c.id) === String(currentCourseId));
+            const titleSpan = document.getElementById('activeCourseTitleDisplay');
+            if (courseObj) {
+                titleSpan.textContent = courseObj.title;
+            } else {
+                titleSpan.textContent = 'เลือกคอร์สเรียน';
             }
         }
 
@@ -246,23 +331,31 @@
 
         function renderVideoList() {
             const container = document.getElementById('videoListContainer');
-            const filtered = cachedVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
-            document.getElementById('videoCountDisplay').textContent = cachedVideos.length;
+            
+            // กรองเฉพาะวิดีโอที่ตรงกับคอร์สที่เลือกปัจจุบัน
+            let courseVideos = allVideos.filter(v => String(v.course_id) === String(currentCourseId));
 
-            if (filtered.length === 0) {
+            if (searchQuery) {
+                courseVideos = courseVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
+            }
+
+            document.getElementById('videoCountDisplay').textContent = courseVideos.length;
+
+            if (courseVideos.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-search text-xl mb-2"></i>
-                        <p>ไม่พบบทเรียนที่ค้นหา</p>
+                        <i class="fas fa-film text-xl mb-2"></i>
+                        <p>ยังไม่มีวิดีโอในคอร์สนี้</p>
                     </div>
                 `;
+                resetPlayerToEmpty();
                 return;
             }
 
-            container.innerHTML = filtered.map(v => {
+            container.innerHTML = courseVideos.map(v => {
                 const isActive = activeVideoId === v.id;
                 return `
-                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
+                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}', '${v.video_url}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
                                 <i class="fas ${isActive ? 'fa-play' : 'fa-video'} text-[10px]"></i>
@@ -276,20 +369,49 @@
                     </div>
                 `;
             }).join('');
+
+            // ถ้ายังไม่ได้เลือกวิดีโอ หรือวิดีโอที่เลือกเดิมไม่อยู่ในคอร์สนี้ ให้เลือกคลิปแรกของคอร์สออโต้
+            const activeInThisCourse = courseVideos.some(v => v.id === activeVideoId);
+            if (!activeInThisCourse && courseVideos.length > 0) {
+                playVideo(courseVideos[0].id, courseVideos[0].youtube_id, encodeURIComponent(courseVideos[0].title), courseVideos[0].created_at, courseVideos[0].video_url);
+            }
         }
 
-        function playVideo(id, fileId, encodedTitle, createdAt) {
+        function playVideo(id, videoIdOrYt, encodedTitle, createdAt, rawUrl) {
             activeVideoId = id;
             const title = decodeURIComponent(encodedTitle);
             document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
             document.getElementById('videoPublishDate').textContent = `เผยแพร่เมื่อ: ${new Date(createdAt).toLocaleString('th-TH')}`;
 
             const wrapper = document.getElementById('iframePlayerWrapper');
-            wrapper.innerHTML = `
-                <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
-            `;
+            
+            // ตรวจสอบรูปแบบลิงก์ว่าเป็น Google Drive หรือ YouTube หรือลิงก์เว็บอื่นๆ
+            let embedHtml = '';
+            if (rawUrl && rawUrl.includes('drive.google.com')) {
+                embedHtml = `<iframe class="w-full h-full" src="${rawUrl}" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>`;
+            } else if (videoIdOrYt && videoIdOrYt.length === 11) {
+                embedHtml = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoIdOrYt}?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            } else if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
+                const ytId = extractVideoId(rawUrl);
+                embedHtml = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            } else {
+                embedHtml = `<iframe class="w-full h-full" src="${rawUrl || '#'}" title="Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>`;
+            }
 
+            wrapper.innerHTML = embedHtml;
             renderVideoList();
+        }
+
+        function resetPlayerToEmpty() {
+            activeVideoId = null;
+            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> กรุณาเลือกบทเรียนจากรายการด้านซ้าย`;
+            document.getElementById('videoPublishDate').textContent = `--`;
+            document.getElementById('iframePlayerWrapper').innerHTML = `
+                <div class="text-center space-y-2">
+                    <i class="fas fa-film text-3xl text-slate-600 animate-pulse"></i>
+                    <p>ไม่มีวิดีโอในคอร์สนี้</p>
+                </div>
+            `;
         }
 
         function alertPopoutBlocked() {
