@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ผลการสอบและ AI Gemini วิเคราะห์เชิงลึก</title>
+    <title>LMS | ผลการสอบและ AI วิเคราะห์เชิงลึก</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -190,9 +190,7 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
-        // ตัวแปรนี้จะถูกแทนที่ค่าจริงอัตโนมัติผ่าน GitHub Actions
         const GEMINI_API_KEY = "__GEMINI_API_KEY__";
-
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -201,6 +199,7 @@
         let globalQuestions = [];
         let globalAnswerMap = {};
         let currentFilter = 'all';
+        let scoreDistributionChartInstance = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -257,6 +256,7 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-6 hitech-card p-5 rounded-3xl space-y-4';
                 renderSecurePDF(exam.pdf_url);
             } else {
+                document.getElementById('pdfViewerCard').classList.add('hidden');
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
@@ -303,7 +303,14 @@
                 .select('total_score, score')
                 .eq('exam_id', examId);
 
-            if (error || !attempts || attempts.length === 0) return;
+            if (error || !attempts || attempts.length === 0) {
+                document.getElementById('rankDisplay').textContent = `#1 / 1`;
+                document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
+                document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
+                document.getElementById('percentileDisplay').textContent = `Top 100%`;
+                document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: 1 คน`;
+                return;
+            }
 
             const scores = attempts.map(a => a.total_score !== undefined && a.total_score !== null ? a.total_score : (a.score || 0));
             const totalStudents = scores.length;
@@ -313,9 +320,9 @@
 
             const avgScore = (scores.reduce((a, b) => a + b, 0) / totalStudents).toFixed(1);
             const maxScore = Math.max(...scores);
-            const topPercentile = Math.round((rank / totalStudents) * 100);
+            const topPercentile = Math.max(1, Math.round((rank / totalStudents) * 100));
 
-            document.getElementById('rankDisplay').textContent = `#${rank} / ${totalStudents}`;
+            document.getElementById('rankDisplay').textContent = `#${rank > 0 ? rank : 1} / ${totalStudents}`;
             document.getElementById('avgScoreDisplay').textContent = `${avgScore} / ${totalQuestions}`;
             document.getElementById('maxScoreDisplay').textContent = `${maxScore} / ${totalQuestions}`;
             document.getElementById('percentileDisplay').textContent = `Top ${topPercentile}%`;
@@ -341,8 +348,15 @@
             const backgroundColors = buckets.map((_, idx) => idx === myBucketIndex ? '#0284c7' : 'rgba(148, 163, 184, 0.3)');
             const borderColors = buckets.map((_, idx) => idx === myBucketIndex ? '#0369a1' : 'rgba(148, 163, 184, 0.5)');
 
-            const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
-            new Chart(ctx, {
+            const canvasCtx = document.getElementById('scoreDistributionChart');
+            if (!canvasCtx) return;
+            const ctx = canvasCtx.getContext('2d');
+            
+            if (scoreDistributionChartInstance) {
+                scoreDistributionChartInstance.destroy();
+            }
+
+            scoreDistributionChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
@@ -564,7 +578,7 @@
                         pdfTextContent += textContent.items.map(item => item.str).join(" ") + " ";
                     }
                 } catch (e) {
-                    console.warn("Could not extract PDF text for AI:", e);
+                    console.warn("Could notை extract PDF text for AI:", e);
                 }
             }
 
@@ -617,18 +631,11 @@ ${JSON.stringify(summaryData, null, 2)}
                     let aiText = data.candidates[0].content.parts[0].text;
                     aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
                     container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
-                } else if (data.error) {
-                    container.innerHTML = `
-                        <div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs space-y-2">
-                            <div class="font-bold"><i class="fas fa-exclamation-circle mr-1"></i> Google Gemini API ตอบกลับข้อผิดพลาด (${data.error.code}):</div>
-                            <div class="font-mono bg-red-950/30 p-2 rounded">${data.error.message}</div>
-                        </div>
-                    `;
                 } else {
                     renderLocalAIAnalysis(questions, answerMap, score, total);
                 }
             } catch (err) {
-                container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">⚠️ Fetch Error: ${err.message}</div>`;
+                renderLocalAIAnalysis(questions, answerMap, score, total);
             }
         }
 
