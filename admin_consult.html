@@ -237,6 +237,7 @@
         let displayedYear = new Date().getFullYear();
         let displayedMonth = new Date().getMonth();
         let selectedDateStr = new Date().toISOString().split('T')[0];
+        let isInitialLoaded = false; // ป้องกันการรีเซ็ตช่อง input ซ้ำซ้อนขณะกำลังแก้ไข
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -252,7 +253,7 @@
         });
 
         function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'ผู้ดูแลระบบ';
+            const currentUsername = localStorage.getItem('admin_username'] || localStorage.getItem('user_name') || 'ผู้ดูแลระบบ';
             localStorage.setItem('admin_username', currentUsername);
             return true;
         }
@@ -272,13 +273,16 @@
                     loadAllSlots();
                     loadBookedStudents();
                 })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, () => {
-                    loadSettings();
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, (payload) => {
+                    // อัปเดตเฉพาะตอนที่มีการเปลี่ยนแปลงจากภายนอกจริง ๆ และผู้ใช้ไม่ได้โฟกัสช่อง input อยู่
+                    if (payload.new && document.activeElement.tagName !== 'INPUT') {
+                        currentSetting = payload.new;
+                        updateStatusDisplay();
+                    }
                 })
                 .subscribe();
         }
 
-        // แปลง ISO String เป็นรูปแบบสำหรับ input datetime-local ให้ตรงเป๊ะตามเวลาไทย
         function formatLocalDateTime(isoString) {
             if (!isoString) return '';
             const date = new Date(isoString);
@@ -295,22 +299,28 @@
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
             currentSetting = data || { is_open: false, prune_hours: 24 };
 
+            // เติมค่าลงในฟอร์มครั้งแรกสุด หรือตอนที่ยังไม่ได้โฟกัสแก้ไขอยู่
+            if (!isInitialLoaded || document.activeElement.tagName !== 'INPUT') {
+                if (currentSetting?.open_at) {
+                    document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
+                }
+                if (currentSetting?.close_at) {
+                    document.getElementById('closeAtInput').value = formatLocalDateTime(currentSetting.close_at);
+                }
+                if (currentSetting?.prune_hours !== undefined) {
+                    document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
+                }
+                isInitialLoaded = true;
+            }
+
+            updateStatusDisplay();
+        }
+
+        function updateStatusDisplay() {
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
             const countdownInfo = document.getElementById('countdownInfo');
 
-            // แสดงค่าลงในฟอร์มด้านซ้ายคงไว้
-            if (currentSetting?.open_at) {
-                document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
-            }
-            if (currentSetting?.close_at) {
-                document.getElementById('closeAtInput').value = formatLocalDateTime(currentSetting.close_at);
-            }
-            if (currentSetting?.prune_hours !== undefined) {
-                document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
-            }
-
-            // คำนวณสถานะเปิด-ปิดอัตโนมัติตามช่วงเวลา open_at และ close_at
             const now = new Date();
             let autoOpen = false;
             if (currentSetting?.open_at && currentSetting?.close_at) {
@@ -321,10 +331,10 @@
                 }
             }
 
-            // ถ้าสถานะเปลี่ยนจากเวลาอัตโนมัติ ให้บันทึกอัปเดตลงฐานข้อมูล
             if (autoOpen !== currentSetting.is_open) {
-                await mySupabase.from('consult_settings').update({ is_open: autoOpen }).eq('id', 1);
-                currentSetting.is_open = autoOpen;
+                mySupabase.from('consult_settings').update({ is_open: autoOpen }).eq('id', 1).then(() => {
+                    currentSetting.is_open = autoOpen;
+                });
             }
 
             if (currentSetting.is_open) {
@@ -342,14 +352,13 @@
             }
         }
 
-        // ปุ่ม Manual Override (ใช้ฉุกเฉิน)
         async function toggleSystemStatus() {
             const newStatus = !currentSetting.is_open;
             await mySupabase.from('consult_settings').update({ is_open: newStatus }).eq('id', 1);
             currentSetting.is_open = newStatus;
             await logHistory(newStatus ? 'Manual Override: เปิดระบบรับจอง' : 'Manual Override: ปิดระบบรับจอง');
             Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบด้วย Manual สำเร็จ' : 'ปิดระบบด้วย Manual สำเร็จ', timer: 1200, showConfirmButton: false });
-            loadSettings();
+            updateStatusDisplay();
         }
 
         async function saveSystemSettings() {
@@ -368,16 +377,25 @@
                 if (now >= openTime && now < closeTime) initialOpen = true;
             }
 
-            await mySupabase.from('consult_settings').update({ 
+            const { error } = await mySupabase.from('consult_settings').update({ 
                 open_at: openIso,
                 close_at: closeIso,
                 prune_hours: pruneVal,
                 is_open: initialOpen
             }).eq('id', 1);
 
-            await logHistory('อัปเดตเวลาเปิด-ปิดอัตโนมัติและการตั้งค่า');
-            Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false });
-            loadSettings();
+            if (!error) {
+                currentSetting.open_at = openIso;
+                currentSetting.close_at = closeIso;
+                currentSetting.prune_hours = pruneVal;
+                currentSetting.is_open = initialOpen;
+
+                await logHistory('อัปเดตเวลาเปิด-ปิดอัตโนมัติและการตั้งค่า');
+                Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false });
+                updateStatusDisplay();
+            } else {
+                Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+            }
         }
 
         async function loadAllSlots() {
