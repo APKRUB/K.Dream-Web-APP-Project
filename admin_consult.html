@@ -649,7 +649,7 @@
                             <div class="text-[10px] text-slate-400 mt-0.5">⏰ ${startStr} - ${endStr} น.</div>
                         </div>
                         <div class="flex gap-1.5">
-                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}')" class="px-2.5 py-1 bg-sky-500/10 text-sky-500 hover:bg-sky-500 hover:text-white rounded-lg font-bold transition-all text-[11px]">ย้าย</button>
+                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}', '${s.profiles?.full_name || 'นักเรียน'}')" class="px-2.5 py-1 bg-sky-500/10 text-sky-500 hover:bg-sky-500 hover:text-white rounded-lg font-bold transition-all text-[11px]">ย้าย</button>
                             <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-2.5 py-1 bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white rounded-lg font-bold transition-all text-[11px]">ยกเลิก</button>
                         </div>
                     </div>
@@ -657,7 +657,8 @@
             }).join('');
         }
 
-        async function openRescheduleModal(oldSlotId, studentId) {
+        // 🔄 ADVANCED RESCHEDULE CALENDAR MODAL
+        async function openRescheduleModal(oldSlotId, studentId, studentName) {
             const nowIso = new Date().toISOString();
             const { data: availableSlots } = await mySupabase.from('consult_slots').select('*').eq('status', 'available').gt('end_time', nowIso).order('start_time', { ascending: true });
 
@@ -666,19 +667,124 @@
                 return;
             }
 
-            let optionsHtml = availableSlots.map(s => {
-                const sStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-                const eStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-                return `<option value="${s.id}">${sStr} - ${eStr} น.</option>`;
-            }).join('');
+            // ตัวแปรสำหรับควบคุมปฏิทินใน Modal
+            let resYear = new Date().getFullYear();
+            let resMonth = new Date().getMonth();
+            let selectedResDate = availableSlots[0].start_time.split('T')[0];
+
+            function renderResCalendarHtml() {
+                const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                let daysHtml = '';
+                const firstDayIndex = new Date(resYear, resMonth, 1).getDay();
+                const totalDays = new Date(resYear, resMonth + 1, 0).getDate();
+
+                for (let i = 0; i < firstDayIndex; i++) { daysHtml += `<div></div>`; }
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const mStr = String(resMonth + 1).padStart(2, '0');
+                    const dStr = String(day).padStart(2, '0');
+                    const dKey = `${resYear}-${mStr}-${dStr}`;
+                    const slotsCount = availableSlots.filter(s => s.start_time.startsWith(dKey)).length;
+
+                    let bgClass = 'bg-slate-100 dark:bg-slate-800 text-slate-400';
+                    if (slotsCount > 0) {
+                        bgClass = 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/30 cursor-pointer hover:bg-sky-500 hover:text-white';
+                    }
+                    const isSel = selectedResDate === dKey ? 'ring-2 ring-sky-500 font-extrabold bg-sky-500 text-white' : '';
+
+                    daysHtml += `<div onclick="window.selectResDate('${dKey}')" class="res-day-cell p-2 rounded-xl text-center text-xs ${bgClass} ${isSel} transition-all select-none" data-date="${dKey}">
+                        <div>${day}</div>
+                        <div class="text-[9px] mt-0.5 opacity-80">${slotsCount > 0 ? slotsCount + ' ว่าง' : ''}</div>
+                    </div>`;
+                }
+
+                return `
+                    <div class="text-left space-y-4">
+                        <div class="p-3 rounded-2xl bg-sky-50 dark:bg-sky-950/20 border border-sky-500/30 text-xs text-sky-900 dark:text-sky-200">
+                            กำลังย้ายคิวของ: <strong class="text-sky-600 dark:text-sky-400">${studentName}</strong>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center px-1">
+                                <span class="font-bold text-xs text-slate-700 dark:text-slate-300" id="resMonthLabel">${monthNames[resMonth]} ${resYear + 543}</span>
+                                <div class="flex gap-1">
+                                    <button onclick="window.changeResMonth(-1)" class="w-7 h-7 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-sky-500 hover:text-white"><i class="fas fa-chevron-left text-[10px]"></i></button>
+                                    <button onclick="window.changeResMonth(1)" class="w-7 h-7 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-sky-500 hover:text-white"><i class="fas fa-chevron-right text-[10px]"></i></button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">
+                                <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
+                            </div>
+                            <div id="resCalendarGrid" class="grid grid-cols-7 gap-1">
+                                ${daysHtml}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">เลือกช่วงเวลาว่างในวันที่เลือก:</label>
+                            <select id="resSlotSelect" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border dark:border-slate-700 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-500">
+                                <!-- โหลด Slot ตามวันที่เลือก -->
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function updateResSlotsDropdown() {
+                const selectEl = document.getElementById('resSlotSelect');
+                if (!selectEl) return;
+                const filtered = availableSlots.filter(s => s.start_time.startsWith(selectedResDate));
+                if (filtered.length === 0) {
+                    selectEl.innerHTML = `<option value="">ไม่มีช่วงเวลาว่างในวันนี้</option>`;
+                    return;
+                }
+                selectEl.innerHTML = filtered.map(s => {
+                    const sStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                    const eStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                    return `<option value="${s.id}">${sStr} - ${eStr} น.</option>`;
+                }).join('');
+            }
+
+            window.changeResMonth = function(dir) {
+                resMonth += dir;
+                if (resMonth > 11) { resMonth = 0; resYear++; }
+                else if (resMonth < 0) { resMonth = 11; resYear--; }
+                const container = document.getElementById('resCalendarGrid');
+                const label = document.getElementById('resMonthLabel');
+                if (container) {
+                    // Re-render modal html dynamically
+                    Swal.getHtmlContainer().querySelector('.space-y-4').outerHTML = renderResCalendarHtml();
+                    updateResSlotsDropdown();
+                }
+            };
+
+            window.selectResDate = function(dKey) {
+                selectedResDate = dKey;
+                const cells = Swal.getHtmlContainer().querySelectorAll('.res-day-cell');
+                cells.forEach(c => {
+                    if (c.getAttribute('data-date') === dKey) {
+                        c.className = c.className.replace(/bg-slate-100|dark:bg-slate-800|text-slate-400|bg-sky-50|dark:bg-sky-950\/40|text-sky-700|dark:text-sky-300|hover:bg-sky-500|hover:text-white/g, '') + ' ring-2 ring-sky-500 font-extrabold bg-sky-500 text-white';
+                    } else {
+                        const hasSlot = availableSlots.filter(s => s.start_time.startsWith(c.getAttribute('data-date'))).length > 0;
+                        c.className = `res-day-cell p-2 rounded-xl text-center text-xs transition-all select-none ${hasSlot ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 font-bold border border-sky-500/30 cursor-pointer hover:bg-sky-500 hover:text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`;
+                    }
+                });
+                updateResSlotsDropdown();
+            };
 
             const { value: newSlotId } = await Swal.fire({
-                title: 'ย้ายเวลา Consult',
-                html: `<p class="text-xs text-slate-500 mb-3">เลือกช่วงเวลาใหม่:</p><select id="newSlotSelect" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border dark:border-slate-700 rounded-xl text-xs">${optionsHtml}</select>`,
+                title: '📅 เลือกวันและเวลาใหม่เพื่อย้ายคิว',
+                html: renderResCalendarHtml(),
+                width: '450px',
                 showCancelButton: true,
                 confirmButtonText: 'ยืนยันย้ายเวลา',
                 cancelButtonText: 'ยกเลิก',
-                preConfirm: () => document.getElementById('newSlotSelect').value
+                confirmButtonColor: '#0284c7',
+                didOpen: () => {
+                    updateResSlotsDropdown();
+                },
+                preConfirm: () => {
+                    const sel = document.getElementById('resSlotSelect');
+                    return sel ? sel.value : null;
+                }
             });
 
             if (newSlotId) {
@@ -687,7 +793,7 @@
                 await mySupabase.from('consult_slots').update({ status: 'booked', student_id: studentId }).eq('id', newSlotId);
                 await mySupabase.from('consult_quotas').update({ booked_slot_id: newSlotId }).eq('student_id', studentId);
                 
-                await logHistory(`ย้ายเวลา Consult ของนักเรียนไป Slot ใหม่`);
+                await logHistory(`ย้ายเวลา Consult ของนักเรียน (${studentName}) ไป Slot ใหม่`);
                 Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1200, showConfirmButton: false });
             }
         }
