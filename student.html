@@ -41,6 +41,13 @@
             box-shadow: 0 20px 40px -10px rgba(2, 132, 199, 0.25);
             border-color: #0284c7;
         }
+        .feature-box {
+            transition: all 0.25s ease;
+        }
+        .feature-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.2);
+        }
         .hide-scrollbar::-webkit-scrollbar { height: 6px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
@@ -68,11 +75,12 @@
                 </div>
             </div>
             
-            <div class="flex items-center gap-3">
-                <button onclick="logoutStudent()" class="px-4 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 border border-red-500/30 shadow-sm">
+            <div class="flex items-center gap-2.5">
+                <button onclick="logoutStudent()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border border-red-500/30 shadow-sm">
                     <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                 </button>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all">
+
+                <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all">
                     <i class="fas fa-moon text-sm" id="themeIcon"></i>
                 </button>
             </div>
@@ -81,22 +89,43 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-28 space-y-8">
 
-        <!-- 🚀 Banner จองเวลา Consult ดีไซน์โทนน้ำเงินฟ้าพรีเมียม -->
-        <div class="relative overflow-hidden hitech-card p-6 sm:p-7 rounded-3xl border-2 border-sky-500/40 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-xl shadow-sky-500/10">
-            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="flex items-center gap-4 relative z-10">
-                <div class="w-14 h-14 rounded-2xl bg-white text-sky-600 flex items-center justify-center text-2xl shadow-lg shadow-black/10 shrink-0">
-                    <i class="fas fa-calendar-check animate-pulse"></i>
+        <!-- 🚀 พื้นที่รวมปุ่มฟีเจอร์เด่น ๆ (Feature Hub) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- ปุ่มเข้าสู่คลังเทปย้อนหลัง (Video Vault) -->
+            <div onclick="goToVideosPage()" class="feature-box hitech-card p-5 sm:p-6 rounded-3xl border-2 border-rose-500/40 bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-xl shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="px-2.5 py-0.5 bg-rose-500/20 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] rounded-full uppercase tracking-wider">Video Vault</span>
+                        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-light">ทบทวนบทเรียนและคลิปย้อนหลังได้ตลอดเวลา</p>
+                    </div>
                 </div>
-                <div class="space-y-1">
-                    <span class="px-2.5 py-0.5 bg-white/20 text-white font-extrabold text-[10px] rounded-full uppercase tracking-wider backdrop-blur-md">ระบบนัดหมายอาจารย์</span>
-                    <h3 class="text-base sm:text-lg font-extrabold text-white">จองเวลา Consult ส่วนตัวกับอาจารย์</h3>
-                    <p class="text-xs text-sky-100 font-light">เลือกช่วงเวลาว่างเพื่อพูดคุย ซักถาม หรือขอคำปรึกษาปัญหาการเรียนได้ทันที</p>
+                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <i class="fas fa-arrow-right text-sm"></i>
                 </div>
             </div>
-            <button onclick="goToConsultPage()" class="w-full md:w-auto px-6 py-3.5 bg-white text-sky-700 hover:bg-sky-50 font-extrabold text-xs rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 relative z-10">
-                <i class="fas fa-calendar-alt text-sm"></i> ไปหน้าจองเวลา Consult <i class="fas fa-arrow-right ml-1"></i>
-            </button>
+
+            <!-- ปุ่มจองเวลา Consult -->
+            <div onclick="goToConsultPage()" class="feature-box hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/40 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent flex items-center justify-between cursor-pointer group">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-calendar-check animate-pulse"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="px-2.5 py-0.5 bg-sky-500/20 text-sky-600 dark:text-sky-400 font-extrabold text-[10px] rounded-full uppercase tracking-wider">Consult Hub</span>
+                        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">จองเวลา Consult</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-light">นัดหมายปรึกษาปัญหาการเรียนกับอาจารย์</p>
+                    </div>
+                </div>
+                <div class="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <i class="fas fa-arrow-right text-sm"></i>
+                </div>
+            </div>
+
         </div>
 
         <!-- Banner & Main Feature Tabs -->
@@ -357,6 +386,10 @@
             } else {
                 window.location.href = 'student_consult.html';
             }
+        }
+
+        function goToVideosPage() {
+            window.location.href = 'videos.html';
         }
 
         async function authenticateStudent() {
@@ -888,7 +921,6 @@
                     `;
                 }).join('');
             } else {
-                // Card View Mode
                 let gridHtml = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
                 gridHtml += filteredAttempts.map(a => {
                     const exam = allExams.find(e => e.id === a.exam_id);
