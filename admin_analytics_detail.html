@@ -68,11 +68,16 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Header Banner -->
+        <!-- Header Banner พร้อมไอคอนโหลดดุ๊กดิ๊ก -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-sky-500/10 p-5 rounded-2xl border border-sky-500/30">
-            <div>
-                <span class="text-[10px] font-extrabold text-sky-600 dark:text-sky-400 uppercase tracking-wider">รายงานผลคะแนนเฉพาะชุดข้อสอบ</span>
-                <h2 id="activeExamTitleBanner" class="font-extrabold text-lg text-slate-900 dark:text-white">กำลังโหลดชื่อชุดข้อสอบ...</h2>
+            <div class="flex items-center gap-3">
+                <div id="loadingBannerIcon" class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base">
+                    <i class="fas fa-spinner animate-spin"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] font-extrabold text-sky-600 dark:text-sky-400 uppercase tracking-wider">รายงานผลคะแนนเฉพาะชุดข้อสอบ</span>
+                    <h2 id="activeExamTitleBanner" class="font-extrabold text-lg text-slate-900 dark:text-white">กำลังโหลดชื่อชุดข้อสอบ...</h2>
+                </div>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="exportToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 shrink-0">
@@ -128,13 +133,13 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- ฝั่งซ้าย: จุดที่ต้องเน้นสอนเพิ่ม -->
-            <div class="lg:col-span-7 space-y-4">
+            <div class="lg:col-span-6 space-y-4">
                 <div class="hitech-card p-5 rounded-2xl space-y-4 border-l-4 border-l-rose-500">
                     <div>
                         <h3 class="font-extrabold text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
                             <i class="fas fa-triangle-exclamation"></i> จุดที่ต้องเน้นสอนเพิ่ม (ข้อที่นักเรียนผิดเยอะสุด)
                         </h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">วิเคราะห์จากข้อสอบที่มีอัตราการตอบผิดสูงที่สุด เพื่อนำไปเน้นย้ำในชั้นเรียน</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">วิเคราะห์จากข้อสอบที่มีอัตราการตอบผิดสูงที่สุด</p>
                     </div>
                     <div id="weakPointsContainer" class="space-y-3">
                         <div class="text-center py-6 text-slate-400 text-xs">กำลังประมวลผลข้อสอบ...</div>
@@ -142,32 +147,51 @@
                 </div>
             </div>
 
-            <!-- ฝั่งขวา: กราฟการกระจายตัวของคะแนน -->
-            <div class="lg:col-span-5 space-y-4">
-                <div class="hitech-card p-5 rounded-2xl space-y-3">
-                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-chart-bar text-sky-500"></i> การกระจายตัวของคะแนน
+            <!-- ฝั่งขวา: กราฟการกระจายตัวของคะแนน & กราฟสัดส่วนผ่าน/ไม่ผ่าน -->
+            <div class="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="hitech-card p-4 rounded-2xl space-y-3 flex flex-col justify-between">
+                    <h3 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <i class="fas fa-chart-bar text-sky-500"></i> การกระจายตัวคะแนน
                     </h3>
-                    <div class="relative h-64 w-full">
+                    <div class="relative h-48 w-full">
                         <canvas id="scoreDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="hitech-card p-4 rounded-2xl space-y-3 flex flex-col justify-between">
+                    <h3 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <i class="fas fa-chart-pie text-emerald-500"></i> สัดส่วน ผ่าน / ไม่ผ่าน
+                    </h3>
+                    <div class="relative h-48 w-full flex items-center justify-center">
+                        <canvas id="passPieChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ตารางคะแนนรายบุคคล -->
+        <!-- ตารางคะแนนรายบุคคล + ฟีเจอร์ค้นหารายชื่อ -->
         <div class="hitech-card p-5 rounded-2xl space-y-4">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-sky-500/20 pb-3">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-sky-500/20 pb-4">
                 <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-list-ol text-sky-500"></i> ตารางคะแนนนักเรียนรายบุคคล
                 </h3>
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-xs text-slate-400 font-bold mr-1">กรอง:</span>
-                    <button onclick="filterTable('all')" id="filterBtn-all" class="px-3 py-1 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all">ทั้งหมด</button>
-                    <button onclick="filterTable('pass')" id="filterBtn-pass" class="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">ผ่านเกณฑ์ (≥50%)</button>
-                    <button onclick="filterTable('risk')" id="filterBtn-risk" class="px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">กลุ่มเสี่ยง (<50%)</button>
-                    <span id="studentTableCount" class="text-xs text-sky-600 dark:text-sky-400 font-bold ml-2">0 รายการ</span>
+                
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <!-- 🔍 ฟีเจอร์ช่องค้นหานักเรียนแบบเรียลไทม์ -->
+                    <div class="relative flex-1 md:w-64">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                        <input type="text" id="studentSearchInput" oninput="renderStudentTable()" placeholder="ค้นหาชื่อ หรือ รหัส นร..." class="w-full pl-9 pr-3 py-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button onclick="filterTable('all')" id="filterBtn-all" class="px-3 py-1.5 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all">ทั้งหมด</button>
+                        <button onclick="filterTable('pass')" id="filterBtn-pass" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">ผ่าน (≥50%)</button>
+                        <button onclick="filterTable('risk')" id="filterBtn-risk" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all">กลุ่มเสี่ยง (<50%)</button>
+                    </div>
                 </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-400">
+                <span id="studentTableCount">แสดง 0 รายการ</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -204,6 +228,7 @@
         let examTimeLimitMinutes = 60;
         let currentFilter = 'all';
         let distributionChart = null;
+        let passPieChartInstance = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -224,32 +249,21 @@
             return 0;
         }
 
-        // 🎯 ฟังก์ชันแปลง Index ตัวเลือก (0, 1, 2, 3) หรือค่าเฉลยให้เป็นตัวอักษร ก, ข, ค, ง
         function formatAnswerText(ansValue) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
-            
             const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
-
-            // ถ้าเป็นตัวเลข Index (0, 1, 2, 3...)
             if (typeof ansValue === 'number' || (!isNaN(ansValue) && String(ansValue).trim() !== '')) {
                 const idx = Number(ansValue);
-                if (idx >= 0 && idx < thaiChoices.length) {
-                    return thaiChoices[idx];
-                }
+                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
             }
-
             const trimmed = String(ansValue).trim();
             if (/^\d+$/.test(trimmed)) {
                 const idx = Number(trimmed);
-                if (idx >= 0 && idx < thaiChoices.length) {
-                    return thaiChoices[idx];
-                }
+                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
             }
-
             return trimmed;
         }
 
-        // 🎯 ดึงเฉลยคำตอบที่ถูกต้องแล้วแปลงเป็น ก, ข, ค, ง
         function getCorrectAnswer(q) {
             let raw = q.correct_answer !== undefined ? q.correct_answer : 
                       (q.answer !== undefined ? q.answer : 
@@ -258,7 +272,6 @@
             return formatAnswerText(raw);
         }
 
-        // 🎯 ดึงคำตอบของนักเรียนแล้วแปลงเป็น ก, ข, ค, ง
         function extractStudentAnswer(att, q, index) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
             if (!raw) return null;
@@ -326,7 +339,12 @@
             const { data: examData } = await mySupabase.from('exams').select('title, duration, time_limit').eq('id', examId).single();
             if (examData) {
                 examTitle = examData.title;
-                document.getElementById('activeExamTitleBanner').textContent = examTitle;
+                const bannerTitle = document.getElementById('activeExamTitleBanner');
+                bannerTitle.textContent = examTitle;
+                // เปลี่ยนไอคอนโหลดเป็นไอคอนชุดข้อสอบเมื่อโหลดเสร็จ
+                document.getElementById('loadingBannerIcon').innerHTML = '<i class="fas fa-file-lines text-sky-500"></i>';
+                document.getElementById('loadingBannerIcon').className = "w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base";
+
                 if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
                 else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
             }
@@ -365,7 +383,7 @@
             renderKPIs();
             renderTimeAnalysis();
             renderWeakPoints();
-            renderDistributionChart();
+            renderCharts();
             renderStudentTable();
         }
 
@@ -455,8 +473,9 @@
             `).join('');
         }
 
-        function renderDistributionChart() {
-            const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+        function renderCharts() {
+            // 1. กราฟกระจายตัวคะแนน
+            const ctxBar = document.getElementById('scoreDistributionChart').getContext('2d');
             if (distributionChart) distributionChart.destroy();
 
             const totalQ = fetchedQuestions.length || 10;
@@ -473,22 +492,41 @@
                 else counts[4]++;
             });
 
-            distributionChart = new Chart(ctx, {
+            distributionChart = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
                     labels: ranges,
-                    datasets: [{
-                        label: 'จำนวนนักเรียน (คน)',
-                        data: counts,
-                        backgroundColor: '#0284c7',
-                        borderRadius: 8
-                    }]
+                    datasets: [{ label: 'จำนวน (คน)', data: counts, backgroundColor: '#0284c7', borderRadius: 6 }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // 2. กราฟวงกลมสัดส่วน ผ่าน / ไม่ผ่าน
+            const ctxPie = document.getElementById('passPieChart').getContext('2d');
+            if (passPieChartInstance) passPieChartInstance.destroy();
+
+            const passCount = fetchedAttempts.filter(a => getAttemptScore(a) >= (totalQ / 2)).length;
+            const riskCount = fetchedAttempts.length - passCount;
+
+            passPieChartInstance = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ผ่านเกณฑ์', 'กลุ่มเสี่ยง'],
+                    datasets: [{
+                        data: [passCount, riskCount],
+                        backgroundColor: ['#10b981', '#f43f5e'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
                 }
             });
         }
@@ -498,9 +536,9 @@
             ['all', 'pass', 'risk'].forEach(t => {
                 const btn = document.getElementById(`filterBtn-${t}`);
                 if (t === type) {
-                    btn.className = "px-3 py-1 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all";
+                    btn.className = "px-3 py-1.5 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all";
                 } else {
-                    btn.className = "px-3 py-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all";
+                    btn.className = "px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all";
                 }
             });
             renderStudentTable();
@@ -509,19 +547,26 @@
         function renderStudentTable() {
             const tbody = document.getElementById('studentScoreTableBody');
             const totalQ = fetchedQuestions.length;
+            const searchKeyword = document.getElementById('studentSearchInput').value.trim().toLowerCase();
 
             let filtered = fetchedAttempts.filter(a => {
                 const score = getAttemptScore(a);
                 const isPass = score >= (totalQ / 2);
-                if (currentFilter === 'pass') return isPass;
-                if (currentFilter === 'risk') return !isPass;
+                if (currentFilter === 'pass' && !isPass) return false;
+                if (currentFilter === 'risk' && isPass) return false;
+
+                if (searchKeyword !== '') {
+                    const nameMatch = a.resolvedName.toLowerCase().includes(searchKeyword);
+                    const idMatch = String(a.resolvedIdCode).toLowerCase().includes(searchKeyword);
+                    if (!nameMatch && !idMatch) return false;
+                }
                 return true;
             });
 
-            document.getElementById('studentTableCount').textContent = `${filtered.length} รายการ`;
+            document.getElementById('studentTableCount').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${fetchedAttempts.length} คน)`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบข้อมูลนักเรียนในเงื่อนไขนี้</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบข้อมูลนักเรียนที่ตรงกัน</td></tr>`;
                 return;
             }
 
