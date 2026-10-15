@@ -127,7 +127,6 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        // รองรับการรับค่า ID ทั้งจากฟิลด์ id และ exam_id เพื่อป้องกันปัญหาพารามิเตอร์ไม่ตรงกัน
         const examId = urlParams.get('id') || urlParams.get('exam_id');
         const isPreview = urlParams.get('preview') === 'true';
 
@@ -137,6 +136,10 @@
         let flaggedQuestions = {};
         let timerInterval = null;
         let currentRemainingSeconds = 0;
+        let totalExamSeconds = 0;
+
+        let halfTimeTriggered = false;
+        let fiveMinsTriggered = false;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -163,7 +166,6 @@
             }
         });
 
-        // ฟังก์ชันดึงและตรวจสอบ Student ID จากคีย์ทั้งหมดที่เป็นไปได้ใน LocalStorage และ URL Query Parameter อย่างครอบคลุม
         function getValidatedStudentId() {
             let studentId = urlParams.get('student_id') || 
                             localStorage.getItem('id') || 
@@ -180,7 +182,6 @@
             return studentId;
         }
 
-        // ระบบ Auth Guard ป้องกันคนไม่ได้ Login เข้ามาทำข้อสอบอย่างเด็ดขาด
         function checkStudentAuth() {
             if (isPreview) return true;
 
@@ -258,7 +259,8 @@
                 localStorage.setItem(timerKey, startTime);
             }
 
-            startPersistentTimer(parseInt(startTime, 10), (currentExam.time_limit || 60) * 60);
+            totalExamSeconds = (currentExam.time_limit || 60) * 60;
+            startPersistentTimer(parseInt(startTime, 10), totalExamSeconds);
         }
 
         async function renderSecurePDF(url) {
@@ -406,6 +408,78 @@
             }
         }
 
+        // ================= ฟังก์ชันเสียงเตือนและเช็กเวลา =================
+        function playSoftAlertSound(type = 'half') {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = 'sine';
+                
+                if (type === 'half') {
+                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'five_mins') {
+                    let now = audioCtx.currentTime;
+                    [0, 0.25, 0.5].forEach((delay) => {
+                        let osc = audioCtx.createOscillator();
+                        let gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(587.33, now + delay); 
+                        gain.gain.setValueAtTime(0.15, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.15);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + 0.15);
+                    });
+                }
+            } catch (e) {
+                console.log("AudioContext blocked or not supported", e);
+            }
+        }
+
+        function checkTimerAlerts(timeLeftSeconds, totalDurationSeconds) {
+            if (!halfTimeTriggered && timeLeftSeconds === Math.floor(totalDurationSeconds / 2)) {
+                halfTimeTriggered = true;
+                playSoftAlertSound('half');
+                Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                }).fire({
+                    icon: 'info',
+                    title: 'เวลาในการทำข้อสอบผ่านไปแล้วครึ่งทาง'
+                });
+            }
+
+            if (!fiveMinsTriggered && timeLeftSeconds === 300) {
+                fiveMinsTriggered = true;
+                playSoftAlertSound('five_mins');
+                Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true
+                }).fire({
+                    icon: 'warning',
+                    title: '⚠️ แจ้งเตือน: เหลือเวลาทำข้อสอบอีก 5 นาทีสุดท้าย!'
+                });
+            }
+        }
+        // =============================================================
+
         function startPersistentTimer(startTime, totalDurationSeconds) {
             const display = document.getElementById('timerDisplay');
 
@@ -413,6 +487,9 @@
                 const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
                 const remainingSeconds = totalDurationSeconds - elapsedSeconds;
                 currentRemainingSeconds = remainingSeconds > 0 ? remainingSeconds : 0;
+
+                // ตรวจสอบเงื่อนไขเสียงเตือนครึ่งทางและ 5 นาทีสุดท้าย
+                checkTimerAlerts(currentRemainingSeconds, totalDurationSeconds);
 
                 if (remainingSeconds <= 0) {
                     clearInterval(timerInterval);
