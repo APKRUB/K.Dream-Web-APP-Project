@@ -60,8 +60,9 @@
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-sky-500/20">
-                    <i class="fas fa-graduation-cap"></i>
+                <div id="navAvatarContainer" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-sky-500/20 overflow-hidden">
+                    <i class="fas fa-graduation-cap" id="navAvatarIcon"></i>
+                    <img id="navAvatarImg" src="" class="w-full h-full object-cover hidden">
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
@@ -73,6 +74,10 @@
             </div>
             
             <div class="flex items-center gap-2.5">
+                <button onclick="openProfileSettingsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all" title="ตั้งค่าโปรไฟล์ส่วนตัว">
+                    <i class="fas fa-cog text-xs"></i>
+                </button>
+
                 <button onclick="logoutStudent()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-500/20 shadow-sm">
                     <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                 </button>
@@ -111,7 +116,7 @@
             <!-- Overall Progress Bar Widget -->
             <div class="pt-4 border-t border-white/15 relative z-10 max-w-xl space-y-1.5">
                 <div class="flex justify-between text-xs font-bold text-sky-100">
-                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบในคอร์สของคุณ</span>
+                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวมในระบบ</span>
                     <span id="overallProgressText">0/0 ชุด (0%)</span>
                 </div>
                 <div class="w-full bg-black/25 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/20">
@@ -130,7 +135,7 @@
                     <div>
                         <span class="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Video Vault</span>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
-                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังตามคอร์สที่ลงทะเบียน</p>
+                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา</p>
                     </div>
                 </div>
                 <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
@@ -162,7 +167,7 @@
             <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-sky-400/50 bg-gradient-to-br from-sky-500/5 via-transparent to-blue-500/5 space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบในคอร์สที่ยังไม่ได้ทำ (<span id="quickPendingCountText">0</span>)
+                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
                     </h3>
                     <span class="text-[11px] text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-arrows-alt-h mr-1"></i> เลื่อนขวาเพื่อดูเพิ่มเติม</span>
                 </div>
@@ -204,7 +209,7 @@
             <!-- Exam Catalog Container -->
             <div class="space-y-6">
                 <div id="examCategoriesGroupContainer" class="space-y-5">
-                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบตามคอร์สเรียน...</div>
+                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบ...</div>
                 </div>
             </div>
         </div>
@@ -342,6 +347,7 @@
 
         let currentStudentId = null;
         let currentStudentName = 'นักเรียน';
+        let currentStudentData = null;
         let allExams = [];
         let enrolledCourseIds = [];
         let categoriesMap = {};
@@ -417,19 +423,21 @@
             let studentFullName = 'นักเรียน';
             const { data: profileData } = await mySupabase
                 .from('profiles')
-                .select('full_name, name')
+                .select('*')
                 .eq('id', currentStudentId)
                 .maybeSingle();
 
-            if (profileData && (profileData.full_name || profileData.name)) {
-                studentFullName = profileData.full_name || profileData.name;
+            if (profileData) {
+                currentStudentData = profileData;
+                studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
             } else {
                 const { data: studentData } = await mySupabase
                     .from('students')
-                    .select('full_name, fullname, name, username')
+                    .select('*')
                     .eq('id', currentStudentId)
                     .maybeSingle();
                 if (studentData) {
+                    currentStudentData = studentData;
                     studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
                 }
             }
@@ -438,13 +446,126 @@
             document.getElementById('studentNavName').textContent = currentStudentName;
             document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
 
+            updateNavAvatar(currentStudentData?.avatar_url);
+
             return true;
+        }
+
+        function updateNavAvatar(avatarUrl) {
+            const imgEl = document.getElementById('navAvatarImg');
+            const iconEl = document.getElementById('navAvatarIcon');
+            if (avatarUrl && avatarUrl.trim() !== '') {
+                imgEl.src = avatarUrl.trim();
+                imgEl.classList.remove('hidden');
+                iconEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                iconEl.classList.remove('hidden');
+            }
         }
 
         function logoutStudent() {
             localStorage.removeItem('student_id');
             localStorage.removeItem('id');
             window.location.href = 'index.html';
+        }
+
+        // ⚙️ SETTINGS PROFILE MODAL (ตั้งค่าโปรไฟล์ส่วนตัว)
+        async function openProfileSettingsModal() {
+            if (!currentStudentData) return;
+            const isDark = document.documentElement.classList.contains('dark');
+
+            const { value: formValues } = await Swal.fire({
+                title: '⚙️ ตั้งค่าข้อมูลโปรไฟล์ส่วนตัว',
+                width: '600px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div class="flex items-center gap-3 p-3 bg-sky-50 dark:bg-darkinput rounded-2xl border border-sky-500/20">
+                            <div class="w-14 h-14 rounded-full bg-sky-500/20 overflow-hidden flex items-center justify-center shrink-0 border border-sky-500/40">
+                                <img id="swalAvatarPreview" src="${currentStudentData.avatar_url || ''}" class="w-full h-full object-cover ${currentStudentData.avatar_url ? '' : 'hidden'}">
+                                <i class="fas fa-user text-sky-500 text-lg ${currentStudentData.avatar_url ? 'hidden' : ''}" id="swalAvatarPlaceholder"></i>
+                            </div>
+                            <div class="flex-1">
+                                <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">ลิงก์รูปโปรไฟล์ (Avatar URL)</label>
+                                <input id="swalAvatarInput" value="${currentStudentData.avatar_url || ''}" oninput="document.getElementById('swalAvatarPreview').src=this.value; document.getElementById('swalAvatarPreview').classList.remove('hidden'); document.getElementById('swalAvatarPlaceholder').classList.add('hidden');" class="w-full px-3 py-2 bg-white dark:bg-darkinput border rounded-xl outline-none font-mono text-[11px]" placeholder="https://... หรือลิงก์รูปภาพ">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                                <input id="swalFullName" value="${currentStudentData.full_name || currentStudentData.name || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none font-bold">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อเล่น</label>
+                                <input id="swalNickname" value="${currentStudentData.nickname || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-bold mb-1">ระดับชั้น</label>
+                                <input id="swalGradeLevel" value="${currentStudentData.grade_level || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="เช่น ม.3/1">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">โรงเรียน</label>
+                                <input id="swalSchool" value="${currentStudentData.school || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="เช่น สวนกุหลาบวิทยาลัย">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t dark:border-slate-800">
+                            <div>
+                                <label class="block font-bold mb-1 text-slate-400">อีเมล (ล็อกโดย Admin)</label>
+                                <input disabled value="${currentStudentData.email || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1 text-slate-400">LINE ID (ล็อกโดย Admin)</label>
+                                <input disabled value="${currentStudentData.line_id || currentStudentData.line || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1 text-slate-400">เลขประจำตัวนักเรียน (ล็อกโดย Admin)</label>
+                            <input disabled value="${currentStudentData.student_id || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการเปลี่ยนแปลง',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const fullName = document.getElementById('swalFullName').value.trim();
+                    if (!fullName) { Swal.showValidationMessage('กรุณากรอกชื่อ-นามสกุล'); return false; }
+                    return {
+                        full_name: fullName,
+                        name: fullName,
+                        nickname: document.getElementById('swalNickname').value.trim(),
+                        grade_level: document.getElementById('swalGradeLevel').value.trim(),
+                        school: document.getElementById('swalSchool').value.trim(),
+                        avatar_url: document.getElementById('swalAvatarInput').value.trim()
+                    };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const tableName = currentStudentData.student_id !== undefined ? 'students' : 'profiles';
+                const { error } = await mySupabase.from(tableName).update(formValues).eq('id', currentStudentId);
+                
+                if (!error) {
+                    currentStudentData = { ...currentStudentData, ...formValues };
+                    currentStudentName = formValues.full_name;
+                    document.getElementById('studentNavName').textContent = currentStudentName;
+                    document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+                    updateNavAvatar(formValues.avatar_url);
+
+                    Swal.fire({ icon: 'success', title: 'บันทึกโปรไฟล์สำเร็จ!', timer: 1200, showConfirmButton: false });
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            }
         }
 
         function switchTab(tab) {
@@ -526,7 +647,7 @@
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
-            // 🎓 ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียนไว้
+            // ดึงข้อมูลคอร์สที่นักเรียนลงทะเบียน (ถ้ามี)
             const { data: enrollments } = await mySupabase
                 .from('course_enrollments')
                 .select('course_id')
@@ -606,12 +727,11 @@
             const quickPendingSection = document.getElementById('quickPendingSection');
             const keyword = document.getElementById('searchExamInput').value.toLowerCase();
 
-            // 🎓 กรองข้อสอบตามคอร์สเรียนที่นักเรียนได้รับสิทธิ์ (ถ้า exam มี course_id กำหนดไว้)
+            // กรองข้อสอบ: ถ้ามีคอร์สที่ลงทะเบียนจะกรองเฉพาะในคอร์ส แต่ถ้าไม่มีข้อมูล Enroll ให้แสดงทั้งหมดเพื่อป้องกันหน้าจอว่างเปล่า
             const availableExams = allExams.filter(exam => {
                 if (exam.status === 'draft') return false;
 
-                // เงื่อนไขคอร์สเรียน: ถ้าข้อสอบมีการผูก course_id ไว้ นักเรียนต้องลงทะเบียนในคอร์สนั้น
-                if (exam.course_id) {
+                if (enrolledCourseIds.length > 0 && exam.course_id) {
                     let examCourses = Array.isArray(exam.course_id) ? exam.course_id.map(String) : [String(exam.course_id)];
                     const hasAccess = examCourses.some(cId => enrolledCourseIds.includes(cId));
                     if (!hasAccess) return false;
@@ -633,24 +753,15 @@
 
             document.getElementById('examCountBadge').textContent = `${availableExams.length} ชุดข้อสอบ`;
 
-            // คำนวณความคืบหน้าเฉพาะข้อสอบในคอร์สของนักเรียน
-            const studentActiveExams = allExams.filter(e => {
-                if (e.status === 'draft') return false;
-                if (e.course_id) {
-                    let eCourses = Array.isArray(e.course_id) ? e.course_id.map(String) : [String(e.course_id)];
-                    return eCourses.some(cId => enrolledCourseIds.includes(cId));
-                }
-                return true;
-            });
-
+            const activeExams = allExams.filter(e => e.status !== 'draft');
             const completedExamIds = new Set(userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).map(a => a.exam_id));
-            const completedCountTotal = studentActiveExams.filter(e => completedExamIds.has(e.id)).length;
-            const progressPercent = studentActiveExams.length > 0 ? Math.round((completedCountTotal / studentActiveExams.length) * 100) : 0;
+            const completedCountTotal = activeExams.filter(e => completedExamIds.has(e.id)).length;
+            const progressPercent = activeExams.length > 0 ? Math.round((completedCountTotal / activeExams.length) * 100) : 0;
             
-            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${studentActiveExams.length} ชุด (${progressPercent}%)`;
+            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
             document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
 
-            const pendingExamsList = studentActiveExams.filter(exam => {
+            const pendingExamsList = activeExams.filter(exam => {
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
@@ -710,7 +821,7 @@
             }
 
             if (availableExams.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สของคุณตามเงื่อนไขนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
                 return;
             }
 
