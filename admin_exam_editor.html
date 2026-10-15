@@ -853,10 +853,11 @@
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ (ฉบับครอบคลุมทุกโครงสร้างคำตอบ)
 // 🌟 ฟังก์ชันบันทึกและ Regrade พร้อมตัวเช็คข้อมูลดิบ (Debug) เพื่อดูโครงสร้างใน Supabase
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade อัปเดตทุกฟิลด์คะแนนที่เป็นไปได้ใน Supabase
+// 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบ Error จาก Supabase
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">อัปเดตเฉลยและคำนวณคะแนนนักเรียนใหม่ทั้งหมด...</div>',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตลงตาราง exam_attempts...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -874,7 +875,12 @@
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
             // 3. ดึงประวัติการสอบของนักเรียนทุกคนในชุดข้อสอบนี้
-            const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+            const { data: attempts, error: fetchErr } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+
+            if (fetchErr) {
+                Swal.fire('ข้อผิดพลาดในการดึงข้อมูลสอบ', fetchErr.message, 'error');
+                return;
+            }
 
             if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
@@ -912,13 +918,18 @@
                         }
                     });
 
-                    // 4. บันทึกคะแนนใหม่ครอบคลุมทุกคอลัมน์คะแนนที่เป็นไปได้ใน Supabase
-                    await mySupabase.from('exam_attempts').update({
-                        total_score: recalculatedScore,
-                        score: recalculatedScore,
-                        points: recalculatedScore,
-                        earned_score: recalculatedScore
-                    }).eq('id', att.id);
+                    // 4. บันทึกค่าลงคอลัมน์ total_score โดยระบุ Primary Key ให้ถูกต้อง (รองรับทั้ง id และ attempt_id)
+                    const targetId = att.id || att.attempt_id;
+                    if (targetId) {
+                        const { error: updateErr } = await mySupabase.from('exam_attempts').update({
+                            total_score: recalculatedScore,
+                            score: recalculatedScore
+                        }).eq('id', targetId);
+
+                        if (updateErr) {
+                            console.error(`อัปเดตไม่สำเร็จสำหรับ ID ${targetId}:`, updateErr.message);
+                        }
+                    }
                 }
             }
 
@@ -926,7 +937,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'บันทึกและ Regrade สำเร็จ!',
-                text: 'อัปเดตเฉลยและคำนวณคะแนนใหม่ในตาราง Supabase เรียบร้อยแล้ว',
+                text: 'อัปเดตคะแนนลงช่อง total_score เรียบร้อยแล้ว',
                 timer: 1800,
                 showConfirmButton: false
             });
