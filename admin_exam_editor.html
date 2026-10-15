@@ -849,11 +849,11 @@
             window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
 
-// 🌟 ระบบบันทึกและ Regrade พร้อมเช็คผลการอัปเดตรายรายการ
+// 🌟 ระบบบันทึกและ Regrade อัปเดตเฉพาะคอลัมน์ total_score ที่มีอยู่จริง
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตลงตาราง exam_attempts...</div>',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตลงช่อง total_score...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -918,14 +918,13 @@
                         }
                     });
 
-                    // 🔍 เช็คชื่อ Primary Key ที่แท้จริง (id, attempt_id หรือ uuid) แล้วลองอัปเดต
                     const targetId = att.id || att.attempt_id || att.uuid;
                     const primaryKeyName = att.id !== undefined ? 'id' : (att.attempt_id !== undefined ? 'attempt_id' : 'uuid');
 
                     if (targetId) {
+                        // 🌟 อัปเดตเฉพาะคอลัมน์ total_score ที่มีอยู่จริงในตาราง
                         const { error: updateErr } = await mySupabase.from('exam_attempts').update({
-                            total_score: recalculatedScore,
-                            score: recalculatedScore
+                            total_score: recalculatedScore
                         }).eq(primaryKeyName, targetId);
 
                         if (updateErr) {
@@ -950,7 +949,7 @@
                 Swal.fire({
                     icon: 'success',
                     title: 'บันทึกและ Regrade สำเร็จ!',
-                    text: `อัปเดตคะแนนใหม่สำเร็จ ${successCount} จาก ${attempts ? attempts.length : 0} รายการ`,
+                    text: `อัปเดตคะแนนลงช่อง total_score สำเร็จ ${successCount} จาก ${attempts ? attempts.length : 0} รายการ`,
                     timer: 2000,
                     showConfirmButton: false
                 });
