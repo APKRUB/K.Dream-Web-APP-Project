@@ -203,6 +203,12 @@
                         <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">ตัด Slot ว่างอัตโนมัติก่อนเริ่ม (ชั่วโมง)</label>
                         <input type="number" id="pruneHoursInput" value="24" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none text-slate-900 dark:text-white">
                     </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">เลือกคอร์สที่อนุญาตให้จอง Consult (เลือกได้หลายคอร์ส)</label>
+                        <div id="allowedCoursesCheckboxContainer" class="p-3 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl max-h-40 overflow-y-auto space-y-1.5 text-xs">
+                            <span class="text-slate-400 italic">กำลังโหลดคอร์ส...</span>
+                        </div>
+                    </div>
                 </div>
                 <button onclick="saveSystemSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">บันทึกการตั้งค่าระบบ</button>
 
@@ -251,6 +257,7 @@
         
         let currentSetting = null;
         let allSlots = [];
+        let allCoursesList = [];
         let displayedYear = new Date().getFullYear();
         let displayedMonth = new Date().getMonth();
         let selectedDateStr = new Date().toISOString().split('T')[0];
@@ -277,10 +284,39 @@
         
         async function initPage() {
             if (!checkAdminAuth()) return;
+            await loadCoursesList();
             await loadSettings();
             await loadAllSlots();
             await loadBookedStudents();
             setupConsultRealtime();
+        }
+
+        async function loadCoursesList() {
+            const { data } = await mySupabase.from('courses').select('id, title, course_code');
+            allCoursesList = data || [];
+            renderAllowedCoursesCheckboxes();
+        }
+
+        function renderAllowedCoursesCheckboxes() {
+            const container = document.getElementById('allowedCoursesCheckboxContainer');
+            if (!container) return;
+
+            if (allCoursesList.length === 0) {
+                container.innerHTML = `<span class="text-slate-400 italic">ไม่พบรายชื่อคอร์สในระบบ</span>`;
+                return;
+            }
+
+            const allowedArr = currentSetting?.allowed_courses || [];
+
+            container.innerHTML = allCoursesList.map(c => {
+                const isChecked = allowedArr.includes(String(c.id)) ? 'checked' : '';
+                return `
+                    <label class="flex items-center gap-2 cursor-pointer hover:text-sky-500 transition-colors">
+                        <input type="checkbox" name="allowedCourseCheck" value="${c.id}" ${isChecked} class="w-4 h-4 accent-sky-500 rounded">
+                        <span class="font-bold text-slate-800 dark:text-slate-200">[${c.course_code || 'COURSE'}] ${c.title}</span>
+                    </label>
+                `;
+            }).join('');
         }
 
         function setupConsultRealtime() {
@@ -294,6 +330,7 @@
                     if (payload.new && document.activeElement.tagName !== 'INPUT') {
                         currentSetting = payload.new;
                         updateStatusDisplay();
+                        renderAllowedCoursesCheckboxes();
                     }
                 })
                 .subscribe();
@@ -308,12 +345,13 @@
 
         async function loadSettings() {
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            currentSetting = data || { is_open: false, prune_hours: 24 };
+            currentSetting = data || { is_open: false, prune_hours: 24, allowed_courses: [] };
 
             if (!isInitialLoaded || document.activeElement.tagName !== 'INPUT') {
                 if (currentSetting?.open_at) document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
                 if (currentSetting?.close_at) document.getElementById('closeAtInput').value = formatLocalDateTime(currentSetting.close_at);
                 if (currentSetting?.prune_hours !== undefined) document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
+                renderAllowedCoursesCheckboxes();
                 isInitialLoaded = true;
             }
             updateStatusDisplay();
@@ -367,6 +405,8 @@
             const closeVal = document.getElementById('closeAtInput').value;
             const pruneVal = parseInt(document.getElementById('pruneHoursInput').value) || 24;
 
+            const checkedCourses = Array.from(document.querySelectorAll('input[name="allowedCourseCheck"]:checked')).map(cb => cb.value);
+
             const openIso = openVal ? new Date(openVal).toISOString() : null;
             const closeIso = closeVal ? new Date(closeVal).toISOString() : null;
 
@@ -377,7 +417,7 @@
             }
 
             const { error } = await mySupabase.from('consult_settings').update({ 
-                open_at: openIso, close_at: closeIso, prune_hours: pruneVal, is_open: initialOpen
+                open_at: openIso, close_at: closeIso, prune_hours: pruneVal, is_open: initialOpen, allowed_courses: checkedCourses
             }).eq('id', 1);
 
             if (!error) {
@@ -385,8 +425,9 @@
                 currentSetting.close_at = closeIso;
                 currentSetting.prune_hours = pruneVal;
                 currentSetting.is_open = initialOpen;
+                currentSetting.allowed_courses = checkedCourses;
 
-                await logHistory('อัปเดตเวลาเปิด-ปิดอัตโนมัติและการตั้งค่า');
+                await logHistory('อัปเดตเวลาเปิด-ปิดอัตโนมัติ, คอร์สที่อนุญาต และการตั้งค่า');
                 Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false });
                 updateStatusDisplay();
             } else {
