@@ -106,7 +106,7 @@
                         <h2 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                             <i class="fas fa-list-check text-sky-500"></i> กระดาษคำตอบ
                         </h2>
-                        <p class="text-[11px] text-slate-400 mt-0.5">ช้อยส์ซ้ายสุด | ธงขวาสุด</p>
+                        <p id="choiceFormatSubLabel" class="text-[11px] text-slate-400 mt-0.5">รูปแบบตัวเลือก: กำลังโหลด...</p>
                     </div>
                     <button onclick="confirmSubmitExam()" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5">
                         <i class="fas fa-paper-plane"></i> ส่งข้อสอบ
@@ -166,6 +166,20 @@
             }
         });
 
+        function getChoiceLabels(formatType) {
+            if (formatType === 'th_num') return ['ก', 'ข', 'ค', 'ง', 'จ'];
+            if (formatType === 'upper') return ['A', 'B', 'C', 'D', 'E'];
+            if (formatType === 'lower') return ['a', 'b', 'c', 'd', 'e'];
+            return ['1', '2', '3', '4', '5']; // ค่าเริ่มต้น num
+        }
+
+        function getChoiceFormatLabelText(formatType) {
+            if (formatType === 'th_num') return 'ก, ข, ค, ง';
+            if (formatType === 'upper') return 'A, B, C, D';
+            if (formatType === 'lower') return 'a, b, c, d';
+            return '1, 2, 3, 4';
+        }
+
         function getValidatedStudentId() {
             let studentId = urlParams.get('student_id') || 
                             localStorage.getItem('id') || 
@@ -221,6 +235,11 @@
             currentExam = exam;
             document.getElementById('examTitleNav').textContent = exam.title;
             document.getElementById('examSubNav').textContent = `รหัส: ${exam.exam_code || 'ไม่มี'} | เวลาทำ: ${exam.time_limit || 60} นาที`;
+            
+            const formatSub = document.getElementById('choiceFormatSubLabel');
+            if (formatSub) {
+                formatSub.textContent = `รูปแบบตัวเลือก: ${getChoiceFormatLabelText(exam.choice_format)}`;
+            }
 
             if (!isPreview) {
                 const confirmStart = await Swal.fire({
@@ -304,6 +323,9 @@
                 return;
             }
 
+            const formatType = currentExam?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+
             const groups = {};
             currentQuestions.forEach((q, idx) => {
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ข้อสอบทั่วไป';
@@ -324,7 +346,7 @@
 
                 for (const { q, idx } of items) {
                     const isEssay = q.question_type === 'essay';
-                    const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                    const opts = (q.options && q.options.length > 0) ? q.options : standardLabels;
                     const qNum = q.question_number || (idx + 1);
                     const isFlagged = flaggedQuestions[q.id];
 
@@ -347,9 +369,10 @@
                     } else {
                         const bubblesHtml = opts.map((cLabel, cIdx) => {
                             const isSelected = studentAnswers[q.id] === String(cIdx) || studentAnswers[q.id] === cLabel;
+                            const displayLabel = standardLabels[cIdx] || cLabel;
                             return `
                                 <div onclick="selectAnswer('${q.id}', '${cIdx}')" id="bubble-${q.id}-${cIdx}" class="omr-bubble-compact ${isSelected ? 'active' : ''}">
-                                    ${cLabel}
+                                    ${displayLabel}
                                 </div>
                             `;
                         }).join('');
@@ -386,8 +409,12 @@
             if (box) box.classList.remove('question-unanswered-highlight');
 
             const qObj = currentQuestions.find(q => q.id === qId);
-            if (qObj && qObj.options) {
-                qObj.options.forEach((_, i) => {
+            const formatType = currentExam?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+            const opts = (qObj && qObj.options && qObj.options.length > 0) ? qObj.options : standardLabels;
+
+            if (qObj) {
+                opts.forEach((_, i) => {
                     const bubble = document.getElementById(`bubble-${qId}-${i}`);
                     if (bubble) {
                         if (String(i) === String(cIdx)) {
@@ -408,7 +435,6 @@
             }
         }
 
-        // ================= ฟังก์ชันเสียงเตือนและเช็กเวลา =================
         function playSoftAlertSound(type = 'half') {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -478,7 +504,6 @@
                 });
             }
         }
-        // =============================================================
 
         function startPersistentTimer(startTime, totalDurationSeconds) {
             const display = document.getElementById('timerDisplay');
@@ -488,7 +513,6 @@
                 const remainingSeconds = totalDurationSeconds - elapsedSeconds;
                 currentRemainingSeconds = remainingSeconds > 0 ? remainingSeconds : 0;
 
-                // ตรวจสอบเงื่อนไขเสียงเตือนครึ่งทางและ 5 นาทีสุดท้าย
                 checkTimerAlerts(currentRemainingSeconds, totalDurationSeconds);
 
                 if (remainingSeconds <= 0) {
