@@ -850,6 +850,7 @@
         }
 
         // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ
+// 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ (ฉบับครอบคลุมทุกโครงสร้างคำตอบ)
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
@@ -875,6 +876,7 @@
 
             if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
+                    // รองรับฟิลด์คำตอบทุกชื่อที่เป็นไปได้ในระบบของคุณ
                     let rawAnswers = att.answer_saved || att.answers || att.user_answers || att.student_answers;
                     if (typeof rawAnswers === 'string') {
                         try { rawAnswers = JSON.parse(rawAnswers); } catch(e) { rawAnswers = {}; }
@@ -885,13 +887,22 @@
                     latestQuestions.forEach((q, index) => {
                         let userAns = null;
                         if (typeof rawAnswers === 'object' && rawAnswers !== null) {
+                            // ค้นหาตาม ID ของคำถาม หรือ Question Number
                             if (rawAnswers[q.id] !== undefined) userAns = rawAnswers[q.id];
                             else if (rawAnswers[String(q.id)] !== undefined) userAns = rawAnswers[String(q.id)];
                             else if (rawAnswers[q.question_number] !== undefined) userAns = rawAnswers[q.question_number];
+                            else if (rawAnswers[String(q.question_number)] !== undefined) userAns = rawAnswers[String(q.question_number)];
                             else if (rawAnswers[`q${q.question_number}`] !== undefined) userAns = rawAnswers[`q${q.question_number}`];
                             
+                            // ถ้าเก็บมาเป็นแบบ Array ตามลำดับข้อ
                             if (userAns === null && Array.isArray(rawAnswers)) {
                                 userAns = rawAnswers[index] !== undefined ? rawAnswers[index] : rawAnswers[index + 1];
+                            }
+                            
+                            // ถ้าเก็บเป็น Object แต่ key เป็น Index รอบตัว
+                            if (userAns === null) {
+                                const keys = Object.keys(rawAnswers);
+                                if (keys[index] !== undefined) userAns = rawAnswers[keys[index]];
                             }
                         }
 
@@ -904,7 +915,7 @@
                         }
                     });
 
-                    // อัปเดตคะแนนใหม่ลงในฐานข้อมูล exam_attempts
+                    // 4. บันทึกคะแนนใหม่ที่คำนวณได้ลงฐานข้อมูลทันที (อัปเดตทั้ง total_score และ score)
                     await mySupabase.from('exam_attempts').update({
                         total_score: recalculatedScore,
                         score: recalculatedScore
