@@ -68,7 +68,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <div class="px-4 py-1.5 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-mono font-bold text-xs flex items-center gap-1.5">
+                <div class="px-4 py-1.5 bg-amber-500/15 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-mono font-bold text-xs flex items-center gap-1.5">
                     <i class="fas fa-clock animate-pulse"></i>
                     <span id="timerDisplay">--:--</span>
                 </div>
@@ -127,7 +127,8 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const examId = urlParams.get('id');
+        // รองรับการรับค่า ID ทั้งจากฟิลด์ id และ exam_id เพื่อป้องกันปัญหาพารามิเตอร์ไม่ตรงกัน
+        const examId = urlParams.get('id') || urlParams.get('exam_id');
         const isPreview = urlParams.get('preview') === 'true';
 
         let currentExam = null;
@@ -162,9 +163,10 @@
             }
         });
 
-        // ฟังก์ชันดึงและตรวจสอบ Student ID จากคีย์ทั้งหมดที่เป็นไปได้ใน LocalStorage อย่างครอบคลุม
+        // ฟังก์ชันดึงและตรวจสอบ Student ID จากคีย์ทั้งหมดที่เป็นไปได้ใน LocalStorage และ URL Query Parameter อย่างครอบคลุม
         function getValidatedStudentId() {
-            let studentId = localStorage.getItem('id') || 
+            let studentId = urlParams.get('student_id') || 
+                            localStorage.getItem('id') || 
                             localStorage.getItem('student_id') || 
                             localStorage.getItem('user_id') || 
                             localStorage.getItem('userId') || null;
@@ -518,7 +520,6 @@
                 }
             });
 
-            // ดึง Student ID ผ่านฟังก์ชันกลางที่ตรวจสอบทุกคีย์อย่างปลอดภัย
             const studentId = getValidatedStudentId();
 
             if (!studentId || studentId === '00000000-0000-0000-0000-000000000000') {
@@ -598,7 +599,7 @@
                 confirmButtonText: 'ดูผลการสอบและเฉลย',
                 allowOutsideClick: false
             }).then(() => {
-                window.location.href = `student_result.html?attempt_id=${attemptId}`;
+                window.location.href = `student_result.html?attempt_id=${attemptId}&student_id=${studentId}`;
             });
         }
 
