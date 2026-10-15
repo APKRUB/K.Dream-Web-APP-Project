@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ระบบจัดการเทปเรียนย้อนหลัง (Google Drive Vault)</title>
+    <title>LMS | ระบบจัดการเทปเรียนย้อนหลัง (Secure Drive Vault)</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -57,7 +57,11 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
-        /* Drag & Drop Styling */
+        /* ปิดการคลิกขวาเซฟวิดีโอ */
+        video::-internal-media-controls-download-button { display:none; }
+        video::-webkit-media-controls-download-button { display:none; }
+        video::-webkit-media-controls-enclosure { overflow:hidden; }
+
         .draggable-item { cursor: grab; transition: transform 0.2s, box-shadow 0.2s; }
         .draggable-item:active { cursor: grabbing; }
         .draggable-item.dragging { opacity: 0.4; transform: scale(0.98); border: 2px dashed #f43f5e; }
@@ -79,8 +83,8 @@
                         <i class="fas fa-brands fa-google-drive"></i>
                     </div>
                     <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Google Drive Video Vault</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">ระบบเทปเรียนย้อนหลัง (กรอได้ / ปรับสปีดได้)</span>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Secure Google Drive Vault</h1>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">บล็อก Pop-out และป้องกันการดาวน์โหลด</span>
                     </div>
                 </div>
 
@@ -100,14 +104,14 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div>
                     <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-cloud-arrow-up text-sky-500"></i> เพิ่มเทปเรียนผ่านลิงก์ Google Drive
+                        <i class="fas fa-shield-halved text-sky-500"></i> เพิ่มเทปเรียน Google Drive (ปลอดภัยสูงสุด)
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        รองรับลิงก์แชร์จาก Google Drive (ตั้งค่าสิทธิ์เป็น "ทุกคนที่มีลิงก์สามารถดูได้") ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้อิสระ
+                        ระบบจะตัดปุ่ม Pop-out และซ่อนปุ่มดาวน์โหลดออกทั้งหมด ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้ตามปกติ
                     </p>
                 </div>
                 <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20">
-                    <i class="fas fa-bolt mr-1"></i> Google Drive Stream Mode
+                    <i class="fas fa-lock mr-1"></i> Anti-Download & No Pop-out
                 </span>
             </div>
 
@@ -169,7 +173,7 @@
 
     </main>
 
-    <!-- Modal สำหรับดูวิดีโอ Google Drive -->
+    <!-- Modal สำหรับดูวิดีโอ (HTML5 Secure Player) -->
     <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -181,13 +185,13 @@
                 </button>
             </div>
 
-            <!-- ตัวเล่นวิดีโอ Google Drive (กรอได้ ปรับสปีดได้ผ่าน Player ปกติ) -->
+            <!-- ตัวเล่นวิดีโอ HTML5 ป้องกันการดาวน์โหลดและไม่มีปุ่ม Pop-out -->
             <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
-                <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
+                <video id="secureVideoElement" class="w-full h-full" controls controlsList="nodownload" oncontextmenu="return false;"></video>
             </div>
 
             <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-check-circle text-emerald-500 mr-1"></i> ผู้เรียนสามารถกดเล่น หยุด กรอ และปรับความเร็ววิดีโอได้อิสระ</span>
+                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลดและตัดปุ่ม Pop-out เรียบร้อย (กรอและปรับสปีดได้)</span>
                 <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
             </div>
         </div>
@@ -288,7 +292,7 @@
                                     <i class="fas fa-grip-vertical"></i>
                                 </div>
                                 <div class="space-y-1">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Google Drive Stream</span>
+                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Secure Drive Stream</span>
                                     <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1">${v.title}</h4>
                                     <p class="text-[11px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
                                 </div>
@@ -299,7 +303,7 @@
                         </div>
                         <div class="flex items-center gap-3 pt-2">
                             <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> รับชมเทปเรียน (Google Drive)
+                                <i class="fas fa-play"></i> รับชมเทปเรียน (ปลอดภัยสูงสุด)
                             </button>
                         </div>
                     </div>
@@ -395,20 +399,19 @@
                 return;
             }
 
-            // แปลงลิงก์ Google Drive ให้เป็นรหัส File ID
             let fileId = '';
             if (urlInput.includes('/file/d/')) {
                 fileId = urlInput.split('/file/d/')[1].split('/')[0];
             } else if (urlInput.includes('id=')) {
                 fileId = urlInput.split('id=')[1].split('&')[0];
             } else {
-                fileId = urlInput; // เผื่อกรณีใส่ File ID มาตรงๆ
+                fileId = urlInput;
             }
 
             try {
                 const { error } = await mySupabase.from('videos').insert([{
                     title: title,
-                    youtube_id: fileId, // ใช้คอลัมน์เดิมเก็บ File ID ของ Google Drive
+                    youtube_id: fileId,
                     display_order: cachedVideos.length,
                     created_at: new Date().toISOString()
                 }]);
@@ -436,18 +439,19 @@
             const title = decodeURIComponent(encodedTitle);
             document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
             
-            const wrapper = document.getElementById('iframePlayerWrapper');
-            // ใช้ลิงก์ Preview ของ Google Drive ซึ่งรองรับการเล่น กรอ และปรับสปีดได้เต็มรูปแบบ
-            wrapper.innerHTML = `
-                <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
-            `;
+            const videoElem = document.getElementById('secureVideoElement');
+            // แปลง Google Drive File ID เป็น Direct Stream Link ที่ไม่มีปุ่ม Pop-out และซ่อนปุ่มดาวน์โหลด
+            videoElem.src = `https://docs.google.com/uc?export=download&id=${fileId}`;
+            videoElem.play();
 
             document.getElementById('videoModal').classList.remove('hidden');
         }
 
         function closeVideoModal() {
+            const videoElem = document.getElementById('secureVideoElement');
+            videoElem.pause();
+            videoElem.src = '';
             document.getElementById('videoModal').classList.add('hidden');
-            document.getElementById('iframePlayerWrapper').innerHTML = '';
         }
 
         loadVideos();
