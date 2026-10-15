@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="th" class="light">
 <head>
-    <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์จัดการบัญชีผู้ใช้งานนักเรียน</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>LMS | แผงควบคุมผู้ดูแลระบบ (Admin Command Center)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันไม่ให้ผู้ใช้ทั่วไปแอบพิมพ์/แปะ URL เข้ามาตรงๆ -->
     <script>
         (function() {
             let hasSession = false;
@@ -18,13 +18,19 @@
                 const key = localStorage.key(i);
                 if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
                     const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) { hasSession = true; break; }
+                    if (val && val.includes('access_token')) {
+                        hasSession = true;
+                        break;
+                    }
                 }
             }
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
-            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
+            if (!hasSession && !fallbackId) {
+                window.location.replace('index.html');
+            }
         })();
     </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -40,78 +46,181 @@
         body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
-        .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
-        .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        .hitech-card { 
+            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); 
+            box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        .dark .hitech-card { 
+            background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); 
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
+        }
+        .hitech-card:hover { transform: translateY(-4px); border-color: #0ea5e9; box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.2); }
+        .hero-banner { background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .dark .hero-banner { background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(30, 58, 138, 0.2) 100%); border: 1px solid rgba(56, 189, 248, 0.2); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
-    <!-- Top Navigation -->
+    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
-                        <i class="fas fa-arrow-left text-sm"></i>
-                    </button>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-users-gear"></i></span>
-                        ศูนย์จัดการบัญชีผู้ใช้งานนักเรียน
-                    </h1>
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
+                        <i class="fas fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Admin Command Center</h1>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">LMS Secure Portal</span>
+                    </div>
                 </div>
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
-                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
-                </button>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
+                        <i class="fas fa-bell text-sm"></i>
+                        <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
+                    </button>
+
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    </button>
+
+                    <button onclick="logoutAdmin()" class="px-3.5 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+                        <i class="fas fa-right-from-bracket"></i> ออกจากระบบ
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Header Banner & Controls -->
-        <div class="hitech-card p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-address-book text-sky-500"></i> รายชื่อบัญชีนักเรียนในระบบ
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น, โรงเรียน, LINE ID, อีเมล)</p>
+        <!-- Welcome Banner แสดงชื่อ Username ดึงจาก Session/LocalStorage -->
+        <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="space-y-2 relative z-10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Signal Active
+                </div>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName" class="text-sky-600 dark:text-sky-400">ผู้ดูแลระบบ</span></h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                    จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และจัดการเทปเรียนย้อนหลังผ่านศูนย์ควบคุม Hi-Tech
+                </p>
             </div>
-            
-            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                <div class="relative flex-1 md:w-72">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, โรงเรียน..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
+
+            <div class="grid grid-cols-2 gap-3 relative z-10 w-full md:w-auto shrink-0">
+                <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
+                    <div id="statTotalExams" class="text-xl font-extrabold text-sky-600 dark:text-sky-400">0</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">ชุดข้อสอบทั้งหมด</div>
+                </div>
+                <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
+                    <div id="statTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนส่งข้อสอบ</div>
                 </div>
             </div>
         </div>
 
-        <!-- Student Table Card -->
-        <div class="hitech-card p-6 rounded-3xl space-y-4">
-            <div class="flex justify-between items-center text-xs text-slate-400 border-b border-sky-500/20 pb-3">
-                <span id="studentCountLabel">แสดง 0 รายการ</span>
-                <span class="text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-circle-info mr-1"></i> ข้อมูลทั้งหมดจำเป็นต้องกรองให้ครบถ้วน</span>
-            </div>
+        <!-- Modules Grid -->
+        <div class="space-y-4">
+            <h3 class="font-extrabold text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-th-large text-sky-500"></i> ฟังก์ชันหลักระบบผู้ดูแลระบบ (Admin Modules)
+            </h3>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
-                            <th class="p-3">ลำดับ</th>
-                            <th class="p-3">เลขประจำตัว</th>
-                            <th class="p-3">ชื่อจริง - นามสกุล</th>
-                            <th class="p-3">ชื่อเล่น</th>
-                            <th class="p-3">ระดับชั้น / โรงเรียน</th>
-                            <th class="p-3">LINE ID / อีเมล</th>
-                            <th class="p-3 text-center">จัดการข้อมูล</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr><td colspan="7" class="text-center py-8 text-slate-400">กำลังโหลดข้อมูลบัญชีผู้ใช้...</td></tr>
-                    </tbody>
-                </table>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-200 dark:border-sky-800">Exam Hub</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">ศูนย์จัดการชุดข้อสอบ</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้าง แก้ไข โคลน และตั้งค่าชุดข้อสอบ พร้อมระบบอัปโหลด PDF และ OMR ครบวงจร</p>
+                    </div>
+                </div>
+
+                <div onclick="window.location.href='admin_analytics.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 text-white flex items-center justify-center text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] border border-indigo-200 dark:border-indigo-800">Analytics</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-indigo-500 transition-colors">วิเคราะห์ผลคะแนน & สถิติ</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">วิเคราะห์จุดอ่อนรายข้อ ออกรายงานคะแนนเฉลย กราฟกระจายตัว และ Export CSV</p>
+                    </div>
+                </div>
+
+                <div onclick="window.location.href='admin_audit_logs.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-700 text-white flex items-center justify-center text-lg shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 font-bold text-[10px] border border-cyan-200 dark:border-cyan-800">Security</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-cyan-500 transition-colors">Audit Logs (ประวัติระบบ)</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบประวัติการแก้ไข การสร้างข้อสอบ และกิจกรรมทั้งหมดในระบบแบบเรียลไทม์</p>
+                    </div>
+                </div>
+
+                <div onclick="window.location.href='admin_announcements.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">Broadcast</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">ระบบประกาศข่าวสาร</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้างและจัดการประกาศแจ้งเตือน ข่าวสารสำคัญ หรือกำหนดการสอบส่งตรงถึงหน้านักเรียน</p>
+                    </div>
+                </div>
+
+                <div onclick="window.location.href='admin_consult.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-bold text-[10px] border border-purple-200 dark:border-purple-800">Consult</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ระบบ Consult ปรึกษา</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ระบบรับข้อซักถาม ให้คำปรึกษา หรือพูดคุยตอบข้อสงสัยกับนักเรียนภายในแพลตฟอร์ม</p>
+                    </div>
+                </div>
+
+                <div onclick="window.location.href='admin_videos.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-rose-500/30">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200 dark:border-rose-800">Video Vault</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">จัดการเทปเรียนย้อนหลัง</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">เพิ่ม ลบ และจัดเรียงลำดับคลิปวิดีโอย้อนหลัง พร้อมระบบความปลอดภัยป้องกันการดาวน์โหลดและ Pop-out</p>
+                    </div>
+                </div>
+
+                <!-- 🔗 ปุ่มจัดการบัญชีผู้ใช้งาน (ลิงก์ไปยัง admin_users.html แล้ว) -->
+                <div onclick="window.location.href='admin_users.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-teal-500/30">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-users-gear"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">Users</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน แก้ไขชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน และระดับชั้น</p>
+                    </div>
+                </div>
             </div>
         </div>
-
     </main>
 
     <script>
@@ -119,7 +228,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let studentsList = [];
+        let liveNotifications = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -134,200 +243,193 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function isUserAdmin(profileObj) {
-            if (!profileObj) return false;
-            const role = String(profileObj.role || profileObj.user_role || '').toLowerCase();
-            const email = String(profileObj.email || '').toLowerCase();
-            if (role === 'admin' || role === 'teacher' || role === 'instructor') return true;
-            if (email.includes('admin') || email.includes('teacher')) return true;
-            return false;
+        function checkAdminAuth() {
+            const currentUsername = localStorage.getItem('admin_username') || 
+                                    localStorage.getItem('user_name') || 
+                                    localStorage.getItem('account_name') || 
+                                    localStorage.getItem('full_name') || 
+                                    localStorage.getItem('user') || 
+                                    'ผู้ดูแลระบบ';
+
+            localStorage.setItem('admin_username', currentUsername);
+            return true;
+        }
+        
+        async function initAdminDashboard() {
+            if (!checkAdminAuth()) return;
+
+            const currentUsername = localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
+            document.getElementById('displayAdminName').textContent = currentUsername;
+
+            try {
+                const { count: examCount } = await mySupabase.from('exams').select('*', { count: 'exact', head: true });
+                document.getElementById('statTotalExams').textContent = examCount ?? 0;
+
+                const { count: subCount } = await mySupabase.from('exam_submissions').select('*', { count: 'exact', head: true });
+                document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
+
+                await fetchLiveNotifications();
+                listenRealtimeNotifications();
+            } catch (err) { console.error(err); }
         }
 
-        async function initPage() {
-            Swal.fire({ title: 'กำลังโหลดบัญชีผู้ใช้...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            const { data: profiles, error } = await mySupabase.from('profiles').select('*');
-            Swal.close();
+        async function fetchLiveNotifications() {
+            try {
+                const { data, error } = await mySupabase
+                    .from('notifications')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
 
-            if (error) {
-                console.error("Error loading profiles:", error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้', 'error');
-                return;
+                if (!error && data) {
+                    liveNotifications = data;
+                } else {
+                    liveNotifications = [];
+                }
+            } catch (err) {
+                console.error('Fetch Notifications Error:', err);
+                liveNotifications = [];
             }
-
-            if (profiles) {
-                studentsList = profiles.filter(p => !isUserAdmin(p));
-            }
-
-            renderStudentsTable();
+            updateNotifBadge();
         }
 
-        function renderStudentsTable() {
-            const tbody = document.getElementById('studentsTableBody');
-            const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
-
-            let filtered = studentsList.filter(s => {
-                if (!keyword) return true;
-                const fname = (s.first_name || s.full_name || '').toLowerCase();
-                const lname = (s.last_name || '').toLowerCase();
-                const nickname = (s.nickname || '').toLowerCase();
-                const studentId = String(s.student_id || '').toLowerCase();
-                const school = (s.school || '').toLowerCase();
-                const email = (s.email || '').toLowerCase();
-                return fname.includes(keyword) || lname.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword) || school.includes(keyword) || email.includes(keyword);
-            });
-
-            document.getElementById('studentCountLabel').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${studentsList.length} คน)`;
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map((s, idx) => {
-                const sId = s.id || s.user_id;
-                const firstName = s.first_name || s.full_name || '-';
-                const lastName = s.last_name || '-';
-                const nickname = s.nickname || '-';
-                const studentId = s.student_id || '-';
-                const gradeLevel = s.grade_level || s.grade || '-';
-                const school = s.school || '-';
-                const lineId = s.line_id || '-';
-                const email = s.email || '-';
-
-                return `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
-                        <td class="p-3 font-mono font-bold text-sky-600 dark:text-sky-400">${studentId}</td>
-                        <td class="p-3 font-bold text-slate-900 dark:text-white">${firstName} ${lastName !== '-' ? lastName : ''}</td>
-                        <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${nickname}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-indigo-600 dark:text-indigo-400">${gradeLevel}</div>
-                            <div class="text-[10px] text-slate-400">${school}</div>
-                        </td>
-                        <td class="p-3">
-                            <div class="font-mono text-slate-700 dark:text-slate-300">LINE: ${lineId}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${email}</div>
-                        </td>
-                        <td class="p-3 text-center">
-                            <button onclick="openEditStudentModal('${sId}')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1 mx-auto">
-                                <i class="fas fa-user-pen"></i> แก้ไขข้อมูล
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+        function listenRealtimeNotifications() {
+            mySupabase
+                .channel('realtime-notifications-channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+                    liveNotifications.unshift(payload.new);
+                    updateNotifBadge();
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'info',
+                        title: payload.new.title,
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                })
+                .subscribe();
         }
 
-        async function openEditStudentModal(studentId) {
-            const student = studentsList.find(s => String(s.id || s.user_id) === String(studentId));
-            if (!student) return;
+        function updateNotifBadge() {
+            const badge = document.getElementById('notifBadge');
+            if (liveNotifications.length > 0) {
+                badge.textContent = liveNotifications.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
 
-            const isDark = document.documentElement.classList.contains('dark');
-
-            const { value: formValues } = await Swal.fire({
-                title: '✏️ แก้ไขข้อมูลบัญชีนักเรียน',
+        function openNotificationsModal() {
+            Swal.fire({
+                title: '🔔 การแจ้งเตือนระบบ Realtime',
                 width: '600px',
                 html: `
-                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
                     <div class="space-y-3 text-left text-xs">
-                        <div>
-                            <label class="block font-bold mb-1">เลขประจำตัวนักเรียน <span class="text-red-500">*</span></label>
-                            <input id="swalStudentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" value="${student.student_id || ''}" placeholder="เช่น 6701">
+                        <div class="flex gap-1 overflow-x-auto pb-1 border-b dark:border-slate-800">
+                            <button id="btn-tab-all" onclick="filterNotifTab('all')" class="notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0 transition-all">ทั้งหมด (${liveNotifications.length})</button>
+                            <button id="btn-tab-submit" onclick="filterNotifTab('submit')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ส่งข้อสอบ</button>
+                            <button id="btn-tab-question" onclick="filterNotifTab('question')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">คำถาม Consult</button>
+                            <button id="btn-tab-grading" onclick="filterNotifTab('grading')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ที่ต้องตรวจ</button>
+                            <button id="btn-tab-general" onclick="filterNotifTab('general')" class="notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all">ประกาศ/ทั่วไป</button>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">ชื่อจริง <span class="text-red-500">*</span></label>
-                                <input id="swalFirstName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.first_name || student.full_name || ''}">
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1">นามสกุล <span class="text-red-500">*</span></label>
-                                <input id="swalLastName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.last_name || ''}">
-                            </div>
+
+                        <div id="notifListContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                            ${liveNotifications.length > 0 ? liveNotifications.map(n => renderNotifCard(n)).join('') : '<div class="text-center py-8 text-slate-400">🎉 ยังไม่มีรายการแจ้งเตือนใหม่ในระบบ</div>'}
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">ชื่อเล่น <span class="text-red-500">*</span></label>
-                                <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.nickname || ''}">
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1">ระดับชั้น <span class="text-red-500">*</span></label>
-                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.grade_level || student.grade || ''}" placeholder="เช่น ม.3/1 หรือ ม.304">
-                            </div>
+
+                        ${liveNotifications.length > 0 ? `
+                        <div class="pt-2 border-t dark:border-slate-800 flex justify-end">
+                            <button onclick="clearAllNotifications()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5">
+                                <i class="fas fa-trash-can"></i> ล้างการแจ้งเตือนทั้งหมด
+                            </button>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">โรงเรียน <span class="text-red-500">*</span></label>
-                                <input id="swalSchool" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.school || ''}" placeholder="เช่น สวนกุหลาบวิทยาลัย">
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
-                                <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.line_id || ''}" placeholder="เช่น @line_id">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">อีเมล (Email) <span class="text-red-500">*</span></label>
-                            <input type="email" id="swalEmail" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.email || ''}" placeholder="student@example.com">
-                        </div>
+                        ` : ''}
                     </div>
                 `,
-                showCancelButton: true,
-                confirmButtonText: 'บันทึกการแก้ไข',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#0284c7',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b',
-                preConfirm: () => {
-                    const studentIdVal = document.getElementById('swalStudentId').value.trim();
-                    const firstName = document.getElementById('swalFirstName').value.trim();
-                    const lastName = document.getElementById('swalLastName').value.trim();
-                    const nickname = document.getElementById('swalNickname').value.trim();
-                    const gradeLevel = document.getElementById('swalGradeLevel').value.trim();
-                    const school = document.getElementById('swalSchool').value.trim();
-                    const lineId = document.getElementById('swalLineId').value.trim();
-                    const email = document.getElementById('swalEmail').value.trim();
+                confirmButtonText: 'ปิดหน้าต่าง'
+            });
+        }
 
-                    const errorBox = document.getElementById('swalErrorMsg');
+        window.renderNotifCard = function(n) {
+            let badge = '';
+            const type = n.type || 'general';
+            if (type === 'general') badge = '<span class="px-2 py-0.5 rounded bg-sky-100 text-sky-600 font-bold text-[10px]">ทั่วไป/ประกาศ</span>';
+            else if (type === 'submit') badge = '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-600 font-bold text-[10px]">ส่งข้อสอบ</span>';
+            else if (type === 'grading') badge = '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-600 font-bold text-[10px]">ที่ต้องตรวจ</span>';
+            else if (type === 'question') badge = '<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-600 font-bold text-[10px]">คำถาม Consult</span>';
 
-                    // ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
-                    if (!studentIdVal || !firstName || !lastName || !nickname || !gradeLevel || !school || !lineId || !email) {
-                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง (ข้อมูลจำเป็นทั้งหมด)';
-                        errorBox.classList.remove('hidden');
-                        return false; // ป้องกันไม่ให้ modal ปิดตัวลง
-                    }
+            const titleText = n.title || n.topic || 'การแจ้งเตือนจากระบบ';
+            const descText = n.description || n.content || n.message || n.desc || 'ไม่มีรายละเอียดเพิ่มเติม';
+            const targetUrl = n.target_url || n.targetUrl || 'admin.html';
+            
+            let timeStr = 'เมื่อครู่นี้';
+            if (n.created_at) {
+                timeStr = new Date(n.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            } else if (n.time) {
+                timeStr = n.time;
+            }
 
-                    return {
-                        student_id: studentIdVal,
-                        first_name: firstName,
-                        last_name: lastName,
-                        nickname: nickname,
-                        grade_level: gradeLevel,
-                        school: school,
-                        line_id: lineId,
-                        email: email,
-                        full_name: `${firstName} ${lastName}`
-                    };
-                }
+            return `
+                <div onclick="window.location.href='${targetUrl}'" class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl cursor-pointer hover:border-sky-500 border border-slate-200 dark:border-slate-700 transition-all flex justify-between items-center">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            ${badge}
+                            <h5 class="font-bold text-slate-900 dark:text-white line-clamp-1">${titleText}</h5>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-1">${descText}</p>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono shrink-0 ml-2">${timeStr}</span>
+                </div>
+            `;
+        };
+
+        window.filterNotifTab = function(type) {
+            document.querySelectorAll('.notif-tab-btn').forEach(btn => {
+                btn.className = 'notif-tab-btn px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold shrink-0 transition-all';
             });
 
-            if (formValues) {
-                Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                
-                const targetKey = student.id ? 'id' : 'user_id';
-                const targetId = student.id || student.user_id;
+            const activeBtn = document.getElementById(`btn-tab-${type}`);
+            if (activeBtn) {
+                activeBtn.className = 'notif-tab-btn active px-2.5 py-1 bg-sky-600 text-white rounded-lg font-bold shrink-0 transition-all';
+            }
 
-                const { error } = await mySupabase.from('profiles').update(formValues).eq(targetKey, targetId);
-
-                if (!error) {
-                    Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ!', timer: 1200, showConfirmButton: false });
-                    initPage();
-                } else {
-                    Swal.fire('บันทึกล้มเหลว', `เกิดข้อผิดพลาดจากฐานข้อมูล:<br><code class="text-xs text-red-400 font-mono mt-2 block">${error.message}</code>`, 'error');
-                }
+            const container = document.getElementById('notifListContainer');
+            const filtered = type === 'all' ? liveNotifications : liveNotifications.filter(n => n.type === type);
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ไม่มีรายการแจ้งเตือนในหมวดหมู่นี้</div>`;
+            } else {
+                container.innerHTML = filtered.map(n => renderNotifCard(n)).join('');
             }
         }
 
-        initPage();
+        async function clearAllNotifications() {
+            await mySupabase.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            liveNotifications = [];
+            updateNotifBadge();
+            Swal.close();
+            Swal.fire({ icon: 'success', title: 'ล้างรายการแจ้งเตือนเรียบร้อยแล้ว!', timer: 1000, showConfirmButton: false });
+        }
+
+        function logoutAdmin() {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: 'คุณต้องการออกจากระบบผู้ดูแลระบบใช่หรือไม่',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async res => { 
+                if (res.isConfirmed) {
+                    await mySupabase.auth.signOut();
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                } 
+            });
+        }
+
+        initAdminDashboard();
     </script>
 </body>
 </html>
