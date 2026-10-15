@@ -331,9 +331,8 @@
                 }
 
                 const bubblesHtml = opts.map((cLabel, cIdx) => {
-                    const isSelected = String(q.correct_answer) === String(cIdx) || 
-                                       String(q.correct_answer) === String(cLabel) || 
-                                       String(q.correct_answer) === String(standardLabels[cIdx]);
+                    // เปรียบเทียบเฉพาะ Index (0, 1, 2, 3) ให้ถูกต้องแม่นยำทีละปุ่ม
+                    const isSelected = String(q.correct_answer) === String(cIdx);
                     return `<div onclick="selectOmrChoice('${q.id}', '${cIdx}')" class="omr-bubble-lg ${isSelected ? 'active' : ''}">${cLabel}</div>`;
                 }).join('');
 
@@ -376,9 +375,7 @@
                         ${(q.keywords || []).length > 0 ? `<div class="text-[11px] text-slate-500">คำสำคัญ: ${q.keywords.map(k => `<span class="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded border border-amber-300">${k.word} (${k.mode === 'exact' ? 'ตรงเป๊ะ' : 'มีในข้อความ'})</span>`).join(' ')}</div>` : ''}
                        </div>`
                     : opts.map((opt, i) => {
-                        const isCorrect = String(q.correct_answer) === String(i) || 
-                                          String(q.correct_answer) === String(opt) || 
-                                          String(q.correct_answer) === String(standardLabels[i]);
+                        const isCorrect = String(q.correct_answer) === String(i);
                         const displayLabel = standardLabels[i] || String.fromCharCode(65+i);
                         return `
                             <div class="px-3 py-2 rounded-xl border text-xs flex items-center justify-between ${isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 font-bold text-emerald-700 dark:text-emerald-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}">
@@ -507,7 +504,7 @@
                             <div id="optionsInputsContainer" class="space-y-1.5">
                                 ${currentOpts.map((opt, i) => `
                                     <div class="flex items-center gap-2 option-row">
-                                        <input type="radio" name="swalCorrectRadio" value="${i}" ${String(qData?.correct_answer) === String(i) || String(qData?.correct_answer) === String(opt) ? 'checked' : ''}>
+                                        <input type="radio" name="swalCorrectRadio" value="${i}" ${String(qData?.correct_answer) === String(i) ? 'checked' : ''}>
                                         <span class="font-bold w-6">${standardLabels[i] || String.fromCharCode(65+i)}:</span>
                                         <input class="opt-text-input flex-1 px-3 py-1 border rounded-xl dark:bg-slate-800" value="${opt}">
                                         ${i >= 2 ? `<button type="button" onclick="this.parentElement.remove()" class="text-red-500 px-1"><i class="fas fa-times"></i></button>` : ''}
