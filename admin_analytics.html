@@ -247,7 +247,7 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // 🎯 ฟังก์ชันดึงคะแนนที่รองรับทุกความเป็นไปได้ในตาราง
+        // 🎯 ดึงคะแนนจากตาราง attempt
         function getAttemptScore(att) {
             if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) {
                 return Number(att.total_score);
@@ -255,23 +255,32 @@
             if (att.score !== undefined && att.score !== null && !isNaN(att.score)) {
                 return Number(att.score);
             }
-            // ถ้าเก็บไว้ในฟิลด์อื่นหรือ object
             return 0;
+        }
+
+        // 🎯 ฟังก์ชันดึงชื่อนักเรียนแบบครอบคลุมทุกคอลัมน์ที่เป็นไปได้
+        function getStudentName(profileObj, studentId) {
+            if (!profileObj) return `นักเรียน (${String(studentId).substring(0, 6)}...)`;
+            return profileObj.full_name || profileObj.name || profileObj.username || profileObj.display_name || `นักเรียน (${String(studentId).substring(0, 6)}...)`;
         }
 
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. โหลดข้อมูลโปรไฟล์นักเรียนทั้งหมด
-            const { data: profiles } = await mySupabase.from('profiles').select('id, full_name, name');
+            // 1. โหลดข้อมูลโปรไฟล์นักเรียนทั้งหมด (ดึงทุกฟิลด์ชื่อเพื่อความชัวร์)
+            const { data: profiles, error: profileErr } = await mySupabase.from('profiles').select('*');
+            if (profileErr) console.error("Error loading profiles:", profileErr);
+            
             if (profiles) {
                 totalRegisteredStudents = profiles.length || 30;
                 profiles.forEach(p => {
-                    allProfiles[p.id] = {
-                        name: p.full_name || p.name || 'นักเรียนทั่วไป'
-                    };
+                    const identifier = p.id || p.user_id || p.student_id;
+                    if (identifier) {
+                        allProfiles[String(identifier)] = p;
+                    }
                 });
             }
+            console.log("Loaded Profiles Map:", allProfiles);
 
             // 2. โหลดหมวดหมู่
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
@@ -289,7 +298,7 @@
             // 4. โหลดผลการทำข้อสอบทั้งหมดจาก exam_attempts
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             allAttempts = attempts || [];
-            console.log("Fetched Exam Attempts:", allAttempts); // ตรวจสอบข้อมูลใน Console
+            console.log("Fetched Exam Attempts:", allAttempts);
 
             Swal.close();
 
@@ -303,7 +312,7 @@
             const totalSubmissions = allAttempts.length;
             document.getElementById('globalTotalSubmissions').textContent = `${totalSubmissions} ครั้ง`;
 
-            const uniqueStudents = new Set(allAttempts.map(a => a.student_id)).size;
+            const uniqueStudents = new Set(allAttempts.map(a => a.student_id || a.user_id)).size;
             document.getElementById('globalUniqueStudents').textContent = `${uniqueStudents} คน`;
 
             if (totalSubmissions > 0) {
@@ -392,19 +401,21 @@
         function renderLeaderboardAndAtRisk() {
             let studentStats = {};
             allAttempts.forEach(a => {
-                if (!a.student_id) return;
-                if (!studentStats[a.student_id]) {
-                    studentStats[a.student_id] = { totalScore: 0, count: 0 };
+                const sId = a.student_id || a.user_id;
+                if (!sId) return;
+                if (!studentStats[sId]) {
+                    studentStats[sId] = { totalScore: 0, count: 0 };
                 }
                 const score = getAttemptScore(a);
-                studentStats[a.student_id].totalScore += score;
-                studentStats[a.student_id].count += 1;
+                studentStats[sId].totalScore += score;
+                studentStats[sId].count += 1;
             });
 
             let studentList = Object.keys(studentStats).map(id => {
-                const info = allProfiles[id] || { name: 'นักเรียนทั่วไป' };
+                const profileInfo = allProfiles[id];
+                const name = getStudentName(profileInfo, id);
                 const avg = studentStats[id].totalScore / studentStats[id].count;
-                return { id, name: info.name, total: studentStats[id].totalScore, avg: avg.toFixed(1), count: studentStats[id].count };
+                return { id, name, total: studentStats[id].totalScore, avg: avg.toFixed(1), count: studentStats[id].count };
             });
 
             // 1. Top Performers
