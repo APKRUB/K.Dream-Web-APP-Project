@@ -735,7 +735,7 @@
             updateAnalyticsDashboard();
         }
 
-        async function initStudentPortal() {
+async function initStudentPortal() {
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
@@ -743,29 +743,35 @@
             const { data: coursesData } = await mySupabase.from('courses').select('*');
             allCourses = coursesData || [];
 
-            // 2. ดึงข้อมูลการลงทะเบียนจากตาราง course_enrollments
-            const { data: enrollments } = await mySupabase
+            // 2. ดึงข้อมูลการลงทะเบียนจากตาราง course_enrollments (แยก query เพื่อความชัวร์ 100%)
+            let enrollments = [];
+            
+            // ลองดึงด้วย student_id
+            const { data: en1 } = await mySupabase
                 .from('course_enrollments')
                 .select('*')
-                .or(`student_id.eq.${currentStudentId},user_id.eq.${currentStudentId}`);
+                .eq('student_id', currentStudentId);
+            if (en1 && en1.length > 0) enrollments = enrollments.concat(en1);
 
-            enrolledCourseIds = (enrollments || []).map(e => String(e.course_id || e.courseid || ''));
+            // ลองดึงด้วย user_id (เผื่อตารางใช้ชื่อนี้)
+            const { data: en2 } = await mySupabase
+                .from('course_enrollments')
+                .select('*')
+                .eq('user_id', currentStudentId);
+            if (en2 && en2.length > 0) enrollments = enrollments.concat(en2);
+
+            // กรองไอดีคอร์สที่ลงทะเบียนแล้ว (แปลงเป็น String เพื่อป้องกันปัญหาประเภทข้อมูลไม่ตรงกัน)
+            enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(id => id !== '');
             
-            // กรองคอร์สที่ลงทะเบียนจริง
+            // ตัดคอร์สที่ไม่ลงทะเบียนออก 100% (หากไม่มีการลงทะเบียน coursesList จะเป็นค่าว่าง ไม่ดึงมั่ว)
             enrolledCoursesList = allCourses.filter(c => enrolledCourseIds.includes(String(c.id)));
-            
-            // Fallback: ถ้ายังไม่มีการบันทึกใน course_enrollments ให้ใช้คอร์สทั้งหมดที่มีอยู่แทนเพื่อไม่ให้หน้าจอว่าง
-            if (enrolledCoursesList.length === 0) {
-                enrolledCoursesList = allCourses;
-                enrolledCourseIds = allCourses.map(c => String(c.id));
-            }
 
             // Populate Global Course Dropdown
             const courseSelect = document.getElementById('globalCourseSelect');
             if (enrolledCoursesList.length === 0) {
-                courseSelect.innerHTML = `<option value="all">⚠️ ไม่พบข้อมูลคอร์สเรียนในระบบ</option>`;
+                courseSelect.innerHTML = `<option value="none">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>`;
             } else {
-                courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์ส (${enrolledCoursesList.length} คอร์ส)</option>`;
+                courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์สที่ลงทะเบียน (${enrolledCoursesList.length} คอร์ส)</option>`;
                 enrolledCoursesList.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
