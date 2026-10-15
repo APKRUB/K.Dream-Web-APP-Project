@@ -98,7 +98,6 @@
                     <span id="globalTotalStudentsCount" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คน</span>
                 </div>
             </div>
-            <!-- ปรับแก้จากคะแนนเฉลี่ยภาพรวม เป็น Percentile ภาพรวม -->
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
                 <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div>
                 <div>
@@ -404,7 +403,6 @@
             renderExamsCatalogByCategories(activeExams);
         }
 
-        // 🎯 คำนวณค่าเฉลี่ย Percentile ภาพรวมของคลาสและแสดงผลลงท้ายด้วย %
         function calculateGlobalKPIs() {
             const totalSubmissions = allAttempts.length;
             document.getElementById('globalTotalSubmissions').textContent = `${totalSubmissions} ครั้ง`;
@@ -562,7 +560,6 @@
             }
         }
 
-        // 🎯 ตารางรายชื่อนักเรียนแสดงผล Percentile เป็น %
         function renderAllStudentsTable() {
             const tbody = document.getElementById('allStudentsTableBody');
             const searchKeyword = document.getElementById('globalStudentSearchInput').value.trim().toLowerCase();
@@ -762,8 +759,14 @@
                             <div class="font-extrabold text-sky-600 dark:text-sky-400">${exam ? exam.title : 'ชุดข้อสอบ'}</div>
                             <div class="text-slate-500">นักเรียน: <strong>${name}</strong></div>
                         </div>
-                        <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">
-                            ${score} / ${totalQ} คะแนน
+                        <div class="flex items-center gap-3">
+                            <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">
+                                ${score} / ${totalQ} คะแนน
+                            </div>
+                            <!-- 🎯 เพิ่มปุ่มปริ้นท์ใบสรุปการตอบรายข้อในหน้านี้ -->
+                            <button onclick="printSingleExamAttemptReport('${studentId}', '${examId}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 shrink-0">
+                                <i class="fas fa-print"></i> ปริ้นท์ใบสรุป
+                            </button>
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -787,6 +790,74 @@
                     viewIndividualStudentProfile(studentId);
                 }
             });
+        }
+
+        // 🎯 ฟังก์ชันสำหรับสั่งพิมพ์รายงานผลการตอบรายข้อของชุดข้อสอบนั้นๆ
+        async function printSingleExamAttemptReport(studentId, examId) {
+            const att = allAttempts.find(a => String(a.student_id || a.user_id) === String(studentId) && String(a.exam_id) === String(examId));
+            const exam = allExams.find(e => String(e.id) === String(examId));
+            const profile = allProfilesMap[studentId];
+            const name = getStudentName(profile, studentId);
+            const studentIdCode = profile?.student_id || '-';
+
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
+            if (!questions) return;
+
+            const totalQ = questions.length;
+            const score = att ? getAttemptScore(att) : 0;
+            const submitTime = att ? (att.submission_time || att.submitted_at || att.created_at) : null;
+            const dateStr = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
+
+            let printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>รายงานผลการสอบรายข้อ - ${name}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Prompt', sans-serif; padding: 40px; color: #1e293b; }
+                        h2 { color: #0284c7; margin-bottom: 5px; }
+                        .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+                        th { background: #f1f5f9; }
+                        .correct { color: #10b981; font-weight: bold; }
+                        .wrong { color: #ef4444; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h2>รายงานผลการตอบข้อสอบรายข้อ</h2>
+                    <p>ชุดข้อสอบ: <strong>${exam ? exam.title : '-'}</strong></p>
+                    <div class="box">
+                        <p>ชื่อ-นามสกุล: <strong>${name}</strong> (รหัส: ${studentIdCode})</p>
+                        <p>คะแนนที่ได้: <strong>${score} / ${totalQ} คะแนน</strong></p>
+                        <p>วันที่ทำข้อสอบ: ${dateStr}</p>
+                    </div>
+                    <h3>รายละเอียดคำตอบรายข้อ</h3>
+                    <table>
+                        <tr><th>ข้อที่</th><th>โจทย์คำถาม</th><th>นักเรียนตอบ</th><th>เฉลยที่ถูกต้อง</th><th>ผลลัพธ์</th></tr>
+            `);
+
+            questions.forEach((q, index) => {
+                const userAns = att ? extractStudentAnswer(att, q, index) : '-';
+                const correctAns = getCorrectAnswer(q);
+                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
+                const correctAnsStr = String(correctAns).trim().toLowerCase();
+                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
+
+                printWindow.document.write(`
+                    <tr>
+                        <td>${q.question_number}</td>
+                        <td>${q.question_text || q.content || '-'}</td>
+                        <td><strong>${userAns}</strong></td>
+                        <td>${correctAns}</td>
+                        <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? 'ถูกต้อง' : 'ตอบผิด'}</td>
+                    </tr>
+                `);
+            });
+
+            printWindow.document.write(`</table><script>window.print();<\/script></body></html>`);
+            printWindow.document.close();
         }
 
         function printStudentSummaryReport(studentId) {
