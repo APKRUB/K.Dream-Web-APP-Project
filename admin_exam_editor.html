@@ -851,15 +851,16 @@
 
         // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ (ฉบับครอบคลุมทุกโครงสร้างคำตอบ)
+// 🌟 ฟังก์ชันบันทึกและ Regrade พร้อมตัวเช็คข้อมูลดิบ (Debug) เพื่อดูโครงสร้างใน Supabase
         async function saveAllChangesSticky() {
             Swal.fire({
-                title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">อัปเดตโจทย์/เฉลย และคำนวณคะแนนนักเรียนใหม่ทั้งหมด...</div>',
+                title: 'กำลังบันทึกและตรวจสอบข้อมูล...',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังบันทึกเฉลยและดึงข้อมูลมาทดสอบ Regrade...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
             
-            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase
+            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase ตามปกติ
             for (const q of cachedQuestions) {
                 await mySupabase.from('questions').update({
                     correct_answer: q.correct_answer,
@@ -868,16 +869,25 @@
                 }).eq('id', q.id);
             }
 
-            // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
+            // 2. ดึงข้อมูลคำถามล่าสุด
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
-            // 3. ดึงประวัติการสอบของนักเรียนทุกคนในชุดข้อสอบนี้
-            const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+            // 3. ดึงประวัติการสอบของชุดนี้มาตรวจสอบ
+            const { data: attempts, error: attError } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
 
-            if (attempts && attempts.length > 0 && latestQuestions) {
+            if (attError) {
+                Swal.fire('เกิดข้อผิดพลาด', attError.message, 'error');
+                return;
+            }
+
+            // 🔍 Debug: ถ้ามีข้อมูลนักเรียน ให้แสดงโครงสร้างคอลัมน์เพื่อดูว่าเก็บคำตอบไว้ที่ฟิลด์ไหน
+            if (attempts && attempts.length > 0) {
+                console.log("โครงสร้างข้อมูล exam_attempts แถวแรก:", attempts[0]);
+                
                 for (const att of attempts) {
-                    // รองรับฟิลด์คำตอบทุกชื่อที่เป็นไปได้ในระบบของคุณ
-                    let rawAnswers = att.answer_saved || att.answers || att.user_answers || att.student_answers;
+                    // ลองเช็คทุกชื่อคอลัมน์ที่เป็นไปได้สำหรับการเก็บคำตอบ
+                    let rawAnswers = att.answer_saved || att.answers || att.user_answers || att.student_answers || att.responses || att.submitted_answers;
+                    
                     if (typeof rawAnswers === 'string') {
                         try { rawAnswers = JSON.parse(rawAnswers); } catch(e) { rawAnswers = {}; }
                     }
@@ -887,19 +897,15 @@
                     latestQuestions.forEach((q, index) => {
                         let userAns = null;
                         if (typeof rawAnswers === 'object' && rawAnswers !== null) {
-                            // ค้นหาตาม ID ของคำถาม หรือ Question Number
                             if (rawAnswers[q.id] !== undefined) userAns = rawAnswers[q.id];
                             else if (rawAnswers[String(q.id)] !== undefined) userAns = rawAnswers[String(q.id)];
                             else if (rawAnswers[q.question_number] !== undefined) userAns = rawAnswers[q.question_number];
                             else if (rawAnswers[String(q.question_number)] !== undefined) userAns = rawAnswers[String(q.question_number)];
                             else if (rawAnswers[`q${q.question_number}`] !== undefined) userAns = rawAnswers[`q${q.question_number}`];
                             
-                            // ถ้าเก็บมาเป็นแบบ Array ตามลำดับข้อ
                             if (userAns === null && Array.isArray(rawAnswers)) {
                                 userAns = rawAnswers[index] !== undefined ? rawAnswers[index] : rawAnswers[index + 1];
                             }
-                            
-                            // ถ้าเก็บเป็น Object แต่ key เป็น Index รอบตัว
                             if (userAns === null) {
                                 const keys = Object.keys(rawAnswers);
                                 if (keys[index] !== undefined) userAns = rawAnswers[keys[index]];
@@ -915,11 +921,16 @@
                         }
                     });
 
-                    // 4. บันทึกคะแนนใหม่ที่คำนวณได้ลงฐานข้อมูลทันที (อัปเดตทั้ง total_score และ score)
-                    await mySupabase.from('exam_attempts').update({
+                    // อัปเดตคะแนนลงตาราง exam_attempts (ลองอัปเดตทั้ง score, total_score และ points ถ้ามี)
+                    const updatePayload = {
                         total_score: recalculatedScore,
                         score: recalculatedScore
-                    }).eq('id', att.id);
+                    };
+
+                    const { error: updateErr } = await mySupabase.from('exam_attempts').update(updatePayload).eq('id', att.id);
+                    if (updateErr) {
+                        console.error("อัปเดตคะแนนไม่สำเร็จสำหรับ ID:", att.id, updateErr);
+                    }
                 }
             }
 
@@ -927,8 +938,8 @@
             Swal.fire({
                 icon: 'success',
                 title: 'บันทึกและ Regrade สำเร็จ!',
-                text: 'อัปเดตเฉลยและคำนวณคะแนนนักเรียนใหม่เรียบร้อยแล้ว',
-                timer: 1800,
+                text: `อัปเดตเฉลยและคำนวณคะแนนนักเรียน ${attempts ? attempts.length : 0} รายการเรียบร้อยแล้ว`,
+                timer: 2000,
                 showConfirmButton: false
             });
         }
