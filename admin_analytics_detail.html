@@ -119,9 +119,6 @@
             <button onclick="switchCourseTab('analytics')" id="tab-btn-analytics" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
                 <i class="fas fa-chart-pie mr-1.5"></i> สถิติ & ผลคะแนน
             </button>
-            <button onclick="switchCourseTab('announcements')" id="tab-btn-announcements" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
-                <i class="fas fa-bullhorn mr-1.5"></i> ประกาศในคอร์ส
-            </button>
         </div>
 
         <!-- Tab Content Container -->
@@ -144,7 +141,6 @@
         let courseLessons = [];
         let courseExams = [];
         let courseAttemptsMap = {};
-        let courseAnnouncements = [];
         let allAttemptsRaw = [];
         let examQuestionsMap = {};
         let categoriesMap = {};
@@ -173,7 +169,7 @@
             return false;
         }
 
-async function initCourseDetail() {
+        async function initCourseDetail() {
             if (!courseId) { window.location.replace('admin_courses.html'); return; }
 
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -241,8 +237,6 @@ async function initCourseDetail() {
                     });
                 }
 
-                courseAnnouncements = []; // ปิดการเรียกตาราง announcements ชั่วคราวเพื่อความเสถียร
-
             } catch (err) {
                 console.error("Initialization error:", err);
             } finally {
@@ -257,6 +251,7 @@ async function initCourseDetail() {
 
             switchCourseTab(currentTab);
         }
+
         function switchCourseTab(tabName) {
             currentTab = tabName;
             document.querySelectorAll('.course-tab-btn').forEach(btn => {
@@ -270,7 +265,6 @@ async function initCourseDetail() {
             else if (tabName === 'students') renderStudentsTab(container);
             else if (tabName === 'exams') renderExamsTab(container);
             else if (tabName === 'analytics') renderAnalyticsTab(container);
-            else if (tabName === 'announcements') renderAnnouncementsTab(container);
         }
 
         function renderCurriculumTab(container) {
@@ -528,7 +522,6 @@ async function initCourseDetail() {
                     
                     await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
                     if (selectedIds.length > 0) {
-                        // 🌟 บันทึกสำรองทั้ง student_id และ user_id เพื่อป้องกันปัญหาฟิลด์ตารางไม่ตรงกัน
                         const rows = selectedIds.map(sId => ({ 
                             student_id: sId, 
                             user_id: sId, 
@@ -1058,63 +1051,6 @@ async function initCourseDetail() {
             printWindow.document.close();
         }
 
-        function renderAnnouncementsTab(container) {
-            let annHtml = courseAnnouncements.length > 0 ? courseAnnouncements.map(an => `
-                <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">
-                    <div class="font-extrabold text-amber-600">${an.title}</div>
-                    <div class="text-xs text-slate-600 dark:text-slate-300">${an.content}</div>
-                </div>
-            `).join('') : '<div class="text-center py-8 text-slate-400">ยังไม่มีประกาศในคอร์สนี้</div>';
-
-            container.innerHTML = `
-                <div class="hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
-                        <span class="text-xs font-bold text-slate-400">ประกาศข่าวสารในคอร์ส (${courseAnnouncements.length} ประกาศ)</span>
-                        <button onclick="openAddAnnouncementModal()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-bullhorn mr-1"></i> สร้างประกาศใหม่</button>
-                    </div>
-                    <div class="space-y-3">${annHtml}</div>
-                </div>
-            `;
-        }
-
-        async function openAddAnnouncementModal() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const { value: formValues } = await Swal.fire({
-                title: '📢 สร้างประกาศใหม่ในคอร์ส',
-                width: '500px',
-                html: `
-                    <div class="space-y-3 text-left text-xs">
-                        <div><label class="block font-bold mb-1">หัวข้อประกาศ</label><input id="swalAnTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold"></div>
-                        <div><label class="block font-bold mb-1">เนื้อหาประกาศ</label><textarea id="swalAnContent" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none"></textarea></div>
-                    </div>
-                `,
-                showCancelButton: true, confirmButtonText: 'โพสต์ประกาศ', confirmButtonColor: '#d97706',
-                background: isDark ? '#090d16' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b',
-                preConfirm: () => ({ title: document.getElementById('swalAnTitle').value.trim(), content: document.getElementById('swalAnContent').value.trim(), course_id: courseId })
-            });
-
-            if (formValues && formValues.title) {
-                await mySupabase.from('announcements').insert([formValues]);
-                initCourseDetail();
-                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ!', timer: 1000, showConfirmButton: false });
-            }
-        }
-
-        function getStatusBadge(st) {
-            if (st === 'public') return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-[10px]">เปิดบริการ</span>';
-            if (st === 'countdown') return '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold text-[10px]">ตั้งเวลา</span>';
-            return '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-bold text-[10px]">ซ่อน</span>';
-        }
-        function getDeliveryBadge(dt) {
-            if (dt === 'online') return '<span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>ออนไลน์</span>';
-            return '<span class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
-        }
-        function getChoiceFormatLabel(fmt) {
-            if (fmt === 'th_num') return 'ก, ข, ค, ง';
-            if (fmt === 'upper') return 'A, B, C, D';
-            if (fmt === 'lower') return 'a, b, c, d';
-            return '1, 2, 3, 4';
-        }
         function getExamAverageScore(examId) {
             const scores = courseAttemptsMap[String(examId)] || [];
             if (scores.length === 0) return '-';
