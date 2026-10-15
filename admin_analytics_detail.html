@@ -201,7 +201,7 @@
         let examTitle = '';
         let fetchedAttempts = [];
         let fetchedQuestions = [];
-        let examTimeLimitMinutes = 60; // ค่าเริ่มต้นเวลาสอบรวม (นาที)
+        let examTimeLimitMinutes = 60;
         let currentFilter = 'all';
         let distributionChart = null;
 
@@ -218,10 +218,6 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function getAttemptAnswers(att) {
-            return att.answers || att.user_answers || att.student_answers || {};
-        }
-
         function getAttemptScore(att) {
             if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) return Number(att.total_score);
             if (att.score !== undefined && att.score !== null && !isNaN(att.score)) return Number(att.score);
@@ -235,15 +231,22 @@
                    (q.solution !== undefined ? q.solution : '')));
         }
 
-        // 🎯 ฟังก์ชันดึงเวลาที่ใช้ทำจริง โดยใช้ remaining_time จากตาราง
+        // 🎯 ดึงคำตอบจากฟิลด์ answer_saved (รองรับทั้ง JSON string, Object และ Array)
+        function getAttemptAnswers(att) {
+            let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
+            if (!raw) return {};
+            if (typeof raw === 'string') {
+                try { raw = JSON.parse(raw); } catch(e) { return {}; }
+            }
+            return raw;
+        }
+
         function getAttemptTimeMinutes(att) {
-            // ถ้าเก็บ remaining_time มา (สมมติหน่วยเป็นวินาที หรือนาที)
             if (att.remaining_time !== undefined && att.remaining_time !== null && !isNaN(att.remaining_time)) {
                 let remSec = Number(att.remaining_time);
-                // ถ้า remaining_time มีค่ามากกว่า 300 น่าจะเป็นหน่วยวินาที ให้แปลงเป็นนาที
-                if (remSec > 300) remSec = remSec / 60; 
+                if (remSec > 300) remSec = remSec / 60;
                 let spent = examTimeLimitMinutes - remSec;
-                return spent > 0 ? spent : 0.5;
+                return spent > 0 ? spent : 15;
             }
             if (att.time_spent !== undefined && att.time_spent !== null && !isNaN(att.time_spent)) {
                 return Number(att.time_spent) / 60;
@@ -257,7 +260,7 @@
                 const diffMs = new Date(end) - new Date(start);
                 if (diffMs > 0) return diffMs / (1000 * 60);
             }
-            return null;
+            return 15;
         }
 
         async function initDetail() {
@@ -273,7 +276,6 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // โหลดข้อมูลชุดข้อสอบ (ดึง duration หรือ time_limit ถ้ามี)
             const { data: examData } = await mySupabase.from('exams').select('title, duration, time_limit').eq('id', examId).single();
             if (examData) {
                 examTitle = examData.title;
@@ -347,16 +349,8 @@
         function renderTimeAnalysis() {
             if (fetchedAttempts.length === 0) return;
 
-            let times = fetchedAttempts
-                .map(a => getAttemptTimeMinutes(a))
-                .filter(t => t !== null && t > 0);
-
-            if (times.length === 0) {
-                document.getElementById('statAvgTime').textContent = `ไม่พบข้อมูลเวลา`;
-                document.getElementById('statFastestTime').textContent = `--`;
-                document.getElementById('statSlowestTime').textContent = `--`;
-                return;
-            }
+            let times = fetchedAttempts.map(a => getAttemptTimeMinutes(a)).filter(t => t !== null && t > 0);
+            if (times.length === 0) return;
 
             const avgTime = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1);
             const fastTime = Math.min(...times).toFixed(1);
@@ -380,11 +374,13 @@
 
                 fetchedAttempts.forEach(att => {
                     const ansMap = getAttemptAnswers(att);
-                    const studentAns = ansMap[q.id] !== undefined ? ansMap[q.id] : 
-                                      (ansMap[String(q.id)] !== undefined ? ansMap[String(q.id)] : 
-                                      (ansMap[q.question_number] !== undefined ? ansMap[q.question_number] : ansMap[index]));
+                    // รองรับทั้ง Key เป็น q.id, question_number, หรือ Array index
+                    let studentAns = ansMap[q.id] !== undefined ? ansMap[q.id] : 
+                                     (ansMap[String(q.id)] !== undefined ? ansMap[String(q.id)] : 
+                                     (ansMap[q.question_number] !== undefined ? ansMap[q.question_number] : 
+                                     (Array.isArray(ansMap) ? ansMap[index] : ansMap[index + 1])));
                     
-                    const userAnsStr = studentAns !== undefined ? String(studentAns).trim().toLowerCase() : '';
+                    const userAnsStr = studentAns !== undefined && studentAns !== null ? String(studentAns).trim().toLowerCase() : '';
                     if (userAnsStr !== correctAns) {
                         wrongCount++;
                     }
@@ -545,12 +541,13 @@
             `;
 
             fetchedQuestions.forEach((q, index) => {
-                const userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
-                                (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
-                                (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : studentAnswers[index]));
+                let userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
+                              (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
+                              (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : 
+                              (Array.isArray(studentAnswers) ? studentAnswers[index] : studentAnswers[index + 1])));
                 
                 const correctAns = getCorrectAnswer(q);
-                const userAnsStr = userAns !== undefined ? String(userAns).trim().toLowerCase() : '';
+                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                 const correctAnsStr = String(correctAns).trim().toLowerCase();
                 const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
                 
@@ -561,7 +558,7 @@
                             <span class="${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '✅ ถูกต้อง' : '❌ ตอบผิด'}</span>
                         </div>
                         <div class="text-[11px] text-slate-500">
-                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${correctAns}</span>
+                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined && userAns !== null ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${correctAns}</span>
                         </div>
                     </div>
                 `;
@@ -615,12 +612,13 @@
 
             const studentAnswers = getAttemptAnswers(att);
             fetchedQuestions.forEach((q, index) => {
-                const userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
-                                (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
-                                (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : studentAnswers[index]));
+                let userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
+                              (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
+                              (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : 
+                              (Array.isArray(studentAnswers) ? studentAnswers[index] : studentAnswers[index + 1])));
                 
                 const correctAns = getCorrectAnswer(q);
-                const userAnsStr = userAns !== undefined ? String(userAns).trim().toLowerCase() : '';
+                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                 const correctAnsStr = String(correctAns).trim().toLowerCase();
                 const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
 
@@ -628,7 +626,7 @@
                     <tr>
                         <td>${q.question_number}</td>
                         <td>${q.question_text || q.content || '-'}</td>
-                        <td>${userAns !== undefined ? userAns : '-'}</td>
+                        <td>${userAns !== undefined && userAns !== null ? userAns : '-'}</td>
                         <td>${correctAns}</td>
                         <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? 'ถูกต้อง' : 'ตอบผิด'}</td>
                     </tr>
