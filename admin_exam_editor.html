@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL ข้ามหน้าโดยไม่ได้รับอนุญาต -->
     <script>
         (function() {
             let hasSession = false;
@@ -67,6 +66,16 @@
             opacity: 0; pointer-events: none; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .bottom-floating-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+
+        /* 🌟 คลาสแอนิเมชันหน้าจอสั่น */
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            20%, 60% { transform: translateX(calc(-50% - 10px)) translateY(0); }
+            40%, 80% { transform: translateX(calc(-50% + 10px)) translateY(0); }
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-32">
@@ -74,7 +83,7 @@
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <button onclick="window.location.href='admin_exams.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
+                <button onclick="handleNavigate('admin_exams.html')" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all"><i class="fas fa-arrow-left text-sm"></i></button>
                 <div>
                     <h1 id="examTitleHeader" class="font-extrabold text-base text-slate-900 dark:text-white">จัดการโจทย์และเฉลย OMR</h1>
                     <p id="examSubHeader" class="text-[11px] text-slate-500">กำลังโหลด...</p>
@@ -162,14 +171,15 @@
         </div>
     </main>
 
+    <!-- 🌟 แบนเนอร์ลอยเตือนให้บันทึก -->
     <div id="floatingSaveBanner" class="bottom-floating-banner">
-        <div class="px-6 py-3.5 bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 rounded-full shadow-2xl border border-sky-500/50 flex items-center gap-4">
+        <div id="floatingBannerInner" class="px-6 py-3.5 bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 rounded-full shadow-2xl border border-sky-500/50 flex items-center gap-4">
             <div class="flex items-center gap-2 text-xs font-bold">
                 <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
-                <span>มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</span>
+                <span>มีการเปลี่ยนแปลงเฉลยที่ยังไม่ได้บันทึก!</span>
             </div>
             <button onclick="saveAllChangesSticky()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md transition-all flex items-center gap-1.5">
-                <i class="fas fa-save"></i> บันทึกข้อมูลทั้งหมด
+                <i class="fas fa-save"></i> บันทึกการแก้ไข (พร้อม Regrade)
             </button>
         </div>
     </div>
@@ -210,6 +220,41 @@
             const banner = document.getElementById('floatingSaveBanner');
             if (banner) banner.classList.remove('show');
         }
+
+        // 🌟 ฟังก์ชันจัดการป้องกันการออกหน้าอื่น พร้อมเอฟเฟกต์หน้าจอสั่นเตือน
+        function handleNavigate(targetUrl) {
+            if (hasUnsavedChanges) {
+                triggerScreenShakeWarning();
+                return;
+            }
+            window.location.href = targetUrl;
+        }
+
+        function triggerScreenShakeWarning() {
+            const bannerInner = document.getElementById('floatingBannerInner');
+            if (bannerInner) {
+                bannerInner.classList.remove('shake-animation');
+                void bannerInner.offsetWidth; // Trigger reflow
+                bannerInner.classList.add('shake-animation');
+            }
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'ยังไม่ได้บันทึกการแก้ไข!',
+                text: 'กรุณากดปุ่ม "บันทึกการแก้ไข" สีเขียวด้านล่างก่อนออกจากหน้าเว็บนี้',
+                confirmButtonText: 'รับทราบ',
+                confirmButtonColor: '#0284c7'
+            });
+        }
+
+        // ดักจับการปิดแท็บหรือรีเฟรชเบราว์เซอร์
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
 
         function checkAdminAuth() {
             const currentUsername = localStorage.getItem('admin_username') || 
@@ -331,7 +376,6 @@
                 }
 
                 const bubblesHtml = opts.map((cLabel, cIdx) => {
-                    // เปรียบเทียบเฉพาะ Index (0, 1, 2, 3) ให้ถูกต้องแม่นยำทีละปุ่ม
                     const isSelected = String(q.correct_answer) === String(cIdx);
                     return `<div onclick="selectOmrChoice('${q.id}', '${cIdx}')" class="omr-bubble-lg ${isSelected ? 'active' : ''}">${cLabel}</div>`;
                 }).join('');
@@ -579,6 +623,7 @@
                 } else {
                     await mySupabase.from('questions').insert([formValues]);
                 }
+                markAsModified();
                 loadQuestions();
             }
         }
@@ -659,6 +704,7 @@
 
             if (res.isConfirmed) {
                 await mySupabase.from('questions').delete().eq('id', id);
+                markAsModified();
                 loadQuestions();
             }
         }
@@ -793,6 +839,7 @@
                     });
                 }
                 await mySupabase.from('questions').insert(newItems);
+                markAsModified();
                 loadQuestions();
                 Swal.close();
             }
@@ -802,9 +849,16 @@
             window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
 
+        // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ
         async function saveAllChangesSticky() {
-            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({
+                title: 'กำลังบันทึกและ Regrade คะแนน...',
+                html: '<div class="text-xs text-slate-400 mt-1">อัปเดตโจทย์/เฉลย และคำนวณคะแนนนักเรียนใหม่ทั้งหมด...</div>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
             
+            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase
             for (const q of cachedQuestions) {
                 await mySupabase.from('questions').update({
                     correct_answer: q.correct_answer,
@@ -813,8 +867,59 @@
                 }).eq('id', q.id);
             }
 
+            // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
+            const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
+
+            // 3. ดึงประวัติการสอบของนักเรียนทุกคนในชุดข้อสอบนี้
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+
+            if (attempts && attempts.length > 0 && latestQuestions) {
+                for (const att of attempts) {
+                    let rawAnswers = att.answer_saved || att.answers || att.user_answers || att.student_answers;
+                    if (typeof rawAnswers === 'string') {
+                        try { rawAnswers = JSON.parse(rawAnswers); } catch(e) { rawAnswers = {}; }
+                    }
+
+                    let recalculatedScore = 0;
+
+                    latestQuestions.forEach((q, index) => {
+                        let userAns = null;
+                        if (typeof rawAnswers === 'object' && rawAnswers !== null) {
+                            if (rawAnswers[q.id] !== undefined) userAns = rawAnswers[q.id];
+                            else if (rawAnswers[String(q.id)] !== undefined) userAns = rawAnswers[String(q.id)];
+                            else if (rawAnswers[q.question_number] !== undefined) userAns = rawAnswers[q.question_number];
+                            else if (rawAnswers[`q${q.question_number}`] !== undefined) userAns = rawAnswers[`q${q.question_number}`];
+                            
+                            if (userAns === null && Array.isArray(rawAnswers)) {
+                                userAns = rawAnswers[index] !== undefined ? rawAnswers[index] : rawAnswers[index + 1];
+                            }
+                        }
+
+                        if (userAns !== null && userAns !== undefined && userAns !== '') {
+                            const userStr = String(userAns).trim().toLowerCase();
+                            const correctStr = String(q.correct_answer).trim().toLowerCase();
+                            if (userStr === correctStr) {
+                                recalculatedScore += 1;
+                            }
+                        }
+                    });
+
+                    // อัปเดตคะแนนใหม่ลงในฐานข้อมูล exam_attempts
+                    await mySupabase.from('exam_attempts').update({
+                        total_score: recalculatedScore,
+                        score: recalculatedScore
+                    }).eq('id', att.id);
+                }
+            }
+
             clearModifiedFlag();
-            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อยแล้ว!', timer: 1200, showConfirmButton: false });
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกและ Regrade สำเร็จ!',
+                text: 'อัปเดตเฉลยและคำนวณคะแนนนักเรียนใหม่เรียบร้อยแล้ว',
+                timer: 1800,
+                showConfirmButton: false
+            });
         }
 
         initPage();
