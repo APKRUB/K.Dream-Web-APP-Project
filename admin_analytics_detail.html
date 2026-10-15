@@ -68,7 +68,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Header Banner พร้อมไอคอนโหลด -->
+        <!-- Header Banner -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-sky-500/10 p-5 rounded-2xl border border-sky-500/30">
             <div class="flex items-center gap-3">
                 <div id="loadingBannerIcon" class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base">
@@ -147,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- ฝั่งขวา: กราฟแท่งกระจายตัวคะแนนรายคะแนน & กราฟวงกลมสัดส่วน ผ่าน/ไม่ผ่าน -->
+            <!-- ฝั่งขวา: กราฟ -->
             <div class="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="hitech-card p-4 rounded-2xl space-y-3 flex flex-col justify-between">
                     <h3 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -336,16 +336,23 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data: examData } = await mySupabase.from('exams').select('title, duration, time_limit').eq('id', examId).single();
-            if (examData) {
-                examTitle = examData.title;
-                document.getElementById('activeExamTitleBanner').textContent = examTitle;
-                document.getElementById('loadingBannerIcon').innerHTML = '<i class="fas fa-file-lines text-sky-500"></i>';
-                document.getElementById('loadingBannerIcon').className = "w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base";
-
-                if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
-                else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
+            // 🎯 ปรับปรุงส่วนดึงชื่อชุดข้อสอบให้รองรับทุกชื่อฟิลด์ในฐานข้อมูล
+            try {
+                const { data: examData, error } = await mySupabase.from('exams').select('*').eq('id', examId).maybeSingle();
+                if (examData) {
+                    examTitle = examData.title || examData.name || examData.exam_name || examData.topic || `ชุดข้อสอบรหัส: ${examId}`;
+                    if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
+                    else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
+                } else {
+                    examTitle = `ชุดข้อสอบรหัส: ${examId}`;
+                }
+            } catch (err) {
+                examTitle = `ชุดข้อสอบรหัส: ${examId}`;
             }
+
+            document.getElementById('activeExamTitleBanner').textContent = examTitle;
+            document.getElementById('loadingBannerIcon').innerHTML = '<i class="fas fa-file-lines text-sky-500"></i>';
+            document.getElementById('loadingBannerIcon').className = "w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base";
 
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             fetchedQuestions = questions || [];
@@ -360,12 +367,12 @@
                     const targetId = att.student_id || att.user_id;
 
                     if (targetId) {
-                        const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', targetId).single();
+                        const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', targetId).maybeSingle();
                         if (prof) {
                             studentName = prof.full_name || prof.name || prof.username || studentName;
                             studentIdCode = prof.student_id || studentIdCode;
                         } else {
-                            const { data: std } = await mySupabase.from('students').select('*').eq('id', targetId).single();
+                            const { data: std } = await mySupabase.from('students').select('*').eq('id', targetId).maybeSingle();
                             if (std) {
                                 studentName = std.fullname || std.name || std.username || studentName;
                             }
@@ -474,7 +481,6 @@
         function renderCharts() {
             const totalQ = fetchedQuestions.length || 10;
 
-            // 1. กราฟแท่งกระจายตัวคะแนนแบบรายแต้มคะแนนจริง (ทุก ๆ คะแนน เช่น 0, 1, 2 ... จนถึงคะแนนเต็ม)
             const ctxBar = document.getElementById('scoreDistributionChart').getContext('2d');
             if (distributionChart) distributionChart.destroy();
 
@@ -500,7 +506,6 @@
                 }
             });
 
-            // 2. กราฟวงกลมสัดส่วน ผ่าน / ไม่ผ่าน
             const ctxPie = document.getElementById('passPieChart').getContext('2d');
             if (passPieChartInstance) passPieChartInstance.destroy();
 
