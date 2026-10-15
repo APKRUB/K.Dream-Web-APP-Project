@@ -57,10 +57,10 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
-        /* ปิดการคลิกขวาเซฟวิดีโอ */
-        video::-internal-media-controls-download-button { display:none; }
-        video::-webkit-media-controls-download-button { display:none; }
-        video::-webkit-media-controls-enclosure { overflow:hidden; }
+        /* โล่กำบังบล็อกเฉพาะมุมขวาบน (จุดปุ่ม Pop-out ของ Google Drive) เพื่อไม่ให้กดเปิดหน้าต่างใหม่ได้ */
+        .popout-blocker {
+            position: absolute; top: 0; right: 0; width: 80px; height: 60px; z-index: 30; background: transparent; cursor: not-allowed;
+        }
 
         .draggable-item { cursor: grab; transition: transform 0.2s, box-shadow 0.2s; }
         .draggable-item:active { cursor: grabbing; }
@@ -84,7 +84,7 @@
                     </div>
                     <div>
                         <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Secure Google Drive Vault</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">บล็อก Pop-out และป้องกันการดาวน์โหลด</span>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">บล็อก Pop-out และควบคุมวิดีโอได้ปกติ</span>
                     </div>
                 </div>
 
@@ -104,14 +104,14 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div>
                     <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-shield-halved text-sky-500"></i> เพิ่มเทปเรียน Google Drive (ปลอดภัยสูงสุด)
+                        <i class="fas fa-shield-halved text-sky-500"></i> เพิ่มเทปเรียน Google Drive
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        ระบบจะตัดปุ่ม Pop-out และซ่อนปุ่มดาวน์โหลดออกทั้งหมด ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้ตามปกติ
+                        ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้อิสระ แต่ถูกบล็อกปุ่ม Pop-out เพื่อไม่ให้เปิดลิงก์ออกภายนอก
                     </p>
                 </div>
                 <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20">
-                    <i class="fas fa-lock mr-1"></i> Anti-Download & No Pop-out
+                    <i class="fas fa-lock mr-1"></i> Block Pop-out Mode
                 </span>
             </div>
 
@@ -173,7 +173,7 @@
 
     </main>
 
-    <!-- Modal สำหรับดูวิดีโอ (HTML5 Secure Player) -->
+    <!-- Modal สำหรับดูวิดีโอ Google Drive พร้อมตัวบล็อกปุ่ม Pop-out -->
     <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
@@ -185,13 +185,15 @@
                 </button>
             </div>
 
-            <!-- ตัวเล่นวิดีโอ HTML5 ป้องกันการดาวน์โหลดและไม่มีปุ่ม Pop-out -->
+            <!-- ตัวเล่นวิดีโอ Google Drive พร้อมแผ่นปิดบล็อกปุ่ม Pop-out มุมขวาบน -->
             <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
-                <video id="secureVideoElement" class="w-full h-full" controls controlsList="nodownload" oncontextmenu="return false;"></video>
+                <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
+                <!-- แผ่นใสทับมุมขวาบน ป้องกันการกดเปิดหน้าต่างใหม่ (Pop-out) -->
+                <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
             </div>
 
             <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลดและตัดปุ่ม Pop-out เรียบร้อย (กรอและปรับสปีดได้)</span>
+                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ควบคุมวิดีโอ (เล่น/หยุด/กรอ/สปีด) ได้ปกติ และบล็อกปุ่ม Pop-out เรียบร้อย</span>
                 <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
             </div>
         </div>
@@ -292,7 +294,7 @@
                                     <i class="fas fa-grip-vertical"></i>
                                 </div>
                                 <div class="space-y-1">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Secure Drive Stream</span>
+                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Google Drive Stream</span>
                                     <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1">${v.title}</h4>
                                     <p class="text-[11px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
                                 </div>
@@ -303,7 +305,7 @@
                         </div>
                         <div class="flex items-center gap-3 pt-2">
                             <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> รับชมเทปเรียน (ปลอดภัยสูงสุด)
+                                <i class="fas fa-play"></i> รับชมเทปเรียน (ควบคุมได้ปกติ)
                             </button>
                         </div>
                     </div>
@@ -439,19 +441,28 @@
             const title = decodeURIComponent(encodedTitle);
             document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
             
-            const videoElem = document.getElementById('secureVideoElement');
-            // แปลง Google Drive File ID เป็น Direct Stream Link ที่ไม่มีปุ่ม Pop-out และซ่อนปุ่มดาวน์โหลด
-            videoElem.src = `https://docs.google.com/uc?export=download&id=${fileId}`;
-            videoElem.play();
+            const wrapper = document.getElementById('iframePlayerWrapper');
+            wrapper.innerHTML = `
+                <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
+            `;
 
             document.getElementById('videoModal').classList.remove('hidden');
         }
 
+        function alertPopoutBlocked() {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: '🔒 ปิดการใช้งานปุ่มเปิดหน้าต่างภายนอก (Pop-out)',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
         function closeVideoModal() {
-            const videoElem = document.getElementById('secureVideoElement');
-            videoElem.pause();
-            videoElem.src = '';
             document.getElementById('videoModal').classList.add('hidden');
+            document.getElementById('iframePlayerWrapper').innerHTML = '';
         }
 
         loadVideos();
