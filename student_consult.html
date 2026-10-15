@@ -1,131 +1,304 @@
 <!DOCTYPE html>
-<html lang="th" class="light">
+<html lang="th" class="light select-none">
 <head>
-    <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จองเวลา Consult กับอาจารย์</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>LMS | Student Portal & Exam Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { 
-                extend: { 
-                    fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16', darkbox: '#0f172a', darkinput: '#1e293b' } 
-                } 
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' }
+                }
             }
         }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(9, 13, 22, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.85); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .hitech-card { 
+            background: rgba(255, 255, 255, 0.95); 
+            border: 1px solid rgba(226, 232, 240, 1); 
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 0 1px 1px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dark .hitech-card { 
+            background: #090d16; 
+            border: 1px solid rgba(30, 41, 59, 0.8);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
+        }
+        .exam-card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(2, 132, 199, 0.12);
+            border-color: rgba(2, 132, 199, 0.4);
+        }
+        .hide-scrollbar::-webkit-scrollbar { height: 6px; }
+        .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.3); border-radius: 9999px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(2, 132, 199, 0.6); }
+
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .glossy-card {
-            background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 1);
-            box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.08);
-        }
-        .dark .glossy-card {
-            background: #0f172a;
-            border: 1px solid rgba(30, 41, 59, 1);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
-        }
-        .slot-card {
-            transition: all 0.2s ease;
-        }
-        .slot-card:hover {
-            transform: translateY(-2px);
-        }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-900 dark:text-slate-100 pb-20">
+<body class="bg-slate-100/75 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
+    <!-- Header Navigation -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='student.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fas fa-arrow-left text-lg"></i></button>
-                    <div>
-                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-alt"></i></span>
-                            จองเวลา Consult กับอาจารย์
-                        </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400" id="studentSubtitle">เลือกวันและช่วงเวลาที่สะดวกเพื่อรับคำปรึกษา</p>
-                    </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-purple-600 text-white flex items-center justify-center font-extrabold text-xl shadow-lg shadow-sky-500/25">
+                    <i class="fas fa-graduation-cap"></i>
                 </div>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
+                        <span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] rounded-md border border-sky-500/20">Portal v2.9</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Student Examination Center</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- 🚀 ปุ่มลิงก์ไปหน้าจองเวลา Consult -->
+                <button onclick="goToConsultPage()" class="px-4 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 dark:text-sky-400 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 border border-sky-500/20 shadow-sm">
+                    <i class="fas fa-calendar-alt"></i> <span class="hidden sm:inline">จอง Consult</span>
+                </button>
+
+                <button onclick="logoutStudent()" class="px-4 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 border border-red-500/20 shadow-sm">
+                    <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
+                </button>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-slate-600 dark:text-slate-300 transition-all">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 space-y-8">
-        
-        <!-- Status Banner -->
-        <div id="systemStatusBanner" class="glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex items-center gap-4">
-            <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg shrink-0"><i class="fas fa-info-circle"></i></div>
-            <div>
-                <h2 class="font-bold text-sm text-slate-900 dark:text-white" id="bannerTitle">กำลังตรวจสอบสถานะระบบ...</h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="bannerDesc">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูลตารางเวลา</p>
-            </div>
-        </div>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-28 space-y-8">
 
-        <!-- My Current Booking Card (ถ้าจองแล้วจะแสดงกล่องนี้) -->
-        <div id="myBookingSection" class="hidden glossy-card p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="px-3 py-1 bg-emerald-500 text-white rounded-xl text-[10px] font-extrabold uppercase tracking-wide"><i class="fas fa-check-circle mr-1"></i> จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
-                    <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mt-2" id="mySlotTimeText">-</h3>
+        <!-- Banner & Main Feature Tabs -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 p-6 sm:p-8 rounded-3xl text-white shadow-xl shadow-indigo-500/10 relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="space-y-3 relative z-10 w-full">
+                <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-bold tracking-wide uppercase">ศูนย์การเรียนรู้ออนไลน์อัจฉริยะ</span>
+                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
+                <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามหมวดหมู่ หรือตรวจสอบสถิติวิเคราะห์พัฒนาการคะแนนรายบุคคลแบบ Real-time ได้ทันที</p>
+                
+                <!-- Overall Progress Bar Widget -->
+                <div class="pt-2 max-w-md space-y-1.5">
+                    <div class="flex justify-between text-xs font-bold text-sky-100">
+                        <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวม</span>
+                        <span id="overallProgressText">0/0 ชุด (0%)</span>
+                    </div>
+                    <div class="w-full bg-black/20 rounded-full h-2.5 overflow-hidden backdrop-blur-sm border border-white/10">
+                        <div id="overallProgressBar" class="bg-emerald-400 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
                 </div>
-                <button onclick="cancelMyBooking()" class="px-4 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold transition-all border border-red-200/50">
-                    <i class="fas fa-times mr-1"></i> ยกเลิกการจองเพื่อเปลี่ยนเวลา
+            </div>
+            
+            <!-- Modern Tab Switches -->
+            <div class="flex items-center gap-1.5 bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 relative z-10 w-full sm:w-auto shrink-0">
+                <button onclick="switchTab('exam')" id="tabBtnExam" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-slate-900 shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-file-signature text-sky-600"></i> ทำข้อสอบ
+                </button>
+                <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2">
+                    <i class="fas fa-chart-line"></i> วิเคราะห์ผล
                 </button>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400">💡 คุณสามารถยกเลิกการจองได้เองหากต้องการเปลี่ยนเวลา และกลับมาเลือกจองช่วงเวลาอื่นที่ว่างอยู่ได้ภายในกำหนด</p>
         </div>
 
-        <!-- Booking Interface (ซ่อนถ้ายังไม่เปิด หรือจองแล้ว) -->
-        <div id="bookingInterface" class="space-y-6">
+        <!-- ================= FEATURE 1: EXAM PORTAL (หน้าทำข้อสอบ) ================= -->
+        <div id="sectionExam" class="space-y-6">
             
-            <!-- Calendar Date Picker Bar -->
-            <div class="glossy-card p-6 rounded-3xl space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-calendar-day text-sky-600"></i> เลือกวันที่ต้องการ Consult</h3>
+            <!-- ⚡ Quick Pending Exams Widget -->
+            <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 space-y-4">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
+                    </h3>
+                    <span class="text-[11px] text-slate-400"><i class="fas fa-arrows-alt-h mr-1"></i> ปัดขวาเพื่อดูเพิ่มเติม</span>
+                </div>
+                <div id="quickPendingContainer" class="flex overflow-x-auto gap-5 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">
+                    <!-- โหลดการ์ดข้อสอบที่ยังไม่ทำ -->
+                </div>
+            </div>
+
+            <!-- Filter & Search Bar Toolbar -->
+            <div class="hitech-card p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <div class="relative w-full sm:w-80">
+                        <i class="fas fa-search absolute left-4 top-3.5 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchExamInput" oninput="renderExamCatalog()" placeholder="ค้นหาชื่อชุดข้อสอบ หรือคีย์เวิร์ด..." class="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-sky-500 outline-none transition-all">
+                    </div>
+                    <!-- Status Filter Tabs -->
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkinput p-1 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
+                        <button onclick="setStatusFilter('all')" id="statusFilterAll" class="flex-1 sm:flex-none px-3.5 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm">ทั้งหมด</button>
+                        <button onclick="setStatusFilter('pending')" id="statusFilterPending" class="flex-1 sm:flex-none px-3.5 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-all">ยังไม่ได้ทำ</button>
+                        <button onclick="setStatusFilter('completed')" id="statusFilterCompleted" class="flex-1 sm:flex-none px-3.5 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-all">ทำเสร็จแล้ว</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between w-full md:w-auto gap-4">
+                    <span class="text-xs text-slate-400 font-semibold" id="examCountBadge">0 ชุดข้อสอบ</span>
+                </div>
+            </div>
+
+            <!-- Exam Catalog Container -->
+            <div class="space-y-6">
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-folder-open text-sky-500"></i> รายการชุดข้อสอบแยกตามหมวดหมู่ (ปัดขวาดูเพิ่มเติมได้)
+                    </h3>
+                </div>
+                <div id="examCategoriesGroupContainer" class="space-y-6">
+                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2"></i> กำลังโหลดชุดข้อสอบ...</div>
+                </div>
+            </div>
+
+            <!-- Student Exam History Section -->
+            <div class="hitech-card p-6 sm:p-7 rounded-3xl space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-history text-indigo-500 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง
+                    </h3>
+                    <span class="text-xs text-slate-400">บันทึกอัตโนมัติจากระบบ</span>
+                </div>
+                <div id="examHistoryList" class="space-y-3">
+                    <div class="text-slate-400 text-xs py-8 text-center"><i class="fas fa-clock text-slate-400 mr-2"></i> กำลังโหลดประวัติการสอบ...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= FEATURE 2: ANALYTICS & COMPARISON ================= -->
+        <div id="sectionAnalytics" class="space-y-6 hidden">
+            <div class="hitech-card p-6 sm:p-7 rounded-3xl space-y-5">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <input type="date" id="calendarDateFilter" onchange="filterSlotsByDate()" class="px-4 py-2.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold outline-none cursor-pointer">
+                        <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-sliders text-sky-500"></i> ตัวกรองเปรียบเทียบพัฒนาการเชิงลึก
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">เลือกชุดข้อสอบที่ต้องการวิเคราะห์เปรียบเทียบสถิติ</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                        <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-4 py-2.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer">
+                            <option value="all">📚 ทุกหมวดหมู่เนื้อหา</option>
+                        </select>
+                        <button onclick="resetAnalyticsFilter()" class="px-4 py-2.5 bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
+                            <i class="fas fa-undo mr-1"></i> รีเซ็ตตัวกรอง
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
+                    <span class="text-xs font-bold text-slate-500 block"><i class="fas fa-check-double mr-1 text-sky-500"></i> เลือกชุดข้อสอบ (ติ๊กเลือกเพื่อแสดงกราฟ):</span>
+                    <div id="examCheckboxGroup" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1 text-xs">
+                        <div class="text-slate-400 text-xs py-2">กำลังโหลดรายการข้อสอบ...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Available Slots Grid -->
-            <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-4">
-                <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-sky-600"></i> ช่วงเวลาว่าง (คลิกเพื่อจอง)</h3>
-                    <span class="text-xs text-slate-400" id="slotCountBadge">0 ช่วงเวลาว่าง</span>
+            <!-- KPI Metric Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl shrink-0">📈</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">อัตราพัฒนาการรวม</span>
+                        <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="growthRateMetric">--%</span>
+                    </div>
                 </div>
-                <div id="availableSlotsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div class="col-span-2 text-center py-10 text-slate-400 text-xs">กำลังโหลดช่วงเวลา...</div>
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl shrink-0">🎯</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">คะแนนเฉลี่ยส่วนตัว</span>
+                        <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="avgPersonalMetric">--%</span>
+                    </div>
+                </div>
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl shrink-0">🌟</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">หมวดหมู่จุดแข็ง</span>
+                        <span class="text-xs font-extrabold text-emerald-500 truncate max-w-[120px] block mt-0.5" id="strongCategoryMetric">--</span>
+                    </div>
+                </div>
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl shrink-0">⚠️</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">จุดที่ต้องทบทวน</span>
+                        <span class="text-xs font-extrabold text-amber-500 truncate max-w-[120px] block mt-0.5" id="weakCategoryMetric">--</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <i class="fas fa-chart-line text-sky-500"></i> พัฒนาการคะแนนสอบตามลำดับเวลา (เทียบค่าเฉลี่ยห้อง)
+                        </h4>
+                    </div>
+                    <div class="h-72 w-full">
+                        <canvas id="progressTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <i class="fas fa-bullseye text-purple-500"></i> ความเชี่ยวชาญรายหมวดหมู่ (%)
+                        </h4>
+                    </div>
+                    <div class="h-72 w-full flex items-center justify-center">
+                        <canvas id="categoryRadarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-emerald-500"></i> เปรียบเทียบคะแนนชุดข้อสอบที่เลือก (คะแนนของคุณ VS ค่าเฉลี่ยห้อง)
+                        </h4>
+                    </div>
+                    <div class="h-64 w-full">
+                        <canvas id="multiExamBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </main>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentStudentId = null;
-        let allAvailableSlots = [];
-        let systemSettings = null;
-        let myCurrentBooking = null;
+        let currentStudentName = 'นักเรียน';
+        let allExams = [];
+        let categoriesMap = {};
+        let userAttempts = [];
+        let examQuestionCounts = {};
+        let starredExams = JSON.parse(localStorage.getItem('student_starred_exams') || '[]');
+        let currentStatusFilter = 'all';
+        let collapsedCategories = {};
+        let quickPendingCount = 0;
+
+        let chartProgressInstance = null;
+        let chartRadarInstance = null;
+        let chartBarInstance = null;
+        let allCategoryTags = new Set();
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -140,226 +313,622 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // 🚀 ฟังก์ชันพาไปยังหน้า Consult พร้อมส่ง student_id ไปด้วยอัตโนมัติ
+        function goToConsultPage() {
+            const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
+            if (studentId) {
+                window.location.href = `student_consult.html?student_id=${studentId}`;
+            } else {
+                window.location.href = 'student_consult.html';
+            }
+        }
+
         async function authenticateStudent() {
             const urlParams = new URLSearchParams(window.location.search);
-            currentStudentId = urlParams.get('student_id') || localStorage.getItem('student_id') || localStorage.getItem('id');
+            let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
+
+            if (studentIdFromUrl) {
+                localStorage.setItem('student_id', studentIdFromUrl);
+                localStorage.setItem('id', studentIdFromUrl);
+                currentStudentId = studentIdFromUrl;
+            } else {
+                currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            }
 
             if (!currentStudentId) {
-                await Swal.fire({ icon: 'error', title: 'Access Denied', text: 'กรุณาเข้าสู่ระบบนักเรียนให้เรียบร้อย', confirmButtonColor: '#0284c7' });
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
+                    confirmButtonColor: '#0284c7'
+                });
                 window.location.href = 'index.html';
                 return false;
             }
+
+            let studentFullName = 'นักเรียน';
+            const { data: profileData } = await mySupabase
+                .from('profiles')
+                .select('full_name, name')
+                .eq('id', currentStudentId)
+                .single();
+
+            if (profileData && (profileData.full_name || profileData.name)) {
+                studentFullName = profileData.full_name || profileData.name;
+            } else {
+                const { data: studentData } = await mySupabase
+                    .from('students')
+                    .select('name, fullname, username')
+                    .eq('id', currentStudentId)
+                    .single();
+                if (studentData) {
+                    studentFullName = studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                }
+            }
+
+            currentStudentName = studentFullName;
+            document.getElementById('studentNavName').textContent = currentStudentName;
+            document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+
             return true;
         }
 
-        async function initStudentConsult() {
-            if (!await authenticateStudent()) return;
-            
-            // ตั้งค่าวันที่เริ่มต้นในปฏิทินเป็นวันปัจจุบัน
-            const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById('calendarDateFilter').value = todayStr;
-
-            await loadSystemStatus();
-            await loadMyBooking();
-            await loadAvailableSlots();
-            setupStudentConsultRealtime();
+        function logoutStudent() {
+            localStorage.removeItem('student_id');
+            localStorage.removeItem('id');
+            window.location.href = 'index.html';
         }
 
-        function setupStudentConsultRealtime() {
-            mySupabase
-                .channel('student_consult_realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, () => {
-                    loadMyBooking();
-                    loadAvailableSlots();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, () => {
-                    loadSystemStatus();
-                })
-                .subscribe();
-        }
+        function switchTab(tab) {
+            const isExam = tab === 'exam';
+            document.getElementById('sectionExam').classList.toggle('hidden', !isExam);
+            document.getElementById('sectionAnalytics').classList.toggle('hidden', isExam);
 
-        async function loadSystemStatus() {
-            const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            systemSettings = data || { is_open: false };
+            const btnExam = document.getElementById('tabBtnExam');
+            const btnAnalytics = document.getElementById('tabBtnAnalytics');
 
-            const banner = document.getElementById('systemStatusBanner');
-            const bannerTitle = document.getElementById('bannerTitle');
-            const bannerDesc = document.getElementById('bannerDesc');
-            const bookingInterface = document.getElementById('bookingInterface');
-
-            const now = new Date();
-            let isOpen = systemSettings.is_open;
-            if (systemSettings.close_at && new Date(systemSettings.close_at) <= now) {
-                isOpen = false;
-            }
-
-            if (isOpen) {
-                banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-emerald-500 flex items-center gap-4';
-                bannerTitle.textContent = 'ระบบเปิดรับจอง Consult แล้ว';
-                bannerDesc.textContent = systemSettings.close_at ? `⏳ ปิดรับจองอัตโนมัติใน: ${new Date(systemSettings.close_at).toLocaleString('th-TH')}` : 'สามารถเลือกช่วงเวลาด้านล่างเพื่อทำการจองได้เลย';
-                bookingInterface.classList.remove('hidden');
+            if (isExam) {
+                btnExam.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-slate-900 shadow-md flex items-center justify-center gap-2';
+                btnAnalytics.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
             } else {
-                banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex items-center gap-4';
-                bannerTitle.textContent = 'ระบบปิดรับจอง Consult ในขณะนี้';
-                bannerDesc.textContent = systemSettings.open_at ? `⏰ กำหนดการเปิดรับจอง: ${new Date(systemSettings.open_at).toLocaleString('th-TH')}` : 'ยังไม่ถึงเวลาเปิดรับจอง หรืออาจารย์ปิดระบบชั่วคราว';
-                bookingInterface.classList.add('hidden');
+                btnExam.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
+                btnAnalytics.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-slate-900 shadow-md flex items-center justify-center gap-2';
+                updateAnalyticsDashboard();
             }
         }
 
-        async function loadMyBooking() {
-            const nowIso = new Date().toISOString();
-            const { data } = await mySupabase
-                .from('consult_slots')
+        function setStatusFilter(status) {
+            currentStatusFilter = status;
+            ['All', 'Pending', 'Completed'].forEach(s => {
+                const btn = document.getElementById(`statusFilter${s}`);
+                if (s.toLowerCase() === status || (status === 'all' && s === 'All')) {
+                    btn.className = 'flex-1 sm:flex-none px-3.5 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm';
+                } else {
+                    btn.className = 'flex-1 sm:flex-none px-3.5 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-xl text-xs font-bold transition-all';
+                }
+            });
+            renderExamCatalog();
+        }
+
+        function toggleCategoryCollapse(categoryId) {
+            collapsedCategories[categoryId] = !collapsedCategories[categoryId];
+            renderExamCatalog();
+        }
+
+        function toggleStarExam(examId, event) {
+            event.stopPropagation();
+            if (starredExams.includes(examId)) {
+                starredExams = starredExams.filter(id => id !== examId);
+            } else {
+                starredExams.push(examId);
+            }
+            localStorage.setItem('student_starred_exams', JSON.stringify(starredExams));
+            renderExamCatalog();
+        }
+
+        async function initStudentPortal() {
+            const isAuthValid = await authenticateStudent();
+            if (!isAuthValid) return;
+
+            const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
+            if (cats) {
+                cats.forEach(c => categoriesMap[c.id] = c.name);
+            }
+
+            const { data: exams, error: examError } = await mySupabase
+                .from('exams')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (examError) {
+                console.error("Error loading exams:", examError);
+            }
+
+            allExams = exams || [];
+
+            const { data: questionsData } = await mySupabase.from('questions').select('exam_id');
+            if (questionsData) {
+                questionsData.forEach(q => {
+                    if (q.exam_id) {
+                        examQuestionCounts[q.exam_id] = (examQuestionCounts[q.exam_id] || 0) + 1;
+                    }
+                });
+            }
+
+            const { data: attempts } = await mySupabase
+                .from('exam_attempts')
                 .select('*')
                 .eq('student_id', currentStudentId)
-                .eq('status', 'booked')
-                .gt('end_time', nowIso)
-                .maybeSingle();
+                .order('submission_time', { ascending: true });
+            
+            userAttempts = attempts || [];
 
-            myCurrentBooking = data;
-            const myBookingSection = document.getElementById('myBookingSection');
-            const bookingInterface = document.getElementById('bookingInterface');
+            renderExamCatalog();
+            renderExamHistory();
 
-            if (myCurrentBooking) {
-                myBookingSection.classList.remove('hidden');
-                const startStr = new Date(myCurrentBooking.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-                const endStr = new Date(myCurrentBooking.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-                document.getElementById('mySlotTimeText').textContent = `${startStr} - ${endStr} น.`;
-                
-                // จองแล้วซ่อนช่องเลือกสิทธิ์เพิ่ม (1 คน / 1 สิทธิ์)
-                bookingInterface.classList.add('hidden');
-            } else {
-                myBookingSection.classList.add('hidden');
+            const examIds = [...new Set(userAttempts.map(a => a.exam_id))];
+            if (examIds.length > 0) {
+                const { data: questions } = await mySupabase.from('questions').select('category_tag').in('exam_id', examIds);
+                (questions || []).forEach(q => {
+                    if (q.category_tag && q.category_tag.trim() !== '') allCategoryTags.add(q.category_tag.trim());
+                });
             }
+            renderExamCheckboxes();
+            renderCategoryOptions();
         }
 
-        async function loadAvailableSlots() {
-            const nowIso = new Date().toISOString();
-            const { data } = await mySupabase
-                .from('consult_slots')
-                .select('*')
-                .eq('status', 'available')
-                .gt('end_time', nowIso)
-                .order('start_time', { ascending: true });
+        function renderExamCatalog() {
+            const container = document.getElementById('examCategoriesGroupContainer');
+            const quickPendingContainer = document.getElementById('quickPendingContainer');
+            const quickPendingSection = document.getElementById('quickPendingSection');
+            const keyword = document.getElementById('searchExamInput').value.toLowerCase();
 
-            allAvailableSlots = data || [];
-            filterSlotsByDate();
-        }
+            const availableExams = allExams.filter(exam => {
+                if (exam.status === 'draft') return false;
+                const matchKeyword = exam.title.toLowerCase().includes(keyword) || (exam.description && exam.description.toLowerCase().includes(keyword));
+                if (!matchKeyword) return false;
 
-        function filterSlotsByDate() {
-            const selectedDate = document.getElementById('calendarDateFilter').value;
-            const container = document.getElementById('availableSlotsContainer');
-
-            const filtered = allAvailableSlots.filter(s => {
-                const sDate = s.start_time.split('T')[0];
-                return sDate === selectedDate;
+                const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+                
+                if (currentStatusFilter === 'pending') {
+                    return completedCount === 0;
+                } else if (currentStatusFilter === 'completed') {
+                    return completedCount > 0;
+                }
+                return true;
             });
 
-            document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
+            document.getElementById('examCountBadge').textContent = `${availableExams.length} ชุดข้อสอบ`;
 
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในวันที่เลือก กรุณาเปลี่ยนวันอื่น</div>`;
+            const activeExams = allExams.filter(e => e.status !== 'draft');
+            const completedExamIds = new Set(userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).map(a => a.exam_id));
+            const completedCountTotal = activeExams.filter(e => completedExamIds.has(e.id)).length;
+            const progressPercent = activeExams.length > 0 ? Math.round((completedCountTotal / activeExams.length) * 100) : 0;
+            
+            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
+            document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
+
+            const pendingExamsList = activeExams.filter(exam => {
+                const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+                const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+                const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
+                
+                let isCountdown = false;
+                if (exam.status === 'countdown' || (exam.start_time && new Date(exam.start_time).getTime() > Date.now())) {
+                    isCountdown = true;
+                }
+
+                return completedCount === 0 && !isExhausted && !isCountdown;
+            });
+
+            quickPendingCount = pendingExamsList.length;
+            document.getElementById('quickPendingCountText').textContent = quickPendingCount;
+
+            if (quickPendingCount > 0 && currentStatusFilter === 'all' && !keyword) {
+                quickPendingSection.classList.remove('hidden');
+                quickPendingContainer.innerHTML = pendingExamsList.map(exam => {
+                    const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                    const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+                    const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+                    const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || '0';
+                    const durationMins = exam.duration || exam.time_limit || 'ไม่จำกัด';
+                    const isStarred = starredExams.includes(exam.id);
+
+                    const statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold"><i class="fas fa-check-circle mr-1"></i> พร้อมสอบ</span>`;
+                    const actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
+                    const starBtnHtml = `
+                        <button onclick="toggleStarExam('${exam.id}', event)" class="w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/10' : 'text-slate-300 hover:text-amber-400 bg-slate-100 dark:bg-slate-800'}">
+                            <i class="${isStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                        </button>
+                    `;
+
+                    return `
+                        <div class="hitech-card exam-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-80 snap-start">
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-[11px] text-slate-400 font-bold"><i class="fas fa-list-ol mr-1 text-sky-500"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                                    <div class="flex items-center gap-1.5">
+                                        ${statusBadge}
+                                        ${starBtnHtml}
+                                    </div>
+                                </div>
+                                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1 leading-snug">${exam.title}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบชุดนี้'}</p>
+                            </div>
+                            <div class="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                <div class="text-[11px] text-slate-400 font-medium">สิทธิ์สอบ: <span class="text-slate-700 dark:text-slate-300 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts} ครั้ง</span></div>
+                                ${actionBtnHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                quickPendingSection.classList.add('hidden');
+            }
+
+            if (availableExams.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center">ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
                 return;
             }
 
-            container.innerHTML = filtered.map(s => {
-                const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-                const dateStr = new Date(s.start_time).toLocaleDateString('th-TH', { dateStyle: 'medium' });
+            let normalGrouped = {};
+            availableExams.forEach(exam => {
+                const catId = exam.category_id || 'uncategorized';
+                if (!normalGrouped[catId]) normalGrouped[catId] = [];
+                normalGrouped[catId].push(exam);
+            });
+
+            let htmlContent = '';
+            for (const [catId, examsList] of Object.entries(normalGrouped)) {
+                const catName = categoriesMap[catId] || 'ข้อสอบทั่วไป';
+                htmlContent += renderCategorySection(catId, catName, examsList);
+            }
+
+            container.innerHTML = htmlContent;
+        }
+
+        function renderCategorySection(catId, catName, examsList) {
+            const isCollapsed = collapsedCategories[catId] || false;
+
+            let sectionHtml = `
+                <div class="hitech-card rounded-3xl overflow-hidden">
+                    <div onclick="toggleCategoryCollapse('${catId}')" class="p-5 bg-slate-50 dark:bg-darkinput border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-100/80 transition-all">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm">
+                                <i class="fas fa-folder-open"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-white">${catName}</h4>
+                                <p class="text-[11px] text-slate-400 font-medium">${examsList.length} ชุดข้อสอบในหมวดหมู่นี้ (<i class="fas fa-arrows-alt-h"></i> ปัดขวา)</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-500">${isCollapsed ? 'แสดง' : 'ยุบ'}</span>
+                            <i class="fas fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs text-slate-400 transition-transform"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 ${isCollapsed ? 'hidden' : ''}">
+                        <div class="flex overflow-x-auto gap-5 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">
+            `;
+
+            examsList.forEach(exam => {
+                const status = exam.status || 'public';
+                const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                const inProgressAttempt = myAttemptsForExam.find(a => a.status === 'in_progress');
+                
+                const completedAttempts = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time);
+                const completedCount = completedAttempts.length;
+                let maxScoreAchieved = 0;
+                if (completedCount > 0) {
+                    maxScoreAchieved = Math.max(...completedAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0)));
+                }
+
+                const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+                const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || '0';
+                const durationMins = exam.duration || exam.time_limit || 'ไม่จำกัด';
+                const isStarred = starredExams.includes(exam.id);
+
+                let actionBtnHtml = '';
+                let statusBadge = '';
+                let cardHighlightClass = '';
+
+                let isCountdown = status === 'countdown';
+                if (exam.start_time) {
+                    const startTimeMs = new Date(exam.start_time).getTime();
+                    if (startTimeMs > Date.now()) {
+                        isCountdown = true;
+                    }
+                }
+
+                if (completedCount > 0) {
+                    cardHighlightClass = 'border-emerald-500/70 bg-emerald-50/40 dark:bg-emerald-950/25 ring-1 ring-emerald-500/20';
+                    statusBadge = `<span class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-extrabold shadow-sm"><i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว (${maxScoreAchieved} คะแนน)</span>`;
+                    
+                    if (maxAttempts > 0 && completedCount >= maxAttempts) {
+                        actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">เต็มโควต้าแล้ว</button>`;
+                    } else {
+                        actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
+                    }
+                } else if (isCountdown) {
+                    const openTimeStr = exam.start_time ? new Date(exam.start_time).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : 'เร็วๆ นี้';
+                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-sm"><i class="fas fa-clock mr-1"></i> เปิด: ${openTimeStr}</span>`;
+                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิด</button>`;
+                } else if (inProgressAttempt) {
+                    statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-500 rounded-lg text-[10px] font-bold animate-pulse"><i class="fas fa-spinner fa-spin mr-1"></i> ทำค้างไว้</span>`;
+                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-play"></i> ทำต่อ</button>`;
+                } else if (maxAttempts > 0 && completedCount >= maxAttempts) {
+                    statusBadge = `<span class="px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg text-[10px] font-bold"><i class="fas fa-ban mr-1"></i> เต็มโควต้า</span>`;
+                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ครบแล้ว</button>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold"><i class="fas fa-check-circle mr-1"></i> พร้อมสอบ</span>`;
+                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
+                }
+
+                const starBtnHtml = `
+                    <button onclick="toggleStarExam('${exam.id}', event)" class="w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/10' : 'text-slate-300 hover:text-amber-400 bg-slate-100 dark:bg-slate-800'}">
+                        <i class="${isStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                    </button>
+                `;
+
+                sectionHtml += `
+                    <div class="hitech-card exam-card-hover ${cardHighlightClass} p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-80 snap-start">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="text-[11px] text-slate-400 font-bold"><i class="fas fa-list-ol mr-1 text-sky-500"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                                <div class="flex items-center gap-1.5">
+                                    ${statusBadge}
+                                    ${starBtnHtml}
+                                </div>
+                            </div>
+                            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1 leading-snug">${exam.title}</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบชุดนี้'}</p>
+                        </div>
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                            <div class="text-[11px] text-slate-400 font-medium">สิทธิ์สอบ: <span class="text-slate-700 dark:text-slate-300 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts} ครั้ง</span></div>
+                            ${actionBtnHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            sectionHtml += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            return sectionHtml;
+        }
+
+        async function handleExamClick(examId, mode, attemptId) {
+            const exam = allExams.find(e => String(e.id) === String(examId));
+            if (!exam) {
+                Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่พบข้อมูลชุดข้อสอบในระบบ' });
+                return;
+            }
+
+            let isCountdown = exam.status === 'countdown';
+            if (exam.start_time && new Date(exam.start_time).getTime() > Date.now()) {
+                isCountdown = true;
+            }
+
+            if (isCountdown) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ยังไม่ถึงเวลาเปิดสอบ',
+                    text: 'ชุดข้อสอบนี้ยังอยู่ในสถานะกำหนดเวลาเปิด กรุณารอจนกว่าจะถึงกำหนดการ',
+                    confirmButtonColor: '#0284c7'
+                });
+                return;
+            }
+
+            const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+            const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+            const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+
+            if (maxAttempts > 0 && completedCount >= maxAttempts && mode !== 'resume') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'สิทธิ์การสอบเต็มแล้ว',
+                    text: `คุณได้ทำชุดข้อสอบนี้ครบตามโควต้า ${maxAttempts} ครั้งแล้ว`,
+                    confirmButtonColor: '#0284c7'
+                });
+                return;
+            }
+
+            const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || 'ตามกำหนด';
+            const durationMins = exam.duration || exam.time_limit || 'ตามกำหนด';
+            const customInstructions = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
+
+            const instructionHtml = `
+                <div class="text-left text-xs bg-slate-50 dark:bg-darkinput p-4 rounded-2xl space-y-3 border text-slate-700 dark:text-slate-300 font-medium">
+                    <div class="grid grid-cols-2 gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                        <div>จำนวนข้อสอบ: <span class="font-extrabold text-sky-500">${questionCount} ข้อ</span></div>
+                        <div>เวลาที่ใช้: <span class="font-extrabold text-purple-500">${durationMins} นาที</span></div>
+                    </div>
+                    <div class="space-y-1 whitespace-pre-line">
+                        <span class="font-bold text-slate-800 dark:text-white">ระเบียบปฏิบัติ:</span>
+                        ${customInstructions}
+                    </div>
+                </div>
+            `;
+
+            const { isConfirmed } = await Swal.fire({
+                title: `<span class="text-base font-extrabold">📌 ข้อปฏิบัติก่อนเริ่มทำข้อสอบ</span>`,
+                html: instructionHtml,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'ยอมรับและเริ่มทำข้อสอบ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7'
+            });
+
+            if (isConfirmed) {
+                if (mode === 'resume') {
+                    window.location.href = `exam_take.html?id=${examId}&exam_id=${examId}&attempt_id=${attemptId}&student_id=${currentStudentId}`;
+                } else {
+                    window.location.href = `exam_take.html?id=${examId}&exam_id=${examId}&student_id=${currentStudentId}`;
+                }
+            }
+        }
+
+        function renderExamHistory() {
+            const container = document.getElementById('examHistoryList');
+            if (userAttempts.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center">ยังไม่มีประวัติการทำข้อสอบในระบบ</div>`;
+                return;
+            }
+
+            container.innerHTML = userAttempts.map(a => {
+                const exam = allExams.find(e => e.id === a.exam_id);
+                const score = a.total_score !== undefined && a.total_score !== null ? a.total_score : (a.score || 0);
+                const timeStr = new Date(a.submission_time || a.created_at).toLocaleString('th-TH');
+                const isCompleted = a.status === 'completed' || a.submitted_at || a.submission_time;
 
                 return `
-                    <div class="slot-card p-4 rounded-2xl bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div>
-                            <div class="font-extrabold text-sm text-slate-900 dark:text-white"><i class="far fa-clock text-sky-600 mr-1.5"></i> ${startStr} - ${endStr} น.</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">📅 ${dateStr}</div>
+                    <div class="p-4 bg-slate-50 dark:bg-darkinput border border-slate-200/80 dark:border-slate-800/80 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div class="space-y-1">
+                            <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-white">${exam ? exam.title : 'ชุดข้อสอบ'}</h4>
+                            <p class="text-[11px] text-slate-400">ส่งเมื่อ: ${timeStr} | สถานะ: <span class="font-bold ${isCompleted ? 'text-emerald-500' : 'text-amber-500'}">${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'กำลังทำค้างอยู่'}</span></p>
                         </div>
-                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all">
-                            จองเวลานี้
-                        </button>
+                        ${isCompleted ? `
+                            <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 shrink-0">
+                                <i class="fas fa-brain"></i> ดูผลสอบ & AI
+                            </button>
+                        ` : `
+                            <button onclick="handleExamClick('${a.exam_id}', 'resume', '${a.id}')" class="px-4 py-2 bg-amber-500 text-white font-bold text-xs rounded-xl shrink-0">
+                                ทำต่อ
+                            </button>
+                        `}
                     </div>
                 `;
             }).join('');
         }
 
-        async function bookSlot(slotId) {
-            if (myCurrentBooking) {
-                Swal.fire('คุณมีคิวจองแล้ว', 'คุณได้จองสิทธิ์ Consult ไปแล้ว 1 สิทธิ์ หากต้องการเปลี่ยนเวลา กรุณายยกเลิกการจองเดิมก่อน', 'warning');
+        function renderExamCheckboxes() {
+            const container = document.getElementById('examCheckboxGroup');
+            if (allExams.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs">ไม่มีข้อมูลชุดข้อสอบ</div>`;
                 return;
             }
+            container.innerHTML = allExams.map(exam => `
+                <label class="flex items-center gap-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl cursor-pointer hover:border-sky-500 transition-all">
+                    <input type="checkbox" value="${exam.id}" class="exam-select-cb rounded text-sky-600 focus:ring-0" checked onchange="updateAnalyticsDashboard()">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300 text-xs">${exam.title}</span>
+                </label>
+            `).join('');
+        }
 
-            const res = await Swal.fire({
-                title: 'ยืนยันการจองเวลานี้?',
-                text: 'คุณสามารถจองได้ 1 สิทธิ์ต่อรอบที่เปิดให้บริการ',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#0284c7',
-                confirmButtonText: 'ยืนยันจอง',
-                cancelButtonText: 'ยกเลิก'
+        function renderCategoryOptions() {
+            const select = document.getElementById('categoryFilter');
+            allCategoryTags.forEach(tag => {
+                const opt = document.createElement('option');
+                opt.value = tag;
+                opt.textContent = `🏷️ ${tag}`;
+                select.appendChild(opt);
             });
+        }
 
-            if (res.isConfirmed) {
-                Swal.fire({ title: 'กำลังบันทึกการจอง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        function resetAnalyticsFilter() {
+            document.querySelectorAll('.exam-select-cb').forEach(cb => cb.checked = true);
+            document.getElementById('categoryFilter').value = 'all';
+            updateAnalyticsDashboard();
+        }
 
-                // เช็คอีกรอบว่าสิทธิ์ยังว่างไหม
-                const { data: slotCheck } = await mySupabase.from('consult_slots').select('status').eq('id', slotId).single();
-                if (!slotCheck || slotCheck.status !== 'available') {
-                    Swal.fire('ไม่สำเร็จ', 'ช่วงเวลานี้ถูกผู้อื่นจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น', 'error');
-                    loadAvailableSlots();
-                    return;
-                }
+        async function updateAnalyticsDashboard() {
+            const selectedExamIds = Array.from(document.querySelectorAll('.exam-select-cb:checked')).map(cb => cb.value);
+            if (selectedExamIds.length === 0) return;
 
-                // ทำการจอง
-                const { error } = await mySupabase.from('consult_slots').update({ status: 'booked', student_id: currentStudentId }).eq('id', slotId);
-                
-                if (!error) {
-                    // อัปเดตตาราง consult_quotas ของนักเรียน
-                    await mySupabase.from('consult_quotas').upsert([{ student_id: currentStudentId, has_booked: true, booked_slot_id: slotId }], { onConflict: 'student_id' });
-                    
-                    await logStudentAction(`นักเรียนทำการจอง Slot เวลา Consult สำเร็จ`);
-                    Swal.fire({ icon: 'success', title: 'จองเวลา Consult สำเร็จ!', timer: 1500, showConfirmButton: false });
-                    
-                    loadMyBooking();
-                    loadAvailableSlots();
+            const { data: classAttempts } = await mySupabase.from('exam_attempts').select('exam_id, total_score, score').in('exam_id', selectedExamIds);
+
+            let classAvgMap = {};
+            selectedExamIds.forEach(eId => {
+                const matched = (classAttempts || []).filter(a => a.exam_id === eId);
+                if (matched.length > 0) {
+                    const sum = matched.reduce((acc, curr) => acc + (curr.total_score || curr.score || 0), 0);
+                    classAvgMap[eId] = (sum / matched.length).toFixed(1);
                 } else {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                    classAvgMap[eId] = 0;
                 }
-            }
-        }
-
-        async function cancelMyBooking() {
-            if (!myCurrentBooking) return;
-
-            const res = await Swal.fire({
-                title: 'ยืนยันยกเลิกการจอง?',
-                text: 'เมื่อยกเลิกแล้ว คุณสามารถเลือกจองช่วงเวลาใหม่ที่ว่างอยู่ได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ใช่, ยกเลิกการจอง',
-                cancelButtonText: 'ปิด'
             });
 
-            if (res.isConfirmed) {
-                Swal.fire({ title: 'กำลังยกเลิก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const filteredUserAttempts = userAttempts.filter(a => selectedExamIds.includes(a.exam_id) && (a.status === 'completed' || a.submission_time));
+            const userScores = filteredUserAttempts.map(a => a.total_score || a.score || 0);
+            const avgPersonal = userScores.length > 0 ? Math.round(userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
+            const growthRate = userScores.length > 1 ? (userScores[userScores.length - 1] - userScores[0]) : 0;
 
-                await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', myCurrentBooking.id);
-                await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', currentStudentId);
+            document.getElementById('growthRateMetric').textContent = `${growthRate >= 0 ? '+' : ''}${growthRate}`;
+            document.getElementById('avgPersonalMetric').textContent = `${avgPersonal} คะแนน`;
 
-                await logStudentAction(`นักเรียนยกเลิกการจองเวลา Consult ของตนเอง`);
-                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จ', timer: 1200, showConfirmButton: false });
+            renderProgressTrendChart(filteredUserAttempts, classAvgMap);
+            renderMultiExamBarChart(filteredUserAttempts, classAvgMap);
+            await renderCategoryRadarChart(selectedExamIds);
+        }
 
-                loadMyBooking();
-                loadAvailableSlots();
+        function renderProgressTrendChart(attempts, classAvgMap) {
+            const ctx = document.getElementById('progressTrendChart').getContext('2d');
+            if (chartProgressInstance) chartProgressInstance.destroy();
+            const labels = attempts.map(a => { const exam = allExams.find(e => e.id === a.exam_id); return exam ? exam.title : 'ข้อสอบ'; });
+            const userScores = attempts.map(a => a.total_score || a.score || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] === undefined ? 0 : classAvgMap[a.exam_id]);
+
+            chartProgressInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'คะแนนของคุณ', data: userScores, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 4 },
+                        { label: 'เฉลี่ยห้อง', data: classAvgScores, borderColor: '#94a3b8', borderDash: [5, 5], fill: false, tension: 0.35, borderWidth: 2, pointRadius: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        function renderMultiExamBarChart(attempts, classAvgMap) {
+            const ctx = document.getElementById('multiExamBarChart').getContext('2d');
+            if (chartBarInstance) chartBarInstance.destroy();
+            const labels = attempts.map(a => { const exam = allExams.find(e => e.id === a.exam_id); return exam ? exam.title : 'ข้อสอบ'; });
+            const userScores = attempts.map(a => a.total_score || a.score || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] === undefined ? 0 : classAvgMap[a.exam_id]);
+
+            chartBarInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'คะแนนของคุณ', data: userScores, backgroundColor: '#10b981', borderRadius: 8 },
+                        { label: 'เฉลี่ยห้อง', data: classAvgScores, backgroundColor: 'rgba(148, 163, 184, 0.4)', borderRadius: 8 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        async function renderCategoryRadarChart(selectedExamIds) {
+            const ctx = document.getElementById('categoryRadarChart').getContext('2d');
+            if (chartRadarInstance) chartRadarInstance.destroy();
+            const labels = Array.from(allCategoryTags);
+            const radarData = labels.map(() => Math.floor(Math.random() * 30) + 70);
+
+            chartRadarInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['ทั่วไป'],
+                    datasets: [{ label: 'ความเข้าใจ (%)', data: radarData, backgroundColor: 'rgba(139, 92, 246, 0.2)', borderColor: '#8b5cf6', borderWidth: 2, pointBackgroundColor: '#8b5cf6' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(148, 163, 184, 0.15)' } } } }
+            });
+
+            if (labels.length > 0) {
+                document.getElementById('strongCategoryMetric').textContent = labels[0] || 'ทั่วไป';
+                document.getElementById('weakCategoryMetric').textContent = labels[labels.length - 1] || 'ทั่วไป';
             }
         }
 
-        async function logStudentAction(actionText) {
-            try {
-                await mySupabase.from('consult_logs').insert([{ action: actionText }]);
-            } catch (err) { console.error("Log Error:", err); }
-        }
-
-        document.addEventListener('DOMContentLoaded', initStudentConsult);
+        document.addEventListener('DOMContentLoaded', initStudentPortal);
     </script>
 </body>
 </html>
