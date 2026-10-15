@@ -164,9 +164,7 @@
                         <thead>
                             <tr class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                                 <th class="p-3">ลำดับ</th>
-                                <th class="p-3">ชื่อ-นามสกุล / เลขประจำตัว</th>
-                                <th class="p-3 text-center">คะแนนปรนัย</th>
-                                <th class="p-3 text-center">คะแนนอัตนัย</th>
+                                <th class="p-3">ชื่อ-นามสกุล / ID</th>
                                 <th class="p-3 text-center">คะแนนรวม</th>
                                 <th class="p-3 text-center">สถานะ</th>
                                 <th class="p-3 text-center">วันที่ส่ง</th>
@@ -174,7 +172,7 @@
                             </tr>
                         </thead>
                         <tbody id="studentScoreTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="8" class="text-center py-6 text-slate-400">ยังไม่มีข้อมูลผลสอบ</td></tr>
+                            <tr><td colspan="6" class="text-center py-6 text-slate-400">ยังไม่มีข้อมูลผลสอบ</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -195,7 +193,7 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentExamId = null;
-        let fetchedSubmissions = [];
+        let fetchedAttempts = [];
         let fetchedQuestions = [];
         let distributionChart = null;
 
@@ -241,11 +239,17 @@
 
             Swal.fire({ title: 'กำลังประมวลผลข้อมูลสถิติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+            // โหลดคำถามในชุดข้อสอบ
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             fetchedQuestions = questions || [];
 
-            const { data: submissions } = await mySupabase.from('exam_submissions').select('*, profiles(full_name, student_id)').eq('exam_id', examId);
-            fetchedSubmissions = submissions || [];
+            // โหลดผลการทำข้อสอบจากตาราง exam_attempts (ดึงข้อมูล student มาด้วย)
+            const { data: attempts } = await mySupabase
+                .from('exam_attempts')
+                .select('*, profiles(full_name, name, student_id)')
+                .eq('exam_id', examId);
+
+            fetchedAttempts = attempts || [];
 
             Swal.close();
 
@@ -259,7 +263,7 @@
         }
 
         function renderKPIs() {
-            const total = fetchedSubmissions.length;
+            const total = fetchedAttempts.length;
             document.getElementById('kpiTotalStudents').textContent = `${total} คน`;
 
             if (total === 0) {
@@ -269,7 +273,7 @@
                 return;
             }
 
-            const scores = fetchedSubmissions.map(s => s.score || 0);
+            const scores = fetchedAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
             const sum = scores.reduce((a, b) => a + b, 0);
             const avg = (sum / total).toFixed(1);
             const max = Math.max(...scores);
@@ -284,20 +288,20 @@
 
         function renderWeakPoints() {
             const container = document.getElementById('weakPointsContainer');
-            if (fetchedSubmissions.length === 0 || fetchedQuestions.length === 0) {
+            if (fetchedAttempts.length === 0 || fetchedQuestions.length === 0) {
                 container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีข้อมูลคำตอบเพื่อนำมาวิเคราะห์</div>`;
                 return;
             }
 
             const wrongStats = fetchedQuestions.map(q => {
                 let wrongCount = 0;
-                fetchedSubmissions.forEach(sub => {
-                    const ansMap = sub.answers || {};
+                fetchedAttempts.forEach(att => {
+                    const ansMap = att.answers || {};
                     if (String(ansMap[q.id]) !== String(q.correct_answer)) {
                         wrongCount++;
                     }
                 });
-                const wrongPercent = Math.round((wrongCount / fetchedSubmissions.length) * 100);
+                const wrongPercent = Math.round((wrongCount / fetchedAttempts.length) * 100);
                 return { question: q, wrongCount, wrongPercent };
             });
 
@@ -316,11 +320,11 @@
                             อันดับ ${idx+1}: ข้อที่ ${w.question.question_number} ${w.question.category_tag ? `[${w.question.category_tag}]` : ''}
                         </span>
                         <span class="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 font-bold text-[10px]">
-                            ตอบผิด ${w.wrongPercent}% (${w.wrongCount}/${fetchedSubmissions.length} คน)
+                            ตอบผิด ${w.wrongPercent}% (${w.wrongCount}/${fetchedAttempts.length} คน)
                         </span>
                     </div>
                     <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold line-clamp-2">
-                        ${w.question.question_text || w.question.content || 'โจทย์ใน PDF'}
+                        ${w.question.question_text || w.question.content || 'โจทย์ในข้อสอบ'}
                     </p>
                 </div>
             `).join('');
@@ -334,8 +338,9 @@
             const ranges = ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'];
             const counts = [0, 0, 0, 0, 0];
 
-            fetchedSubmissions.forEach(s => {
-                const pct = (s.score / totalQ) * 100;
+            fetchedAttempts.forEach(a => {
+                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const pct = (score / totalQ) * 100;
                 if (pct <= 20) counts[0]++;
                 else if (pct <= 40) counts[1]++;
                 else if (pct <= 60) counts[2]++;
@@ -367,18 +372,20 @@
 
         function renderStudentTable() {
             const tbody = document.getElementById('studentScoreTableBody');
-            document.getElementById('studentTableCount').textContent = `${fetchedSubmissions.length} รายการ`;
+            document.getElementById('studentTableCount').textContent = `${fetchedAttempts.length} รายการ`;
 
-            if (fetchedSubmissions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ยังไม่มีนักเรียนส่งข้อสอบชุดนี้</td></tr>`;
+            if (fetchedAttempts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">ยังไม่มีนักเรียนทำข้อสอบชุดนี้</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = fetchedSubmissions.map((s, idx) => {
+            tbody.innerHTML = fetchedAttempts.map((a, idx) => {
                 const totalQ = fetchedQuestions.length;
-                const isPass = s.score >= (totalQ / 2);
-                const name = s.profiles?.full_name || 'นักเรียนทั่วไป';
-                const stdId = s.profiles?.student_id || '-';
+                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const isPass = score >= (totalQ / 2);
+                const name = a.profiles?.full_name || a.profiles?.name || 'นักเรียนทั่วไป';
+                const stdId = a.profiles?.student_id || a.student_id || '-';
+                const submitTime = a.submission_time || a.submitted_at || a.created_at;
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -387,20 +394,18 @@
                             <div class="font-bold text-slate-900 dark:text-white">${name}</div>
                             <div class="text-[10px] text-slate-400 font-mono">ID: ${stdId}</div>
                         </td>
-                        <td class="p-3 text-center font-mono font-bold text-sky-600">${s.mc_score ?? s.score ?? 0}</td>
-                        <td class="p-3 text-center font-mono font-bold text-amber-500">${s.essay_score ?? 0}</td>
-                        <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${s.score || 0} / ${totalQ}</td>
+                        <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${score} / ${totalQ}</td>
                         <td class="p-3 text-center">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isPass ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600' : 'bg-rose-100 dark:bg-rose-950 text-rose-600'}">
                                 ${isPass ? 'ผ่าน' : 'ไม่ผ่าน'}
                             </span>
                         </td>
-                        <td class="p-3 text-center text-[11px] text-slate-400">${new Date(s.created_at).toLocaleDateString('th-TH')}</td>
+                        <td class="p-3 text-center text-[11px] text-slate-400">${submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-'}</td>
                         <td class="p-3 text-center space-x-1">
-                            <button onclick="viewStudentDetail('${s.id}')" class="px-2.5 py-1 bg-sky-50 dark:bg-sky-950/40 text-sky-600 hover:bg-sky-100 font-bold text-[11px] rounded-lg border border-sky-200 dark:border-sky-900 transition-all" title="ดูรายละเอียดรายคน">
+                            <button onclick="viewStudentDetail('${a.id}')" class="px-2.5 py-1 bg-sky-50 dark:bg-sky-950/40 text-sky-600 hover:bg-sky-100 font-bold text-[11px] rounded-lg border border-sky-200 dark:border-sky-900 transition-all" title="ดูรายละเอียดรายคน">
                                 <i class="fas fa-eye"></i> ดู
                             </button>
-                            <button onclick="resetStudentAttempt('${s.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซ็ตสิทธิ์สอบใหม่">
+                            <button onclick="resetStudentAttempt('${a.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซ็ตสิทธิ์สอบใหม่">
                                 <i class="fas fa-rotate-right"></i> Reset
                             </button>
                         </td>
@@ -409,25 +414,26 @@
             }).join('');
         }
 
-        // 👁️ ฟังก์ชันดูรายละเอียดรายคน (Individual Breakdown Modal)
-        function viewStudentDetail(submissionId) {
-            const sub = fetchedSubmissions.find(s => s.id === submissionId);
-            if (!sub) return;
+        // 👁️ ดูรายละเอียดคำตอบรายคน
+        function viewStudentDetail(attemptId) {
+            const att = fetchedAttempts.find(a => a.id === attemptId);
+            if (!att) return;
 
-            const name = sub.profiles?.full_name || 'นักเรียน';
-            const stdId = sub.profiles?.student_id || '-';
-            const studentAnswers = sub.answers || {};
+            const name = att.profiles?.full_name || att.profiles?.name || 'นักเรียน';
+            const stdId = att.profiles?.student_id || att.student_id || '-';
+            const studentAnswers = att.answers || {};
+            const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
 
             let detailsHtml = `
                 <div class="text-left space-y-3 max-h-96 overflow-y-auto pr-1 text-xs">
                     <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-500/30">
                         <div>นักเรียน: <strong class="text-sky-600 dark:text-sky-400">${name}</strong> (รหัส: ${stdId})</div>
-                        <div>คะแนนรวม: <strong class="text-indigo-600 dark:text-indigo-400">${sub.score || 0} / ${fetchedQuestions.length}</strong></div>
+                        <div>คะแนนรวม: <strong class="text-indigo-600 dark:text-indigo-400">${score} / ${fetchedQuestions.length}</strong></div>
                     </div>
                     <div class="space-y-2">
             `;
 
-            fetchedQuestions.forEach((q, idx) => {
+            fetchedQuestions.forEach((q) => {
                 const userAns = studentAnswers[q.id];
                 const isCorrect = String(userAns) === String(q.correct_answer);
                 
@@ -454,7 +460,7 @@
             });
         }
 
-        async function resetStudentAttempt(submissionId) {
+        async function resetStudentAttempt(attemptId) {
             Swal.fire({
                 title: 'ยืนยันการ Reset สิทธิ์สอบ?',
                 text: 'การกระทำนี้จะลบผลคะแนนและคำตอบเดิมของนักเรียน เพื่อให้พวกเขาสามารถกลับมาทำข้อสอบใหม่ได้อีกครั้ง',
@@ -465,11 +471,11 @@
                 confirmButtonColor: '#d97706'
             }).then(async (res) => {
                 if (res.isConfirmed) {
-                    const { error } = await mySupabase.from('exam_submissions').delete().eq('id', submissionId);
+                    const { error } = await mySupabase.from('exam_attempts').delete().eq('id', attemptId);
                     if (error) {
                         Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
                     } else {
-                        Swal.fire({ icon: 'success', title: 'Reset สำเร็จ!', text: 'ลบประวัติการส่งข้อสอบเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'Reset สำเร็จ!', text: 'ลบประวัติการสอบเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
                         loadAnalyticsData(currentExamId);
                     }
                 }
@@ -477,7 +483,7 @@
         }
 
         function exportToCSV() {
-            if (fetchedSubmissions.length === 0) {
+            if (fetchedAttempts.length === 0) {
                 Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลคะแนนสำหรับ Export', 'info');
                 return;
             }
@@ -485,14 +491,16 @@
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
             csvContent += "ลำดับ,ชื่อ-นามสกุล,รหัสนักเรียน,คะแนนรวม,คะแนนเต็ม,สถานะ,วันที่ส่ง\n";
 
-            fetchedSubmissions.forEach((s, idx) => {
-                const name = s.profiles?.full_name || 'นักเรียน';
-                const stdId = s.profiles?.student_id || '-';
+            fetchedAttempts.forEach((a, idx) => {
+                const name = a.profiles?.full_name || a.profiles?.name || 'นักเรียน';
+                const stdId = a.profiles?.student_id || a.student_id || '-';
                 const totalQ = fetchedQuestions.length;
-                const status = s.score >= (totalQ / 2) ? 'ผ่าน' : 'ไม่ผ่าน';
-                const date = new Date(s.created_at).toLocaleDateString('th-TH');
+                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const status = score >= (totalQ / 2) ? 'ผ่าน' : 'ไม่ผ่าน';
+                const submitTime = a.submission_time || a.submitted_at || a.created_at;
+                const date = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
 
-                csvContent += `${idx + 1},"${name}",${stdId},${s.score || 0},${totalQ},${status},${date}\n`;
+                csvContent += `${idx + 1},"${name}",${stdId},${score},${totalQ},${status},${date}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
