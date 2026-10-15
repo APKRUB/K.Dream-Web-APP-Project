@@ -187,7 +187,11 @@
         }
 
         function clearCourseFilter() {
-            window.location.href = 'admin_exams.html';
+            if (filterCourseId) {
+                window.location.href = `admin_course_detail.html?id=${filterCourseId}`;
+            } else {
+                window.location.href = 'admin_exams.html';
+            }
         }
 
         async function initPage() {
@@ -256,7 +260,6 @@
             
             let allExams = exams || [];
 
-            // ถ้ากดมาจากหน้าคอร์ส ให้กรองเฉพาะชุดข้อสอบที่มี course_id นี้อยู่ในอาเรย์
             if (filterCourseId) {
                 allExams = allExams.filter(e => {
                     if (!e.course_id) return false;
@@ -618,7 +621,6 @@
             const isEdit = !!examData;
             const categoryOptions = categoriesList.map(c => `<option value="${c.id}" ${examData?.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
             
-            // ดึงรายชื่อคอร์สมาทำ Checkbox เลือกได้หลายคอร์ส
             let currentSelectedCourses = [];
             if (examData?.course_id) {
                 currentSelectedCourses = Array.isArray(examData.course_id) ? examData.course_id : [examData.course_id];
