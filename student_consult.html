@@ -80,18 +80,13 @@
             </div>
         </div>
 
-        <!-- My Current Booking Card -->
+        <!-- My Current Booking Card (ไม่อนุญาตให้นักเรียนยกเลิกเอง) -->
         <div id="myBookingSection" class="hidden glossy-card p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-4">
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="px-3 py-1 bg-emerald-500 text-white rounded-xl text-[10px] font-extrabold uppercase tracking-wide"><i class="fas fa-check-circle mr-1"></i> จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
-                    <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mt-2" id="mySlotTimeText">-</h3>
-                </div>
-                <button onclick="cancelMyBooking()" class="px-4 py-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold transition-all border border-red-200/50">
-                    <i class="fas fa-times mr-1"></i> ยกเลิกเพื่อเปลี่ยนเวลา
-                </button>
+            <div>
+                <span class="px-3 py-1 bg-emerald-500 text-white rounded-xl text-[10px] font-extrabold uppercase tracking-wide"><i class="fas fa-check-circle mr-1"></i> จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
+                <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mt-2" id="mySlotTimeText">-</h3>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400">💡 คุณสามารถยกเลิกการจองได้เองหากต้องการเปลี่ยนเวลา และกลับมาเลือกจองช่วงเวลาอื่นได้ภายในกำหนด</p>
+            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">⚠️ หมายเหตุ: เมื่อยืนยันการจองแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนแปลงเวลา กรุณาติดต่ออาจารย์ผู้สอนโดยตรง</p>
         </div>
 
         <!-- Booking Interface -->
@@ -111,19 +106,16 @@
                     </div>
                 </div>
 
-                <!-- Color Status Legend -->
                 <div class="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> ว่าง (เพียบ)</span>
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> ใกล้เต็ม (< 3 ช่วง)</span>
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span> เต็ม / ไม่มีคิว</span>
                 </div>
 
-                <!-- Calendar Grid Header (Days of week) -->
                 <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400">
                     <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
                 </div>
 
-                <!-- Calendar Days Container -->
                 <div id="calendarGrid" class="grid grid-cols-7 gap-2">
                     <!-- โหลดวันในปฏิทิน -->
                 </div>
@@ -154,7 +146,7 @@
         let myCurrentBooking = null;
 
         let displayedYear = new Date().getFullYear();
-        let displayedMonth = new Date().getMonth(); // 0-11
+        let displayedMonth = new Date().getMonth();
         let selectedDateStr = new Date().toISOString().split('T')[0];
         let countdownInterval = null;
 
@@ -185,7 +177,6 @@
 
         async function initStudentConsult() {
             if (!await authenticateStudent()) return;
-
             await loadSystemStatus();
             await loadMyBooking();
             await loadAvailableSlots();
@@ -207,7 +198,7 @@
 
         async function loadSystemStatus() {
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            systemSettings = data || { is_open: false };
+            systemSettings = data || { is_open: false, prune_hours: 24 };
 
             const banner = document.getElementById('systemStatusBanner');
             const bannerTitle = document.getElementById('bannerTitle');
@@ -217,6 +208,11 @@
 
             const now = new Date();
             let isOpen = systemSettings.is_open;
+            
+            // เช็คอัตโนมัติ Open At / Close At
+            if (systemSettings.open_at && new Date(systemSettings.open_at) > now) {
+                isOpen = false;
+            }
             if (systemSettings.close_at && new Date(systemSettings.close_at) <= now) {
                 isOpen = false;
             }
@@ -246,25 +242,20 @@
 
         function startCountdown(targetTime) {
             if (countdownInterval) clearInterval(countdownInterval);
-            
             function updateTimer() {
                 const now = new Date().getTime();
                 const distance = targetTime - now;
-
                 if (distance < 0) {
                     clearInterval(countdownInterval);
                     loadSystemStatus();
                     return;
                 }
-
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
                 document.getElementById('countdownDisplay').textContent = `${days}วัน ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }
-
             updateTimer();
             countdownInterval = setInterval(updateTimer, 1000);
         }
@@ -295,12 +286,16 @@
         }
 
         async function loadAvailableSlots() {
-            const nowIso = new Date().toISOString();
+            const now = new Date();
+            const pruneHours = systemSettings?.prune_hours || 24;
+            const pruneThreshold = new Date(now.getTime() + (pruneHours * 3600000)).toISOString();
+
+            // ดึงเฉพาะ Slot ที่ยังไม่ถูกจอง และเวลาเริ่มต้นห่างจากปัจจุบันมากกว่ากำหนด (Auto-Prune)
             const { data } = await mySupabase
                 .from('consult_slots')
                 .select('*')
                 .eq('status', 'available')
-                .gt('end_time', nowIso)
+                .gt('start_time', pruneThreshold)
                 .order('start_time', { ascending: true });
 
             allAvailableSlots = data || [];
@@ -310,13 +305,8 @@
 
         function changeMonth(direction) {
             displayedMonth += direction;
-            if (displayedMonth > 11) {
-                displayedMonth = 0;
-                displayedYear++;
-            } else if (displayedMonth < 0) {
-                displayedMonth = 11;
-                displayedYear--;
-            }
+            if (displayedMonth > 11) { displayedMonth = 0; displayedYear++; }
+            else if (displayedMonth < 0) { displayedMonth = 11; displayedYear--; }
             renderCalendar();
         }
 
@@ -338,17 +328,13 @@
             const totalDays = new Date(displayedYear, displayedMonth + 1, 0).getDate();
             const todayStr = new Date().toISOString().split('T')[0];
 
-            // ช่องว่างก่อนวันแรกของเดือน
-            for (let i = 0; i < firstDayIndex; i++) {
-                grid.innerHTML += `<div></div>`;
-            }
+            for (let i = 0; i < firstDayIndex; i++) { grid.innerHTML += `<div></div>`; }
 
             for (let day = 1; day <= totalDays; day++) {
                 const monthStr = String(displayedMonth + 1).padStart(2, '0');
                 const dayStr = String(day).padStart(2, '0');
                 const dateKey = `${displayedYear}-${monthStr}-${dayStr}`;
 
-                // เช็คจำนวน Slot ว่างในวันนี้
                 const slotsOnThisDay = allAvailableSlots.filter(s => s.start_time.startsWith(dateKey));
                 const count = slotsOnThisDay.length;
 
@@ -396,23 +382,20 @@
             document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในวันที่เลือก กรุณาเลือกวันอื่นจากปฏิทิน</div>`;
+                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในวันที่เลือก หรือช่วงเวลาใกล้ถึงกำหนดถูกตัดออกอัตโนมัติ</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(s => {
                 const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-
                 return `
                     <div class="slot-card p-4 rounded-2xl bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <div>
                             <div class="font-extrabold text-sm text-slate-900 dark:text-white"><i class="far fa-clock text-sky-600 mr-1.5"></i> ${startStr} - ${endStr} น.</div>
                             <div class="text-[11px] text-slate-400 mt-0.5">สถานะ: <span class="text-emerald-500 font-bold">ว่าง</span></div>
                         </div>
-                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all">
-                            จองเวลานี้
-                        </button>
+                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all">จองเวลานี้</button>
                     </div>
                 `;
             }).join('');
@@ -420,13 +403,13 @@
 
         async function bookSlot(slotId) {
             if (myCurrentBooking) {
-                Swal.fire('คุณมีคิวจองแล้ว', 'คุณได้จองสิทธิ์ Consult ไปแล้ว 1 สิทธิ์ หากต้องการเปลี่ยนเวลา กรุณายกเลิกการจองเดิมก่อน', 'warning');
+                Swal.fire('คุณมีคิวจองแล้ว', 'คุณได้จองสิทธิ์ Consult ไปแล้ว 1 สิทธิ์', 'warning');
                 return;
             }
 
             const res = await Swal.fire({
                 title: 'ยืนยันการจองเวลานี้?',
-                text: 'คุณสามารถจองได้ 1 สิทธิ์ต่อรอบที่เปิดให้บริการ',
+                text: 'เมื่อยืนยันแล้วจะไม่สามารถยกเลิกเองได้ หากต้องการเปลี่ยนเวลาต้องติดต่ออาจารย์',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#0284c7',
@@ -436,20 +419,17 @@
 
             if (res.isConfirmed) {
                 Swal.fire({ title: 'กำลังบันทึกการจอง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
                 const { data: slotCheck } = await mySupabase.from('consult_slots').select('status').eq('id', slotId).single();
                 if (!slotCheck || slotCheck.status !== 'available') {
-                    Swal.fire('ไม่สำเร็จ', 'ช่วงเวลานี้ถูกผู้อื่นจองไปแล้ว กรุณาเลือกช่วงเวลาอื่น', 'error');
+                    Swal.fire('ไม่สำเร็จ', 'ช่วงเวลานี้ถูกผู้อื่นจองไปแล้ว', 'error');
                     loadAvailableSlots();
                     return;
                 }
 
                 const { error } = await mySupabase.from('consult_slots').update({ status: 'booked', student_id: currentStudentId }).eq('id', slotId);
-                
                 if (!error) {
                     await mySupabase.from('consult_quotas').upsert([{ student_id: currentStudentId, has_booked: true, booked_slot_id: slotId }], { onConflict: 'student_id' });
                     await logStudentAction(`นักเรียนทำการจอง Slot เวลา Consult สำเร็จ`);
-                    
                     Swal.fire({ icon: 'success', title: 'จองเวลา Consult สำเร็จ!', timer: 1500, showConfirmButton: false });
                     loadMyBooking();
                     loadAvailableSlots();
@@ -459,37 +439,8 @@
             }
         }
 
-        async function cancelMyBooking() {
-            if (!myCurrentBooking) return;
-
-            const res = await Swal.fire({
-                title: 'ยืนยันยกเลิกการจอง?',
-                text: 'เมื่อยกเลิกแล้ว คุณสามารถเลือกจองช่วงเวลาใหม่ที่ว่างอยู่ได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ใช่, ยกเลิกการจอง',
-                cancelButtonText: 'ปิด'
-            });
-
-            if (res.isConfirmed) {
-                Swal.fire({ title: 'กำลังยกเลิก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                await mySupabase.from('consult_slots').update({ status: 'available', student_id: null }).eq('id', myCurrentBooking.id);
-                await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null }).eq('student_id', currentStudentId);
-
-                await logStudentAction(`นักเรียนยกเลิกการจองเวลา Consult ของตนเอง`);
-                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จ', timer: 1200, showConfirmButton: false });
-
-                loadMyBooking();
-                loadAvailableSlots();
-            }
-        }
-
         async function logStudentAction(actionText) {
-            try {
-                await mySupabase.from('consult_logs').insert([{ action: actionText }]);
-            } catch (err) { console.error("Log Error:", err); }
+            try { await mySupabase.from('consult_logs').insert([{ action: actionText }]); } catch (err) {}
         }
 
         document.addEventListener('DOMContentLoaded', initStudentConsult);
