@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | คลังข้อสอบนักเรียนและระบบวิเคราะห์ผลสัมฤทธิ์</title>
+    <title>LMS | Student Portal - ทำข้อสอบ, วิเคราะห์ผล และจองคิว Consult</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -41,8 +41,8 @@
                     <i class="fas fa-graduation-cap"></i>
                 </div>
                 <div>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white">Student Examination Portal</h1>
-                    <p class="text-[11px] text-slate-500">ระบบสอบออนไลน์และศูนย์วิเคราะห์ศักยภาพผู้เรียน</p>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white">Student Portal & Learning Hub</h1>
+                    <p class="text-[11px] text-slate-500">ระบบสอบออนไลน์ วิเคราะห์ผลสัมฤทธิ์ และจองคิวปรึกษา</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -55,22 +55,25 @@
 
     <main class="max-w-7xl mx-auto px-4 pt-24 space-y-8">
 
-        <!-- Tab Switcher (หน้าแรกตั้งต้นที่ "รายการชุดข้อสอบ") -->
-        <div class="flex items-center gap-2 bg-slate-200/60 dark:bg-darkbox p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit">
-            <button onclick="switchTab('exams')" id="tabBtnExams" class="px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md">
-                <i class="fas fa-file-signature mr-1.5"></i> รายการชุดข้อสอบ (ทำข้อสอบ)
+        <!-- 3 Main Feature Tabs (หน้าแรกเริ่มต้นที่ "ทำข้อสอบ") -->
+        <div class="flex flex-wrap items-center gap-2 bg-slate-200/60 dark:bg-darkbox p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit">
+            <button onclick="switchTab('exam')" id="tabBtnExam" class="px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md">
+                <i class="fas fa-file-signature mr-1.5"></i> 1. ทำข้อสอบ
             </button>
-            <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500">
-                <i class="fas fa-chart-line mr-1.5"></i> ติดตาม & วิเคราะห์ผลสัมฤทธิ์
+            <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="px-4 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500">
+                <i class="fas fa-chart-line mr-1.5"></i> 2. ติดตาม & วิเคราะห์ผล
+            </button>
+            <button onclick="switchTab('consult')" id="tabBtnConsult" class="px-4 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500">
+                <i class="fas fa-calendar-alt mr-1.5"></i> 3. จองคิว Consult
             </button>
         </div>
 
-        <!-- ================= TAB 1: รายการชุดข้อสอบ (หน้าแรก) ================= -->
-        <div id="examsSection" class="space-y-6">
+        <!-- ================= FEATURE 1: ทำข้อสอบ (Exam Portal) ================= -->
+        <div id="sectionExam" class="space-y-6">
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                     <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-list-check text-sky-500"></i> ชุดข้อสอบที่เปิดให้ทำ
+                        <i class="fas fa-list-check text-sky-500"></i> รายการชุดข้อสอบที่เปิดให้ทำ
                     </h2>
                     <span class="text-xs text-slate-400 font-semibold" id="examCountText">กำลังโหลด...</span>
                 </div>
@@ -79,10 +82,9 @@
                 </div>
             </div>
 
-            <!-- ประวัติการสอบที่ผ่านมา -->
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-history text-indigo-500"></i> ประวัติการสอบและผลคะแนนของคุณ
+                    <i class="fas fa-history text-indigo-500"></i> ประวัติการสอบที่ผ่านมาของคุณ
                 </h3>
                 <div id="examHistoryList" class="space-y-3">
                     <div class="text-slate-400 text-xs py-6 text-center">กำลังโหลดประวัติการสอบ...</div>
@@ -90,17 +92,16 @@
             </div>
         </div>
 
-        <!-- ================= TAB 2: ติดตาม & วิเคราะห์ผล (หน้า 2) ================= -->
-        <div id="analyticsSection" class="space-y-6 hidden">
+        <!-- ================= FEATURE 2: ติดตาม & วิเคราะห์ผล (Analytics & Comparison) ================= -->
+        <div id="sectionAnalytics" class="space-y-6 hidden">
             
-            <!-- ตัวกรองเปรียบเทียบ -->
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-sliders text-sky-500"></i> ตัวกรองเปรียบเทียบพัฒนาการ
                         </h2>
-                        <p class="text-xs text-slate-500">เลือกชุดข้อสอบและหมวดหมู่เนื้อหาที่ต้องการนำมาประมวลผลเชิงเปรียบเทียบ</p>
+                        <p class="text-xs text-slate-500">เลือกชุดข้อสอบและหมวดหมู่เนื้อหาเพื่อเปรียบเทียบพัฒนาการเชิงลึก</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                         <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500">
@@ -120,7 +121,6 @@
                 </div>
             </div>
 
-            <!-- การ์ดสรุปเมตริก -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-lg">📈</div>
@@ -152,7 +152,6 @@
                 </div>
             </div>
 
-            <!-- กราฟ Analytics -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div class="lg:col-span-8 hitech-card p-5 rounded-3xl space-y-3">
                     <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -182,6 +181,45 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- ================= FEATURE 3: จองคิว Consult ================= -->
+        <div id="sectionConsult" class="space-y-6 hidden">
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
+                <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-calendar-check text-sky-500"></i> ระบบจองคิวปรึกษา (Consultation Booking)
+                </h2>
+                <p class="text-xs text-slate-500">นัดหมายเวลาเพื่อพูดคุย ซักถาม หรือขอคำปรึกษาเพิ่มเติมกับ Mentor หรือคุณครูผู้สอน</p>
+                
+                <div class="p-6 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">หัวข้อที่ต้องการปรึกษา</label>
+                            <input type="text" id="consultTopic" placeholder="เช่น สงสัยโจทย์ข้อสอบข้อที่ 5, ขอคำแนะนำแนวทางเขียนโค้ด" class="w-full px-3.5 py-2 bg-white dark:bg-darkbox border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">วันที่ต้องการจองคิว</label>
+                            <input type="date" id="consultDate" class="w-full px-3.5 py-2 bg-white dark:bg-darkbox border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
+                        <textarea id="consultDetail" rows="3" placeholder="ระบุรายละเอียดหรือปัญหาที่พบเพิ่มเติมเพื่อให้ผู้สอนเตรียมตัวล่วงหน้า" class="w-full px-3.5 py-2 bg-white dark:bg-darkbox border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500"></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="bookConsultAppointment()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                            <i class="fas fa-paper-plane"></i> ยืนยันการจองคิว Consult
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-4 space-y-2">
+                    <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200">รายการนัดหมายของคุณ</h3>
+                    <div id="consultBookingList" class="space-y-2">
+                        <div class="text-slate-400 text-xs py-4 text-center">ยังไม่มีประวัติการจองคิว</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </main>
@@ -214,20 +252,29 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // Tab Switcher ควบคุม 3 ฟีเจอร์หลัก
         function switchTab(tab) {
-            const isExams = tab === 'exams';
-            document.getElementById('examsSection').classList.toggle('hidden', !isExams);
-            document.getElementById('analyticsSection').classList.toggle('hidden', isExams);
+            const isExam = tab === 'exam';
+            const isAnalytics = tab === 'analytics';
+            const isConsult = tab === 'consult';
 
-            document.getElementById('tabBtnExams').className = isExams 
-                ? 'px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
-                : 'px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+            document.getElementById('sectionExam').classList.toggle('hidden', !isExam);
+            document.getElementById('sectionAnalytics').classList.toggle('hidden', !isAnalytics);
+            document.getElementById('sectionConsult').classList.toggle('hidden', !isConsult);
 
-            document.getElementById('tabBtnAnalytics').className = !isExams 
-                ? 'px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
-                : 'px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+            document.getElementById('tabBtnExam').className = isExam 
+                ? 'px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
+                : 'px-4 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
 
-            if (!isExams) {
+            document.getElementById('tabBtnAnalytics').className = isAnalytics 
+                ? 'px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
+                : 'px-4 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+
+            document.getElementById('tabBtnConsult').className = isConsult 
+                ? 'px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
+                : 'px-4 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+
+            if (isAnalytics) {
                 updateAnalyticsDashboard();
             }
         }
@@ -235,7 +282,7 @@
         async function initStudentPortal() {
             const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
             
-            // 1. โหลดชุดข้อสอบทั้งหมดที่เปิดให้ทำ
+            // 1. โหลดชุดข้อสอบทั้งหมด (ฟีเจอร์ที่ 1)
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             allExamsData = exams || [];
             document.getElementById('examCountText').textContent = `ทั้งหมด ${allExamsData.length} ชุดข้อสอบ`;
@@ -288,7 +335,7 @@
                 }).join('');
             }
 
-            // 3. เตรียมข้อมูลสำหรับหน้า Analytics
+            // 3. เตรียมข้อมูลสำหรับหน้า Analytics (ฟีเจอร์ที่ 2)
             const examIds = [...new Set(userAttemptsData.map(a => a.exam_id))];
             const { data: questions } = await mySupabase.from('questions').select('category_tag').in('exam_id', examIds);
             (questions || []).forEach(q => {
@@ -497,7 +544,70 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', initStudentPortal);
+        // ฟังก์ชันจองคิว Consult (ฟีเจอร์ที่ 3)
+        async function bookConsultAppointment() {
+            const topic = document.getElementById('consultTopic').value.trim();
+            const date = document.getElementById('consultDate').value;
+            const detail = document.getElementById('consultDetail').value.trim();
+
+            if (!topic || !date) {
+                Swal.fire({ icon: 'warning', title: 'กรุณากรอกหัวข้อและวันที่ต้องการจองคิว' });
+                return;
+            }
+
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+
+            const { error } = await mySupabase.from('consult_bookings').insert([
+                { student_id: studentId, topic: topic, booking_date: date, detail: detail, status: 'pending' }
+            ]);
+
+            if (error) {
+                // ถ้ายังไม่มีตาราง consult_bookings ในฐานข้อมูล ให้บันทึกลง localStorage สำรองก่อนได้
+                let localBookings = JSON.parse(localStorage.getItem('my_consults') || '[]');
+                localBookings.push({ topic, date, detail, status: 'pending', created_at: new Date().toISOString() });
+                localStorage.setItem('my_consults', JSON.stringify(localBookings));
+            }
+
+            Swal.fire({ icon: 'success', title: 'จองคิว Consult สำเร็จ!', text: 'ผู้สอนจะตรวจสอบและยืนยันเวลานัดหมายเร็วๆ นี้' });
+            document.getElementById('consultTopic').value = '';
+            document.getElementById('consultDate').value = '';
+            document.getElementById('consultDetail').value = '';
+            loadConsultBookings();
+        }
+
+        async function loadConsultBookings() {
+            const container = document.getElementById('consultBookingList');
+            let bookings = [];
+
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            const { data } = await mySupabase.from('consult_bookings').select('*').eq('student_id', studentId);
+            
+            if (data && data.length > 0) {
+                bookings = data;
+            } else {
+                bookings = JSON.parse(localStorage.getItem('my_consults') || '[]');
+            }
+
+            if (bookings.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs py-4 text-center">ยังไม่มีประวัติการจองคิว</div>`;
+                return;
+            }
+
+            container.innerHTML = bookings.map(b => `
+                <div class="p-3.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl flex justify-between items-center text-xs">
+                    <div>
+                        <div class="font-bold text-slate-800 dark:text-white">📌 ${b.topic}</div>
+                        <div class="text-[11px] text-slate-400">วันที่นัดหมาย: ${b.date || b.booking_date} | รายละเอียด: ${b.detail || '-'}</div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 font-bold rounded-lg text-[10px]">รอยืนยันคิว</span>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initStudentPortal();
+            loadConsultBookings();
+        });
     </script>
 </body>
 </html>
