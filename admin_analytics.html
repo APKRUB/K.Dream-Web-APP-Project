@@ -43,7 +43,22 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
-        .exam-card-hover:hover { transform: translateY(-3px); border-color: rgba(2, 132, 199, 0.6); box-shadow: 0 15px 35px -10px rgba(2, 132, 199, 0.15); }
+        
+        /* 🌟 ดีไซน์ใหม่ให้การ์ดชุดข้อสอบเด่นสะดุดตาและพรีเมียมขึ้น */
+        .exam-catalog-card {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.03) 0%, rgba(99, 102, 241, 0.05) 100%);
+            border: 1px solid rgba(2, 132, 199, 0.25);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dark .exam-catalog-card {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(99, 102, 241, 0.12) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+        .exam-catalog-card:hover {
+            transform: translateY(-5px) scale(1.01);
+            border-color: rgba(2, 132, 199, 0.8);
+            box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.25);
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
@@ -247,13 +262,14 @@
             </div>
         </div>
 
-        <!-- SECTION 5: Exam Catalog Grid -->
+        <!-- 🌟 SECTION 5: Exam Catalog Grid (ปรับดีไซน์ใหม่ให้เด่นสะดุดตา พรีเมียมสุดๆ) -->
         <div class="space-y-4 pt-2">
-            <div class="flex justify-between items-center">
-                <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-folder-open text-sky-500"></i> ชุดข้อสอบทั้งหมด (แยกตามหมวดหมู่) - คลิกเพื่อดูผลเจาะลึก
+            <div class="flex justify-between items-center bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-transparent p-4 rounded-2xl border border-sky-500/20">
+                <h2 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-folder-open"></i></span>
+                    ชุดข้อสอบทั้งหมด (แยกตามหมวดหมู่) - คลิกเพื่อดูผลเจาะลึก
                 </h2>
-                <span id="examCountBadge" class="text-xs text-slate-400 font-bold">0 ชุดข้อสอบ</span>
+                <span id="examCountBadge" class="text-xs font-extrabold px-3 py-1 bg-sky-500 text-white rounded-xl shadow-sm">0 ชุดข้อสอบ</span>
             </div>
 
             <div id="examsCatalogGroupContainer" class="space-y-6">
@@ -763,7 +779,6 @@
                             <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">
                                 ${score} / ${totalQ} คะแนน
                             </div>
-                            <!-- 🎯 เพิ่มปุ่มปริ้นท์ใบสรุปการตอบรายข้อในหน้านี้ -->
                             <button onclick="printSingleExamAttemptReport('${studentId}', '${examId}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 shrink-0">
                                 <i class="fas fa-print"></i> ปริ้นท์ใบสรุป
                             </button>
@@ -792,72 +807,72 @@
             });
         }
 
-        // 🎯 ฟังก์ชันสำหรับสั่งพิมพ์รายงานผลการตอบรายข้อของชุดข้อสอบนั้นๆ
-        async function printSingleExamAttemptReport(studentId, examId) {
+        function printSingleExamAttemptReport(studentId, examId) {
             const att = allAttempts.find(a => String(a.student_id || a.user_id) === String(studentId) && String(a.exam_id) === String(examId));
             const exam = allExams.find(e => String(e.id) === String(examId));
             const profile = allProfilesMap[studentId];
             const name = getStudentName(profile, studentId);
             const studentIdCode = profile?.student_id || '-';
 
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
-            if (!questions) return;
+            mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true }).then(({ data: questions }) => {
+                if (!questions) return;
 
-            const totalQ = questions.length;
-            const score = att ? getAttemptScore(att) : 0;
-            const submitTime = att ? (att.submission_time || att.submitted_at || att.created_at) : null;
-            const dateStr = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
+                const totalQ = questions.length;
+                const score = att ? getAttemptScore(att) : 0;
+                const submitTime = att ? (att.submission_time || att.submitted_at || att.created_at) : null;
+                const dateStr = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
 
-            let printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>รายงานผลการสอบรายข้อ - ${name}</title>
-                    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
-                    <style>
-                        body { font-family: 'Prompt', sans-serif; padding: 40px; color: #1e293b; }
-                        h2 { color: #0284c7; margin-bottom: 5px; }
-                        .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-                        th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
-                        th { background: #f1f5f9; }
-                        .correct { color: #10b981; font-weight: bold; }
-                        .wrong { color: #ef4444; font-weight: bold; }
-                    </style>
-                </head>
-                <body>
-                    <h2>รายงานผลการตอบข้อสอบรายข้อ</h2>
-                    <p>ชุดข้อสอบ: <strong>${exam ? exam.title : '-'}</strong></p>
-                    <div class="box">
-                        <p>ชื่อ-นามสกุล: <strong>${name}</strong> (รหัส: ${studentIdCode})</p>
-                        <p>คะแนนที่ได้: <strong>${score} / ${totalQ} คะแนน</strong></p>
-                        <p>วันที่ทำข้อสอบ: ${dateStr}</p>
-                    </div>
-                    <h3>รายละเอียดคำตอบรายข้อ</h3>
-                    <table>
-                        <tr><th>ข้อที่</th><th>โจทย์คำถาม</th><th>นักเรียนตอบ</th><th>เฉลยที่ถูกต้อง</th><th>ผลลัพธ์</th></tr>
-            `);
-
-            questions.forEach((q, index) => {
-                const userAns = att ? extractStudentAnswer(att, q, index) : '-';
-                const correctAns = getCorrectAnswer(q);
-                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
-                const correctAnsStr = String(correctAns).trim().toLowerCase();
-                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
-
+                let printWindow = window.open('', '_blank');
                 printWindow.document.write(`
-                    <tr>
-                        <td>${q.question_number}</td>
-                        <td>${q.question_text || q.content || '-'}</td>
-                        <td><strong>${userAns}</strong></td>
-                        <td>${correctAns}</td>
-                        <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? 'ถูกต้อง' : 'ตอบผิด'}</td>
-                    </tr>
+                    <html>
+                    <head>
+                        <title>รายงานผลการสอบรายข้อ - ${name}</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+                        <style>
+                            body { font-family: 'Prompt', sans-serif; padding: 40px; color: #1e293b; }
+                            h2 { color: #0284c7; margin-bottom: 5px; }
+                            .box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+                            th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+                            th { background: #f1f5f9; }
+                            .correct { color: #10b981; font-weight: bold; }
+                            .wrong { color: #ef4444; font-weight: bold; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>รายงานผลการตอบข้อสอบรายข้อ</h2>
+                        <p>ชุดข้อสอบ: <strong>${exam ? exam.title : '-'}</strong></p>
+                        <div class="box">
+                            <p>ชื่อ-นามสกุล: <strong>${name}</strong> (รหัส: ${studentIdCode})</p>
+                            <p>คะแนนที่ได้: <strong>${score} / ${totalQ} คะแนน</strong></p>
+                            <p>วันที่ทำข้อสอบ: ${dateStr}</p>
+                        </div>
+                        <h3>รายละเอียดคำตอบรายข้อ</h3>
+                        <table>
+                            <tr><th>ข้อที่</th><th>โจทย์คำถาม</th><th>นักเรียนตอบ</th><th>เฉลยที่ถูกต้อง</th><th>ผลลัพธ์</th></tr>
                 `);
-            });
 
-            printWindow.document.write(`</table><script>window.print();<\/script></body></html>`);
-            printWindow.document.close();
+                questions.forEach((q, index) => {
+                    const userAns = att ? extractStudentAnswer(att, q, index) : '-';
+                    const correctAns = getCorrectAnswer(q);
+                    const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
+                    const correctAnsStr = String(correctAns).trim().toLowerCase();
+                    const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
+
+                    printWindow.document.write(`
+                        <tr>
+                            <td>${q.question_number}</td>
+                            <td>${q.question_text || q.content || '-'}</td>
+                            <td><strong>${userAns}</strong></td>
+                            <td>${correctAns}</td>
+                            <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? 'ถูกต้อง' : 'ตอบผิด'}</td>
+                        </tr>
+                    `);
+                });
+
+                printWindow.document.write(`</table><script>window.print();<\/script></body></html>`);
+                printWindow.document.close();
+            });
         }
 
         function printStudentSummaryReport(studentId) {
@@ -918,6 +933,7 @@
             printWindow.document.close();
         }
 
+        // 🌟 renderExamsCatalogByCategories พร้อมดีไซน์การ์ดชุดข้อสอบใหม่ที่โดดเด่นสะดุดตา
         function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (activeExams.length === 0) {
@@ -936,11 +952,14 @@
             for (const [catId, examsList] of Object.entries(grouped)) {
                 const catName = categoriesMap[catId] || 'หมวดหมู่ทั่วไป';
                 html += `
-                    <div class="hitech-card p-5 rounded-2xl space-y-4">
-                        <h3 class="font-extrabold text-sm text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                            <i class="fas fa-folder text-sky-500"></i> ${catName} <span class="text-xs text-slate-400 font-normal">(${examsList.length} ชุด)</span>
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="hitech-card p-6 rounded-3xl space-y-4 border border-sky-500/20 shadow-lg">
+                        <div class="flex items-center justify-between border-b border-sky-500/20 pb-3">
+                            <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2.5">
+                                <span class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-sm"><i class="fas fa-folder"></i></span>
+                                ${catName} <span class="text-xs font-semibold px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-full">(${examsList.length} ชุดข้อสอบ)</span>
+                            </h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 `;
 
                 examsList.forEach(exam => {
@@ -949,18 +968,18 @@
                     const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : '-';
 
                     html += `
-                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="hitech-card exam-card-hover p-4 rounded-xl cursor-pointer flex flex-col justify-between space-y-3 border border-slate-200 dark:border-slate-800">
-                            <div class="space-y-1">
+                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="exam-catalog-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between space-y-4">
+                            <div class="space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-[10px] font-bold px-2 py-0.5 bg-sky-500/10 text-sky-600 rounded-md">${exam.exam_code || 'EXAM'}</span>
-                                    <span class="text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 px-2 py-0.5 rounded-md"><i class="fas fa-users mr-1"></i> ส่งแล้ว ${submittedCount} คน</span>
+                                    <span class="text-[10px] font-extrabold px-2.5 py-1 bg-sky-500 text-white rounded-lg shadow-sm">${exam.exam_code || 'EXAM'}</span>
+                                    <span class="text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg"><i class="fas fa-users mr-1"></i> ส่งแล้ว ${submittedCount} คน</span>
                                 </div>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1">${exam.title}</h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${exam.description || 'ไม่มีคำอธิบาย'}</p>
+                                <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1">${exam.title}</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบนี้'}</p>
                             </div>
-                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold">
-                                <span class="text-slate-400">คะแนนเฉลี่ย: <strong class="text-indigo-600 dark:text-indigo-400">${avgExamScore}</strong></span>
-                                <span class="text-sky-600 dark:text-sky-400 flex items-center gap-1">ดูสถิติ <i class="fas fa-arrow-right"></i></span>
+                            <div class="pt-3 border-t border-sky-500/10 flex justify-between items-center text-xs">
+                                <span class="text-slate-400 font-medium">คะแนนเฉลี่ย: <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold text-sm">${avgExamScore}</strong></span>
+                                <span class="text-sky-600 dark:text-sky-400 font-extrabold flex items-center gap-1.5 hover:translate-x-1 transition-transform">คลิกดูสถิติ <i class="fas fa-arrow-right"></i></span>
                             </div>
                         </div>
                     `;
