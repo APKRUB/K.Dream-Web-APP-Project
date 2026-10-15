@@ -101,7 +101,7 @@
             </div>
         </div>
 
-        <!-- NEW FEATURE: Time Analysis Widget -->
+        <!-- Time Analysis Widget -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="hitech-card p-4 rounded-2xl flex items-center gap-3 border-l-4 border-l-purple-500">
                 <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold"><i class="fas fa-clock"></i></div>
@@ -127,7 +127,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <!-- ฝั่งซ้าย: จุดที่ต้องเน้นสอนเพิ่ม (ข้อที่ผิดเยอะสุด) -->
+            <!-- ฝั่งซ้าย: จุดที่ต้องเน้นสอนเพิ่ม -->
             <div class="lg:col-span-7 space-y-4">
                 <div class="hitech-card p-5 rounded-2xl space-y-4 border-l-4 border-l-rose-500">
                     <div>
@@ -155,14 +155,12 @@
             </div>
         </div>
 
-        <!-- ตารางคะแนนรายบุคคล พร้อมระบบ Filter ด่วน -->
+        <!-- ตารางคะแนนรายบุคคล -->
         <div class="hitech-card p-5 rounded-2xl space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-sky-500/20 pb-3">
                 <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-list-ol text-sky-500"></i> ตารางคะแนนนักเรียนรายบุคคล
                 </h3>
-                
-                <!-- NEW FEATURE: Filter Chips -->
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-xs text-slate-400 font-bold mr-1">กรอง:</span>
                     <button onclick="filterTable('all')" id="filterBtn-all" class="px-3 py-1 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all">ทั้งหมด</button>
@@ -219,16 +217,22 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // 🎯 ฟังก์ชันดึงคำตอบของนักเรียนรองรับทุกรูปแบบโครงสร้าง
         function getAttemptAnswers(att) {
             return att.answers || att.user_answers || att.student_answers || {};
         }
 
-        // 🎯 ฟังก์ชันดึงคะแนนรวม
         function getAttemptScore(att) {
             if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) return Number(att.total_score);
             if (att.score !== undefined && att.score !== null && !isNaN(att.score)) return Number(att.score);
             return 0;
+        }
+
+        // 🎯 ฟังก์ชันดึงเฉลยคำตอบที่ถูกต้อง รองรับทุกชื่อฟิลด์ในฐานข้อมูล
+        function getCorrectAnswer(q) {
+            return q.correct_answer !== undefined ? q.correct_answer : 
+                   (q.answer !== undefined ? q.answer : 
+                   (q.key !== undefined ? q.key : 
+                   (q.solution !== undefined ? q.solution : '')));
         }
 
         async function initDetail() {
@@ -244,18 +248,15 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // โหลดชื่อชุดข้อสอบ
             const { data: examData } = await mySupabase.from('exams').select('title').eq('id', examId).single();
             if (examData) {
                 examTitle = examData.title;
                 document.getElementById('activeExamTitleBanner').textContent = examTitle;
             }
 
-            // โหลดคำถาม
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
             fetchedQuestions = questions || [];
 
-            // โหลดผลสอบ
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
             
             let enhancedAttempts = [];
@@ -319,14 +320,13 @@
             if (fetchedAttempts.length === 0) return;
 
             let times = fetchedAttempts.map(a => {
-                // คำนวณเวลาที่ใช้จาก duration หรือเวลาเริ่ม-ส่ง
-                if (a.time_spent !== undefined && !isNaN(a.time_spent)) return Number(a.time_spent) / 60; // วินาทีเป็นนาที
+                if (a.time_spent !== undefined && !isNaN(a.time_spent)) return Number(a.time_spent) / 60;
                 if (a.duration !== undefined && !isNaN(a.duration)) return Number(a.duration) / 60;
                 if (a.started_at && (a.submitted_at || a.submission_time)) {
                     const diff = new Date(a.submitted_at || a.submission_time) - new Date(a.started_at);
                     if (diff > 0) return diff / (1000 * 60);
                 }
-                return Math.floor(Math.random() * 20) + 15; // ค่าจำลองสมมติหากไม่มีข้อมูลเวลา
+                return Math.floor(Math.random() * 20) + 15;
             });
 
             const avgTime = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1);
@@ -347,14 +347,16 @@
 
             const wrongStats = fetchedQuestions.map((q, index) => {
                 let wrongCount = 0;
+                const correctAns = String(getCorrectAnswer(q)).trim().toLowerCase();
+
                 fetchedAttempts.forEach(att => {
                     const ansMap = getAttemptAnswers(att);
-                    // รองรับการเทียบคำตอบทุกรูปแบบ Key (q.id, String(q.id), question_number, array index)
                     const studentAns = ansMap[q.id] !== undefined ? ansMap[q.id] : 
                                       (ansMap[String(q.id)] !== undefined ? ansMap[String(q.id)] : 
                                       (ansMap[q.question_number] !== undefined ? ansMap[q.question_number] : ansMap[index]));
                     
-                    if (studentAns === undefined || String(studentAns).trim() !== String(q.correct_answer).trim()) {
+                    const userAnsStr = studentAns !== undefined ? String(studentAns).trim().toLowerCase() : '';
+                    if (userAnsStr !== correctAns) {
                         wrongCount++;
                     }
                 });
@@ -513,12 +515,14 @@
             `;
 
             fetchedQuestions.forEach((q, index) => {
-                // เช็คคำตอบเทียบหลายรูปแบบคีย์
                 const userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
                                 (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
                                 (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : studentAnswers[index]));
                 
-                const isCorrect = userAns !== undefined && String(userAns).trim() === String(q.correct_answer).trim();
+                const correctAns = getCorrectAnswer(q);
+                const userAnsStr = userAns !== undefined ? String(userAns).trim().toLowerCase() : '';
+                const correctAnsStr = String(correctAns).trim().toLowerCase();
+                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
                 
                 detailsHtml += `
                     <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1">
@@ -527,7 +531,7 @@
                             <span class="${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '✅ ถูกต้อง' : '❌ ตอบผิด'}</span>
                         </div>
                         <div class="text-[11px] text-slate-500">
-                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${q.correct_answer}</span>
+                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${correctAns}</span>
                         </div>
                     </div>
                 `;
@@ -584,14 +588,18 @@
                 const userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
                                 (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
                                 (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : studentAnswers[index]));
-                const isCorrect = userAns !== undefined && String(userAns).trim() === String(q.correct_answer).trim();
+                
+                const correctAns = getCorrectAnswer(q);
+                const userAnsStr = userAns !== undefined ? String(userAns).trim().toLowerCase() : '';
+                const correctAnsStr = String(correctAns).trim().toLowerCase();
+                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
 
                 printWindow.document.write(`
                     <tr>
                         <td>${q.question_number}</td>
                         <td>${q.question_text || q.content || '-'}</td>
                         <td>${userAns !== undefined ? userAns : '-'}</td>
-                        <td>${q.correct_answer}</td>
+                        <td>${correctAns}</td>
                         <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? 'ถูกต้อง' : 'ตอบผิด'}</td>
                     </tr>
                 `);
