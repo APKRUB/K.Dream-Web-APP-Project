@@ -114,7 +114,7 @@
                 <i class="fas fa-users mr-1.5"></i> นักเรียนในคอร์ส
             </button>
             <button onclick="switchCourseTab('exams')" id="tab-btn-exams" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
-                <i class="fas fa-file-signature mr-1.5"></i> ชุดข้อสอบทั้งหมดในคอร์ส (แยกตามหมวดหมู่)
+                <i class="fas fa-file-signature mr-1.5"></i> ชุดข้อสอบทั้งหมดในคอร์ส
             </button>
             <button onclick="switchCourseTab('analytics')" id="tab-btn-analytics" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
                 <i class="fas fa-chart-pie mr-1.5"></i> สถิติ & ผลคะแนน
@@ -301,12 +301,15 @@
 
             container.innerHTML = `
                 <div class="space-y-4">
-                    <div class="hitech-card p-6 rounded-3xl flex justify-between items-center">
+                    <div class="hitech-card p-6 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>
-                            <p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons)</p>
+                            <p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons) หรือจัดการวิดีโอประกอบคอร์ส</p>
                         </div>
-                        <button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.location.href='admin_videos.html?course_id=${courseId}'" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-video"></i> จัดการวิดีโอ (Videos)</button>
+                            <button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>
+                        </div>
                     </div>
                     <div class="space-y-4">${modulesHtml}</div>
                 </div>
@@ -521,21 +524,17 @@
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     
                     try {
-                        // 1. ลบรายชื่อเดิมออกก่อน
                         const { error: deleteErr } = await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
                         if (deleteErr) {
                             console.warn("Delete enrollment warning:", deleteErr);
                         }
 
-                        // 2. ถ้ามีการเลือกนักเรียน ให้ทำการ INSERT ทีละรายการเพื่อป้องกันปัญหาคอลัมน์ที่ไม่ตรงกันในแต่ละตาราง DB
                         if (selectedIds.length > 0) {
                             for (const sId of selectedIds) {
-                                // ลองบันทึกด้วยฟิลด์ student_id และ user_id พร้อมกัน
                                 const payload1 = { student_id: sId, course_id: courseId };
                                 let insertRes = await mySupabase.from('course_enrollments').insert([payload1]);
                                 
                                 if (insertRes.error) {
-                                    // ลองสำรองด้วยฟิลด์ user_id
                                     const payload2 = { user_id: sId, course_id: courseId };
                                     insertRes = await mySupabase.from('course_enrollments').insert([payload2]);
                                 }
@@ -879,7 +878,6 @@
             }
         }
 
-        // --- ดูภาพรวมผลการเรียนรายบุคคล (Individual Student Profile Modal) ---
         function viewIndividualStudentProfile(studentId) {
             const profile = allStudents.find(s => String(s.id || s.user_id) === String(studentId));
             const name = profile ? `${profile.first_name || '-'} ${profile.last_name || ''}`.trim() : 'นักเรียน';
