@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS | เทปเรียนย้อนหลัง (Video Vault)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -36,8 +36,9 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
+        /* 🛡️ บล็อกปุ่ม Pop-out ของ Google Drive อย่างเด็ดขาด */
         .popout-blocker {
-            position: absolute; top: 0; right: 0; width: 80px; height: 60px; z-index: 30; background: transparent; cursor: not-allowed;
+            position: absolute; top: 0; right: 0; width: 100px; height: 70px; z-index: 50; background: transparent; cursor: not-allowed;
         }
         .hide-scrollbar::-webkit-scrollbar { width: 6px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
@@ -83,28 +84,38 @@
     <!-- Main Split View Layout -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Course Selection Bar -->
-        <div class="hitech-card p-4 sm:p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-l-8 border-l-sky-500">
-            <div class="flex items-center gap-3 w-full sm:w-auto">
-                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-base shrink-0 font-bold">
-                    <i class="fas fa-book-open"></i>
+        <!-- 🌟 แถบเลือกคอร์สเรียน (ดีไซน์ใหม่ เด่นชัดสะดุดตา) -->
+        <div class="hitech-card p-5 sm:p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-2 border-sky-500/60 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent shadow-lg shadow-sky-500/10">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-md shadow-sky-500/30 animate-pulse shrink-0">
+                    <i class="fas fa-book-reader"></i>
                 </div>
                 <div>
-                    <h2 class="text-xs text-slate-400 font-bold">เลือกคอร์สเรียนของคุณ</h2>
-                    <span id="activeCourseTitleDisplay" class="text-sm font-extrabold text-slate-900 dark:text-white">กำลังโหลดคอร์ส...</span>
+                    <span class="text-[10px] uppercase tracking-wider font-extrabold text-sky-600 dark:text-sky-400">Course Switcher Hub</span>
+                    <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อดูเทปย้อนหลัง</h2>
+                    <p class="text-xs text-slate-500 font-light">แสดงเฉพาะคอร์สที่คุณได้ลงทะเบียนเรียนไว้แล้วเท่านั้น</p>
                 </div>
             </div>
-            <div class="w-full sm:w-72">
-                <select id="courseSelector" onchange="onCourseChanged()" class="w-full px-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
-                    <option value="">-- กำลังโหลดคอร์ส --</option>
-                </select>
+            
+            <div class="w-full md:w-80">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-sky-500 font-bold">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <select id="courseSelector" onchange="onCourseChanged()" class="w-full pl-10 pr-10 py-3 bg-white dark:bg-darkinput border-2 border-sky-400 dark:border-sky-600 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer shadow-md hover:border-sky-500 transition-all appearance-none">
+                        <option value="">-- กำลังโหลดคอร์สของคุณ --</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-sky-500">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-5 items-start">
             
             <!-- ฝั่งซ้าย: รายการบทเรียน -->
-            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-210px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
+            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-250px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
                 <div class="space-y-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center">
                         <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -123,7 +134,7 @@
                 <!-- รายการวิดีโอแบบเลื่อนได้ -->
                 <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดข้อมูล...
+                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังตรวจสอบคอร์ส...
                     </div>
                 </div>
             </div>
@@ -143,11 +154,12 @@
                             <p>ยังไม่ได้เลือกวิดีโอ</p>
                         </div>
                     </div>
+                    <!-- บล็อกกันปุ่ม Pop-out / เปิดหน้าต่างใหม่ -->
                     <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
                 </div>
 
                 <div class="flex justify-between items-center pt-1 text-[11px] text-slate-400">
-                    <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลด • รองรับการกรอและปรับความเร็ว</span>
+                    <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลด • ปิดกั้น Pop-out สมบูรณ์</span>
                     <span id="videoPublishDate">--</span>
                 </div>
             </div>
@@ -161,7 +173,8 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allCourses = [];
+        let currentStudentId = null;
+        let enrolledCourses = [];
         let allVideos = [];
         let currentCourseId = null;
         let searchQuery = '';
@@ -202,8 +215,8 @@
         });
 
         async function verifyStudentAccess() {
-            const studentId = localStorage.getItem('student_id') || localStorage.getItem('id');
-            if (!studentId) {
+            currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            if (!currentStudentId) {
                 await Swal.fire({
                     icon: 'error',
                     title: 'ไม่อนุญาตให้เข้าถึง',
@@ -214,10 +227,10 @@
                 return false;
             }
 
-            const { data: profile } = await mySupabase.from('profiles').select('id').eq('id', studentId).single();
+            const { data: profile } = await mySupabase.from('profiles').select('id').eq('id', currentStudentId).single();
             if (profile) return true;
 
-            const { data: student } = await mySupabase.from('students').select('id').eq('id', studentId).single();
+            const { data: student } = await mySupabase.from('students').select('id').eq('id', currentStudentId).single();
             if (student) return true;
 
             localStorage.removeItem('student_id');
@@ -237,11 +250,26 @@
             if (!isValid) return;
 
             try {
-                // 1. โหลดข้อมูลคอร์สทั้งหมด
-                const courseRes = await mySupabase.from('courses').select('id, title, course_code').order('title');
-                allCourses = courseRes.data || [];
+                // 1. ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียนจริงเท่านั้น
+                let enrollments = [];
+                const { data: en1 } = await mySupabase.from('course_enrollments').select('*').eq('student_id', currentStudentId);
+                if (en1) enrollments = enrollments.concat(en1);
+                
+                const { data: en2 } = await mySupabase.from('course_enrollments').select('*').eq('user_id', currentStudentId);
+                if (en2) enrollments = enrollments.concat(en2);
 
-                // 2. โหลดวิดีโอจากทั้ง course_lessons และ videos
+                const enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(Boolean);
+
+                const { data: allCoursesData } = await mySupabase.from('courses').select('id, title, course_code').order('title');
+                
+                // กรองเฉพาะคอร์สที่นักเรียนลงทะเบียน (ถ้ายังไม่ลงทะเบียนเลย จะแสดงเป็นค่าว่างเพื่อให้จัดการต่อได้ถูกต้อง)
+                if (enrolledCourseIds.length > 0) {
+                    enrolledCourses = (allCoursesData || []).filter(c => enrolledCourseIds.includes(String(c.id)));
+                } else {
+                    enrolledCourses = []; // หรือหากต้องการให้เห็นทุกคอร์สในช่วงทดสอบ สามารถปรับตรงนี้ได้
+                }
+
+                // 2. โหลดวิดีโอทั้งหมดในระบบ
                 let fetchedVideos = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
                 if (lessonRes.data) {
@@ -255,11 +283,10 @@
                     }
                 }
 
-                // จัดรูปแบบข้อมูลวิดีโอ
                 allVideos = fetchedVideos.map(v => ({
                     id: v.id,
                     title: v.title || v.name || 'ไม่มีชื่อบทเรียน',
-                    course_id: v.course_id || v.courseid || v.course || null,
+                    course_id: String(v.course_id || v.courseid || v.course || ''),
                     video_url: v.video_url || v.video || v.url || '',
                     created_at: v.created_at || new Date().toISOString()
                 }));
@@ -279,7 +306,6 @@
 
         function extractDrivePreviewUrl(url) {
             if (!url) return '';
-            // แปลงลิงก์ Google Drive ทุกรูปแบบให้เป็น /preview อัตโนมัติ
             const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
             if (match && match[1]) {
                 return `https://drive.google.com/file/d/${match[1]}/preview`;
@@ -299,37 +325,30 @@
             const selector = document.getElementById('courseSelector');
             if (!selector) return;
 
-            if (allCourses.length === 0) {
-                selector.innerHTML = '<option value="">-- ไม่พบคอร์สในระบบ --</option>';
-                document.getElementById('activeCourseTitleDisplay').textContent = 'ไม่มีคอร์สเรียน';
+            if (enrolledCourses.length === 0) {
+                selector.innerHTML = '<option value="">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>';
+                document.getElementById('videoListContainer').innerHTML = `
+                    <div class="text-center py-12 text-slate-400 text-xs space-y-2">
+                        <i class="fas fa-ban text-2xl text-amber-500"></i>
+                        <p>ไม่พบรายวิชาที่คุณลงทะเบียนในระบบ</p>
+                    </div>
+                `;
                 return;
             }
 
-            selector.innerHTML = allCourses.map(c => `
-                <option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>
+            selector.innerHTML = enrolledCourses.map(c => `
+                <option value="${c.id}">📖 [${c.course_code || 'CRS'}] ${c.title}</option>
             `).join('');
 
-            currentCourseId = allCourses[0].id;
+            currentCourseId = enrolledCourses[0].id;
             selector.value = currentCourseId;
-            updateActiveCourseHeader();
             renderVideoList();
         }
 
         function onCourseChanged() {
             const selector = document.getElementById('courseSelector');
             currentCourseId = selector.value;
-            updateActiveCourseHeader();
             renderVideoList();
-        }
-
-        function updateActiveCourseHeader() {
-            const courseObj = allCourses.find(c => String(c.id) === String(currentCourseId));
-            const titleSpan = document.getElementById('activeCourseTitleDisplay');
-            if (courseObj) {
-                titleSpan.textContent = courseObj.title;
-            } else {
-                titleSpan.textContent = 'เลือกคอร์สเรียน';
-            }
         }
 
         function handleLiveSearch() {
@@ -339,9 +358,10 @@
 
         function renderVideoList() {
             const container = document.getElementById('videoListContainer');
-            
-            // กรองเฉพาะวิดีโอที่เป็นของคอร์สปัจจุบันเท่านั้น
-            let courseVideos = allVideos.filter(v => String(v.course_id) === String(currentCourseId));
+            if (!currentCourseId) return;
+
+            // กรองเฉพาะวิดีโอที่ตรงกับคอร์สที่ผู้ใช้เลือก
+            let courseVideos = allVideos.filter(v => v.course_id === String(currentCourseId));
 
             if (searchQuery) {
                 courseVideos = courseVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
@@ -352,8 +372,8 @@
             if (courseVideos.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-film text-xl mb-2"></i>
-                        <p>ยังไม่มีวิดีโอในคอร์สนี้</p>
+                        <i class="fas fa-film text-xl mb-2 text-sky-500"></i>
+                        <p>ยังไม่มีเทปเรียนย้อนหลังในคอร์สนี้</p>
                     </div>
                 `;
                 resetPlayerToEmpty();
@@ -378,7 +398,6 @@
                 `;
             }).join('');
 
-            // เลือกเล่นคลิปแรกอัตโนมัติหากยังไม่ได้เลือก หรือคลิปเดิมไม่อยู่ในคอร์สนี้
             const activeInThisCourse = courseVideos.some(v => v.id === activeVideoId);
             if (!activeInThisCourse && courseVideos.length > 0) {
                 playVideo(courseVideos[0].id, encodeURIComponent(courseVideos[0].title), courseVideos[0].created_at, courseVideos[0].video_url);
@@ -425,9 +444,9 @@
                 toast: true,
                 position: 'top-end',
                 icon: 'info',
-                title: '🔒 ปิดการใช้งานปุ่มเปิดหน้าต่างภายนอก (Pop-out)',
+                title: '🔒 ปิดการใช้งานปุ่มเปิดหน้าต่างภายนอกเรียบร้อย',
                 showConfirmButton: false,
-                timer: 2000
+                timer: 1500
             });
         }
 
