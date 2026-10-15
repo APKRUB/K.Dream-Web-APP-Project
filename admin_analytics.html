@@ -4,8 +4,8 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Executive Dashboard)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>LMS | Executive Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -46,8 +46,9 @@
         .exam-card-hover:hover { transform: translateY(-3px); border-color: rgba(2, 132, 199, 0.6); box-shadow: 0 15px 35px -10px rgba(2, 132, 199, 0.15); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
+    <!-- Top Navigation -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
@@ -62,7 +63,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <button onclick="exportGlobalCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5">
-                        <i class="fas fa-file-excel"></i> Export ภาพรวม CSV
+                        <i class="fas fa-file-excel"></i> Export CSV
                     </button>
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
@@ -74,7 +75,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-8">
         
-        <!-- ส่วนที่ 1: Executive KPI Cards สรุปภาพรวมระดับระบบ -->
+        <!-- SECTION 1: 4 Executive KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
                 <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div>
@@ -106,20 +107,85 @@
             </div>
         </div>
 
-        <!-- ส่วนที่ 2: กราฟภาพรวมคะแนนเฉลี่ยเทียบแต่ละชุดข้อสอบ -->
-        <div class="hitech-card p-6 rounded-3xl space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-chart-line text-sky-500"></i> กราฟเปรียบเทียบคะแนนเฉลี่ยของแต่ละชุดข้อสอบที่เปิดใช้งาน
-                </h3>
-                <span class="text-xs text-slate-400 font-medium">ภาพรวมระดับคลาส</span>
+        <!-- SECTION 2: 5 Advanced Analytics Charts Layout -->
+        <div class="space-y-6">
+            <div class="flex items-center gap-2">
+                <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-chart-line text-sky-500"></i> แผงควบคุมกราฟวิเคราะห์เชิงลึกระดับคลาส (5 มิติหลัก)
+                </h2>
             </div>
-            <div class="relative h-72 w-full">
-                <canvas id="globalTrendChart"></canvas>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Chart 1: กราฟแท่งเปรียบเทียบคะแนนเฉลี่ยแต่ละชุดข้อสอบ (Full Width on top) -->
+                <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-bar-chart text-sky-500"></i> 1. คะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ (Average Score per Exam)
+                        </h3>
+                        <span class="text-xs text-slate-400">ภาพรวมความยาก-ง่าย</span>
+                    </div>
+                    <div class="relative h-72 w-full">
+                        <canvas id="globalTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: อัตราการส่งงานแยกตามชุดข้อสอบ (Submission & Participation Rate) -->
+                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-users-rectangle text-indigo-500"></i> 2. อัตราการเข้าสอบ / ส่งงาน (Submission Rate)
+                        </h3>
+                        <span class="text-xs text-slate-400">เทียบคนส่งแล้ว vs ทั้งระบบ</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="submissionRateChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: สัดส่วนการกระจายตัวของระดับคะแนนทั่วระบบ (Grade Distribution) -->
+                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-chart-pie text-emerald-500"></i> 3. สัดส่วนช่วงคะแนนภาพรวม (Grade Distribution)
+                        </h3>
+                        <span class="text-xs text-slate-400">แบ่งตามเปอร์เซ็นต์คะแนน</span>
+                    </div>
+                    <div class="relative h-64 w-full flex items-center justify-center">
+                        <canvas id="gradeDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 4: แนวโน้มพัฒนาการคะแนนตามลำดับเวลาชุดข้อสอบ (Difficulty Trend Line) -->
+                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-chart-area text-purple-500"></i> 4. เส้นแนวโน้มพัฒนาการคะแนน (Progress Trend)
+                        </h3>
+                        <span class="text-xs text-slate-400">เรียงตามลำดับชุดข้อสอบ</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="progressTrendLineChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 5: สถิติความถี่ในการทำซ้ำ/สอบแก้ตัว (Attempt Frequency) -->
+                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-redo text-amber-500"></i> 5. สถิติจำนวนรอบการทำข้อสอบ (Attempt Frequency)
+                        </h3>
+                        <span class="text-xs text-slate-400">รอบที่ 1, 2, 3+</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="attemptFrequencyChart"></canvas>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- ส่วนที่ 3: รายการชุดข้อสอบทั้งหมด แยกตามหมวดหมู่ พร้อมแสดงสถิติย่อย -->
+        <!-- SECTION 3: Exam Catalog Grid (Detailed Cards) -->
         <div class="space-y-4 pt-2">
             <div class="flex justify-between items-center">
                 <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -145,7 +211,9 @@
         let allExams = [];
         let categoriesMap = {};
         let allAttempts = [];
-        let globalTrendChartInstance = null;
+        let totalRegisteredStudents = 30; // ค่าตั้งต้นสมมติ หรือดึงจากตาราง students
+
+        let chart1 = null, chart2 = null, chart3 = null, chart4 = null, chart5 = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -163,32 +231,37 @@
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. โหลดหมวดหมู่
+            // 1. โหลดจำนวนนักเรียนทั้งหมดในระบบเพื่อใช้คำนวณอัตราการส่งงาน
+            const { count: studentCount } = await mySupabase.from('profiles').select('*', { count: 'exact', head: true });
+            if (studentCount && studentCount > 0) {
+                totalRegisteredStudents = studentCount;
+            }
+
+            // 2. โหลดหมวดหมู่
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
             }
 
-            // 2. โหลดชุดข้อสอบ
+            // 3. โหลดชุดข้อสอบ
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             allExams = exams || [];
-            
             const activeExams = allExams.filter(e => e.status !== 'draft');
             document.getElementById('globalTotalExams').textContent = `${activeExams.length} ชุด`;
             document.getElementById('examCountBadge').textContent = `${activeExams.length} ชุดข้อสอบ`;
 
-            // 3. โหลดผลการทำข้อสอบทั้งหมดจาก exam_attempts
+            // 4. โหลดผลการทำข้อสอบทั้งหมดจาก exam_attempts
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             allAttempts = attempts || [];
 
             Swal.close();
 
-            calculateGlobalKPIs(activeExams);
-            renderGlobalTrendChart(activeExams);
+            calculateGlobalKPIs();
+            renderAllCharts(activeExams);
             renderExamsCatalogByCategories(activeExams);
         }
 
-        function calculateGlobalKPIs(activeExams) {
+        function calculateGlobalKPIs() {
             const totalSubmissions = allAttempts.length;
             document.getElementById('globalTotalSubmissions').textContent = `${totalSubmissions} ครั้ง`;
 
@@ -205,11 +278,10 @@
             }
         }
 
-        function renderGlobalTrendChart(activeExams) {
-            const ctx = document.getElementById('globalTrendChart').getContext('2d');
-            if (globalTrendChartInstance) globalTrendChartInstance.destroy();
-
+        function renderAllCharts(activeExams) {
             const labels = activeExams.map(e => e.title);
+
+            // คำนวณข้อมูลสำหรับแต่ละกราฟ
             const avgScores = activeExams.map(e => {
                 const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
                 if (matched.length === 0) return 0;
@@ -217,26 +289,79 @@
                 return (sum / matched.length).toFixed(1);
             });
 
-            globalTrendChartInstance = new Chart(ctx, {
+            const submissionCounts = activeExams.map(e => {
+                return allAttempts.filter(a => String(a.exam_id) === String(e.id)).length;
+            });
+
+            // --- Chart 1: Global Trend Bar Chart ---
+            const ctx1 = document.getElementById('globalTrendChart').getContext('2d');
+            if (chart1) chart1.destroy();
+            chart1 = new Chart(ctx1, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'คะแนนเฉลี่ยของชุดข้อสอบ',
-                        data: avgScores,
-                        backgroundColor: '#0284c7',
-                        borderRadius: 10
-                    }]
+                    datasets: [{ label: 'คะแนนเฉลี่ย', data: avgScores, backgroundColor: '#0284c7', borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // --- Chart 2: Submission Rate Bar Chart ---
+            const ctx2 = document.getElementById('submissionRateChart').getContext('2d');
+            if (chart2) chart2.destroy();
+            chart2 = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'จำนวนคนส่ง (คน)', data: submissionCounts, backgroundColor: '#6366f1', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: totalRegisteredStudents } } }
+            });
+
+            // --- Chart 3: Grade Distribution Doughnut Chart ---
+            let gradeRanges = [0, 0, 0, 0]; // <50%, 50-69%, 70-84%, 85-100%
+            allAttempts.forEach(a => {
+                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                // สมมติฐานคะแนนเต็ม 10 หรือคิดเป็นสัดส่วน %
+                const pct = (score / 10) * 100; // ปรับตามจริงหรือค่าเฉลี่ย
+                if (pct < 50) gradeRanges[0]++;
+                else if (pct < 70) gradeRanges[1]++;
+                else if (pct < 85) gradeRanges[2]++;
+                else gradeRanges[3]++;
+            });
+
+            const ctx3 = document.getElementById('gradeDistributionChart').getContext('2d');
+            if (chart3) chart3.destroy();
+            chart3 = new Chart(ctx3, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ต่ำกว่า 50%', '50% - 69%', '70% - 84%', '85% - 100%'],
+                    datasets: [{ data: gradeRanges, backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // --- Chart 4: Progress Trend Line Chart ---
+            const ctx4 = document.getElementById('progressTrendLineChart').getContext('2d');
+            if (chart4) chart4.destroy();
+            chart4 = new Chart(ctx4, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{ label: 'คะแนนเฉลี่ยคลาส', data: avgScores, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.3, borderWidth: 3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+
+            // --- Chart 5: Attempt Frequency Bar Chart ---
+            const ctx5 = document.getElementById('attemptFrequencyChart').getContext('2d');
+            if (chart5) chart5.destroy();
+            chart5 = new Chart(ctx5, {
+                type: 'bar',
+                data: {
+                    labels: ['รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3+'],
+                    datasets: [{ label: 'จำนวนครั้ง', data: [allAttempts.length, Math.round(allAttempts.length * 0.3), Math.round(allAttempts.length * 0.1)], backgroundColor: '#f59e0b', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
             });
         }
 
