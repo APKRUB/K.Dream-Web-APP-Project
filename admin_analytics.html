@@ -98,11 +98,12 @@
                     <span id="globalTotalStudentsCount" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คน</span>
                 </div>
             </div>
+            <!-- ปรับแก้จากคะแนนเฉลี่ยภาพรวม เป็น Percentile ภาพรวม -->
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-trophy"></i></div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div>
                 <div>
-                    <span class="text-xs text-slate-400 font-bold block">คะแนนเฉลี่ยภาพรวม</span>
-                    <span id="globalAvgScore" class="text-xl font-extrabold text-amber-500">--</span>
+                    <span class="text-xs text-slate-400 font-bold block">ค่าเฉลี่ย Percentile คลาส</span>
+                    <span id="globalAvgPercentile" class="text-xl font-extrabold text-amber-500">--%</span>
                 </div>
             </div>
         </div>
@@ -236,7 +237,7 @@
                             <th class="p-3">รหัสนักเรียน / ID</th>
                             <th class="p-3 text-center">ชุดข้อสอบที่ทำแล้ว</th>
                             <th class="p-3 text-center">คะแนนสะสมรวม</th>
-                            <th class="p-3 text-center">Percentile (อันดับเทียบในคลาส)</th>
+                            <th class="p-3 text-center">Percentile</th>
                             <th class="p-3 text-center">ดูภาพรวมรายคน</th>
                         </tr>
                     </thead>
@@ -312,7 +313,6 @@
             return false;
         }
 
-        // Helper functions for formatting answers
         function formatAnswerText(ansValue) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
             const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
@@ -404,17 +404,30 @@
             renderExamsCatalogByCategories(activeExams);
         }
 
+        // 🎯 คำนวณค่าเฉลี่ย Percentile ภาพรวมของคลาสและแสดงผลลงท้ายด้วย %
         function calculateGlobalKPIs() {
             const totalSubmissions = allAttempts.length;
             document.getElementById('globalTotalSubmissions').textContent = `${totalSubmissions} ครั้ง`;
 
-            if (totalSubmissions > 0) {
-                const scores = allAttempts.map(a => getAttemptScore(a));
-                const sum = scores.reduce((a, b) => a + b, 0);
-                const avg = (sum / totalSubmissions).toFixed(1);
-                document.getElementById('globalAvgScore').textContent = `${avg} คะแนน`;
+            let combinedStudents = allProfilesList.map(p => {
+                const sId = p.id || p.user_id || p.student_id;
+                const studentAttempts = allAttempts.filter(a => String(a.student_id || a.user_id) === String(sId));
+                const totalScore = studentAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0);
+                return { totalScore };
+            });
+
+            const totalStudentsCount = combinedStudents.length || 1;
+            combinedStudents.forEach(s => {
+                const lowerCount = combinedStudents.filter(other => other.totalScore < s.totalScore).length;
+                s.percentile = Math.round((lowerCount / totalStudentsCount) * 100);
+            });
+
+            if (combinedStudents.length > 0) {
+                const sumPercentile = combinedStudents.reduce((acc, curr) => acc + curr.percentile, 0);
+                const avgPercentile = Math.round(sumPercentile / combinedStudents.length);
+                document.getElementById('globalAvgPercentile').textContent = `${avgPercentile}%`;
             } else {
-                document.getElementById('globalAvgScore').textContent = `0 คะแนน`;
+                document.getElementById('globalAvgPercentile').textContent = `0%`;
             }
         }
 
@@ -549,7 +562,7 @@
             }
         }
 
-        // 🎯 ตารางรายชื่อนักเรียน พร้อมระบบ Dropdown Sort และคำนวณ Percentile
+        // 🎯 ตารางรายชื่อนักเรียนแสดงผล Percentile เป็น %
         function renderAllStudentsTable() {
             const tbody = document.getElementById('allStudentsTableBody');
             const searchKeyword = document.getElementById('globalStudentSearchInput').value.trim().toLowerCase();
@@ -567,20 +580,17 @@
                 return { sId, name, studentIdCode, totalScore, count, studentAttempts };
             });
 
-            // คำนวณ Percentile ของนักเรียนแต่ละคนเทียบกับเพื่อนในคลาส
             const totalStudentsCount = combinedStudents.length || 1;
             combinedStudents.forEach(s => {
                 const lowerCount = combinedStudents.filter(other => other.totalScore < s.totalScore).length;
                 s.percentile = Math.round((lowerCount / totalStudentsCount) * 100);
             });
 
-            // กรองตามคำค้นหา
             let filtered = combinedStudents.filter(s => {
                 if (searchKeyword === '') return true;
                 return s.name.toLowerCase().includes(searchKeyword) || String(s.studentIdCode).toLowerCase().includes(searchKeyword);
             });
 
-            // จัดเรียงตาม Dropdown Sort
             filtered.sort((a, b) => {
                 if (sortMode === 'id_asc') {
                     return String(a.studentIdCode).localeCompare(String(b.studentIdCode));
@@ -589,7 +599,7 @@
                 } else if (sortMode === 'score_asc') {
                     return a.totalScore - b.totalScore;
                 }
-                return 0; // default
+                return 0;
             });
 
             document.getElementById('studentDirectoryCount').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${combinedStudents.length} คน)`;
@@ -606,7 +616,7 @@
                     <td class="p-3 font-mono text-slate-500">${s.studentIdCode}</td>
                     <td class="p-3 text-center font-mono">${s.count} ชุด</td>
                     <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${s.totalScore} คะแนน</td>
-                    <td class="p-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">P${s.percentile} (${s.percentile}%)</td>
+                    <td class="p-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">${s.percentile}%</td>
                     <td class="p-3 text-center">
                         <button onclick="viewIndividualStudentProfile('${s.sId}')" class="px-3.5 py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-extrabold text-[11px] rounded-xl shadow-md transition-all flex items-center gap-1.5 mx-auto">
                             <i class="fas fa-eye animate-pulse"></i> ดูภาพรวม
@@ -616,7 +626,6 @@
             `).join('');
         }
 
-        // 🎯 Modal ภาพรวมรายบุคคล
         function viewIndividualStudentProfile(studentId) {
             const profile = allProfilesMap[studentId];
             const name = getStudentName(profile, studentId);
@@ -705,7 +714,6 @@
             });
         }
 
-        // 🎯 ฟังก์ชันดูรายละเอียดข้อสอบแต่ละชุดของนักเรียนคนนั้น "ใน Modal ทันที" โดยไม่ต้องเปลี่ยนหน้า
         async function viewStudentExamDetailInModal(studentId, examId) {
             Swal.fire({ title: 'กำลังโหลดรายละเอียดข้อสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
