@@ -174,7 +174,7 @@
             courseExams = examsRes.data || [];
             courseAnnouncements = annRes.data || [];
 
-            document.getElementById('navCourseTitle').innerHTML = `<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chalkboard"></i></span> ${currentCourse.title}`;
+            document.getElementById('navCourseTitle').innerHTML = '<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chalkboard"></i></span> ' + currentCourse.title;
             document.getElementById('courseBadgeCode').textContent = currentCourse.course_code || 'COURSE';
             document.getElementById('headerCourseTitle').textContent = currentCourse.title;
             document.getElementById('headerCourseDesc').textContent = currentCourse.description || 'ไม่มีรายละเอียดคอร์ส';
@@ -187,7 +187,7 @@
             document.querySelectorAll('.course-tab-btn').forEach(btn => {
                 btn.className = 'course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all';
             });
-            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            const activeBtn = document.getElementById('tab-btn-' + tabName);
             if (activeBtn) activeBtn.className = 'course-tab-btn px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs shrink-0 transition-all shadow';
 
             const container = document.getElementById('tabContentContainer');
@@ -197,57 +197,43 @@
             else if (tabName === 'announcements') renderAnnouncementsTab(container);
         }
 
-        // --- TAB 1: บทเรียน & เนื้อหา (Curriculum Builder) ---
         function renderCurriculumTab(container) {
-            container.innerHTML = `
-                <div class="space-y-4">
-                    <div class="hitech-card p-6 rounded-3xl flex justify-between items-center">
-                        <div>
-                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>
-                            <p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons) พร้อมวิดีโอและเอกสารประกอบ</p>
-                        </div>
-                        <button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5">
-                            <i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่
-                        </button>
-                    </div>
+            let modulesHtml = '';
+            if (courseModules.length > 0) {
+                modulesHtml = courseModules.map(function(m, idx) {
+                    const lessons = courseLessons.filter(function(l) { return String(l.module_id) === String(m.id); });
+                    let lessonsHtml = '';
+                    if (lessons.length > 0) {
+                        lessonsHtml = lessons.map(function(l) {
+                            return '<div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl flex justify-between items-center border dark:border-slate-700">' +
+                                   '<div class="flex items-center gap-2"><i class="fas fa-play-circle text-purple-500"></i><span class="font-bold text-xs">' + l.title + '</span></div>' +
+                                   '<button onclick="deleteLesson(\'' + l.id + '\')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>' +
+                                   '</div>';
+                        }).join('');
+                    } else {
+                        lessonsHtml = '<div class="text-xs text-slate-400 italic py-2">ยังไม่มีเนื้อหาย่อยในบทนี้</div>';
+                    }
 
-                    <div class="space-y-4">
-                        ${courseModules.length > 0 ? courseModules.map((m, idx) => {
-                            const lessons = courseLessons.filter(l => String(l.module_id) === String(m.id));
-                            return `
-                                <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-purple-500">
-                                    <div class="flex justify-between items-center">
-                                        <div class="flex items-center gap-2">
-                                            <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
-                                            <h4 class="font-extrabold text-base text-slate-900 dark:text-white">${m.title}</h4>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <button onclick="openLessonModal('${m.id}')" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-xl text-xs font-bold transition-all">
-                                                <i class="fas fa-plus mr-1"></i> เพิ่มเนื้อหาย่อย
-                                            </button>
-                                            <button onclick="deleteModule('${m.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all">
-                                                <i class="fas fa-trash text-xs"></i>
-                                            </button>
-                                        </div>
-                                    </div>
+                    return '<div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-purple-500">' +
+                           '<div class="flex justify-between items-center">' +
+                           '<div class="flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">' + (idx + 1) + '</span>' +
+                           '<h4 class="font-extrabold text-base text-slate-900 dark:text-white">' + m.title + '</h4></div>' +
+                           '<div class="flex items-center gap-2">' +
+                           '<button onclick="openLessonModal(\'' + m.id + '\')" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-xl text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มเนื้อหาย่อย</button>' +
+                           '<button onclick="deleteModule(\'' + m.id + '\')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all"><i class="fas fa-trash text-xs"></i></button>' +
+                           '</div></div>' +
+                           '<div class="space-y-2 pl-4 border-l-2 border-purple-500/20">' + lessonsHtml + '</div></div>';
+                }).join('');
+            } else {
+                modulesHtml = '<div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs">ยังไม่มีบทเรียนในคอร์สนี้</div>';
+            }
 
-                                    <div class="space-y-2 pl-4 border-l-2 border-purple-500/20">
-                                        ${lessons.length > 0 ? lessons.map(l => `
-                                            <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl flex justify-between items-center border dark:border-slate-700">
-                                                <div class="flex items-center gap-2">
-                                                    <i class="fas fa-play-circle text-purple-500"></i>
-                                                    <span class="font-bold text-xs">${l.title}</span>
-                                                </div>
-                                                <button onclick="deleteLesson('${l.id}')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>
-                                            </div>
-                                        `).join('') : '<div class="text-xs text-slate-400 italic py-2">ยังไม่มีเนื้อหาย่อยในบทนี้</div>'}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('') : '<div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs">ยังไม่มีบทเรียนในคอร์สนี้</div>'}
-                    </div>
-                </div>
-            `;
+            container.innerHTML = '<div class="space-y-4">' +
+                '<div class="hitech-card p-6 rounded-3xl flex justify-between items-center">' +
+                '<div><h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>' +
+                '<p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons) พร้อมวิดีโอและเอกสาร</p></div>' +
+                '<button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>' +
+                '</div><div class="space-y-4">' + modulesHtml + '</div></div>';
         }
 
         async function openModuleModal() {
@@ -255,7 +241,7 @@
             const { value: title } = await Swal.fire({
                 title: '📚 เพิ่มบทเรียนหลัก (Module)',
                 input: 'text',
-                inputPlaceholder: 'เช่น บทที่ 1: พื้นฐานการเขียนโปรแกรม C++',
+                inputPlaceholder: 'เช่น บทที่ 1: พื้นฐานการเขียนโปรแกรม',
                 showCancelButton: true,
                 confirmButtonText: 'สร้างบทเรียน',
                 confirmButtonColor: '#9333ea',
@@ -321,67 +307,45 @@
             initCourseDetail();
         }
 
-        // --- TAB 2: นักเรียนในคอร์ส ---
         function renderStudentsTab(container) {
-            const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
-            container.innerHTML = `
-                <div class="hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
-                        <span class="text-xs font-bold text-slate-400">รายชื่อนักเรียนในคอร์ส (${enrolledStudents.length} คน)</span>
-                        <button onclick="openManageEnrollmentsModal()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5">
-                            <i class="fas fa-user-plus"></i> จัดการรายชื่อนักเรียน
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700">
-                                    <th class="p-3">ลำดับ</th>
-                                    <th class="p-3">รหัส</th>
-                                    <th class="p-3">ชื่อ-นามสกุล</th>
-                                    <th class="p-3">ชื่อเล่น</th>
-                                    <th class="p-3">ระดับชั้น / โรงเรียน</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                                ${enrolledStudents.length > 0 ? enrolledStudents.map((s, idx) => `
-                                    <tr>
-                                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
-                                        <td class="p-3 font-mono text-purple-600">${s.student_id || '-'}</td>
-                                        <td class="p-3 font-bold">${s.first_name \vert{}\vert{} '-'}${s.last_name || ''}</td>
-                                        <td class="p-3">${s.nickname || '-'}</td>
-                                        <td class="p-3">${s.grade_level \vert{}\vert{} '-'} (${s.school || '-'})</td>
-                                    </tr>
-                                `).join('') : '<tr><td colspan="5" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนในคอร์สนี้</td></tr>'}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
+            const enrolledStudents = allStudents.filter(function(s) { return enrolledStudentIds.includes(String(s.id || s.user_id)); });
+            let rowsHtml = '';
+            if (enrolledStudents.length > 0) {
+                rowsHtml = enrolledStudents.map(function(s, idx) {
+                    return '<tr><td class="p-3 font-mono font-bold">' + (idx + 1) + '</td>' +
+                           '<td class="p-3 font-mono text-purple-600">' + (s.student_id || '-') + '</td>' +
+                           '<td class="p-3 font-bold">' + (s.first_name || '-') + ' ' + (s.last_name || '') + '</td>' +
+                           '<td class="p-3">' + (s.nickname || '-') + '</td>' +
+                           '<td class="p-3">' + (s.grade_level || '-') + ' (' + (s.school || '-') + ')</td></tr>';
+                }).join('');
+            } else {
+                rowsHtml = '<tr><td colspan="5" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนในคอร์สนี้</td></tr>';
+            }
+
+            container.innerHTML = '<div class="hitech-card p-6 rounded-3xl space-y-4">' +
+                '<div class="flex justify-between items-center pb-3 border-b border-purple-500/20">' +
+                '<span class="text-xs font-bold text-slate-400">รายชื่อนักเรียนในคอร์ส (' + enrolledStudents.length + ' คน)</span>' +
+                '<button onclick="openManageEnrollmentsModal()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-user-plus"></i> จัดการรายชื่อนักเรียน</button>' +
+                '</div><div class="overflow-x-auto"><table class="w-full text-left text-xs border-collapse">' +
+                '<thead><tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700"><th class="p-3">ลำดับ</th><th class="p-3">รหัส</th><th class="p-3">ชื่อ-นามสกุล</th><th class="p-3">ชื่อเล่น</th><th class="p-3">ระดับชั้น / โรงเรียน</th></tr></thead>' +
+                '<tbody class="divide-y divide-slate-100 dark:divide-slate-800">' + rowsHtml + '</tbody></table></div></div>';
         }
 
         async function openManageEnrollmentsModal() {
-            let studentCheckboxes = allStudents.map(s => {
+            let studentCheckboxes = allStudents.map(function(s) {
                 const sId = s.id || s.user_id;
                 const isChecked = enrolledStudentIds.includes(String(sId)) ? 'checked' : '';
-                return `
-                    <label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500">
-                        <div class="flex items-center gap-2.5">
-                            <input type="checkbox" name="courseStudent" value="${sId}" ${isChecked} class="w-4 h-4 accent-purple-600 rounded">
-                            <div>
-                                <div class="font-bold">${s.first_name || '-'} ${s.last_name || ''}</div>
-                                <div class="text-[10px] text-slate-400 font-mono">รหัส: ${s.student_id || '-'} | ชั้น: ${s.grade_level || '-'}</div>
-                            </div>
-                        </div>
-                    </label>
-                `;
+                return '<label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500">' +
+                       '<div class="flex items-center gap-2.5"><input type="checkbox" name="courseStudent" value="' + sId + '" ' + isChecked + ' class="w-4 h-4 accent-purple-600 rounded">' +
+                       '<div><div class="font-bold">' + (s.first_name || '-') + ' ' + (s.last_name || '') + '</div>' +
+                       '<div class="text-[10px] text-slate-400 font-mono">รหัส: ' + (s.student_id || '-') + ' | ชั้น: ' + (s.grade_level || '-') + '</div></div></div></label>';
             }).join('');
 
             const isDark = document.documentElement.classList.contains('dark');
             const { isConfirmed } = await Swal.fire({
                 title: '👥 จัดการรายชื่อนักเรียนในคอร์ส',
                 width: '600px',
-                html: `<div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-left">${studentCheckboxes}</div>`,
+                html: '<div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-left">' + studentCheckboxes + '</div>',
                 showCancelButton: true,
                 confirmButtonText: 'บันทึก',
                 confirmButtonColor: '#9333ea',
@@ -392,11 +356,11 @@
             if (isConfirmed) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 const checkboxes = document.querySelectorAll('input[name="courseStudent"]:checked');
-                const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+                const selectedIds = Array.from(checkboxes).map(function(cb) { return cb.value; });
 
                 await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
                 if (selectedIds.length > 0) {
-                    const rows = selectedIds.map(sId => ({ student_id: sId, course_id: courseId }));
+                    const rows = selectedIds.map(function(sId) { return { student_id: sId, course_id: courseId }; });
                     await mySupabase.from('course_enrollments').insert(rows);
                 }
                 initCourseDetail();
@@ -404,74 +368,8 @@
             }
         }
 
-        // --- TAB 3: ข้อสอบประจำคอร์ส ---
         function renderExamsTab(container) {
-            container.innerHTML = `
-                <div class="hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
-                        <span class="text-xs font-bold text-slate-400">ชุดข้อสอบที่ผูกกับคอร์สนี้ (${courseExams.length} ชุด)</span>
-                        <button onclick="window.location.href='admin_exams.html'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all">
-                            <i class="fas fa-file-signature mr-1"></i> ไปที่ศูนย์จัดการชุดข้อสอบ
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${courseExams.length > 0 ? courseExams.map(ex => `
-                            <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">
-                                <div class="font-extrabold text-slate-900 dark:text-white">${ex.title || ex.exam_name || 'ชุดข้อสอบ'}</div>
-                                <div class="text-xs text-slate-500">${ex.description || 'ไม่มีคำอธิบาย'}</div>
-                            </div>
-                        `).join('') : '<div class="col-span-full text-center py-8 text-slate-400">ยังไม่มีชุดข้อสอบที่ผูกกับคอร์สนี้</div>'}
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- TAB 4: ประกาศเฉพาะคอร์ส ---
-        function renderAnnouncementsTab(container) {
-            container.innerHTML = `
-                <div class="hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
-                        <span class="text-xs font-bold text-slate-400">ประกาศข่าวสารในคอร์ส (${courseAnnouncements.length} ประกาศ)</span>
-                        <button onclick="openAddAnnouncementModal()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow transition-all">
-                            <i class="fas fa-bullhorn mr-1"></i> สร้างประกาศใหม่
-                        </button>
-                    </div>
-                    <div class="space-y-3">
-                        ${courseAnnouncements.length > 0 ? courseAnnouncements.map(an => `
-                            <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">
-                                <div class="font-extrabold text-amber-600">${an.title}</div>
-                                <div class="text-xs text-slate-600 dark:text-slate-300">${an.content}</div>
-                            </div>
-                        `).join('') : '<div class="text-center py-8 text-slate-400">ยังไม่มีประกาศในคอร์สนี้</div>'}
-                    </div>
-                </div>
-            `;
-        }
-
-        async function openAddAnnouncementModal() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const { value: formValues } = await Swal.fire({
-                title: '📢 สร้างประกาศใหม่ในคอร์ส',
-                width: '500px',
-                html: `
-                    <div class="space-y-3 text-left text-xs">
-                        <div><label class="block font-bold mb-1">หัวข้อประกาศ</label><input id="swalAnTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold"></div>
-                        <div><label class="block font-bold mb-1">เนื้อหาประกาศ</label><textarea id="swalAnContent" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none"></textarea></div>
-                    </div>
-                `,
-                showCancelButton: true, confirmButtonText: 'โพสต์ประกาศ', confirmButtonColor: '#d97706',
-                background: isDark ? '#090d16' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b',
-                preConfirm: () => ({ title: document.getElementById('swalAnTitle').value.trim(), content: document.getElementById('swalAnContent').value.trim(), course_id: courseId })
-            });
-
-            if (formValues && formValues.title) {
-                await mySupabase.from('announcements').insert([formValues]);
-                initCourseDetail();
-                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ!', timer: 1000, showConfirmButton: false });
-            }
-        }
-
-        initCourseDetail();
-    </script>
-</body>
-</html>
+            let examsHtml = '';
+            if (courseExams.length > 0) {
+                examsHtml = courseExams.map(function(ex) {
+                    return '<div class="p-
