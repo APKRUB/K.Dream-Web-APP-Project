@@ -849,17 +849,11 @@
             window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
 
-        // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ
-// 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ (ฉบับครอบคลุมทุกโครงสร้างคำตอบ)
-// 🌟 ฟังก์ชันบันทึกและ Regrade พร้อมตัวเช็คข้อมูลดิบ (Debug) เพื่อดูโครงสร้างใน Supabase
-// 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade อัปเดตทุกฟิลด์คะแนนที่เป็นไปได้ใน Supabase
-// 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบ Error จาก Supabase
-// 🌟 ระบบบันทึกและ Regrade พร้อมจับ Error แบบละเอียด
-// 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบจำนวนข้อมูลที่ดึงมาได้
+// 🌟 ระบบบันทึกและ Regrade พร้อมเช็คผลการอัปเดตรายรายการ
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">กำลังตรวจสอบข้อมูลและอัปเดต...</div>',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตลงตาราง exam_attempts...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -876,10 +870,8 @@
             // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
-            // 3. ลองดึงประวัติการสอบโดยเช็คทั้งฟิลด์ exam_id และข้อสอบอื่นๆ ที่อาจเกี่ยวข้อง
-            let { data: attempts, error: fetchErr } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
-            
-            // เผื่อตารางใช้ชื่อฟิลด์ชุดข้อสอบเป็น exam_uuid หรือตัวแปรอื่น
+            // 3. ดึงประวัติการสอบ
+            let { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
             if (!attempts || attempts.length === 0) {
                 const altFetch = await mySupabase.from('exam_attempts').select('*');
                 if (altFetch.data) {
@@ -887,7 +879,8 @@
                 }
             }
 
-            console.log("จำนวนประวัติการสอบที่พบสำหรับ Regrade:", attempts ? attempts.length : 0);
+            let successCount = 0;
+            let errorLogs = [];
 
             if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
@@ -925,29 +918,43 @@
                         }
                     });
 
-                    // อัปเดตคะแนนลงตาราง exam_attempts
+                    // 🔍 เช็คชื่อ Primary Key ที่แท้จริง (id, attempt_id หรือ uuid) แล้วลองอัปเดต
                     const targetId = att.id || att.attempt_id || att.uuid;
+                    const primaryKeyName = att.id !== undefined ? 'id' : (att.attempt_id !== undefined ? 'attempt_id' : 'uuid');
+
                     if (targetId) {
                         const { error: updateErr } = await mySupabase.from('exam_attempts').update({
                             total_score: recalculatedScore,
                             score: recalculatedScore
-                        }).eq('id', targetId);
+                        }).eq(primaryKeyName, targetId);
 
                         if (updateErr) {
-                            console.error("Error updating score:", updateErr);
+                            errorLogs.push(updateErr.message);
+                            console.error(`Update failed for ${primaryKeyName}=${targetId}:`, updateErr);
+                        } else {
+                            successCount++;
                         }
                     }
                 }
             }
 
             clearModifiedFlag();
-            Swal.fire({
-                icon: 'success',
-                title: 'บันทึกและ Regrade สำเร็จ!',
-                text: `คำนวณคะแนนใหม่เรียบร้อย (พบประวัติการสอบ ${attempts ? attempts.length : 0} รายการ)`,
-                timer: 2000,
-                showConfirmButton: false
-            });
+
+            if (errorLogs.length > 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาดในการอัปเดตคะแนน',
+                    html: `<div class="text-xs text-left text-red-400 font-mono mt-2 p-2 bg-slate-900 rounded">Error: ${errorLogs[0]}</div>`
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกและ Regrade สำเร็จ!',
+                    text: `อัปเดตคะแนนใหม่สำเร็จ ${successCount} จาก ${attempts ? attempts.length : 0} รายการ`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
         }
 
         initPage();
