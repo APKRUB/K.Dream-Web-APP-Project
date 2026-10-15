@@ -44,7 +44,6 @@
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
         
-        /* 🌟 ดีไซน์ใหม่ให้การ์ดชุดข้อสอบเด่นสะดุดตาและพรีเมียมขึ้น */
         .exam-catalog-card {
             background: linear-gradient(135deg, rgba(2, 132, 199, 0.03) 0%, rgba(99, 102, 241, 0.05) 100%);
             border: 1px solid rgba(2, 132, 199, 0.25);
@@ -135,7 +134,7 @@
                 <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-bar-chart text-sky-500"></i> 1. คะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ (Average Score per Exam)
+                            <i class="fas fa-chart-bar text-sky-500"></i> 1. คะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ (Average Score per Exam)
                         </h3>
                         <span class="text-xs text-slate-400">ภาพรวมความยาก-ง่าย</span>
                     </div>
@@ -262,12 +261,12 @@
             </div>
         </div>
 
-        <!-- 🌟 SECTION 5: Exam Catalog Grid (ปรับดีไซน์ใหม่ให้เด่นสะดุดตา พรีเมียมสุดๆ) -->
+        <!-- 🌟 SECTION 5: Exam Catalog Grid (ปรับดีไซน์ใหม่และลิงก์ดูสถิติรายข้อสอบแต่ละข้ออย่างสมบูรณ์) -->
         <div class="space-y-4 pt-2">
             <div class="flex justify-between items-center bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-transparent p-4 rounded-2xl border border-sky-500/20">
                 <h2 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <span class="w-8 h-8 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-folder-open"></i></span>
-                    ชุดข้อสอบทั้งหมด (แยกตามหมวดหมู่) - คลิกเพื่อดูผลเจาะลึก
+                    ชุดข้อสอบทั้งหมด (แยกตามหมวดหมู่) - คลิกเพื่อดูผลเจาะลึกรายข้อสอบ
                 </h2>
                 <span id="examCountBadge" class="text-xs font-extrabold px-3 py-1 bg-sky-500 text-white rounded-xl shadow-sm">0 ชุดข้อสอบ</span>
             </div>
@@ -345,9 +344,9 @@
 
         function getCorrectAnswer(q) {
             let raw = q.correct_answer !== undefined ? q.correct_answer : 
-                      (q.answer !== undefined ? q.answer : 
-                      (q.key !== undefined ? q.key : 
-                      (q.solution !== undefined ? q.solution : '')));
+                    (q.answer !== undefined ? q.answer : 
+                    (q.key !== undefined ? q.key : 
+                    (q.solution !== undefined ? q.solution : '')));
             return formatAnswerText(raw);
         }
 
@@ -933,7 +932,7 @@
             printWindow.document.close();
         }
 
-        // 🌟 renderExamsCatalogByCategories พร้อมดีไซน์การ์ดชุดข้อสอบใหม่ที่โดดเด่นสะดุดตา
+        // 🌟 renderExamsCatalogByCategories พร้อมลิงก์ไปหน้าวิเคราะห์รายชุดข้อสอบอย่างแม่นยำ
         function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (activeExams.length === 0) {
@@ -979,7 +978,7 @@
                             </div>
                             <div class="pt-3 border-t border-sky-500/10 flex justify-between items-center text-xs">
                                 <span class="text-slate-400 font-medium">คะแนนเฉลี่ย: <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold text-sm">${avgExamScore}</strong></span>
-                                <span class="text-sky-600 dark:text-sky-400 font-extrabold flex items-center gap-1.5 hover:translate-x-1 transition-transform">คลิกดูสถิติ <i class="fas fa-arrow-right"></i></span>
+                                <span class="text-sky-600 dark:text-sky-400 font-extrabold flex items-center gap-1.5 hover:translate-x-1 transition-transform">คลิกดูสถิติรายข้อ <i class="fas fa-arrow-right"></i></span>
                             </div>
                         </div>
                     `;
