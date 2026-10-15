@@ -520,17 +520,38 @@
                     const selectedIds = result.value;
                     Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     
-                    await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
-                    if (selectedIds.length > 0) {
-                        const rows = selectedIds.map(sId => ({ 
-                            student_id: sId, 
-                            user_id: sId, 
-                            course_id: courseId 
-                        }));
-                        await mySupabase.from('course_enrollments').insert(rows);
+                    try {
+                        // 1. ลบรายชื่อเดิมออกก่อน
+                        const { error: deleteErr } = await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
+                        if (deleteErr) {
+                            console.warn("Delete enrollment warning:", deleteErr);
+                        }
+
+                        // 2. ถ้ามีการเลือกนักเรียน ให้ทำการ INSERT ทีละรายการเพื่อป้องกันปัญหาคอลัมน์ที่ไม่ตรงกันในแต่ละตาราง DB
+                        if (selectedIds.length > 0) {
+                            for (const sId of selectedIds) {
+                                // ลองบันทึกด้วยฟิลด์ student_id และ user_id พร้อมกัน
+                                const payload1 = { student_id: sId, course_id: courseId };
+                                let insertRes = await mySupabase.from('course_enrollments').insert([payload1]);
+                                
+                                if (insertRes.error) {
+                                    // ลองสำรองด้วยฟิลด์ user_id
+                                    const payload2 = { user_id: sId, course_id: courseId };
+                                    insertRes = await mySupabase.from('course_enrollments').insert([payload2]);
+                                }
+
+                                if (insertRes.error) {
+                                    console.error("Failed to insert student:", sId, insertRes.error);
+                                }
+                            }
+                        }
+
+                        await initCourseDetail();
+                        Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    } catch (err) {
+                        console.error("Save enrollment error:", err);
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาตรวจสอบ Console', 'error');
                     }
-                    initCourseDetail();
-                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1000, showConfirmButton: false });
                 }
             });
         }
