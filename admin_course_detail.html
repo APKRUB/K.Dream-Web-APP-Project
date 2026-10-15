@@ -260,8 +260,8 @@
             switchCourseTab(currentTab);
         }
 
-        // --- ระบบอัจฉริยะ: แค่แปะลิงก์ Google Drive ปกติ ระบบจัดการแปลงซ่อนปุ่มมุมขวาบนให้อัตโนมัติ ---
-        function getSecureEmbedUrl(url) {
+        // --- แปลงลิงก์ Google Drive ปกติให้เป็น Direct Stream URL สำหรับ HTML5 Video Player ---
+        function getSecureStreamUrl(url) {
             if (!url) return '';
             let videoUrl = url.trim();
             if (videoUrl.includes('drive.google.com')) {
@@ -274,13 +274,14 @@
                     fileId = urlParamsObj.get('id');
                 }
                 if (fileId) {
-                    return `https://drive.google.com/file/d/${fileId}/preview`;
+                    // ใช้ลิงก์ดาวน์โหลดตรงของ Google Drive เพื่อดึงสตรีมวิดีโอเข้า HTML5 Video Tag โดยตรง
+                    return `https://docs.google.com/uc?export=download&id=${fileId}`;
                 }
             }
             return videoUrl;
         }
 
-        // --- เปิดหน้าต่างทดสอบดูคลิปตัวอย่าง (พร้อม Crop ซ่อนปุ่มเปิดหน้าต่างใหม่มุมขวาบนแบบ 100%) ---
+        // --- เปิดหน้าต่างทดสอบดูคลิปตัวอย่าง (ใช้ HTML5 Video ป้องกันการดาวน์โหลด 100% แต่กดเล่น/กรอ/ปรับสปีดได้ปกติ) ---
         function openPreviewVideoModal() {
             const previewLessons = courseLessons.filter(l => l.video_url || l.video || l.url);
             if (previewLessons.length === 0) {
@@ -289,7 +290,7 @@
             }
 
             let optionsHtml = previewLessons.map((l, idx) => `<option value="${l.video_url || l.video || l.url}">บทที่ ${idx + 1}: ${l.title}</option>`).join('');
-            const initialEmbedUrl = getSecureEmbedUrl(previewLessons[0].video_url || previewLessons[0].video || previewLessons[0].url);
+            const initialStreamUrl = getSecureStreamUrl(previewLessons[0].video_url || previewLessons[0].video || previewLessons[0].url);
 
             const isDark = document.documentElement.classList.contains('dark');
 
@@ -304,14 +305,12 @@
                                 ${optionsHtml}
                             </select>
                         </div>
-                        <!-- กล่องครอบตัดขอบบน (CSS Overflow Mask) ซ่อนปุ่มมุมขวาบนไม่ให้กดเปิดหน้าต่างใหม่หรือดาวน์โหลดออกไปได้ -->
+                        <!-- HTML5 Video Player ป้องกันคลิกขวาและซ่อนปุ่มดาวน์โหลดสมบูรณ์แบบ -->
                         <div class="relative w-full aspect-video rounded-2xl overflow-hidden shadow-inner border border-slate-700 bg-black">
-                            <div class="absolute inset-0 overflow-hidden">
-                                <iframe id="previewVideoIframe" src="${initialEmbedUrl}" class="w-full h-[120%] -mt-[10%] border-0 relative z-10" allow="autoplay; fullscreen" allowfullscreen></iframe>
-                            </div>
+                            <video id="secureVideoPlayer" src="${initialStreamUrl}" controls controlsList="nodownload" oncontextmenu="return false;" class="w-full h-full object-contain"></video>
                         </div>
-                        <div class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/25 flex items-center gap-2">
-                            <i class="fas fa-shield-halved text-sm"></i> ล็อกปุ่มดาวน์โหลดและซ่อนปุ่มเปิดหน้าต่างใหม่มุมขวาบนเรียบร้อย (ยังกดเล่น/กรอ/ปรับสปีดได้ปกติ)
+                        <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-500/25 flex items-center gap-2">
+                            <i class="fas fa-shield-check text-sm"></i> ล็อกปุ่มดาวน์โหลดเด็ดขาด (ห้ามคลิกขวา/ไม่มีปุ่มเซฟ) แต่ยังกดเล่น กรอ และปรับสปีดได้ปกติ
                         </div>
                     </div>
                 `,
@@ -325,10 +324,12 @@
 
         function changePreviewVideo(selectEl) {
             const rawUrl = selectEl.value;
-            const embedUrl = getSecureEmbedUrl(rawUrl);
-            const iframe = document.getElementById('previewVideoIframe');
-            if (iframe) {
-                iframe.src = embedUrl;
+            const streamUrl = getSecureStreamUrl(rawUrl);
+            const player = document.getElementById('secureVideoPlayer');
+            if (player) {
+                player.src = streamUrl;
+                player.load();
+                player.play();
             }
         }
 
