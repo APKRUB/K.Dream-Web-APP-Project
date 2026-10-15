@@ -119,9 +119,6 @@
             <button onclick="switchCourseTab('analytics')" id="tab-btn-analytics" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
                 <i class="fas fa-chart-pie mr-1.5"></i> สถิติ & ผลคะแนน
             </button>
-            <button onclick="switchCourseTab('announcements')" id="tab-btn-announcements" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
-                <i class="fas fa-bullhorn mr-1.5"></i> ประกาศในคอร์ส
-            </button>
         </div>
 
         <!-- Tab Content Container -->
@@ -144,7 +141,6 @@
         let courseLessons = [];
         let courseExams = [];
         let courseAttemptsMap = {};
-        let courseAnnouncements = [];
         let allAttemptsRaw = [];
         let examQuestionsMap = {};
         let categoriesMap = {};
@@ -187,12 +183,19 @@
                 currentCourse = courseRes.data;
 
                 const studentsRes = await mySupabase.from('profiles').select('*');
-                if (studentsRes.data) {
-                    allStudents = studentsRes.data.filter(p => !isUserAdmin(p));
+                let rawProfiles = studentsRes.data || [];
+                if (rawProfiles.length === 0) {
+                    const fallbackStudentsRes = await mySupabase.from('students').select('*');
+                    rawProfiles = fallbackStudentsRes.data || [];
                 }
 
+                allStudents = rawProfiles.map(p => ({
+                    ...p,
+                    uid: String(p.id || p.user_id || p.student_id || '')
+                })).filter(p => !isUserAdmin(p));
+
                 const enrollRes = await mySupabase.from('course_enrollments').select('*').eq('course_id', courseId);
-                enrolledStudentIds = (enrollRes.data || []).map(e => String(e.student_id));
+                enrolledStudentIds = (enrollRes.data || []).map(e => String(e.student_id || e.user_id));
 
                 const modulesRes = await mySupabase.from('course_modules').select('*').eq('course_id', courseId).order('sequence_order', { ascending: true });
                 courseModules = modulesRes.data || [];
@@ -234,9 +237,6 @@
                     });
                 }
 
-                const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
-                courseAnnouncements = annRes.data || [];
-
             } catch (err) {
                 console.error("Initialization error:", err);
             } finally {
@@ -265,7 +265,6 @@
             else if (tabName === 'students') renderStudentsTab(container);
             else if (tabName === 'exams') renderExamsTab(container);
             else if (tabName === 'analytics') renderAnalyticsTab(container);
-            else if (tabName === 'announcements') renderAnnouncementsTab(container);
         }
 
         function renderCurriculumTab(container) {
@@ -386,7 +385,7 @@
         }
 
         function renderStudentsTab(container) {
-            const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
+            const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(s.uid) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)));
             
             container.innerHTML = `
                 <div class="hitech-card p-6 rounded-3xl space-y-4">
@@ -432,7 +431,7 @@
             const keyword = (document.getElementById('courseStudentSearch')?.value || '').trim().toLowerCase();
             const sortMode = document.getElementById('courseStudentSort')?.value || 'default';
 
-            let enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
+            let enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(s.uid) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)));
 
             let filtered = enrolledStudents.filter(s => {
                 if (!keyword) return true;
@@ -479,47 +478,110 @@
         }
 
         async function openManageEnrollmentsModal() {
-            let studentCheckboxes = allStudents.map(s => {
-                const sId = s.id || s.user_id;
-                const isChecked = enrolledStudentIds.includes(String(sId)) ? 'checked' : '';
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            let modalHtml = `
+                <div class="space-y-3 text-left">
+                    <div class="flex flex-col sm:flex-row gap-2 items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl">
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" id="modalStudentSearch" oninput="filterModalStudents()" placeholder="ค้นหาชื่อ, นามสกุล, หรือรหัส..." class="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none">
+                        </div>
+                        <div class="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                            <button type="button" onclick="toggleAllModalCheckboxes(true)" class="px-2.5 py-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-lg font-bold text-[11px] transition-all">เลือกทั้งหมด</button>
+                            <button type="button" onclick="toggleAllModalCheckboxes(false)" class="px-2.5 py-1 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg font-bold text-[11px] transition-all">ล้างทั้งหมด</button>
+                        </div>
+                    </div>
+                    <div id="modalStudentListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        <!-- รายชื่อนักเรียนจะถูกเรนเดอร์ตรงนี้ -->
+                    </div>
+                </div>
+            `;
+
+            Swal.fire({
+                title: '👥 จัดการรายชื่อนักเรียนในคอร์ส',
+                width: '650px',
+                html: modalHtml,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการเปลี่ยนแปลง',
+                cancelButtonColor: '#ef4444',
+                confirmButtonColor: '#9333ea',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                didOpen: () => {
+                    renderModalStudentCheckboxes('');
+                },
+                preConfirm: () => {
+                    const checkboxes = document.querySelectorAll('input[name="courseStudent"]:checked');
+                    return Array.from(checkboxes).map(cb => cb.value);
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const selectedIds = result.value;
+                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    
+                    await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
+                    if (selectedIds.length > 0) {
+                        const rows = selectedIds.map(sId => ({ 
+                            student_id: sId, 
+                            user_id: sId, 
+                            course_id: courseId 
+                        }));
+                        await mySupabase.from('course_enrollments').insert(rows);
+                    }
+                    initCourseDetail();
+                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1000, showConfirmButton: false });
+                }
+            });
+        }
+
+        function renderModalStudentCheckboxes(keyword = '') {
+            const container = document.getElementById('modalStudentListContainer');
+            if (!container) return;
+
+            const lowerKey = keyword.trim().toLowerCase();
+            let filtered = allStudents.filter(s => {
+                if (!lowerKey) return true;
+                const fullName = `${s.first_name || ''} ${s.last_name || ''} ${s.full_name || ''}`.toLowerCase();
+                const sId = String(s.student_id || '').toLowerCase();
+                const nickname = String(s.nickname || '').toLowerCase();
+                return fullName.includes(lowerKey) || sId.includes(lowerKey) || nickname.includes(lowerKey);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ไม่พบรายชื่อนักเรียนที่ค้นหา</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(s => {
+                const sId = s.id || s.user_id || s.student_id;
+                const isChecked = enrolledStudentIds.includes(String(sId)) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)) ? 'checked' : '';
+                const fullName = `${s.first_name || '-'} ${s.last_name || ''}`.trim() || s.full_name || '-';
                 return `
-                    <label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500">
-                        <div class="flex items-center gap-2.5">
-                            <input type="checkbox" name="courseStudent" value="${sId}" ${isChecked} class="w-4 h-4 accent-purple-600 rounded">
-                            <div>
-                                <div class="font-bold">${s.first_name || '-'} ${s.last_name || ''}</div>
-                                <div class="text-[10px] text-slate-400 font-mono">รหัส: ${s.student_id || '-'} | ชั้น: ${s.grade_level || '-'}</div>
+                    <label class="modal-student-row flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500 transition-colors">
+                        <div class="flex items-center gap-2.5 w-full">
+                            <input type="checkbox" name="courseStudent" value="${sId}" ${isChecked} class="w-4 h-4 accent-purple-600 rounded shrink-0">
+                            <div class="flex justify-between items-center w-full">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900 dark:text-white">${fullName} <span class="text-slate-400 font-normal">(${s.nickname || '-'})</span></div>
+                                    <div class="text-[10px] text-slate-400 font-mono">รหัส: ${s.student_id || '-'} | ชั้น: ${s.grade_level || '-'}</div>
+                                </div>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">${s.school || 'โรงเรียน'}</span>
                             </div>
                         </div>
                     </label>
                 `;
             }).join('');
+        }
 
-            const isDark = document.documentElement.classList.contains('dark');
-            const { isConfirmed } = await Swal.fire({
-                title: '👥 จัดการรายชื่อนักเรียนในคอร์ส',
-                width: '600px',
-                html: `<div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-left">${studentCheckboxes}</div>`,
-                showCancelButton: true,
-                confirmButtonText: 'บันทึก',
-                confirmButtonColor: '#9333ea',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b'
-            });
+        function filterModalStudents() {
+            const keyword = document.getElementById('modalStudentSearch')?.value || '';
+            renderModalStudentCheckboxes(keyword);
+        }
 
-            if (isConfirmed) {
-                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const checkboxes = document.querySelectorAll('input[name="courseStudent"]:checked');
-                const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-
-                await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
-                if (selectedIds.length > 0) {
-                    const rows = selectedIds.map(sId => ({ student_id: sId, course_id: courseId }));
-                    await mySupabase.from('course_enrollments').insert(rows);
-                }
-                initCourseDetail();
-                Swal.fire({ icon: 'success', title: 'สำเร็จ!', timer: 1000, showConfirmButton: false });
-            }
+        function toggleAllModalCheckboxes(selectState) {
+            const checkboxes = document.querySelectorAll('input[name="courseStudent"]');
+            checkboxes.forEach(cb => { cb.checked = selectState; });
         }
 
         // --- TAB 3: ชุดข้อสอบทั้งหมดในคอร์ส (แยกตามหมวดหมู่) ---
@@ -574,7 +636,7 @@
                     const avgScore = getExamAverageScore(exam.id);
 
                     html += `
-                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="exam-catalog-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between space-y-3">
+                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}&course_id=${courseId}'" class="exam-catalog-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between space-y-3">
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center">
                                     <span class="font-mono text-[11px] font-bold glow-badge-sky px-2 py-0.5 rounded-md">${exam.exam_code || 'EXAM'}</span>
@@ -678,7 +740,7 @@
             totalStuEl.textContent = `${enrolledStudentIds.length} คน`;
 
             let studentStats = {};
-            let enrolledProfiles = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
+            let enrolledProfiles = allStudents.filter(s => enrolledStudentIds.includes(s.uid) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)));
 
             enrolledProfiles.forEach(s => {
                 const sId = s.id || s.user_id || s.student_id;
@@ -989,63 +1051,6 @@
             printWindow.document.close();
         }
 
-        function renderAnnouncementsTab(container) {
-            let annHtml = courseAnnouncements.length > 0 ? courseAnnouncements.map(an => `
-                <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">
-                    <div class="font-extrabold text-amber-600">${an.title}</div>
-                    <div class="text-xs text-slate-600 dark:text-slate-300">${an.content}</div>
-                </div>
-            `).join('') : '<div class="text-center py-8 text-slate-400">ยังไม่มีประกาศในคอร์สนี้</div>';
-
-            container.innerHTML = `
-                <div class="hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
-                        <span class="text-xs font-bold text-slate-400">ประกาศข่าวสารในคอร์ส (${courseAnnouncements.length} ประกาศ)</span>
-                        <button onclick="openAddAnnouncementModal()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-bullhorn mr-1"></i> สร้างประกาศใหม่</button>
-                    </div>
-                    <div class="space-y-3">${annHtml}</div>
-                </div>
-            `;
-        }
-
-        async function openAddAnnouncementModal() {
-            const isDark = document.documentElement.classList.contains('dark');
-            const { value: formValues } = await Swal.fire({
-                title: '📢 สร้างประกาศใหม่ในคอร์ส',
-                width: '500px',
-                html: `
-                    <div class="space-y-3 text-left text-xs">
-                        <div><label class="block font-bold mb-1">หัวข้อประกาศ</label><input id="swalAnTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold"></div>
-                        <div><label class="block font-bold mb-1">เนื้อหาประกาศ</label><textarea id="swalAnContent" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none"></textarea></div>
-                    </div>
-                `,
-                showCancelButton: true, confirmButtonText: 'โพสต์ประกาศ', confirmButtonColor: '#d97706',
-                background: isDark ? '#090d16' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b',
-                preConfirm: () => ({ title: document.getElementById('swalAnTitle').value.trim(), content: document.getElementById('swalAnContent').value.trim(), course_id: courseId })
-            });
-
-            if (formValues && formValues.title) {
-                await mySupabase.from('announcements').insert([formValues]);
-                initCourseDetail();
-                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ!', timer: 1000, showConfirmButton: false });
-            }
-        }
-
-        function getStatusBadge(st) {
-            if (st === 'public') return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-[10px]">เปิดบริการ</span>';
-            if (st === 'countdown') return '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold text-[10px]">ตั้งเวลา</span>';
-            return '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-bold text-[10px]">ซ่อน</span>';
-        }
-        function getDeliveryBadge(dt) {
-            if (dt === 'online') return '<span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>ออนไลน์</span>';
-            return '<span class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
-        }
-        function getChoiceFormatLabel(fmt) {
-            if (fmt === 'th_num') return 'ก, ข, ค, ง';
-            if (fmt === 'upper') return 'A, B, C, D';
-            if (fmt === 'lower') return 'a, b, c, d';
-            return '1, 2, 3, 4';
-        }
         function getExamAverageScore(examId) {
             const scores = courseAttemptsMap[String(examId)] || [];
             if (scores.length === 0) return '-';
