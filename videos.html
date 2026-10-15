@@ -241,7 +241,7 @@
                 const courseRes = await mySupabase.from('courses').select('id, title, course_code').order('title');
                 allCourses = courseRes.data || [];
 
-                // 2. โหลดวิดีโอจากทั้ง course_lessons และ videos เพื่อความครอบคลุม
+                // 2. โหลดวิดีโอจากทั้ง course_lessons และ videos
                 let fetchedVideos = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
                 if (lessonRes.data) {
@@ -255,13 +255,12 @@
                     }
                 }
 
-                // จัดรูปทรงข้อมูลวิดีโอให้เป็นมาตรฐานเดียวกัน
+                // จัดรูปแบบข้อมูลวิดีโอ
                 allVideos = fetchedVideos.map(v => ({
                     id: v.id,
                     title: v.title || v.name || 'ไม่มีชื่อบทเรียน',
                     course_id: v.course_id || v.courseid || v.course || null,
                     video_url: v.video_url || v.video || v.url || '',
-                    youtube_id: v.youtube_id || extractVideoId(v.video_url || v.video || v.url || ''),
                     created_at: v.created_at || new Date().toISOString()
                 }));
 
@@ -278,12 +277,22 @@
             }
         }
 
-        function extractVideoId(url) {
+        function extractDrivePreviewUrl(url) {
             if (!url) return '';
-            if (!url.includes('http') && !url.includes('/')) return url; // กรณีเก็บเป็น ID ตรงๆ
+            // แปลงลิงก์ Google Drive ทุกรูปแบบให้เป็น /preview อัตโนมัติ
+            const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+                return `https://drive.google.com/file/d/${match[1]}/preview`;
+            }
+            return url;
+        }
+
+        function extractYoutubeId(url) {
+            if (!url) return '';
+            if (!url.includes('http') && url.length === 11) return url;
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
-            return (match && match[2].length === 11) ? match[2] : url;
+            return (match && match[2].length === 11) ? match[2] : '';
         }
 
         function populateCourseDropdown() {
@@ -300,7 +309,6 @@
                 <option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>
             `).join('');
 
-            // ตั้งค่าคอร์สเริ่มต้นเป็นคอร์สแรก
             currentCourseId = allCourses[0].id;
             selector.value = currentCourseId;
             updateActiveCourseHeader();
@@ -332,7 +340,7 @@
         function renderVideoList() {
             const container = document.getElementById('videoListContainer');
             
-            // กรองเฉพาะวิดีโอที่ตรงกับคอร์สที่เลือกปัจจุบัน
+            // กรองเฉพาะวิดีโอที่เป็นของคอร์สปัจจุบันเท่านั้น
             let courseVideos = allVideos.filter(v => String(v.course_id) === String(currentCourseId));
 
             if (searchQuery) {
@@ -355,7 +363,7 @@
             container.innerHTML = courseVideos.map(v => {
                 const isActive = activeVideoId === v.id;
                 return `
-                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}', '${v.video_url}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
+                    <div onclick="playVideo('${v.id}', '${encodeURIComponent(v.title)}', '${v.created_at}', '${v.video_url}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
                         <div class="flex items-center gap-2.5 min-w-0">
                             <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
                                 <i class="fas ${isActive ? 'fa-play' : 'fa-video'} text-[10px]"></i>
@@ -370,29 +378,27 @@
                 `;
             }).join('');
 
-            // ถ้ายังไม่ได้เลือกวิดีโอ หรือวิดีโอที่เลือกเดิมไม่อยู่ในคอร์สนี้ ให้เลือกคลิปแรกของคอร์สออโต้
+            // เลือกเล่นคลิปแรกอัตโนมัติหากยังไม่ได้เลือก หรือคลิปเดิมไม่อยู่ในคอร์สนี้
             const activeInThisCourse = courseVideos.some(v => v.id === activeVideoId);
             if (!activeInThisCourse && courseVideos.length > 0) {
-                playVideo(courseVideos[0].id, courseVideos[0].youtube_id, encodeURIComponent(courseVideos[0].title), courseVideos[0].created_at, courseVideos[0].video_url);
+                playVideo(courseVideos[0].id, encodeURIComponent(courseVideos[0].title), courseVideos[0].created_at, courseVideos[0].video_url);
             }
         }
 
-        function playVideo(id, videoIdOrYt, encodedTitle, createdAt, rawUrl) {
+        function playVideo(id, encodedTitle, createdAt, rawUrl) {
             activeVideoId = id;
             const title = decodeURIComponent(encodedTitle);
             document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
             document.getElementById('videoPublishDate').textContent = `เผยแพร่เมื่อ: ${new Date(createdAt).toLocaleString('th-TH')}`;
 
             const wrapper = document.getElementById('iframePlayerWrapper');
-            
-            // ตรวจสอบรูปแบบลิงก์ว่าเป็น Google Drive หรือ YouTube หรือลิงก์เว็บอื่นๆ
             let embedHtml = '';
+
             if (rawUrl && rawUrl.includes('drive.google.com')) {
-                embedHtml = `<iframe class="w-full h-full" src="${rawUrl}" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>`;
-            } else if (videoIdOrYt && videoIdOrYt.length === 11) {
-                embedHtml = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoIdOrYt}?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                const previewUrl = extractDrivePreviewUrl(rawUrl);
+                embedHtml = `<iframe class="w-full h-full" src="${previewUrl}" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>`;
             } else if (rawUrl && (rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be'))) {
-                const ytId = extractVideoId(rawUrl);
+                const ytId = extractYoutubeId(rawUrl);
                 embedHtml = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytId}?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             } else {
                 embedHtml = `<iframe class="w-full h-full" src="${rawUrl || '#'}" title="Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>`;
