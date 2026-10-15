@@ -57,7 +57,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] rounded-md border border-sky-500/20">Portal v2.8</span>
+                        <span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] rounded-md border border-sky-500/20">Portal v2.9</span>
                     </div>
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Student Examination Center</p>
                 </div>
@@ -110,6 +110,19 @@
         <!-- ================= FEATURE 1: EXAM PORTAL (หน้าทำข้อสอบ) ================= -->
         <div id="sectionExam" class="space-y-6">
             
+            <!-- ⚡ Quick Pending Exams Widget (กล่องด่วนรวมข้อสอบที่ยังไม่ได้ทำไว้ด้านบนสุด) -->
+            <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (${quickPendingCount})
+                    </h3>
+                    <span class="text-[11px] text-slate-400">เลือกทำจากด้านล่างนี้ได้ทันที</span>
+                </div>
+                <div id="quickPendingContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- โหลดข้อสอบที่ยังไม่ทำมาแสดงที่นี่อัตโนมัติ -->
+                </div>
+            </div>
+
             <!-- Filter & Search Bar Toolbar -->
             <div class="hitech-card p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
@@ -276,6 +289,7 @@
         let currentViewMode = 'card';
         let currentStatusFilter = 'all';
         let collapsedCategories = {};
+        let quickPendingCount = 0;
 
         let chartProgressInstance = null;
         let chartRadarInstance = null;
@@ -462,6 +476,8 @@
 
         function renderExamCatalog() {
             const container = document.getElementById('examCategoriesGroupContainer');
+            const quickPendingContainer = document.getElementById('quickPendingContainer');
+            const quickPendingSection = document.getElementById('quickPendingSection');
             const keyword = document.getElementById('searchExamInput').value.toLowerCase();
 
             const availableExams = allExams.filter(exam => {
@@ -483,36 +499,56 @@
             document.getElementById('examCountBadge').textContent = `${availableExams.length} ชุดข้อสอบ`;
 
             // คำนวณความคืบหน้าภาพรวม (Overall Progress)
-            const totalActiveExams = allExams.filter(e => e.status !== 'draft').length;
+            const activeExams = allExams.filter(e => e.status !== 'draft');
             const completedExamIds = new Set(userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).map(a => a.exam_id));
-            const completedCountTotal = allExams.filter(e => e.status !== 'draft' && completedExamIds.has(e.id)).length;
-            const progressPercent = totalActiveExams > 0 ? Math.round((completedCountTotal / totalActiveExams) * 100) : 0;
+            const completedCountTotal = activeExams.filter(e => completedExamIds.has(e.id)).length;
+            const progressPercent = activeExams.length > 0 ? Math.round((completedCountTotal / activeExams.length) * 100) : 0;
             
-            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${totalActiveExams} ชุด (${progressPercent}%)`;
+            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
             document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
+
+            // กรองชุดข้อสอบที่ "ยังไม่ได้ทำ" สำหรับแสดงในกล่องด่วนด้านบน
+            const pendingExamsList = activeExams.filter(exam => {
+                const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+                const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+                const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
+                return completedCount === 0 && !isExhausted && exam.status !== 'countdown';
+            });
+
+            quickPendingCount = pendingExamsList.length;
+
+            if (quickPendingCount > 0 && currentStatusFilter === 'all' && !keyword) {
+                quickPendingSection.classList.remove('hidden');
+                quickPendingContainer.innerHTML = pendingExamsList.map(exam => {
+                    const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || '0';
+                    const durationMins = exam.duration || exam.time_limit || 'ไม่จำกัด';
+                    const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
+
+                    return `
+                        <div class="p-4 bg-white dark:bg-darkinput border border-sky-500/30 rounded-2xl flex flex-col justify-between space-y-3 shadow-sm hover:shadow-md transition-all">
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] font-extrabold px-2 py-0.5 bg-sky-500/10 text-sky-500 rounded-md">${catName}</span>
+                                    <span class="text-[11px] text-slate-400"><i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                                </div>
+                                <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-white line-clamp-1">${exam.title}</h4>
+                            </div>
+                            <button onclick="handleExamClick('${exam.id}', 'start', null)" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                                <i class="fas fa-play text-[10px]"></i> เริ่มทำข้อสอบนี้ทันที
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                quickPendingSection.classList.add('hidden');
+            }
 
             if (availableExams.length === 0) {
                 container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center">ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
                 return;
             }
 
-            // จัดกลุ่มข้อสอบ รวมถึงหมวดหมู่พิเศษ (⭐ ปักหมุด)
-            let groupedExams = {};
-            let starredList = availableExams.filter(e => starredExams.includes(e.id));
-            if (starredList.length > 0) {
-                groupedExams['starred'] = starredList;
-            }
-
-            availableExams.forEach(exam => {
-                const catId = exam.category_id || 'uncategorized';
-                if (!groupedExams[catId]) groupedExams[catId] = [];
-                // ป้องกันการใส่ซ้ำถ้าอยู่ในหมวด star แล้ว แต่อยากให้แสดงในหมวดหมู่เดิมด้วยก็ได้ หรือแยกเด็ดขาด
-                if (!groupedExams[catId].includes(exam)) {
-                    // groupedExams[catId].push(exam);
-                }
-            });
-
-            // เพื่อความเรียบร้อย ให้สร้าง Map จัดหมวดหมู่ปกติแยกต่างหาก
             let normalGrouped = {};
             availableExams.forEach(exam => {
                 const catId = exam.category_id || 'uncategorized';
@@ -521,12 +557,6 @@
             });
 
             let htmlContent = '';
-
-            // แสดงหมวดหมู่ปักหมุดก่อน ถ้ามี
-            if (starredList.length > 0 && currentStatusFilter === 'all' && !keyword) {
-                htmlContent += renderCategorySection('starred', '⭐ ชุดข้อสอบปักหมุด (สำคัญ/เร่งด่วน)', starredList);
-            }
-
             for (const [catId, examsList] of Object.entries(normalGrouped)) {
                 const catName = categoriesMap[catId] || 'ข้อสอบทั่วไป';
                 htmlContent += renderCategorySection(catId, catName, examsList);
@@ -543,7 +573,7 @@
                     <div onclick="toggleCategoryCollapse('${catId}')" class="p-5 bg-slate-50 dark:bg-darkinput border-b border-slate-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-slate-100/80 transition-all">
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm">
-                                <i class="fas ${catId === 'starred' ? 'fa-star text-amber-500' : 'fa-folder-open'}"></i>
+                                <i class="fas fa-folder-open"></i>
                             </div>
                             <div>
                                 <h4 class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-white">${catName}</h4>
@@ -565,7 +595,6 @@
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const inProgressAttempt = myAttemptsForExam.find(a => a.status === 'in_progress');
                 
-                // ค้นหาคะแนนสูงสุดที่ทำได้
                 const completedAttempts = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time);
                 const completedCount = completedAttempts.length;
                 let maxScoreAchieved = 0;
@@ -583,10 +612,14 @@
                 let cardHighlightClass = '';
 
                 if (completedCount > 0) {
-                    // ทำเสร็จแล้ว ให้การ์ดและปุ่มเป็นสีเขียวเด่นชัด พร้อมโชว์คะแนนสูงสุด
                     cardHighlightClass = 'border-emerald-500/70 bg-emerald-50/40 dark:bg-emerald-950/25 ring-1 ring-emerald-500/20';
                     statusBadge = `<span class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-extrabold shadow-sm"><i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว (${maxScoreAchieved} คะแนน)</span>`;
-                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
+                    
+                    if (maxAttempts > 0 && completedCount >= maxAttempts) {
+                        actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">เต็มโควต้าแล้ว</button>`;
+                    } else {
+                        actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
+                    }
                 } else if (status === 'countdown') {
                     statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-bold"><i class="fas fa-clock mr-1"></i> ยังไม่ถึงเวลาเปิดสอบ</span>`;
                     actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิด</button>`;
@@ -674,9 +707,23 @@
                 return;
             }
 
+            // เช็คโควต้า attempts
+            const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+            const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+            const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
+
+            if (maxAttempts > 0 && completedCount >= maxAttempts && mode !== 'resume') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'สิทธิ์การสอบเต็มแล้ว',
+                    text: `คุณได้ทำชุดข้อสอบนี้ครบตามโควต้า ${maxAttempts} ครั้งแล้ว`,
+                    confirmButtonColor: '#0284c7'
+                });
+                return;
+            }
+
             const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || 'ตามกำหนด';
             const durationMins = exam.duration || exam.time_limit || 'ตามกำหนด';
-            
             const customInstructions = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
 
             const instructionHtml = `
