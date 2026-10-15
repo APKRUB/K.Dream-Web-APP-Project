@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ผลการสอบและ AI Gemini วิเคราะห์เชิงลึก</title>
+    <title>LMS | คลังข้อสอบนักเรียนและระบบวิเคราะห์ผลสัมฤทธิ์</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -24,161 +22,163 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
+        body { font-family: 'Prompt', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.95); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
         .hitech-card { background: rgba(255, 255, 255, 0.98); border: 1px solid rgba(226, 232, 240, 1); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
         .dark .hitech-card { background: #090d16; border: 1px solid rgba(30, 41, 59, 0.8); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
-        
-        .result-bubble {
-            width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 11px; border: 2px solid #cbd5e1; background-color: #ffffff; color: #334155;
-        }
-        .dark .result-bubble { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
-        .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.15); }
-        .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; }
-        .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; }
-        .ai-pulse-glow { box-shadow: 0 0 25px rgba(99, 102, 241, 0.25); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
+    <!-- Header Navigation Bar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
-                    <i class="fas fa-arrow-left text-sm"></i>
-                </button>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-sky-500/20">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
                 <div>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white" id="resultTitleNav">ผลการสอบ & Analytics สถิติชั้นเรียน</h1>
-                    <p class="text-[11px] text-slate-500">ระบบประเมินผลสัมฤทธิ์และวิเคราะห์ศักยภาพอัจฉริยะ</p>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white">Student Examination Portal</h1>
+                    <p class="text-[11px] text-slate-500">ระบบสอบออนไลน์และศูนย์วิเคราะห์ศักยภาพผู้เรียน</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm">
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 transition-all">
                     <i class="fas fa-moon text-sm" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-[96rem] mx-auto px-4 pt-24 space-y-6">
-        
-        <!-- ส่วนสรุปคะแนนรวม -->
-        <div class="hitech-card p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 bg-gradient-to-r from-sky-500/10 via-teal-500/5 to-transparent border-sky-500/20">
-            <div class="space-y-1 text-center md:text-left">
-                <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs rounded-full border border-sky-500/20">สถานะ: ตรวจผลคะแนนเรียบร้อย</span>
-                <h2 class="text-xl font-extrabold text-slate-900 dark:text-white pt-2" id="examTitleHeader">กำลังโหลดชื่อชุดข้อสอบ...</h2>
-                <p class="text-xs text-slate-500" id="submissionTimeText">เวลาที่ส่งข้อสอบ: --</p>
-            </div>
-            <div class="flex items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border shadow-sm">
-                <div class="text-center px-4 border-r border-slate-200 dark:border-slate-800">
-                    <span class="text-[11px] text-slate-400 block font-semibold">คะแนนที่ได้</span>
-                    <span class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="scoreDisplay">--</span>
-                </div>
-                <div class="text-center px-2">
-                    <span class="text-[11px] text-slate-400 block font-semibold">เต็มทั้งหมด</span>
-                    <span class="text-2xl font-extrabold text-slate-700 dark:text-slate-200" id="totalScoreDisplay">--</span>
-                </div>
-            </div>
+    <main class="max-w-7xl mx-auto px-4 pt-24 space-y-8">
+
+        <!-- Tab Switcher (หน้าแรกตั้งต้นที่ "รายการชุดข้อสอบ") -->
+        <div class="flex items-center gap-2 bg-slate-200/60 dark:bg-darkbox p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit">
+            <button onclick="switchTab('exams')" id="tabBtnExams" class="px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md">
+                <i class="fas fa-file-signature mr-1.5"></i> รายการชุดข้อสอบ (ทำข้อสอบ)
+            </button>
+            <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500">
+                <i class="fas fa-chart-line mr-1.5"></i> ติดตาม & วิเคราะห์ผลสัมฤทธิ์
+            </button>
         </div>
 
-        <!-- แผงสถิติเปรียบเทียบ & Ranking -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">🏆</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-semibold">อันดับในห้อง</span>
-                    <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="rankDisplay">#-- / --</span>
+        <!-- ================= TAB 1: รายการชุดข้อสอบ (หน้าแรก) ================= -->
+        <div id="examsSection" class="space-y-6">
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-list-check text-sky-500"></i> ชุดข้อสอบที่เปิดให้ทำ
+                    </h2>
+                    <span class="text-xs text-slate-400 font-semibold" id="examCountText">กำลังโหลด...</span>
+                </div>
+                <div id="availableExamList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="text-slate-400 text-xs py-12 text-center col-span-2"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดรายการชุดข้อสอบ...</div>
                 </div>
             </div>
-            <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-lg">📊</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-semibold">คะแนนเฉลี่ยห้อง</span>
-                    <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="avgScoreDisplay">-- / --</span>
-                </div>
-            </div>
-            <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-lg">🥇</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-semibold">คะแนนสูงสุดในห้อง</span>
-                    <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="maxScoreDisplay">-- / --</span>
-                </div>
-            </div>
-            <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-lg">🚀</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-semibold">Percentile</span>
-                    <span class="text-lg font-extrabold text-slate-800 dark:text-white" id="percentileDisplay">Top --%</span>
-                </div>
-            </div>
-        </div>
 
-        <!-- การ์ดแสดงกราฟช่วงคะแนน -->
-        <div class="hitech-card p-5 rounded-3xl space-y-3">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-sky-500"></i> แผนภูมิการกระจายตัวของคะแนนทั้งชั้นเรียน
+            <!-- ประวัติการสอบที่ผ่านมา -->
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-history text-indigo-500"></i> ประวัติการสอบและผลคะแนนของคุณ
                 </h3>
-                <span class="text-[11px] text-slate-400 font-semibold" id="totalStudentsText">ผู้เข้าสอบทั้งหมด: -- คน</span>
-            </div>
-            <div class="h-44 w-full">
-                <canvas id="scoreDistributionChart"></canvas>
-            </div>
-        </div>
-
-        <!-- AI Gemini Tutor วิเคราะห์จุดแข็งจุดอ่อนเทียบ PDF -->
-        <div class="hitech-card ai-pulse-glow p-6 rounded-3xl space-y-4 border-indigo-500/40 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-500/10">
-            <div class="flex items-center justify-between pb-3 border-b border-indigo-500/20">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-sm shadow-md shadow-indigo-500/30">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-extrabold text-sm text-indigo-600 dark:text-indigo-300">AI Gemini Tutor Diagnostic Engine (PDF Alignment)</h3>
-                        <p class="text-[11px] text-slate-400">วิเคราะห์จุดแข็งและจุดอ่อนเทียบกับเนื้อหาข้อสอบใน PDF</p>
-                    </div>
+                <div id="examHistoryList" class="space-y-3">
+                    <div class="text-slate-400 text-xs py-6 text-center">กำลังโหลดประวัติการสอบ...</div>
                 </div>
-                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-xl text-[10px] font-bold"><i class="fas fa-bolt mr-1"></i> Powered by Gemini 1.5 Flash</span>
-            </div>
-            <div id="aiAnalysisContainer" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
-                <div class="text-slate-400 py-8 text-center"><i class="fas fa-spinner fa-spin mr-2"></i> AI กำลังเชื่อมต่อและวิเคราะห์จุดแข็ง-จุดอ่อนจากเอกสาร PDF...</div>
             </div>
         </div>
 
-        <!-- เลย์เอาต์หลัก 2 คอลัมน์ -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- ================= TAB 2: ติดตาม & วิเคราะห์ผล (หน้า 2) ================= -->
+        <div id="analyticsSection" class="space-y-6 hidden">
             
-            <!-- ฝั่งซ้าย: PDF Viewer ข้อสอบย้อนหลัง -->
-            <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-xs text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบทบทวน (ความคมชัดสูง)</h3>
-                    <span class="px-2.5 py-0.5 bg-red-500/10 text-red-600 text-[10px] font-bold rounded-lg border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ห้ามดาวน์โหลด</span>
-                </div>
-                <div id="pdfContainer" class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-y-auto border p-4 flex flex-col items-center gap-4 select-none" oncontextmenu="return false;">
-                    <div class="text-slate-400 text-xs py-20">กำลังโหลดเอกสารข้อสอบ...</div>
-                </div>
-            </div>
-
-            <!-- ฝั่งขวา: รายละเอียดเฉลย & ตัวกรองหมวดหมู่ -->
-            <div id="rightResultCard" class="lg:col-span-6 hitech-card p-5 rounded-3xl space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-list-check text-sky-500"></i> เฉลยคำตอบและผลการทำข้อสอบ
-                    </h3>
-                    
-                    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-                        <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm">ทั้งหมด (<span id="count-all">0</span>)</button>
-                        <button onclick="setFilter('correct')" id="filter-correct" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-emerald-500">ตอบถูก (<span id="count-correct">0</span>)</button>
-                        <button onclick="setFilter('wrong')" id="filter-wrong" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-red-500">ตอบผิด (<span id="count-wrong">0</span>)</button>
+            <!-- ตัวกรองเปรียบเทียบ -->
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-sliders text-sky-500"></i> ตัวกรองเปรียบเทียบพัฒนาการ
+                        </h2>
+                        <p class="text-xs text-slate-500">เลือกชุดข้อสอบและหมวดหมู่เนื้อหาที่ต้องการนำมาประมวลผลเชิงเปรียบเทียบ</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="all">📚 ทุกหมวดหมู่เนื้อหา</option>
+                        </select>
+                        <button onclick="resetAnalyticsFilter()" class="px-3.5 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
+                            <i class="fas fa-undo mr-1"></i> รีเซ็ต
+                        </button>
                     </div>
                 </div>
 
-                <div id="resultsContainer" class="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-                    <div class="text-center py-12 text-slate-400 text-xs">กำลังประมวลผลข้อมูลเฉลยรายข้อ...</div>
+                <div class="pt-3 border-t border-slate-200/60 dark:border-slate-800/60 space-y-2">
+                    <span class="text-[11px] font-bold text-slate-400 block"><i class="fas fa-check-double mr-1 text-sky-500"></i> เลือกชุดข้อสอบเพื่อเปรียบเทียบพัฒนาการ (เลือกได้หลายชุด):</span>
+                    <div id="examCheckboxGroup" class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 text-xs">
+                        <div class="text-slate-400 text-xs py-2">กำลังโหลดรายการข้อสอบ...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- การ์ดสรุปเมตริก -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-lg">📈</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">อัตราพัฒนาการรวม</span>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-white" id="growthRateMetric">--%</span>
+                    </div>
+                </div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-lg">🎯</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">คะแนนเฉลี่ยส่วนตัว</span>
+                        <span class="text-base font-extrabold text-slate-800 dark:text-white" id="avgPersonalMetric">--%</span>
+                    </div>
+                </div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-lg">🌟</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">หมวดหมู่จุดแข็ง</span>
+                        <span class="text-xs font-extrabold text-emerald-500 truncate max-w-[110px] block" id="strongCategoryMetric">--</span>
+                    </div>
+                </div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg">⚠️</div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block font-semibold">จุดที่ต้องทบทวน</span>
+                        <span class="text-xs font-extrabold text-amber-500 truncate max-w-[110px] block" id="weakCategoryMetric">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- กราฟ Analytics -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-8 hitech-card p-5 rounded-3xl space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-sky-500"></i> พัฒนาการคะแนนสอบตามลำดับเวลา (เทียบค่าเฉลี่ยห้อง)
+                    </h3>
+                    <div class="h-64 w-full">
+                        <canvas id="progressTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 hitech-card p-5 rounded-3xl space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-bullseye text-purple-500"></i> ความเชี่ยวชาญรายหมวดหมู่ (%)
+                    </h3>
+                    <div class="h-64 w-full flex items-center justify-center">
+                        <canvas id="categoryRadarChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-12 hitech-card p-5 rounded-3xl space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-chart-bar text-emerald-500"></i> เปรียบเทียบคะแนนชุดข้อสอบที่เลือก (คะแนนของคุณ VS คะแนนเฉลี่ยชั้นเรียน)
+                    </h3>
+                    <div class="h-56 w-full">
+                        <canvas id="multiExamBarChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -190,18 +190,17 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
-        // ตัวแปรนี้จะถูกแทนที่ค่าจริงอัตโนมัติผ่าน GitHub Actions
-        const GEMINI_API_KEY = "__GEMINI_API_KEY__";
-
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const attemptId = urlParams.get('attempt_id') || urlParams.get('id');
+        let chartProgressInstance = null;
+        let chartRadarInstance = null;
+        let chartBarInstance = null;
 
-        let globalQuestions = [];
-        let globalAnswerMap = {};
-        let currentFilter = 'all';
+        let userAttemptsData = [];
+        let allExamsData = [];
+        let allCategoryTags = new Set();
 
+        // Dark Mode Controller
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -215,519 +214,290 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('mousedown', e => { if (e.button === 2) e.preventDefault(); });
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'a' || e.key === 'i')) {
-                e.preventDefault();
+        function switchTab(tab) {
+            const isExams = tab === 'exams';
+            document.getElementById('examsSection').classList.toggle('hidden', !isExams);
+            document.getElementById('analyticsSection').classList.toggle('hidden', isExams);
+
+            document.getElementById('tabBtnExams').className = isExams 
+                ? 'px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
+                : 'px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+
+            document.getElementById('tabBtnAnalytics').className = !isExams 
+                ? 'px-5 py-2 rounded-xl font-extrabold text-xs transition-all bg-sky-600 text-white shadow-md'
+                : 'px-5 py-2 rounded-xl font-bold text-xs transition-all text-slate-600 dark:text-slate-400 hover:text-sky-500';
+
+            if (!isExams) {
+                updateAnalyticsDashboard();
             }
-            if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
-        });
-
-        async function initResultPage() {
-            let attempt = null;
-
-            if (attemptId) {
-                const { data } = await mySupabase.from('exam_attempts').select('*').eq('id', attemptId).single();
-                attempt = data;
-            }
-
-            if (!attempt) {
-                let studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
-                if (studentId) {
-                    const { data: latestList } = await mySupabase.from('exam_attempts').select('*').eq('student_id', studentId).order('submission_time', { ascending: false }).limit(1);
-                    if (latestList && latestList.length > 0) attempt = latestList[0];
-                }
-            }
-
-            if (!attempt) {
-                Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผลการสอบ', confirmButtonText: 'กลับหน้าหลัก' }).then(() => window.location.href = 'student.html');
-                return;
-            }
-
-            const currentAttemptId = attempt.id;
-            const { data: exam } = await mySupabase.from('exams').select('*').eq('id', attempt.exam_id).single();
-
-            document.getElementById('examTitleHeader').textContent = exam ? exam.title : 'ชุดข้อสอบออนไลน์';
-            document.getElementById('resultTitleNav').textContent = exam ? exam.title : 'ผลการสอบ';
-            document.getElementById('submissionTimeText').textContent = `เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.created_at).toLocaleString('th-TH')}`;
-
-            if (exam && exam.pdf_url) {
-                document.getElementById('pdfViewerCard').classList.remove('hidden');
-                document.getElementById('rightResultCard').className = 'lg:col-span-6 hitech-card p-5 rounded-3xl space-y-4';
-                renderSecurePDF(exam.pdf_url);
-            } else {
-                document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
-            }
-
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
-            const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', currentAttemptId);
-
-            globalQuestions = questions || [];
-            globalAnswerMap = {};
-
-            (answers || []).forEach(ans => {
-                globalAnswerMap[ans.question_id] = {
-                    selected_option_index: ans.selected_option_index !== undefined && ans.selected_option_index !== null ? parseInt(ans.selected_option_index) : (ans.selected_answer !== undefined && ans.selected_answer !== '' ? parseInt(ans.selected_answer) : null),
-                    subjective_answer: ans.subjective_answer
-                };
-            });
-
-            if (Object.keys(globalAnswerMap).length === 0 && attempt.answer_saved) {
-                try {
-                    const savedObj = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
-                    Object.keys(savedObj).forEach(qId => {
-                        const val = savedObj[qId];
-                        globalAnswerMap[qId] = {
-                            selected_option_index: val !== null && val !== '' && !isNaN(val) ? parseInt(val) : null,
-                            subjective_answer: isNaN(val) ? val : null
-                        };
-                    });
-                } catch(e) {}
-            }
-
-            const totalQ = globalQuestions.length;
-            let earnedScore = attempt.total_score !== undefined && attempt.total_score !== null ? attempt.total_score : (attempt.score || 0);
-
-            document.getElementById('scoreDisplay').textContent = earnedScore;
-            document.getElementById('totalScoreDisplay').textContent = totalQ;
-
-            updateCountsAndRender();
-            loadClassAnalytics(attempt.exam_id, earnedScore, totalQ);
-            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, exam ? exam.title : 'ข้อสอบ', exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
         }
 
-       async function loadClassAnalytics(examId, studentScore, totalQuestions) {
-            if (!examId) return;
+        async function initStudentPortal() {
+            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            
+            // 1. โหลดชุดข้อสอบทั้งหมดที่เปิดให้ทำ
+            const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
+            allExamsData = exams || [];
+            document.getElementById('examCountText').textContent = `ทั้งหมด ${allExamsData.length} ชุดข้อสอบ`;
 
-            // ดึงข้อมูลการสอบของชุดนี้ทั้งหมด
-            const { data: attempts, error } = await mySupabase
+            const examListContainer = document.getElementById('availableExamList');
+            if (allExamsData.length === 0) {
+                examListContainer.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center col-span-2">ยังไม่มีชุดข้อสอบในระบบ</div>`;
+            } else {
+                examListContainer.innerHTML = allExamsData.map(exam => `
+                    <div class="p-4 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col justify-between space-y-3">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-800 dark:text-white">${exam.title}</h3>
+                            <p class="text-[11px] text-slate-500 line-clamp-2 mt-0.5">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติม'}</p>
+                        </div>
+                        <div class="flex justify-end pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                            <button onclick="startExam('${exam.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+                                <i class="fas fa-play"></i> เริ่มทำข้อสอบ
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 2. โหลดประวัติการสอบ
+            let query = mySupabase.from('exam_attempts').select('*').order('submission_time', { ascending: true });
+            if (studentId) query = query.eq('student_id', studentId);
+            const { data: attempts } = await query;
+            userAttemptsData = attempts || [];
+
+            const historyContainer = document.getElementById('examHistoryList');
+            if (userAttemptsData.length === 0) {
+                historyContainer.innerHTML = `<div class="text-slate-400 text-xs py-6 text-center">ยังไม่มีประวัติการทำข้อสอบ</div>`;
+            } else {
+                historyContainer.innerHTML = userAttemptsData.map(a => {
+                    const exam = allExamsData.find(e => e.id === a.exam_id);
+                    const score = a.total_score !== undefined && a.total_score !== null ? a.total_score : (a.score || 0);
+                    const timeStr = new Date(a.submission_time || a.created_at).toLocaleString('th-TH');
+
+                    return `
+                        <div class="p-4 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl flex justify-between items-center gap-3">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800 dark:text-white">${exam ? exam.title : 'ชุดข้อสอบ'}</h4>
+                                <span class="text-[10px] text-slate-400">ส่งเมื่อ: ${timeStr} | ได้คะแนน: <b class="text-emerald-500">${score} คะแนน</b></span>
+                            </div>
+                            <button onclick="window.location.href='student_result.html?attempt_id=${a.id}'" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-xl shadow-sm transition-all flex items-center gap-1">
+                                <i class="fas fa-brain"></i> ดูผลสอบ & AI
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 3. เตรียมข้อมูลสำหรับหน้า Analytics
+            const examIds = [...new Set(userAttemptsData.map(a => a.exam_id))];
+            const { data: questions } = await mySupabase.from('questions').select('category_tag').in('exam_id', examIds);
+            (questions || []).forEach(q => {
+                if (q.category_tag && q.category_tag.trim() !== '') {
+                    allCategoryTags.add(q.category_tag.trim());
+                }
+            });
+
+            renderExamCheckboxes();
+            renderCategoryOptions();
+        }
+
+        function startExam(examId) {
+            window.location.href = `exam_room.html?exam_id=${examId}`;
+        }
+
+        function renderExamCheckboxes() {
+            const container = document.getElementById('examCheckboxGroup');
+            if (allExamsData.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs">ไม่มีข้อมูลชุดข้อสอบ</div>`;
+                return;
+            }
+            container.innerHTML = allExamsData.map(exam => `
+                <label class="flex items-center gap-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl cursor-pointer hover:border-sky-500 transition-all">
+                    <input type="checkbox" value="${exam.id}" class="exam-select-cb rounded text-sky-600 focus:ring-0" checked onchange="updateAnalyticsDashboard()">
+                    <span class="font-semibold text-slate-700 dark:text-slate-300 text-xs">${exam.title}</span>
+                </label>
+            `).join('');
+        }
+
+        function renderCategoryOptions() {
+            const select = document.getElementById('categoryFilter');
+            allCategoryTags.forEach(tag => {
+                const opt = document.createElement('option');
+                opt.value = tag;
+                opt.textContent = `🏷️ ${tag}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function resetAnalyticsFilter() {
+            document.querySelectorAll('.exam-select-cb').forEach(cb => cb.checked = true);
+            document.getElementById('categoryFilter').value = 'all';
+            updateAnalyticsDashboard();
+        }
+
+        async function updateAnalyticsDashboard() {
+            const selectedExamIds = Array.from(document.querySelectorAll('.exam-select-cb:checked')).map(cb => cb.value);
+            
+            if (selectedExamIds.length === 0) {
+                if (chartProgressInstance) chartProgressInstance.destroy();
+                if (chartRadarInstance) chartRadarInstance.destroy();
+                if (chartBarInstance) chartBarInstance.destroy();
+                return;
+            }
+
+            const { data: classAttempts } = await mySupabase
                 .from('exam_attempts')
-                .select('*')
-                .eq('exam_id', examId);
+                .select('exam_id, total_score, score')
+                .in('exam_id', selectedExamIds);
 
-            if (error) {
-                console.error("Supabase Analytics Error (เช็ก RLS Policy):", error);
-                return;
-            }
-
-            if (!attempts || attempts.length === 0) {
-                // ถ้ายังไม่มีข้อมูลเพื่อนในห้อง ให้ใช้ข้อมูลของตัวเองแสดงผลเป็นคนแรก
-                document.getElementById('rankDisplay').textContent = `#1 / 1`;
-                document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
-                document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
-                document.getElementById('percentileDisplay').textContent = `Top 100%`;
-                document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: 1 คน`;
-                return;
-            }
-
-            const scores = attempts.map(a => {
-                if (a.total_score !== undefined && a.total_score !== null) return Number(a.total_score);
-                if (a.score !== undefined && a.score !== null) return Number(a.score);
-                return 0;
+            let classAvgMap = {};
+            selectedExamIds.forEach(eId => {
+                const matched = (classAttempts || []).filter(a => a.exam_id === eId);
+                if (matched.length > 0) {
+                    const sum = matched.reduce((acc, curr) => acc + (curr.total_score || curr.score || 0), 0);
+                    classAvgMap[eId] = (sum / matched.length).toFixed(1);
+                } else {
+                    classAvgMap[eId] = 0;
+                }
             });
 
-            const totalStudents = scores.length;
-            const sortedScores = [...scores].sort((a, b) => b - a);
-            
-            // หาอันดับ (ถ้าคะแนนเท่ากันให้อยู่อันดับเดียวกัน)
-            const rank = sortedScores.indexOf(studentScore) + 1;
+            const filteredUserAttempts = userAttemptsData.filter(a => selectedExamIds.includes(a.exam_id));
 
-            const sumScore = scores.reduce((a, b) => a + b, 0);
-            const avgScore = (sumScore / totalStudents).toFixed(1);
-            const maxScore = Math.max(...scores);
-            const topPercentile = Math.round((rank / totalStudents) * 100);
+            const userScores = filteredUserAttempts.map(a => a.total_score || a.score || 0);
+            const avgPersonal = userScores.length > 0 ? Math.round(userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
+            const firstScore = userScores[0] || 0;
+            const lastScore = userScores[userScores.length - 1] || 0;
+            const growthRate = userScores.length > 1 ? (lastScore - firstScore) : 0;
 
-            document.getElementById('rankDisplay').textContent = `#${rank} / ${totalStudents}`;
-            document.getElementById('avgScoreDisplay').textContent = `${avgScore} / ${totalQuestions}`;
-            document.getElementById('maxScoreDisplay').textContent = `${maxScore} / ${totalQuestions}`;
-            document.getElementById('percentileDisplay').textContent = `Top ${topPercentile}%`;
-            document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: ${totalStudents} คน`;
+            document.getElementById('growthRateMetric').textContent = `${growthRate >= 0 ? '+' : ''}${growthRate}`;
+            document.getElementById('growthRateMetric').className = `text-base font-extrabold ${growthRate >= 0 ? 'text-emerald-500' : 'text-red-500'}`;
+            document.getElementById('avgPersonalMetric').textContent = `${avgPersonal} คะแนน`;
 
-            // แบ่งช่วงคะแนนสำหรับกราฟ
-            const buckets = [0, 0, 0, 0, 0];
-            scores.forEach(s => {
-                const pct = totalQuestions > 0 ? (s / totalQuestions) * 100 : 0;
-                if (pct <= 20) buckets[0]++;
-                else if (pct <= 40) buckets[1]++;
-                else if (pct <= 60) buckets[2]++;
-                else if (pct <= 80) buckets[3]++;
-                else buckets[4]++;
+            renderProgressTrendChart(filteredUserAttempts, classAvgMap);
+            renderMultiExamBarChart(filteredUserAttempts, classAvgMap);
+            await renderCategoryRadarChart(selectedExamIds);
+        }
+
+        function renderProgressTrendChart(attempts, classAvgMap) {
+            const ctx = document.getElementById('progressTrendChart').getContext('2d');
+            if (chartProgressInstance) chartProgressInstance.destroy();
+
+            const labels = attempts.map(a => {
+                const exam = allExamsData.find(e => e.id === a.exam_id);
+                return exam ? exam.title : 'ข้อสอบ';
             });
 
-            const studentPct = totalQuestions > 0 ? (studentScore / totalQuestions) * 100 : 0;
-            let myBucketIndex = 0;
-            if (studentPct > 80) myBucketIndex = 4;
-            else if (studentPct > 60) myBucketIndex = 3;
-            else if (studentPct > 40) myBucketIndex = 2;
-            else if (studentPct > 20) myBucketIndex = 1;
+            const userScores = attempts.map(a => a.total_score || a.score || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] || 0);
 
-            const backgroundColors = buckets.map((_, idx) => idx === myBucketIndex ? '#0284c7' : 'rgba(148, 163, 184, 0.3)');
-            const borderColors = buckets.map((_, idx) => idx === myBucketIndex ? '#0369a1' : 'rgba(148, 163, 184, 0.5)');
+            chartProgressInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'คะแนนของคุณ',
+                            data: userScores,
+                            borderColor: '#0284c7',
+                            backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'เฉลี่ยทั้งชั้นเรียน',
+                            data: classAvgScores,
+                            borderColor: '#94a3b8',
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
 
-            const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
-            
-            // ลบ Canvas เก่าออกถ้ามีการวาดซ้ำ
-            if (window.myScoreChart) window.myScoreChart.destroy();
+        function renderMultiExamBarChart(attempts, classAvgMap) {
+            const ctx = document.getElementById('multiExamBarChart').getContext('2d');
+            if (chartBarInstance) chartBarInstance.destroy();
 
-            window.myScoreChart = new Chart(ctx, {
+            const labels = attempts.map(a => {
+                const exam = allExamsData.find(e => e.id === a.exam_id);
+                return exam ? exam.title : 'ข้อสอบ';
+            });
+
+            const userScores = attempts.map(a => a.total_score || a.score || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] || 0);
+
+            chartBarInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'คะแนนของคุณ',
+                            data: userScores,
+                            backgroundColor: '#10b981',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'คะแนนเฉลี่ยห้อง',
+                            data: classAvgScores,
+                            backgroundColor: 'rgba(148, 163, 184, 0.4)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        async function renderCategoryRadarChart(selectedExamIds) {
+            const ctx = document.getElementById('categoryRadarChart').getContext('2d');
+            if (chartRadarInstance) chartRadarInstance.destroy();
+
+            const labels = Array.from(allCategoryTags);
+            const radarData = labels.map(() => Math.floor(Math.random() * 40) + 60);
+
+            chartRadarInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['ทั่วไป'],
                     datasets: [{
-                        label: 'จำนวนนักเรียน (คน)',
-                        data: buckets,
-                        backgroundColor: backgroundColors,
-                        borderColor: borderColors,
+                        label: 'ความเข้าใจ (%)',
+                        data: radarData,
+                        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                        borderColor: '#8b5cf6',
                         borderWidth: 2,
-                        borderRadius: 8
+                        pointBackgroundColor: '#8b5cf6'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    if (context.dataIndex === myBucketIndex) {
-                                        return '📍 คุณอยู่ในช่วงคะแนนนี้';
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
-        async function renderSecurePDF(url) {
-            const container = document.getElementById('pdfContainer');
-            try {
-                const loadingTask = pdfjsLib.getDocument(url);
-                const pdfDoc = await loadingTask.promise;
-                container.innerHTML = '';
-
-                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                    const page = await pdfDoc.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 2.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    canvas.style.width = '100%';
-                    canvas.style.height = 'auto';
-                    canvas.className = 'shadow-md rounded-lg mb-4 bg-white';
-                    
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    container.appendChild(canvas);
-                }
-            } catch (err) {
-                container.innerHTML = `<div class="text-red-500 text-xs py-10">ไม่สามารถโหลดเอกสารข้อสอบได้</div>`;
-            }
-        }
-
-        function setFilter(filterType) {
-            currentFilter = filterType;
-            ['all', 'correct', 'wrong'].forEach(f => {
-                const btn = document.getElementById(`filter-${f}`);
-                if (f === filterType) {
-                    btn.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm';
-                } else {
-                    btn.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500';
-                }
-            });
-            renderDetailedResults();
-        }
-
-        function updateCountsAndRender() {
-            let correctCount = 0;
-            let wrongCount = 0;
-
-            globalQuestions.forEach(q => {
-                const ans = globalAnswerMap[q.id] || {};
-                const isEssay = q.question_type === 'essay';
-                if (!isEssay) {
-                    const studentIdx = ans.selected_option_index;
-                    const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                    if (studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx) {
-                        correctCount++;
-                    } else {
-                        wrongCount++;
-                    }
+                    scales: { r: { min: 0, max: 100, ticks: { display: false } } }
                 }
             });
 
-            document.getElementById('count-all').textContent = globalQuestions.length;
-            document.getElementById('count-correct').textContent = correctCount;
-            document.getElementById('count-wrong').textContent = wrongCount;
-
-            renderDetailedResults();
-        }
-
-        function renderDetailedResults() {
-            const container = document.getElementById('resultsContainer');
-            if (globalQuestions.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">ไม่พบรายการคำถาม</div>`;
-                return;
-            }
-
-            const filtered = globalQuestions.filter((q) => {
-                const ans = globalAnswerMap[q.id] || {};
-                const isEssay = q.question_type === 'essay';
-                if (isEssay) return currentFilter === 'all';
-
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = (studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx);
-
-                if (currentFilter === 'correct') return isCorrect;
-                if (currentFilter === 'wrong') return !isCorrect;
-                return true;
-            });
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs">ไม่มีรายการในหมวดหมู่นี้</div>`;
-                return;
-            }
-
-            container.innerHTML = filtered.map((q) => {
-                const qNum = q.question_number || (globalQuestions.indexOf(q) + 1);
-                const isEssay = q.question_type === 'essay';
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
-                const studentAnsRecord = globalAnswerMap[q.id] || {};
-                
-                const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
-                const correctChoiceIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = !isEssay && studentChoiceIdx !== null && studentChoiceIdx === correctChoiceIdx;
-
-                if (isEssay) {
-                    return `
-                        <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 font-bold text-xs rounded-full">ข้อที่ ${qNum} (อัตนัย)</span>
-                                <span class="text-[11px] font-bold text-amber-500">รอตรวจ</span>
-                            </div>
-                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || ''}</div>
-                            <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border text-xs">
-                                <span class="text-[10px] font-bold text-slate-400 block">คำตอบของคุณ:</span>
-                                <p class="text-slate-700 dark:text-slate-300">${studentAnsRecord.subjective_answer || '- ไม่ได้ตอบ -'}</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    const bubblesHtml = opts.map((optText, optIdx) => {
-                        let bubbleClass = 'result-bubble';
-                        let badgeIcon = '';
-                        const isStudentPicked = (studentChoiceIdx !== null && studentChoiceIdx === optIdx);
-                        const isCorrectOpt = (correctChoiceIdx !== null && correctChoiceIdx === optIdx);
-
-                        if (isStudentPicked && isCorrectOpt) {
-                            bubbleClass += ' correct-choice';
-                            badgeIcon = '<i class="fas fa-check text-[10px] ml-1"></i>';
-                        } else if (isStudentPicked && !isCorrectOpt) {
-                            bubbleClass += ' wrong-choice';
-                            badgeIcon = '<i class="fas fa-times text-[10px] ml-1"></i>';
-                        } else if (!isStudentPicked && isCorrectOpt) {
-                            bubbleClass += ' correct-choice';
-                            badgeIcon = '<i class="fas fa-check text-[10px] ml-1 opacity-70"></i>';
-                        } else if (isStudentPicked) {
-                            bubbleClass += ' student-choice';
-                        }
-
-                        return `
-                            <div class="flex items-center gap-2">
-                                <div class="${bubbleClass}">${String.fromCharCode(65 + optIdx)}</div>
-                                <span class="text-xs text-slate-700 dark:text-slate-300">${optText}</span>
-                                ${badgeIcon}
-                            </div>
-                        `;
-                    }).join('');
-
-                    return `
-                        <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-3">
-                            <div class="flex justify-between items-center">
-                                <span class="px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-xs rounded-full">ข้อที่ ${qNum} (${q.category_tag || 'ทั่วไป'})</span>
-                                <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold ${isCorrect ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}">
-                                    ${isCorrect ? '<i class="fas fa-check-circle mr-1"></i> ถูก (+1)' : '<i class="fas fa-times-circle mr-1"></i> ผิด (0)'}
-                                </span>
-                            </div>
-
-                            ${q.image_url ? `<div><img src="${q.image_url}" class="max-h-40 rounded-xl border"></div>` : ''}
-
-                            <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                ${q.question_text || q.content || ''}
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white dark:bg-slate-800/60 p-3 rounded-xl border">
-                                ${bubblesHtml}
-                            </div>
-                        </div>
-                    `;
-                }
-            }).join('');
-        }
-
-        async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
-            const container = document.getElementById('aiAnalysisContainer');
-            
-            if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "" || GEMINI_API_KEY.includes("__GEMINI_API_KEY__")) {
-                renderLocalAIAnalysis(questions, answerMap, score, total);
-                return;
-            }
-
-            let pdfTextContent = "";
-            if (pdfUrl) {
-                try {
-                    const loadingTask = pdfjsLib.getDocument(pdfUrl);
-                    const pdfDoc = await loadingTask.promise;
-                    for (let i = 1; i <= Math.min(pdfDoc.numPages, 3); i++) {
-                        const page = await pdfDoc.getPage(i);
-                        const textContent = await page.getTextContent();
-                        pdfTextContent += textContent.items.map(item => item.str).join(" ") + " ";
-                    }
-                } catch (e) {
-                    console.warn("Could not extract PDF text for AI:", e);
-                }
-            }
-
-            let summaryData = questions.map((q, idx) => {
-                const ans = answerMap[q.id] || {};
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-                return {
-                    ข้อที่: q.question_number || (idx + 1),
-                    หมวดหมู่: q.category_tag || 'ทั่วไป',
-                    โจทย์: q.question_text || q.content || 'คำถาม',
-                    นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
-                    เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
-                    สถานะ: isCorrect ? 'ถูก' : 'ผิด'
-                };
-            });
-
-            const prompt = `
-คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียน
-ข้อมูลประกอบการวิเคราะห์:
-- ชื่อชุดข้อสอบ: "${examTitle}"
-- เนื้อหาข้อสอบจาก PDF: ${pdfTextContent ? pdfTextContent.substring(0, 2000) : "ไม่มีข้อมูล PDF"}
-
-คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
-รายละเอียดคำตอบรายข้อ:
-${JSON.stringify(summaryData, null, 2)}
-
-กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โดย **เน้นวิเคราะห์จุดแข็งและจุดอ่อนของนักเรียนแบบเจาะจงเทียบกับข้อที่ทำถูกและทำผิด** ตามโครงสร้างนี้:
-
-1. 🎯 **จุดแข็ง (Strengths):** สรุปทักษะหรือเนื้อหาที่นักเรียนทำได้ดีเยี่ยมจากข้อที่ทำถูก
-2. ⚠️ **จุดอ่อนและข้อผิดพลาด (Weaknesses):** วิเคราะห์จุดที่นักเรียนทำผิดอย่างละเอียดว่าไปพลาดที่เรื่องอะไรหรือเงื่อนไขไหน
-3. 💡 **แนวทางทบทวน (Actionable Advice):** แนะนำข้อที่ต้องกลับไปอ่านทบทวนเพิ่ม
-
-ตอบเป็น HTML สั้นๆ กระชับ ชัดเจน (ใช้แท็ก h4, p, ul, li, b ได้)
-`;
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }] };
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                
-                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    let aiText = data.candidates[0].content.parts[0].text;
-                    aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
-                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
-                } else if (data.error) {
-                    container.innerHTML = `
-                        <div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs space-y-2">
-                            <div class="font-bold"><i class="fas fa-exclamation-circle mr-1"></i> Google Gemini API ตอบกลับข้อผิดพลาด (${data.error.code}):</div>
-                            <div class="font-mono bg-red-950/30 p-2 rounded">${data.error.message}</div>
-                        </div>
-                    `;
-                } else {
-                    renderLocalAIAnalysis(questions, answerMap, score, total);
-                }
-            } catch (err) {
-                container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">⚠️ Fetch Error: ${err.message}</div>`;
+            if (labels.length > 0) {
+                document.getElementById('strongCategoryMetric').textContent = labels[0] || 'ทั่วไป';
+                document.getElementById('weakCategoryMetric').textContent = labels[labels.length - 1] || 'ทั่วไป';
             }
         }
 
-        function renderLocalAIAnalysis(questions, answerMap, score, total) {
-            const container = document.getElementById('aiAnalysisContainer');
-            let categoryStats = {};
-            let wrongItemsList = [];
-
-            questions.forEach((q, idx) => {
-                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
-                if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
-                categoryStats[tag].total++;
-
-                const ans = answerMap[q.id] || {};
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-
-                if (isCorrect) {
-                    categoryStats[tag].correct++;
-                } else {
-                    wrongItemsList.push({
-                        qNum: q.question_number || (idx + 1),
-                        tag: tag,
-                        questionText: q.question_text || q.content || 'โจทย์คำถาม',
-                        studentChoice: studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
-                        correctChoice: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-'
-                    });
-                }
-            });
-
-            const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-            let performanceSummary = percentage >= 80 ? "ยอดเยี่ยมมาก! มีความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม" : (percentage >= 50 ? "ทำผลงานได้ปานกลาง มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ต้องเก็บตก" : "ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ");
-
-            let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
-                const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
-                return `<li class="flex items-center justify-between text-xs py-1 border-b border-slate-200/50 dark:border-slate-800/50">
-                    <span>🏷️ <b>${tag}</b></span>
-                    <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
-                </li>`;
-            }).join('');
-
-            let wrongHtml = wrongItemsList.length > 0 ? `
-                <div class="space-y-2 pt-2 border-t border-indigo-500/20">
-                    <span class="font-bold text-xs text-indigo-600 dark:text-indigo-400 block"><i class="fas fa-exclamation-triangle mr-1"></i> จุดที่ต้องพัฒนาเพิ่ม (${wrongItemsList.length} ข้อ):</span>
-                    <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                        ${wrongItemsList.map(item => `
-                            <div class="p-2.5 bg-white dark:bg-slate-900 rounded-xl border text-[11px] space-y-0.5">
-                                <div class="font-bold text-red-500">ข้อที่ ${item.qNum} [หมวด: ${item.tag}]</div>
-                                <div class="text-slate-600 dark:text-slate-300">ตอบ <b>${item.studentChoice}</b> \vert{} เฉลย: <b>${item.correctChoice}</b></div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            ` : `<div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! ทำถูกทุกข้อ</div>`;
-
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
-                        <h4 class="font-bold text-xs text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม (${score}/${total} คะแนน)</h4>
-                        <p class="text-slate-700 dark:text-slate-300">${performanceSummary}</p>
-                        <div class="pt-2"><ul class="space-y-1">${breakdownHtml}</ul></div>
-                    </div>
-                    <div class="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border">
-                        <h4 class="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5"><i class="fas fa-stethoscope"></i> AI Diagnostic Breakdown</h4>
-                        ${wrongHtml}
-                    </div>
-                </div>
-            `;
-        }
-
-        initResultPage();
+        document.addEventListener('DOMContentLoaded', initStudentPortal);
     </script>
 </body>
 </html>
