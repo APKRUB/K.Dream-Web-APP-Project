@@ -62,25 +62,9 @@
         }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
-        
-        /* Anti-Download Shield */
-        .secure-video-wrapper {
-            position: relative;
-            width: 100%;
-            background: #000;
-            border-radius: 1rem;
-            overflow: hidden;
-        }
-        .secure-video-wrapper::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 10;
-            pointer-events: none; /* ป้องกันคลิกขวาและลากไฟล์ทับแต่ยังกด Play ได้ผ่าน iframe เบื้องต้น */
-        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24" oncontextmenu="return false;">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
@@ -276,11 +260,10 @@
             switchCourseTab(currentTab);
         }
 
-        // --- ฟังก์ชันแปลง Google Drive URL เป็น Secure Preview Embed ---
+        // --- ฟังก์ชันแปลง Google Drive URL เป็น Secure Preview Embed (ซ่อนปุ่มดาวน์โหลด แต่ใช้งาน Player ได้ปกติ) ---
         function getSecureEmbedUrl(url) {
             if (!url) return '';
             let videoUrl = url.trim();
-            // ถ้าเป็น Google Drive ให้แปลงเป็นแบบ preview เพื่อซ่อนปุ่ม Download ด้านบน
             if (videoUrl.includes('drive.google.com')) {
                 let fileId = '';
                 if (videoUrl.includes('/file/d/')) {
@@ -291,13 +274,14 @@
                     fileId = urlParamsObj.get('id');
                 }
                 if (fileId) {
+                    // ใช้ลิงก์ preview เพื่อซ่อนปุ่ม Download และไอคอนแชร์ของ Google Drive แต่ยังคงควบคุม Play/Pause/Seek/Speed ได้ครบ
                     return `https://drive.google.com/file/d/${fileId}/preview`;
                 }
             }
             return videoUrl;
         }
 
-        // --- เปิดหน้าต่างทดสอบดูคลิปตัวอย่างเสมือนที่นักเรียนเห็น พร้อมระบบป้องกันดาวน์โหลด ---
+        // --- เปิดหน้าต่างทดสอบดูคลิปตัวอย่างเสมือนที่นักเรียนเห็น ---
         function openPreviewVideoModal() {
             const previewLessons = courseLessons.filter(l => l.video_url || l.video || l.url);
             if (previewLessons.length === 0) {
@@ -314,20 +298,18 @@
                 title: '🎓 ตัวอย่างคลิปวิดีโอ (มุมมองนักเรียน)',
                 width: '750px',
                 html: `
-                    <div class="space-y-4 text-left text-xs">
+                    <div class="space-y-4 text-left text-xs" oncontextmenu="return false;">
                         <div>
                             <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">เลือกบทเรียนวิดีโอตัวอย่าง:</label>
                             <select id="previewSelectLesson" onchange="changePreviewVideo(this)" class="w-full px-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-300 dark:border-slate-700 rounded-xl font-bold outline-none cursor-pointer">
                                 ${optionsHtml}
                             </select>
                         </div>
-                        <div class="secure-video-wrapper relative w-full aspect-video rounded-2xl overflow-hidden shadow-inner border border-slate-700">
-                            <!-- แผ่นใสทับเพื่อป้องกันการคลิกขวาหรือลากไฟล์วิดีโอโดยตรง -->
-                            <div class="absolute inset-0 z-20" oncontextmenu="return false;" style="background: transparent;"></div>
-                            <iframe id="previewVideoIframe" src="${initialEmbedUrl}" class="w-full h-full border-0 relative z-10" allow="autoplay" allowfullscreen></iframe>
+                        <div class="relative w-full aspect-video rounded-2xl overflow-hidden shadow-inner border border-slate-700 bg-black">
+                            <iframe id="previewVideoIframe" src="${initialEmbedUrl}" class="w-full h-full border-0" allow="autoplay; fullscreen" allowfullscreen></iframe>
                         </div>
-                        <div class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 flex items-center gap-2">
-                            <i class="fas fa-shield-halved text-sm"></i> ระบบเปิดใช้งานโหมดป้องกันการดาวน์โหลด (Anti-Download Protection) เรียบร้อยแล้ว
+                        <div class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/25 flex items-center gap-2">
+                            <i class="fas fa-circle-check text-sm"></i> อนุญาตให้กดเล่น หยุด กรอ และปรับสปีดได้ปกติ ป้องกันเฉพาะปุ่มดาวน์โหลด
                         </div>
                     </div>
                 `,
