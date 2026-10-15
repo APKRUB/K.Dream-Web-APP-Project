@@ -190,10 +190,11 @@
         });
 
         function goBack() {
+            // เช็คว่ามี course_id ติดมาใน URL หรือไม่ ถ้ามีให้กลับไปหน้า analytics ของคอร์สนั้น
             if (courseId) {
-                window.location.href = `admin_course_detail.html?id=${courseId}`;
+                window.location.href = `admin_analytics.html?course_id=${courseId}`;
             } else {
-                window.location.href = 'admin_exams.html';
+                window.location.href = 'admin_analytics.html';
             }
         }
 
