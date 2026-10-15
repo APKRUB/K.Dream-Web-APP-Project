@@ -134,9 +134,9 @@
                 <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-chart-bar text-sky-500"></i> 1. คะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ (Average Score per Exam)
+                            <i class="fas fa-chart-bar text-sky-500"></i> 1. ร้อยละคะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ (Average Percentage Score per Exam)
                         </h3>
-                        <span class="text-xs text-slate-400">ภาพรวมความยาก-ง่าย</span>
+                        <span class="text-xs text-slate-400">ภาพรวมความยาก-ง่าย (%)</span>
                     </div>
                     <div class="relative h-72 w-full">
                         <canvas id="globalTrendChart"></canvas>
@@ -291,6 +291,7 @@
         let allProfilesList = [];
         let allProfilesMap = {};
         let totalRegisteredStudents = 30;
+        let examQuestionsMap = {}; // 📌 เก็บจำนวนข้อของแต่ละข้อสอบ
 
         let chart1 = null, chart2 = null, chart3 = null, chart4 = null;
 
@@ -327,7 +328,6 @@
             return false;
         }
 
-        // 🌟 ฟังก์ชันแปลงค่าคำตอบตามชนิดตัวเลือก (choice_format) ของแต่ละชุดข้อสอบ
         function formatAnswerText(ansValue, examObj = null) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
             const strVal = String(ansValue).trim();
@@ -411,6 +411,15 @@
             document.getElementById('globalTotalExams').textContent = `${activeExams.length} ชุด`;
             document.getElementById('examCountBadge').textContent = `${activeExams.length} ชุดข้อสอบ`;
 
+            // 🌟 ดึงข้อมูลคำถามทั้งหมดเพื่อมานับคะแนนเต็ม (Max Score) ของแต่ละชุดข้อสอบ
+            const { data: allQuestions } = await mySupabase.from('questions').select('id, exam_id');
+            if (allQuestions) {
+                allQuestions.forEach(q => {
+                    const eId = String(q.exam_id);
+                    examQuestionsMap[eId] = (examQuestionsMap[eId] || 0) + 1;
+                });
+            }
+
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             allAttempts = attempts || [];
 
@@ -452,7 +461,24 @@
         function renderAllCharts(activeExams) {
             const labels = activeExams.map(e => e.title);
 
-            const avgScores = activeExams.map(e => {
+            // 🌟 คำนวณคะแนนเฉลี่ยเป็นร้อยละ (%) ของคะแนนเต็มในแต่ละชุดข้อสอบ
+            const avgPercentages = activeExams.map(e => {
+                const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
+                if (matched.length === 0) return 0;
+                
+                // คะแนนเต็มของชุดข้อสอบนี้ (หากไม่มีคำถามในระบบ ให้ใช้ 10 เป็นค่าสำรอง)
+                const maxScore = examQuestionsMap[String(e.id)] || 10;
+                if (maxScore === 0) return 0;
+
+                const sumScore = matched.reduce((acc, curr) => acc + getAttemptScore(curr), 0);
+                const avgScore = sumScore / matched.length;
+                
+                // คำนวณเป็นร้อยละ
+                const percentage = (avgScore / maxScore) * 100;
+                return Number(percentage.toFixed(1));
+            });
+
+            const avgScoresRaw = activeExams.map(e => {
                 const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
                 if (matched.length === 0) return 0;
                 const sum = matched.reduce((acc, curr) => acc + getAttemptScore(curr), 0);
@@ -463,15 +489,47 @@
                 return allAttempts.filter(a => String(a.exam_id) === String(e.id)).length;
             });
 
+            // 📊 Chart 1: ร้อยละคะแนนเฉลี่ยเปรียบเทียบ (%)
             const ctx1 = document.getElementById('globalTrendChart').getContext('2d');
             if (chart1) chart1.destroy();
             chart1 = new Chart(ctx1, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{ label: 'คะแนนเฉลี่ย', data: avgScores, backgroundColor: '#0284c7', borderRadius: 8 }]
+                    datasets: [{ 
+                        label: 'ร้อยละคะแนนเฉลี่ย (%)', 
+                        data: avgPercentages, 
+                        backgroundColor: '#0284c7', 
+                        borderRadius: 8 
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const maxScore = examQuestionsMap[String(activeExams[idx].id)] || 10;
+                                    return ` คะแนนเฉลี่ย: ${avgScoresRaw[idx]} / ${maxScore} (${context.raw}%)`;
+                                }
+                            }
+                        }
+                    }, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        } 
+                    } 
+                }
             });
 
             const ctx2 = document.getElementById('submissionRateChart').getContext('2d');
@@ -488,7 +546,8 @@
             let gradeRanges = [0, 0, 0, 0]; 
             allAttempts.forEach(a => {
                 const score = getAttemptScore(a);
-                const pct = (score / 10) * 100;
+                const examMax = examQuestionsMap[String(a.exam_id)] || 10;
+                const pct = examMax > 0 ? (score / examMax) * 100 : 0;
                 if (pct < 50) gradeRanges[0]++;
                 else if (pct < 70) gradeRanges[1]++;
                 else if (pct < 85) gradeRanges[2]++;
@@ -512,9 +571,33 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{ label: 'คะแนนเฉลี่ยคลาส', data: avgScores, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.3, borderWidth: 3 }]
+                    datasets: [{ label: 'ร้อยละคะแนนเฉลี่ย', data: avgPercentages, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.3, borderWidth: 3 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ร้อยละเฉลี่ย: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        } 
+                    } 
+                }
             });
         }
 
@@ -526,18 +609,21 @@
                 if (allProfilesMap[sId] && isUserAdmin(allProfilesMap[sId])) return;
 
                 if (!studentStats[sId]) {
-                    studentStats[sId] = { totalScore: 0, count: 0 };
+                    studentStats[sId] = { totalScore: 0, count: 0, totalMax: 0 };
                 }
                 const score = getAttemptScore(a);
+                const examMax = examQuestionsMap[String(a.exam_id)] || 10;
                 studentStats[sId].totalScore += score;
+                studentStats[sId].totalMax += examMax;
                 studentStats[sId].count += 1;
             });
 
             let studentList = Object.keys(studentStats).map(id => {
                 const profileInfo = allProfilesMap[id];
                 const name = getStudentName(profileInfo, id);
-                const avg = studentStats[id].totalScore / studentStats[id].count;
-                return { id, name, total: studentStats[id].totalScore, avg: avg.toFixed(1), count: studentStats[id].count };
+                const stat = studentStats[id];
+                const avgPct = stat.totalMax > 0 ? (stat.totalScore / stat.totalMax) * 100 : 0;
+                return { id, name, total: stat.totalScore, avgPct: avgPct.toFixed(1), count: stat.count };
             });
 
             let topList = [...studentList].sort((a, b) => b.total - a.total).slice(0, 5);
@@ -551,7 +637,7 @@
                             <span class="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
                             <div>
                                 <div class="font-extrabold text-slate-900 dark:text-white text-sm">${s.name}</div>
-                                <div class="text-[11px] text-slate-400">ทำข้อสอบแล้ว ${s.count} ชุด</div>
+                                <div class="text-[11px] text-slate-400">ทำข้อสอบแล้ว ${s.count} ชุด (เฉลี่ย ${s.avgPct}%)</div>
                             </div>
                         </div>
                         <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">
@@ -561,7 +647,7 @@
                 `).join('');
             }
 
-            let atRiskList = studentList.filter(s => Number(s.avg) < 5);
+            let atRiskList = studentList.filter(s => Number(s.avgPct) < 50);
             const riskContainer = document.getElementById('atRiskStudentsContainer');
             if (atRiskList.length === 0) {
                 riskContainer.innerHTML = `<div class="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! ไม่มีนักเรียนอยู่ในกลุ่มเสี่ยง</div>`;
@@ -573,7 +659,7 @@
                             <div class="text-[11px] text-slate-400">ทำข้อสอบแล้ว ${s.count} ชุด</div>
                         </div>
                         <div class="px-3 py-1 bg-rose-100 dark:bg-rose-900 text-rose-600 dark:text-rose-300 font-bold rounded-lg text-xs">
-                            เฉลี่ย ${s.avg} คะแนน
+                            เฉลี่ย ${s.avgPct}%
                         </div>
                     </div>
                 `).join('');
@@ -1001,15 +1087,17 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "รหัสข้อสอบ,ชื่อชุดข้อสอบ,หมวดหมู่,จำนวนคนส่ง,คะแนนเฉลี่ย\n";
+            csvContent += "รหัสข้อสอบ,ชื่อชุดข้อสอบ,หมวดหมู่,จำนวนคนส่ง,ร้อยละคะแนนเฉลี่ย\n";
 
             allExams.forEach(exam => {
                 const matchedAttempts = allAttempts.filter(a => String(a.exam_id) === String(exam.id));
                 const submittedCount = matchedAttempts.length;
-                const avgScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : 0;
+                const maxScore = examQuestionsMap[String(exam.id)] || 10;
+                const avgScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount) : 0;
+                const avgPct = maxScore > 0 ? ((avgScore / maxScore) * 100).toFixed(1) : 0;
                 const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
 
-                csvContent += `"${exam.exam_code || 'EXAM'}","${exam.title}","${catName}",${submittedCount},${avgScore}\n`;
+                csvContent += `"${exam.exam_code || 'EXAM'}","${exam.title}","${catName}",${submittedCount},${avgPct}%\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
