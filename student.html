@@ -42,10 +42,13 @@
                 </div>
                 <div>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white">Student Examination Center</h1>
-                    <p class="text-[11px] text-slate-500">ระบบสอบออนไลน์และศูนย์วิเคราะห์พัฒนาการผู้เรียน</p>
+                    <p class="text-[11px] text-slate-500" id="studentWelcomeText">กำลังตรวจสอบข้อมูลผู้ใช้งาน...</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <button onclick="logoutStudent()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                </button>
                 <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 transition-all">
                     <i class="fas fa-moon text-sm" id="themeIcon"></i>
                 </button>
@@ -68,7 +71,6 @@
         <!-- ================= FEATURE 1: EXAM PORTAL (หน้าทำข้อสอบ) ================= -->
         <div id="sectionExam" class="space-y-6">
             
-            <!-- Toolbar ค้นหา, กรองหมวดหมู่ และสลับมุมมอง List/Card -->
             <div class="hitech-card p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-3 w-full md:w-auto">
                     <div class="relative flex-1 md:w-72">
@@ -87,7 +89,6 @@
                 </div>
             </div>
 
-            <!-- ส่วนแสดงรายการชุดข้อสอบ -->
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h2 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -100,7 +101,6 @@
                 </div>
             </div>
 
-            <!-- ประวัติการสอบ -->
             <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-history text-indigo-500"></i> ประวัติการสอบและผลคะแนนของคุณ
@@ -208,6 +208,8 @@
         
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let currentStudentId = null;
+        let currentStudentName = '';
         let allExams = [];
         let categoriesMap = {};
         let userAttempts = [];
@@ -230,6 +232,54 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
+
+        // 🛡️ ระบบตรวจสอบสิทธิ์ (Auth Guard & ID Resolver)
+        async function authenticateStudent() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
+
+            if (studentIdFromUrl) {
+                localStorage.setItem('student_id', studentIdFromUrl);
+                localStorage.setItem('id', studentIdFromUrl);
+                currentStudentId = studentIdFromUrl;
+            } else {
+                currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            }
+
+            // ถ้าไม่มี ID ทั้งใน URL และ localStorage ให้ตีกลับทันที (ป้องกันเอาลิงก์มาแปะ)
+            if (!currentStudentId) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
+                    confirmButtonColor: '#0284c7'
+                });
+                window.location.href = 'index.html'; // หรือหน้า Login ของระบบ
+                return false;
+            }
+
+            // ดึงชื่อนักเรียนจากฐานข้อมูลมาแสดงผล
+            const { data: studentData, error } = await mySupabase
+                .from('students')
+                .select('name, fullname, username')
+                .eq('id', currentStudentId)
+                .single();
+
+            if (studentData) {
+                currentStudentName = studentData.name || studentData.fullname || studentData.username || 'นักเรียน';
+                document.getElementById('studentWelcomeText').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+            } else {
+                document.getElementById('studentWelcomeText').textContent = `รหัสผู้ใช้: ${currentStudentId}`;
+            }
+
+            return true;
+        }
+
+        function logoutStudent() {
+            localStorage.removeItem('student_id');
+            localStorage.removeItem('id');
+            window.location.href = 'index.html';
+        }
 
         function switchTab(tab) {
             const isExam = tab === 'exam';
@@ -257,7 +307,8 @@
         }
 
         async function initStudentPortal() {
-            const studentId = localStorage.getItem('id') || localStorage.getItem('student_id') || localStorage.getItem('user_id');
+            const isAuthValid = await authenticateStudent();
+            if (!isAuthValid) return;
 
             // 1. ดึงข้อมูลหมวดหมู่ (Categories)
             const { data: cats } = await mySupabase.from('categories').select('*');
@@ -276,10 +327,13 @@
             const { data: exams } = await mySupabase.from('exams').select('*').neq('status', 'draft').order('created_at', { ascending: false });
             allExams = exams || [];
 
-            // 3. ดึงประวัติการสอบของนักเรียน
-            let query = mySupabase.from('exam_attempts').select('*').order('submission_time', { ascending: true });
-            if (studentId) query = query.eq('student_id', studentId);
-            const { data: attempts } = await query;
+            // 3. ดึงประวัติการสอบเฉพาะของนักเรียนคนนี้
+            const { data: attempts } = await mySupabase
+                .from('exam_attempts')
+                .select('*')
+                .eq('student_id', currentStudentId)
+                .order('submission_time', { ascending: true });
+            
             userAttempts = attempts || [];
 
             renderExamCatalog();
@@ -375,7 +429,6 @@
             }).join('');
         }
 
-        // แสดง Instructions ก่อนลิงก์ไป exam_take.html
         async function handleExamClick(examId, mode, attemptId) {
             const exam = allExams.find(e => e.id === examId);
             const instructionsText = exam && exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
@@ -391,10 +444,11 @@
             });
 
             if (isConfirmed) {
+                // แนบ student_id ไปที่ URL ปลายทางด้วย เพื่อความปลอดภัยต่อเนื่อง
                 if (mode === 'resume') {
-                    window.location.href = `exam_take.html?exam_id=${examId}&attempt_id=${attemptId}`;
+                    window.location.href = `exam_take.html?exam_id=${examId}&attempt_id=${attemptId}&student_id=${currentStudentId}`;
                 } else {
-                    window.location.href = `exam_take.html?exam_id=${examId}`;
+                    window.location.href = `exam_take.html?exam_id=${examId}&student_id=${currentStudentId}`;
                 }
             }
         }
@@ -419,7 +473,7 @@
                             <span class="text-[10px] text-slate-400">ทำเมื่อ: ${timeStr} | สถานะ: <b class="${isCompleted ? 'text-emerald-500' : 'text-amber-500'}">${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'กำลังทำค้างอยู่'}</b></span>
                         </div>
                         ${isCompleted ? `
-                            <button onclick="window.location.href='student_result.html?attempt_id=${a.id}'" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-xl shadow-sm transition-all flex items-center gap-1">
+                            <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] rounded-xl shadow-sm transition-all flex items-center gap-1">
                                 <i class="fas fa-brain"></i> ดูผลสอบ & AI
                             </button>
                         ` : `
