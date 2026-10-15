@@ -303,7 +303,7 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3sqlite...'; // คงค่าเดิมของพี่ AP ไว้
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -334,15 +334,15 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-       function goBack() {
-            // เช็ค course_id จาก URL โดยตรงแบบชัวร์ที่สุด
+        function goBack() {
+            // ตรวจสอบ course_id จาก URL หรือตัวแปร filterCourseId เพื่อพากลับหน้าคอร์สให้ถูกต้อง
             const params = new URLSearchParams(window.location.search);
             const cId = params.get('course_id') || filterCourseId;
 
             if (cId) {
                 window.location.href = `admin_course_detail.html?id=${cId}`;
             } else {
-                window.location.href = 'admin_courses.html'; // หรือหน้าแอดมินหลักของพี่ AP
+                window.location.href = 'admin_courses.html';
             }
         }
 
@@ -437,19 +437,16 @@
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // โหลดข้อมูลคอร์สทั้งหมดเพื่อใช้ทำ Dropdown และเช็คชื่อคอร์ส
             const { data: courses } = await mySupabase.from('courses').select('id, title, course_code').order('title');
             allCoursesList = courses || [];
             coursesMap = {};
             allCoursesList.forEach(c => { coursesMap[c.id] = c; });
 
             if (!filterCourseId) {
-                // ถ้าไม่ได้เข้าผ่านคอร์ส ให้แสดง Dropdown เลือกคอร์สบน Navbar
                 document.getElementById('courseSelectorWrapper').classList.remove('hidden');
                 const sel = document.getElementById('headerCourseSelect');
                 sel.innerHTML = `<option value="">📚 ทุกคอร์ส (ภาพรวมระบบ)</option>` + allCoursesList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
             } else {
-                // ถ้าเข้าผ่านคอร์ส ให้แสดงแบนเนอร์บอกชื่อคอร์ส
                 const cObj = coursesMap[filterCourseId];
                 if (cObj) {
                     document.getElementById('courseFilterBanner').classList.remove('hidden');
@@ -479,7 +476,6 @@
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             let rawExams = exams || [];
 
-            // กรองข้อสอบเฉพาะคอร์สที่เลือก (ถ้ามี filterCourseId)
             if (filterCourseId) {
                 rawExams = rawExams.filter(e => {
                     if (!e.course_id) return false;
@@ -506,7 +502,6 @@
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             let rawAttempts = attempts || [];
 
-            // กรอง attempts เฉพาะข้อสอบที่อยู่ในคอร์สนี้
             if (filterCourseId) {
                 const activeExamIds = new Set(activeExams.map(e => String(e.id)));
                 rawAttempts = rawAttempts.filter(a => activeExamIds.has(String(a.exam_id)));
@@ -1109,7 +1104,7 @@
             printWindow.document.close();
         }
 
-function renderExamsCatalogByCategories(activeExams) {
+        function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (activeExams.length === 0) {
                 container.innerHTML = `<div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบที่เปิดใช้งานในระบบ</div>`;
@@ -1142,7 +1137,6 @@ function renderExamsCatalogByCategories(activeExams) {
                     const submittedCount = matchedAttempts.length;
                     const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : '-';
 
-                    // 🌟 ปรับลิงก์ให้รองรับการส่ง course_id พ่วงไปด้วย (ถ้ามีการกรองคอร์สอยู่)
                     const detailUrl = filterCourseId 
                         ? `admin_analytics_detail.html?exam_id=${exam.id}&course_id=${filterCourseId}` 
                         : `admin_analytics_detail.html?exam_id=${exam.id}`;
