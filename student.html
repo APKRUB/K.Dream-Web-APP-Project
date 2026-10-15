@@ -67,7 +67,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.3</span>
+                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.4</span>
                     </div>
                     <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">Student Examination Center</p>
                 </div>
@@ -103,7 +103,7 @@
                 <div class="space-y-2">
                     <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold tracking-wide uppercase">ศูนย์การเรียนรู้ออนไลน์อัจฉริยะ</span>
                     <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
-                    <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามรายวิชา ทบทวนเทปเรียนย้อนหลัง หรือตรวจสอบคอร์สที่ลงทะเบียนได้จากเมนูด้านล่างนี้</p>
+                    <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามคอร์สที่ลงทะเบียน ทบทวนเทปเรียนย้อนหลัง หรือตรวจสอบรายวิชาได้จากเมนูด้านล่างนี้</p>
                 </div>
 
                 <!-- Modern Tab Switches -->
@@ -120,7 +120,7 @@
             <!-- Overall Progress Bar Widget -->
             <div class="pt-4 border-t border-white/15 relative z-10 max-w-xl space-y-1.5">
                 <div class="flex justify-between text-xs font-bold text-sky-100">
-                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวมในระบบ</span>
+                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบในคอร์สที่ลงทะเบียน</span>
                     <span id="overallProgressText">0/0 ชุด (0%)</span>
                 </div>
                 <div class="w-full bg-black/25 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/20">
@@ -190,13 +190,13 @@
                         <i class="fas fa-layer-group"></i>
                     </div>
                     <div>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-extrabold uppercase block">Course Selector</span>
-                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อแสดงข้อสอบ</h3>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-extrabold uppercase block">Enrolled Course Selector</span>
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">เลือกคอร์สที่ลงทะเบียนเพื่อแสดงข้อสอบ</h3>
                     </div>
                 </div>
                 <div class="w-full sm:w-80">
                     <select id="globalCourseSelect" onchange="onGlobalCourseChange()" class="w-full px-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none cursor-pointer focus:border-sky-500">
-                        <option value="all">📚 ทุกคอร์สที่ลงทะเบียน (All Courses)</option>
+                        <option value="all">📚 ทุกคอร์สที่ลงทะเบียน (All Enrolled Courses)</option>
                     </select>
                 </div>
             </div>
@@ -247,7 +247,7 @@
             <!-- Exam Catalog Container -->
             <div class="space-y-6">
                 <div id="examCategoriesGroupContainer" class="space-y-5">
-                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบตามคอร์สเรียน...</div>
+                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบเฉพาะคอร์สที่ลงทะเบียน...</div>
                 </div>
             </div>
         </div>
@@ -259,7 +259,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                     <div>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง (เฉพาะข้อสอบที่ทำแล้ว)
+                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง (เฉพาะข้อสอบในคอร์สที่ลงทะเบียน)
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">แสดงเฉพาะชุดข้อสอบที่นักเรียนได้ส่งคำตอบและบันทึกผลเรียบร้อยแล้ว</p>
                     </div>
@@ -472,7 +472,6 @@
                 currentStudentData = profileData;
                 studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
             } else {
-                // Fallback ป้องกัน error ถ้าไม่มีตาราง students โดยตรง
                 try {
                     const { data: studentData } = await mySupabase
                         .from('students')
@@ -527,7 +526,7 @@
                     coursesHtml += `
                         <div class="hitech-card p-4 rounded-2xl flex flex-col justify-between space-y-3 border-l-4 border-l-sky-500">
                             <div class="space-y-1">
-                                <span class="px-2 py-0.5 bg-sky-500/15 text-sky-600 rounded-md text-[10px] font-extrabold">คอร์สที่ลงทะเบียน</span>
+                                <span class="px-2 py-0.5 bg-sky-500/15 text-sky-600 rounded-md text-[10px] font-extrabold">คอร์สที่ลงทะเบียนแล้ว</span>
                                 <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${course.title || course.name || 'รายวิชา'}</h4>
                                 <p class="text-xs text-slate-500 line-clamp-2">${course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
                             </div>
@@ -744,7 +743,7 @@
             const { data: coursesData } = await mySupabase.from('courses').select('*');
             allCourses = coursesData || [];
 
-            // 2. ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียน (รองรับฟิลด์ student_id และ user_id)
+            // 2. ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียนจริงเท่านั้นจากตาราง course_enrollments
             const { data: enrollments } = await mySupabase
                 .from('course_enrollments')
                 .select('*')
@@ -752,24 +751,22 @@
 
             enrolledCourseIds = (enrollments || []).map(e => String(e.course_id || e.courseid || ''));
             
-            // กรองคอร์สที่ลงทะเบียนจริง
+            // กรองเฉพาะคอร์สที่มีการลงทะเบียนจริงๆ (ตัดคอร์สที่ไม่ลงทะเบียนออก 100%)
             enrolledCoursesList = allCourses.filter(c => enrolledCourseIds.includes(String(c.id)));
-            
-            // ถ้าไม่พบในตาราง course_enrollments หรือยังไม่ได้ผูก ให้ดึงคอร์สทั้งหมดเป็น Fallback เพื่อไม่ให้หน้าว่าง
-            if (enrolledCoursesList.length === 0) {
-                enrolledCoursesList = allCourses;
-                enrolledCourseIds = allCourses.map(c => String(c.id));
-            }
 
-            // Populate Global Course Dropdown
+            // Populate Global Course Dropdown (เฉพาะคอร์สที่ลงทะเบียน)
             const courseSelect = document.getElementById('globalCourseSelect');
-            courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์สที่ลงทะเบียน (${enrolledCoursesList.length} คอร์ส)</option>`;
-            enrolledCoursesList.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = `📖 ${c.title || c.name || 'คอร์สเรียน'}`;
-                courseSelect.appendChild(opt);
-            });
+            if (enrolledCoursesList.length === 0) {
+                courseSelect.innerHTML = `<option value="all">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>`;
+            } else {
+                courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์สที่ลงทะเบียน (${enrolledCoursesList.length} คอร์ส)</option>`;
+                enrolledCoursesList.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = `📖 ${c.title || c.name || 'คอร์สเรียน'}`;
+                    courseSelect.appendChild(opt);
+                });
+            }
 
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
@@ -843,17 +840,20 @@
             const quickPendingSection = document.getElementById('quickPendingSection');
             const keyword = document.getElementById('searchExamInput').value.toLowerCase();
 
+            // กรองข้อสอบเฉพาะที่อยู่ในคอร์สที่ลงทะเบียนแล้วเท่านั้น
             const availableExams = allExams.filter(exam => {
                 if (exam.status === 'draft') return false;
 
-                // กรองตาม Course Dropdown ที่เลือก
-                if (selectedGlobalCourseId !== 'all') {
-                    const examCourseId = String(exam.course_id || exam.courseid || '');
-                    if (examCourseId !== String(selectedGlobalCourseId)) return false;
-                } else if (enrolledCourseIds.length > 0 && exam.course_id) {
-                    let examCourses = Array.isArray(exam.course_id) ? exam.course_id.map(String) : [String(exam.course_id)];
-                    const hasAccess = examCourses.some(cId => enrolledCourseIds.includes(cId));
-                    if (!hasAccess) return false;
+                const examCourseId = String(exam.course_id || exam.courseid || '');
+                
+                // ตรวจสอบว่าข้อสอบนี้อยู่ในคอร์สที่นักเรียนลงทะเบียนหรือไม่
+                if (!enrolledCourseIds.includes(examCourseId)) {
+                    return false; // ตัดออกทันทีถ้าไม่ได้ลงทะเบียนคอร์สนี้
+                }
+
+                // กรองตาม Dropdown ที่เลือก
+                if (selectedGlobalCourseId !== 'all' && examCourseId !== String(selectedGlobalCourseId)) {
+                    return false;
                 }
 
                 const matchKeyword = exam.title.toLowerCase().includes(keyword) || (exam.description && exam.description.toLowerCase().includes(keyword));
@@ -874,8 +874,10 @@
 
             const activeExams = allExams.filter(e => {
                 if (e.status === 'draft') return false;
+                const examCourseId = String(e.course_id || e.courseid || '');
+                if (!enrolledCourseIds.includes(examCourseId)) return false;
                 if (selectedGlobalCourseId !== 'all') {
-                    return String(e.course_id || e.courseid || '') === String(selectedGlobalCourseId);
+                    return examCourseId === String(selectedGlobalCourseId);
                 }
                 return true;
             });
@@ -893,7 +895,6 @@
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
                 const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
                 
-                // ตรวจสอบสถานะ countdown (ถ้ามี start_time และยังไม่ถึงเวลา)
                 let isCountdown = false;
                 if (exam.start_time) {
                     if (new Date(exam.start_time).getTime() > Date.now()) {
@@ -951,8 +952,13 @@
                 quickPendingSection.classList.add('hidden');
             }
 
+            if (enrolledCoursesList.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-exclamation-circle text-2xl text-amber-500 mb-2"></i><br>คุณยังไม่ได้ลงทะเบียนในคอร์สเรียนใดๆ กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มคอร์ส</div>`;
+                return;
+            }
+
             if (availableExams.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สนี้ตามเงื่อนไข</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สที่ลงทะเบียนตามเงื่อนไขนี้</div>`;
                 return;
             }
 
@@ -1194,9 +1200,11 @@
                 const exam = allExams.find(e => e.id === a.exam_id);
                 if (!exam) return false;
 
-                if (selectedGlobalCourseId !== 'all') {
-                    const examCourseId = String(exam.course_id || exam.courseid || '');
-                    if (examCourseId !== String(selectedGlobalCourseId)) return false;
+                const examCourseId = String(exam.course_id || exam.courseid || '');
+                if (!enrolledCourseIds.includes(examCourseId)) return false;
+
+                if (selectedGlobalCourseId !== 'all' && examCourseId !== String(selectedGlobalCourseId)) {
+                    return false;
                 }
 
                 const examTitle = exam.title.toLowerCase();
@@ -1204,7 +1212,7 @@
             });
 
             if (completedAttempts.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center">ไม่พบประวัติการทำข้อสอบที่เสร็จสิ้นในคอร์สนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center">ไม่พบประวัติการทำข้อสอบที่เสร็จสิ้นในคอร์สที่ลงทะเบียน</div>`;
                 return;
             }
 
@@ -1263,15 +1271,17 @@
 
             const availableExamsForAnalytics = allExams.filter(exam => {
                 if (!completedExamIds.includes(exam.id)) return false;
-                if (selectedGlobalCourseId !== 'all') {
-                    const examCourseId = String(exam.course_id || exam.courseid || '');
-                    if (examCourseId !== String(selectedGlobalCourseId)) return false;
+                const examCourseId = String(exam.course_id || exam.courseid || '');
+                if (!enrolledCourseIds.includes(examCourseId)) return false;
+
+                if (selectedGlobalCourseId !== 'all' && examCourseId !== String(selectedGlobalCourseId)) {
+                    return false;
                 }
                 return true;
             });
 
             if (availableExamsForAnalytics.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs">ยังไม่มีประวัติการทำข้อสอบที่เสร็จสิ้นในคอร์สนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs">ยังไม่มีประวัติการทำข้อสอบที่เสร็จสิ้นในคอร์สที่ลงทะเบียน</div>`;
                 return;
             }
 
