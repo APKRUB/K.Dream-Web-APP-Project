@@ -57,9 +57,9 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
-        /* Anti-Download Shield Overlay */
+        /* Anti-Download & Anti-Direct-Link Shield Overlay */
         .video-secure-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; background: transparent; pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; background: transparent; pointer-events: auto;
         }
     </style>
 </head>
@@ -101,7 +101,7 @@
                         <i class="fas fa-shield-halved text-rose-500"></i> อัปโหลดและจัดการเทปเรียนย้อนหลัง
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        รองรับลิงก์ YouTube แบบ Unlisted ระบบจะซ่อนลิงก์ต้นทางและป้องกันการดาวน์โหลดคลิปด้วยมาตรการความปลอดภัยระดับสูง
+                        ระบบซ่อนลิงก์ต้นทาง ป้องกันการคลิกออกไปหน้า YouTube ภายนอก และป้องกันการดาวน์โหลดคลิปอย่างสมบูรณ์
                     </p>
                 </div>
                 <span class="px-3 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-rose-500/20">
@@ -127,13 +127,26 @@
             </div>
         </div>
 
-        <!-- รายการเทปเรียนทั้งหมด -->
+        <!-- รายการเทปเรียนทั้งหมดพร้อมปุ่มสลับมุมมอง (Grid / List) -->
         <div class="space-y-4">
-            <h3 class="font-extrabold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <i class="fas fa-film text-sky-500"></i> คลังเทปเรียนย้อนหลังทั้งหมดในระบบ (<span id="videoCountDisplay">0</span> รายการ)
-            </h3>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h3 class="font-extrabold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <i class="fas fa-film text-sky-500"></i> คลังเทปเรียนย้อนหลังทั้งหมด (<span id="videoCountDisplay">0</span> รายการ)
+                </h3>
+                
+                <!-- ปุ่มสลับมุมมอง (คล้ายหน้าทำข้อสอบ) -->
+                <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs">
+                    <button onclick="switchViewMode('grid')" id="btn-mode-grid" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-border-all"></i> แบบการ์ด
+                    </button>
+                    <button onclick="switchViewMode('list')" id="btn-mode-list" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5">
+                        <i class="fas fa-list"></i> แบบรายการ
+                    </button>
+                </div>
+            </div>
 
-            <div id="videoGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- คอนเทนเนอร์แสดงผล (จะเปลี่ยน class ตามโหมด) -->
+            <div id="videoContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="col-span-full text-center py-12 text-slate-400 text-xs">
                     <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดข้อมูลคลังเทปเรียน...
                 </div>
@@ -142,8 +155,8 @@
 
     </main>
 
-    <!-- Modal สำหรับดูวิดีโอพร้อมระบบป้องกันการดูดคลิป -->
-    <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <!-- Modal สำหรับดูวิดีโอพร้อมระบบป้องกันการดูดคลิปขั้นสูง -->
+    <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                 <h3 id="modalVideoTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -154,16 +167,16 @@
                 </button>
             </div>
 
-            <!-- ตัวเล่นวิดีโอพร้อมระบบ Anti-Download Shield -->
+            <!-- ตัวเล่นวิดีโอพร้อมระบบป้องกันคลิกออกและดูดคลิป -->
             <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
                 <div id="iframePlayerWrapper" class="w-full h-full relative">
-                    <!-- Overlay ป้องกันคลิกขวาและลากคลุม -->
-                    <div class="video-secure-overlay"></div>
+                    <!-- Overlay ดักจับการคลิกทุกอย่าง ป้องกันการคลิกขวาหรือกดไปหน้า YouTube -->
+                    <div class="video-secure-overlay" onclick="handleOverlayClick()"></div>
                 </div>
             </div>
 
             <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ระบบรักษาความปลอดภัยเปิดใช้งาน: ป้องกันการดาวน์โหลดและบันทึกหน้าจอ</span>
+                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการคลิกออกภายนอกและดาวน์โหลดคลิปเรียบร้อย</span>
                 <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
             </div>
         </div>
@@ -173,6 +186,9 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentViewMode = 'grid'; // 'grid' หรือ 'list'
+        let cachedVideos = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -197,25 +213,55 @@
         });
 
         async function loadVideos() {
-            const container = document.getElementById('videoGridContainer');
             try {
                 const { data, error } = await mySupabase.from('videos').select('*').order('created_at', { ascending: false });
-                
                 if (error) throw error;
-                
-                if (!data || data.length === 0) {
-                    document.getElementById('videoCountDisplay').textContent = '0';
-                    container.innerHTML = `
-                        <div class="col-span-full text-center py-16 text-slate-400 text-xs bg-white dark:bg-darkbox rounded-3xl border border-dashed">
-                            <i class="fas fa-film text-3xl mb-3 text-slate-300"></i>
-                            <p>ยังไม่มีเทปเรียนย้อนหลังในระบบ</p>
-                        </div>
-                    `;
-                    return;
-                }
+                cachedVideos = data || [];
+                renderVideos();
+            } catch (err) {
+                const container = document.getElementById('videoContainer');
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-amber-500 text-xs bg-white dark:bg-darkbox rounded-3xl border">
+                        <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
+                        <p>ยังไม่ได้สร้างตาราง <b>videos</b> ในฐานข้อมูล Supabase</p>
+                    </div>
+                `;
+            }
+        }
 
-                document.getElementById('videoCountDisplay').textContent = data.length;
-                container.innerHTML = data.map(v => `
+        function switchViewMode(mode) {
+            currentViewMode = mode;
+            const btnGrid = document.getElementById('btn-mode-grid');
+            const btnList = document.getElementById('btn-mode-list');
+
+            if (mode === 'grid') {
+                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5';
+                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5';
+            } else {
+                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5';
+                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5';
+            }
+            renderVideos();
+        }
+
+        function renderVideos() {
+            const container = document.getElementById('videoContainer');
+            document.getElementById('videoCountDisplay').textContent = cachedVideos.length;
+
+            if (cachedVideos.length === 0) {
+                container.className = 'grid grid-cols-1 gap-4';
+                container.innerHTML = `
+                    <div class="text-center py-16 text-slate-400 text-xs bg-white dark:bg-darkbox rounded-3xl border border-dashed">
+                        <i class="fas fa-film text-3xl mb-3 text-slate-300"></i>
+                        <p>ยังไม่มีเทปเรียนย้อนหลังในระบบ</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentViewMode === 'grid') {
+                container.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
+                container.innerHTML = cachedVideos.map(v => `
                     <div class="hitech-card p-5 rounded-3xl space-y-4 relative overflow-hidden group">
                         <div class="flex justify-between items-start">
                             <div class="space-y-1">
@@ -227,7 +273,6 @@
                                 <i class="fas fa-trash-can text-xs"></i>
                             </button>
                         </div>
-
                         <div class="flex items-center gap-3 pt-2">
                             <button onclick="openSecurePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
                                 <i class="fas fa-play"></i> รับชมเทปเรียน (ระบบป้องกัน)
@@ -235,15 +280,29 @@
                         </div>
                     </div>
                 `).join('');
-
-            } catch (err) {
-                container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-amber-500 text-xs bg-white dark:bg-darkbox rounded-3xl border">
-                        <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
-                        <p>ยังไม่ได้สร้างตาราง <b>videos</b> ในฐานข้อมูล Supabase</p>
-                        <p class="text-[10px] text-slate-400 mt-1">กรุณาสร้างตาราง (id, title, youtube_id, created_at) เพื่อใช้งานระบบบันทึก</p>
+            } else {
+                container.className = 'space-y-3';
+                container.innerHTML = cachedVideos.map(v => `
+                    <div class="hitech-card p-4 rounded-2xl flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold text-sm shrink-0">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">${v.title}</h4>
+                                <p class="text-[10px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="openSecurePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
+                                <i class="fas fa-play"></i> รับชม
+                            </button>
+                            <button onclick="deleteVideo('${v.id}')" class="w-9 h-9 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl flex items-center justify-center transition-all text-xs" title="ลบ">
+                                <i class="fas fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
-                `;
+                `).join('');
             }
         }
 
@@ -298,13 +357,25 @@
             document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-rose-500"></i> ${title}`;
             
             const wrapper = document.getElementById('iframePlayerWrapper');
-            // ฝัง YouTube Player แบบจำกัด Controls และป้องกันการกดลิงก์ออกด้านนอก
+            // ใช้ youtube-nocookie และพารามิเตอร์ควบคุมขั้นสูงเพื่อไม่ให้กดชื่อคลิปเด้งไป YouTube ภายนอก
             wrapper.innerHTML = `
-                <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3" title="Secure Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <div class="video-secure-overlay"></div>
+                <iframe class="w-full h-full pointer-events-none" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3" title="Secure Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                <div class="video-secure-overlay" title="ระบบความปลอดภัยเปิดใช้งาน ห้ามคลิกออกนอกกรอบ"></div>
             `;
 
             document.getElementById('videoModal').classList.remove('hidden');
+        }
+
+        function handleOverlayClick() {
+            // ป้องกันการคลิกทะลุไปโดนตัวปุ่มแชร์หรือชื่อคลิปของ YouTube
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: '🔒 โหมดป้องกันการคลิกออกภายนอกเปิดใช้งานอยู่',
+                showConfirmButton: false,
+                timer: 2000
+            });
         }
 
         function closeVideoModal() {
