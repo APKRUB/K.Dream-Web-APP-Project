@@ -286,49 +286,34 @@
             const statusText = document.getElementById('statusText');
             const countdownInfo = document.getElementById('countdownInfo');
 
-            const now = new Date();
-            let calculatedOpen = currentSetting.is_open;
-
-            if (currentSetting?.open_at && currentSetting?.close_at) {
-                const openTime = new Date(currentSetting.open_at);
-                const closeTime = new Date(currentSetting.close_at);
-                if (now >= openTime && now < closeTime) {
-                    calculatedOpen = true;
-                } else {
-                    calculatedOpen = false;
-                }
+            // แสดงค่าลงในฟอร์มด้านซ้ายให้คงที่
+            if (currentSetting?.open_at) {
+                const localDt = new Date(currentSetting.open_at);
+                document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
             }
-
-            if (calculatedOpen !== currentSetting.is_open) {
-                await mySupabase.from('consult_settings').update({ is_open: calculatedOpen }).eq('id', 1);
-                currentSetting.is_open = calculatedOpen;
+            if (currentSetting?.close_at) {
+                const closeDt = new Date(currentSetting.close_at);
+                document.getElementById('closeAtInput').value = new Date(closeDt.getTime() - (closeDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            }
+            if (currentSetting?.prune_hours !== undefined) {
+                document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
             }
 
             if (currentSetting.is_open) {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse inline-block';
-                statusText.textContent = 'เปิดรับจอง Consult แล้วตามกำหนดเวลา';
-                countdownInfo.textContent = currentSetting.close_at ? `⏳ จะปิดอัตโนมัติใน: ${new Date(currentSetting.close_at).toLocaleString('th-TH')}` : '';
+                statusText.textContent = 'เปิดรับจอง Consult แล้ว';
+                countdownInfo.textContent = currentSetting.close_at ? `⏳ ปิดอัตโนมัติใน: ${new Date(currentSetting.close_at).toLocaleString('th-TH')}` : 'ระบบเปิดรับจองตามปกติ';
             } else {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500 inline-block';
-                statusText.textContent = 'ปิดรับจอง (นอกเวลา / ตามกำหนดการ)';
-                if (currentSetting?.open_at) {
-                    const localDt = new Date(currentSetting.open_at);
-                    document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                }
-                if (currentSetting?.close_at) {
-                    const closeDt = new Date(currentSetting.close_at);
-                    document.getElementById('closeAtInput').value = new Date(closeDt.getTime() - (closeDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-                }
-                if (currentSetting?.prune_hours !== undefined) {
-                    document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
-                }
-                countdownInfo.textContent = currentSetting.open_at ? `🟢 จะเปิดอัตโนมัติใน: ${new Date(currentSetting.open_at).toLocaleString('th-TH')}` : 'ระบบปิดรับจองในขณะนี้';
+                statusText.textContent = 'ปิดรับจอง';
+                countdownInfo.textContent = currentSetting.open_at ? `🟢 เปิดอัตโนมัติใน: ${new Date(currentSetting.open_at).toLocaleString('th-TH')}` : 'ระบบปิดรับจองในขณะนี้';
             }
         }
 
         async function toggleSystemStatus() {
             const newStatus = !currentSetting.is_open;
             await mySupabase.from('consult_settings').update({ is_open: newStatus }).eq('id', 1);
+            currentSetting.is_open = newStatus;
             await logHistory(newStatus ? 'สลับเปิดระบบรับจอง Consult' : 'สลับปิดระบบรับจอง Consult');
             Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบแล้ว' : 'ปิดระบบแล้ว', timer: 1200, showConfirmButton: false });
             loadSettings();
@@ -338,24 +323,15 @@
             const openVal = document.getElementById('openAtInput').value;
             const closeVal = document.getElementById('closeAtInput').value;
             const pruneVal = parseInt(document.getElementById('pruneHoursInput').value) || 24;
-            
-            const now = new Date();
-            let initialOpen = false;
-            if (openVal && closeVal) {
-                const openTime = new Date(openVal);
-                const closeTime = new Date(closeVal);
-                if (now >= openTime && now < closeTime) initialOpen = true;
-            }
 
             await mySupabase.from('consult_settings').update({ 
                 open_at: openVal ? new Date(openVal).toISOString() : null,
                 close_at: closeVal ? new Date(closeVal).toISOString() : null,
-                prune_hours: pruneVal,
-                is_open: initialOpen
+                prune_hours: pruneVal
             }).eq('id', 1);
 
-            await logHistory('อัปเดตเวลาเปิด-ปิดอัตโนมัติ');
-            Swal.fire({ icon: 'success', title: 'บันทึกเวลาเปิด-ปิดสำเร็จ', timer: 1200, showConfirmButton: false });
+            await logHistory('อัปเดตเวลาเปิด-ปิดและการตั้งค่า');
+            Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false });
             loadSettings();
         }
 
