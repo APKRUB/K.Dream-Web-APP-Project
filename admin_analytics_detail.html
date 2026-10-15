@@ -51,7 +51,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin_analytics.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                    <button onclick="goBackToSource()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -224,8 +224,9 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let examId = null;
+        let courseId = null;
         let examTitle = '';
-        let examChoiceFormat = 'num'; // ค่าเริ่มต้นเป็น 1, 2, 3, 4
+        let examChoiceFormat = 'num';
         let fetchedAttempts = [];
         let fetchedQuestions = [];
         let examTimeLimitMinutes = 60;
@@ -247,18 +248,24 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // 🌟 ฟังก์ชันจัดการการกดปุ่มย้อนกลับให้เด้งกลับเข้าคอร์สหรือหน้าวิเคราะห์ตามที่มา
+        function goBackToSource() {
+            if (courseId) {
+                window.location.href = `admin_course_detail.html?id=${courseId}`;
+            } else {
+                window.location.href = 'admin_analytics.html';
+            }
+        }
+
         function getAttemptScore(att) {
             if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) return Number(att.total_score);
             if (att.score !== undefined && att.score !== null && !isNaN(att.score)) return Number(att.score);
             return 0;
         }
 
-        // 🌟 ฟังก์ชันแปลงค่าคำตอบ/เฉลยให้ตรงกับชนิดตัวเลือกที่ตั้งค่าไว้ในชุดข้อสอบ (num, th_num, upper, lower)
         function formatAnswerText(ansValue, q = null) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
             const strVal = String(ansValue).trim();
-
-            // ใช้ format จากตัวข้อสอบหรือใช้ค่าจาก examChoiceFormat ภาพรวม
             const formatType = (q && q.exam_choice_format) ? q.exam_choice_format : examChoiceFormat;
             
             let labels = ['1', '2', '3', '4', '5'];
@@ -266,21 +273,14 @@
             else if (formatType === 'upper') labels = ['A', 'B', 'C', 'D', 'E'];
             else if (formatType === 'lower') labels = ['a', 'b', 'c', 'd', 'e'];
 
-            // ถ้าเก็บค่ามาเป็นดัชนีตัวเลข (Index: 0, 1, 2, 3) ให้แปลงเป็นป้ายกำกับที่ถูกต้อง
             if (/^\d+$/.test(strVal)) {
                 const idx = Number(strVal);
-                if (idx >= 0 && idx < labels.length) {
-                    return labels[idx];
-                }
+                if (idx >= 0 && idx < labels.length) return labels[idx];
             }
 
-            // ถ้าบันทึกเป็นตัวอักษรหรือข้อความอยู่แล้ว ให้ตรวจสอบว่าตรงกับการแปลง index หรือไม่
-            // หรือถ้าตรงกับค่าใน options ของคำถาม
             if (q && q.options && Array.isArray(q.options)) {
                 const optIdx = q.options.findIndex(opt => String(opt).trim().toLowerCase() === strVal.toLowerCase());
-                if (optIdx !== -1 && optIdx < labels.length) {
-                    return labels[optIdx];
-                }
+                if (optIdx !== -1 && optIdx < labels.length) return labels[optIdx];
             }
 
             return strVal;
@@ -348,10 +348,11 @@
         async function initDetail() {
             const urlParams = new URLSearchParams(window.location.search);
             examId = urlParams.get('exam_id');
+            courseId = urlParams.get('course_id');
 
             if (!examId) {
                 Swal.fire('ข้อผิดพลาด', 'ไม่พบรหัสชุดข้อสอบ', 'error').then(() => {
-                    window.location.href = 'admin_analytics.html';
+                    goBackToSource();
                 });
                 return;
             }
@@ -359,15 +360,16 @@
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                const { data: examData, error } = await mySupabase.from('exams').select('*').eq('id', examId).maybeSingle();
+                const { data: examData } = await mySupabase.from('exams').select('*').eq('id', examId).maybeSingle();
                 if (examData) {
                     examTitle = examData.title || examData.name || examData.exam_name || examData.topic || `ชุดข้อสอบรหัส: ${examId}`;
                     if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
                     else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
                     
-                    // ดึงชนิดตัวเลือก (choice_format) มาเก็บไว้ใช้งาน
-                    if (examData.choice_format) {
-                        examChoiceFormat = examData.choice_format;
+                    if (examData.choice_format) examChoiceFormat = examData.choice_format;
+                    if (!courseId && examData.course_id) {
+                        if (Array.isArray(examData.course_id) && examData.course_id.length > 0) courseId = examData.course_id[0];
+                        else if (typeof examData.course_id === 'string') courseId = examData.course_id;
                     }
                 } else {
                     examTitle = `ชุดข้อสอบรหัส: ${examId}`;
@@ -399,9 +401,7 @@
                             studentIdCode = prof.student_id || studentIdCode;
                         } else {
                             const { data: std } = await mySupabase.from('students').select('*').eq('id', targetId).maybeSingle();
-                            if (std) {
-                                studentName = std.fullname || std.name || std.username || studentName;
-                            }
+                            if (std) studentName = std.fullname || std.name || std.username || studentName;
                         }
                     }
                     enhancedAttempts.push({ ...att, resolvedName: studentName, resolvedIdCode: studentIdCode });
@@ -444,7 +444,6 @@
 
         function renderTimeAnalysis() {
             if (fetchedAttempts.length === 0) return;
-
             let times = fetchedAttempts.map(a => getAttemptTimeMinutes(a)).filter(t => t !== null && t > 0);
             if (times.length === 0) return;
 
@@ -471,9 +470,7 @@
                 fetchedAttempts.forEach(att => {
                     const studentAns = extractStudentAnswer(att, q, index);
                     const userAnsStr = studentAns !== undefined && studentAns !== null ? String(studentAns).trim().toLowerCase() : '';
-                    if (userAnsStr !== correctAns) {
-                        wrongCount++;
-                    }
+                    if (userAnsStr !== correctAns) wrongCount++;
                 });
                 const wrongPercent = Math.round((wrongCount / fetchedAttempts.length) * 100);
                 return { question: q, wrongCount, wrongPercent };
@@ -506,7 +503,6 @@
 
         function renderCharts() {
             const totalQ = fetchedQuestions.length || 10;
-
             const ctxBar = document.getElementById('scoreDistributionChart').getContext('2d');
             if (distributionChart) distributionChart.destroy();
 
@@ -520,16 +516,8 @@
 
             distributionChart = new Chart(ctxBar, {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'จำนวน (คน)', data: dataCounts, backgroundColor: '#0284c7', borderRadius: 4 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                data: { labels, datasets: [{ label: 'จำนวน (คน)', data: dataCounts, backgroundColor: '#0284c7', borderRadius: 4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
 
             const ctxPie = document.getElementById('passPieChart').getContext('2d');
@@ -540,19 +528,8 @@
 
             passPieChartInstance = new Chart(ctxPie, {
                 type: 'doughnut',
-                data: {
-                    labels: ['ผ่านเกณฑ์', 'กลุ่มเสี่ยง'],
-                    datasets: [{
-                        data: [passCount, riskCount],
-                        backgroundColor: ['#10b981', '#f43f5e'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
-                }
+                data: { labels: ['ผ่านเกณฑ์', 'กลุ่มเสี่ยง'], datasets: [{ data: [passCount, riskCount], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
             });
         }
 
@@ -560,11 +537,8 @@
             currentFilter = type;
             ['all', 'pass', 'risk'].forEach(t => {
                 const btn = document.getElementById(`filterBtn-${t}`);
-                if (t === type) {
-                    btn.className = "px-3 py-1.5 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all";
-                } else {
-                    btn.className = "px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all";
-                }
+                if (t === type) btn.className = "px-3 py-1.5 bg-sky-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all";
+                else btn.className = "px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition-all";
             });
             renderStudentTable();
         }
@@ -572,11 +546,7 @@
         function toggleSortScore() {
             scoreSortOrder = scoreSortOrder === 'desc' ? 'asc' : 'desc';
             const sortIcon = document.getElementById('sortIcon');
-            if (scoreSortOrder === 'desc') {
-                sortIcon.className = "fas fa-sort-down ml-1 text-sky-500";
-            } else {
-                sortIcon.className = "fas fa-sort-up ml-1 text-sky-500";
-            }
+            sortIcon.className = scoreSortOrder === 'desc' ? "fas fa-sort-down ml-1 text-sky-500" : "fas fa-sort-up ml-1 text-sky-500";
             renderStudentTable();
         }
 
@@ -602,11 +572,7 @@
             filtered.sort((a, b) => {
                 const scoreA = getAttemptScore(a);
                 const scoreB = getAttemptScore(b);
-                if (scoreSortOrder === 'desc') {
-                    return scoreB - scoreA;
-                } else {
-                    return scoreA - scoreB;
-                }
+                return scoreSortOrder === 'desc' ? scoreB - scoreA : scoreA - scoreB;
             });
 
             document.getElementById('studentTableCount').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${fetchedAttempts.length} คน)`;
@@ -654,7 +620,6 @@
         function viewStudentDetail(attemptId) {
             const att = fetchedAttempts.find(a => a.id === attemptId);
             if (!att) return;
-
             const score = getAttemptScore(att);
 
             let detailsHtml = `
@@ -674,9 +639,7 @@
             fetchedQuestions.forEach((q, index) => {
                 const userAns = extractStudentAnswer(att, q, index);
                 const correctAns = getCorrectAnswer(q);
-                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
-                const correctAnsStr = String(correctAns).trim().toLowerCase();
-                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
+                const isCorrect = userAns && String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase();
                 
                 detailsHtml += `
                     <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1">
@@ -692,16 +655,10 @@
             });
 
             detailsHtml += `</div></div>`;
-
-            Swal.fire({
-                title: `📋 รายละเอียดข้อสอบรายบุคคล`,
-                html: detailsHtml,
-                width: '650px',
-                confirmButtonColor: '#0284c7'
-            });
+            Swal.fire({ title: `📋 รายละเอียดข้อสอบรายบุคคล`, html: detailsHtml, width: '650px', confirmButtonColor: '#0284c7' });
         }
 
-      function printIndividualReport(attemptId) {
+        function printIndividualReport(attemptId) {
             const att = fetchedAttempts.find(a => a.id === attemptId);
             if (!att) return;
             const score = getAttemptScore(att);
@@ -728,7 +685,6 @@
                     <h2>รายงานผลคะแนนสอบรายบุคคล</h2>
                     <p>ชุดข้อสอบ: <strong>${examTitle}</strong></p>
                     <div class="box">
-                        <!-- 🌟 ตัดส่วนแสดงรหัส (ID) ออก เหลือเพียงชื่อ-นามสกุล -->
                         <p>ชื่อ-นามสกุล: <strong>${att.resolvedName}</strong></p>
                         <p>คะแนนที่ได้: <strong>${score} / ${totalQ} คะแนน (${((score/totalQ)*100).toFixed(1)}%)</strong></p>
                         <p>สถานะ: <strong>${score >= (totalQ/2) ? 'ผ่านเกณฑ์' : 'ไม่ผ่านเกณฑ์'}</strong></p>
@@ -741,9 +697,7 @@
             fetchedQuestions.forEach((q, index) => {
                 const userAns = extractStudentAnswer(att, q, index);
                 const correctAns = getCorrectAnswer(q);
-                const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
-                const correctAnsStr = String(correctAns).trim().toLowerCase();
-                const isCorrect = userAnsStr !== '' && userAnsStr === correctAnsStr;
+                const isCorrect = userAns && String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase();
 
                 printWindow.document.write(`
                     <tr>
