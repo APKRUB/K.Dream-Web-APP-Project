@@ -122,7 +122,7 @@
                 <h3 class="font-bold text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2">
                     <i class="fas fa-grip-vertical"></i> กระดาษคำตอบคอมพิวเตอร์ (OMR Sheet 4 ข้อ/แถว)
                 </h3>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ฝนเฉลย OMR | กำหนดช่วงข้อผูกกับหมวดหมู่ย่อยได้ทันที</p>
+                <p id="choiceFormatSubtitle" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ฝนเฉลย OMR | รูปแบบตัวเลือก: กำลังโหลด...</p>
             </div>
             <button onclick="openAutoAnswerSheetModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0">
                 <i class="fas fa-plus-circle mr-1"></i> เจนกระดาษ OMR
@@ -184,6 +184,7 @@
 
         let hasUnsavedChanges = false;
         let cachedQuestions = [];
+        let currentExamData = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -217,7 +218,6 @@
                                     localStorage.getItem('full_name') || 
                                     localStorage.getItem('user') || 
                                     'ผู้ดูแลระบบ';
-
             localStorage.setItem('admin_username', currentUsername);
             return true;
         }
@@ -232,11 +232,31 @@
             await loadQuestions();
         }
 
+        function getChoiceLabels(formatType) {
+            if (formatType === 'th_num') return ['ก', 'ข', 'ค', 'ง', 'จ'];
+            if (formatType === 'upper') return ['A', 'B', 'C', 'D', 'E'];
+            if (formatType === 'lower') return ['a', 'b', 'c', 'd', 'e'];
+            return ['1', '2', '3', '4', '5'];
+        }
+
+        function getChoiceFormatLabelText(formatType) {
+            if (formatType === 'th_num') return 'ก, ข, ค, ง';
+            if (formatType === 'upper') return 'A, B, C, D';
+            if (formatType === 'lower') return 'a, b, c, d';
+            return '1, 2, 3, 4';
+        }
+
         async function loadExamHeader() {
             const { data } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (data) {
+                currentExamData = data;
                 document.getElementById('examTitleHeader').textContent = `${data.title}`;
-                document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | โหมด: ${data.delivery_type === 'online' ? 'พิมพ์โจทย์ลงระบบ' : 'ไฟล์ PDF'}`;
+                document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | โหมด: ${data.delivery_type === 'online' ? 'พิมพ์โจทย์ลงระบบ' : 'ไฟล์ PDF'} | รูปแบบตัวเลือก: ${getChoiceFormatLabelText(data.choice_format)}`;
+                
+                const subtitle = document.getElementById('choiceFormatSubtitle');
+                if (subtitle) {
+                    subtitle.textContent = `ฝนเฉลย OMR | รูปแบบตัวเลือก: ${getChoiceFormatLabelText(data.choice_format)}`;
+                }
                 
                 if (data.pdf_url) {
                     const pdfInput = document.getElementById('pdfUrlInput');
@@ -291,9 +311,12 @@
                 return;
             }
 
+            const formatType = currentExamData?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+
             container.innerHTML = cachedQuestions.map((q, idx) => {
                 const isEssay = q.question_type === 'essay';
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                const opts = (q.options && q.options.length > 0) ? q.options : standardLabels;
 
                 if (isEssay) {
                     return `
@@ -336,9 +359,12 @@
                 return;
             }
 
+            const formatType = currentExamData?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+
             container.innerHTML = filtered.map((q, idx) => {
                 const isEssay = q.question_type === 'essay';
-                const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
+                const opts = (q.options && q.options.length > 0) ? q.options : standardLabels;
 
                 const optionsListHtml = isEssay 
                     ? `<div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl text-xs text-amber-600 dark:text-amber-300 font-bold space-y-1">
@@ -347,9 +373,10 @@
                        </div>`
                     : opts.map((opt, i) => {
                         const isCorrect = String(i) === String(q.correct_answer) || opt === q.correct_answer;
+                        const displayLabel = standardLabels[i] || String.fromCharCode(65+i);
                         return `
                             <div class="px-3 py-2 rounded-xl border text-xs flex items-center justify-between ${isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 font-bold text-emerald-700 dark:text-emerald-300' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}">
-                                <span><strong class="mr-1">${String.fromCharCode(65+i)}:</strong> ${opt}</span>
+                                <span><strong class="mr-1">${displayLabel}:</strong> ${opt}</span>
                                 ${isCorrect ? '<span class="px-2 py-0.5 bg-emerald-600 text-white text-[10px] rounded-md font-bold"><i class="fas fa-check mr-1"></i>เฉลยถูกต้อง</span>' : ''}
                             </div>
                         `;
@@ -421,7 +448,10 @@
 
         async function openQuestionModal(qData = null) {
             const isEdit = !!qData;
-            let currentOpts = qData?.options || ['ก', 'ข', 'ค', 'ง'];
+            const formatType = currentExamData?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+
+            let currentOpts = (qData?.options && qData.options.length > 0) ? qData.options : standardLabels;
             let currentKeywords = qData?.keywords || [];
 
             const { value: formValues } = await Swal.fire({
@@ -465,14 +495,14 @@
 
                         <div id="mcSection" class="${qData?.question_type === 'essay' ? 'hidden' : ''} space-y-2 pt-2 border-t dark:border-slate-800">
                             <div class="flex justify-between items-center">
-                                <label class="font-bold text-slate-800 dark:text-slate-200">รายการตัวเลือกคำตอบ (สูงสุด 5 ตัวเลือก)</label>
+                                <label class="font-bold text-slate-800 dark:text-slate-200">รายการตัวเลือกคำตอบ (รูปแบบ: ${getChoiceFormatLabelText(formatType)})</label>
                                 <button type="button" onclick="addOptionField()" class="px-2 py-1 bg-sky-600 text-white rounded-lg text-[10px] font-bold"><i class="fas fa-plus"></i> เพิ่มตัวเลือก</button>
                             </div>
                             <div id="optionsInputsContainer" class="space-y-1.5">
                                 ${currentOpts.map((opt, i) => `
                                     <div class="flex items-center gap-2 option-row">
                                         <input type="radio" name="swalCorrectRadio" value="${i}" ${String(qData?.correct_answer) === String(i) ? 'checked' : ''}>
-                                        <span class="font-bold w-4">${String.fromCharCode(65+i)}:</span>
+                                        <span class="font-bold w-6">${standardLabels[i] || String.fromCharCode(65+i)}:</span>
                                         <input class="opt-text-input flex-1 px-3 py-1 border rounded-xl dark:bg-slate-800" value="${opt}">
                                         ${i >= 2 ? `<button type="button" onclick="this.parentElement.remove()" class="text-red-500 px-1"><i class="fas fa-times"></i></button>` : ''}
                                     </div>
@@ -532,7 +562,7 @@
                         question_text: txt,
                         content: txt,
                         image_url: document.getElementById('qImageUrl').value.trim() || null,
-                        options: optsParsed.length > 0 ? optsParsed : ['ก', 'ข', 'ค', 'ง'],
+                        options: optsParsed.length > 0 ? optsParsed : standardLabels,
                         correct_answer: selectedRadio ? selectedRadio.value : '0',
                         grading_type: document.getElementById('qGradingType').value,
                         keywords: kwParsed
@@ -568,12 +598,15 @@
             const currentCount = container.querySelectorAll('.option-row').length;
             if (currentCount >= 5) { Swal.fire('ข้อจำกัด', 'เพิ่มตัวเลือกได้สูงสุด 5 ตัวเลือกเท่านั้น', 'info'); return; }
 
-            const label = String.fromCharCode(65 + currentCount);
+            const formatType = currentExamData?.choice_format || 'num';
+            const standardLabels = getChoiceLabels(formatType);
+            const label = standardLabels[currentCount] || String.fromCharCode(65 + currentCount);
+
             const div = document.createElement('div');
             div.className = 'flex items-center gap-2 option-row';
             div.innerHTML = `
                 <input type="radio" name="swalCorrectRadio" value="${currentCount}">
-                <span class="font-bold w-4">${label}:</span>
+                <span class="font-bold w-6">${label}:</span>
                 <input class="opt-text-input flex-1 px-3 py-1 border rounded-xl dark:bg-slate-800" value="${label}">
                 <button type="button" onclick="this.parentElement.remove()" class="text-red-500 px-1"><i class="fas fa-times"></i></button>
             `;
@@ -728,6 +761,9 @@
 
             if (formValues) {
                 Swal.fire({ title: 'กำลังสร้าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const formatType = currentExamData?.choice_format || 'num';
+                const standardLabels = getChoiceLabels(formatType);
+
                 const newItems = [];
                 for (let i = formValues.start; i <= formValues.end; i++) {
                     newItems.push({
@@ -737,7 +773,7 @@
                         content: `ข้อที่ ${i}`,
                         category_tag: formValues.tag || '',
                         question_type: 'multiple_choice',
-                        options: ['ก', 'ข', 'ค', 'ง'],
+                        options: standardLabels,
                         correct_answer: '0'
                     });
                 }
