@@ -61,16 +61,20 @@
         .popout-blocker {
             position: absolute; top: 0; right: 0; width: 80px; height: 60px; z-index: 30; background: transparent; cursor: not-allowed;
         }
+        .hide-scrollbar::-webkit-scrollbar { width: 6px; }
+        .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-12" oncontextmenu="return false;">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='dashboard.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                    <!-- แก้ไขปุ่มย้อนกลับให้กลับไป student.html -->
+                    <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm" title="กลับหน้าหลักนักเรียน">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
@@ -91,90 +95,73 @@
         </div>
     </nav>
 
+    <!-- Main Split View Layout -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Header Banner -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl space-y-3 border-sky-500/30 bg-gradient-to-r from-sky-500/5 to-blue-500/5">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
-                <i class="fas fa-graduation-cap"></i> ระบบการเรียนรู้ออนไลน์
-            </div>
-            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">เทปเรียนย้อนหลังทั้งหมด</h2>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                เลือกบทเรียนที่คุณต้องการทบทวน สามารถกดเล่น กรอ และปรับความเร็วในการรับชมได้ตามต้องการ
-            </p>
-        </div>
-
-        <!-- รายการเทปเรียนพร้อม Live Search & View Mode -->
-        <div class="space-y-4">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-                <h3 class="font-extrabold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <i class="fas fa-film text-sky-500"></i> รายการบทเรียนทั้งหมด (<span id="videoCountDisplay">0</span> รายการ)
-                </h3>
-                
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- ฝั่งซ้าย: รายการบทเรียน (List View) พร้อมช่องค้นหา -->
+            <div class="lg:col-span-5 hitech-card p-5 rounded-3xl space-y-4 flex flex-col h-[calc(100vh-140px)] sticky top-24">
+                <div class="space-y-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-list text-sky-500"></i> รายการบทเรียน (<span id="videoCountDisplay">0</span>)
+                        </h3>
+                    </div>
                     <!-- ช่องค้นหาแบบ Live Search -->
-                    <div class="relative flex-1 md:w-64">
+                    <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
                             <i class="fas fa-search text-xs"></i>
                         </span>
                         <input type="text" id="videoSearchInput" oninput="handleLiveSearch()" class="w-full pl-9 pr-4 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500 shadow-sm" placeholder="ค้นหาชื่อบทเรียน...">
                     </div>
+                </div>
 
-                    <!-- ปุ่มสลับมุมมอง (Grid / List) -->
-                    <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs shrink-0">
-                        <button onclick="switchViewMode('grid')" id="btn-mode-grid" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5">
-                            <i class="fas fa-border-all"></i> การ์ด
-                        </button>
-                        <button onclick="switchViewMode('list')" id="btn-mode-list" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5">
-                            <i class="fas fa-list"></i> รายการ
-                        </button>
+                <!-- รายการวิดีโอแบบเลื่อนได้ -->
+                <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1 hide-scrollbar">
+                    <div class="text-center py-12 text-slate-400 text-xs">
+                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดรายการเทปเรียน...
                     </div>
                 </div>
             </div>
 
-            <!-- คอนเทนเนอร์แสดงผลวิดีโอ -->
-            <div id="videoContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-full text-center py-12 text-slate-400 text-xs">
-                    <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดเทปเรียน...
+            <!-- ฝั่งขวา: หน้าจอเล่นวิดีโอขนาดใหญ่ (Large Player View) -->
+            <div class="lg:col-span-7 hitech-card p-6 rounded-3xl space-y-4 flex flex-col">
+                <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <h3 id="currentPlayingTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-play-circle text-sky-500"></i> กรุณาเลือกบทเรียนจากรายการด้านซ้าย
+                    </h3>
+                </div>
+
+                <!-- ตัวเล่นวิดีโอ Google Drive ขนาดใหญ่ -->
+                <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
+                    <div id="iframePlayerWrapper" class="w-full h-full relative flex items-center justify-center text-slate-500 text-xs bg-slate-900">
+                        <div class="text-center space-y-2">
+                            <i class="fas fa-film text-3xl text-slate-600 animate-pulse"></i>
+                            <p>ยังไม่ได้เลือกวิดีโอ</p>
+                        </div>
+                    </div>
+                    <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
+                    <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลด • รองรับการกรอและปรับความเร็ว</span>
+                    <span id="videoPublishDate">--</span>
                 </div>
             </div>
+
         </div>
 
     </main>
-
-    <!-- Modal สำหรับดูวิดีโอ -->
-    <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                <h3 id="modalVideoTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-play-circle text-sky-500"></i> กำลังเล่นเทปเรียน
-                </h3>
-                <button onclick="closeVideoModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-white hover:bg-sky-600 transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- ตัวเล่นวิดีโอ Google Drive พร้อมตัวบล็อกปุ่ม Pop-out -->
-            <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
-                <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
-                <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
-            </div>
-
-            <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> สามารถกดเล่น หยุด กรอ และปรับความเร็วได้ปกติ</span>
-                <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
-            </div>
-        </div>
-    </div>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentViewMode = 'grid';
         let cachedVideos = [];
         let searchQuery = '';
+        let activeVideoId = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -203,106 +190,74 @@
                 const { data, error } = await mySupabase.from('videos').select('*').order('display_order', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
                 if (error) throw error;
                 cachedVideos = data || [];
-                renderVideos();
+                renderVideoList();
+
+                // ถ้ามีวิดีโอ ให้เลือกเล่นวิดีโอแรกโดยอัตโนมัติ
+                if (cachedVideos.length > 0) {
+                    playVideo(cachedVideos[0].id, cachedVideos[0].youtube_id, cachedVideos[0].title, cachedVideos[0].created_at);
+                }
             } catch (err) {
-                const container = document.getElementById('videoContainer');
+                const container = document.getElementById('videoListContainer');
                 container.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-amber-500 text-xs bg-white dark:bg-darkbox rounded-3xl border">
+                    <div class="text-center py-12 text-amber-500 text-xs">
                         <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
-                        <p>ยังไม่สามารถโหลดข้อมูลคลังเทปเรียนได้ในขณะนี้</p>
+                        <p>ไม่สามารถโหลดรายการเทปเรียนได้ในขณะนี้</p>
                     </div>
                 `;
             }
         }
 
-        function switchViewMode(mode) {
-            currentViewMode = mode;
-            const btnGrid = document.getElementById('btn-mode-grid');
-            const btnList = document.getElementById('btn-mode-list');
-
-            if (mode === 'grid') {
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
-            } else {
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
-            }
-            renderVideos();
-        }
-
         function handleLiveSearch() {
             searchQuery = document.getElementById('videoSearchInput').value.trim().toLowerCase();
-            renderVideos();
+            renderVideoList();
         }
 
-        function renderVideos() {
-            const container = document.getElementById('videoContainer');
-            
+        function renderVideoList() {
+            const container = document.getElementById('videoListContainer');
             const filtered = cachedVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
             document.getElementById('videoCountDisplay').textContent = cachedVideos.length;
 
             if (filtered.length === 0) {
-                container.className = 'grid grid-cols-1 gap-4';
                 container.innerHTML = `
-                    <div class="text-center py-16 text-slate-400 text-xs bg-white dark:bg-darkbox rounded-3xl border border-dashed">
-                        <i class="fas fa-search text-3xl mb-3 text-slate-300"></i>
-                        <p>ไม่พบบทเรียนที่ตรงกับคำค้นหาของคุณ</p>
+                    <div class="text-center py-12 text-slate-400 text-xs">
+                        <i class="fas fa-search text-2xl mb-2"></i>
+                        <p>ไม่พบบทเรียนที่ค้นหา</p>
                     </div>
                 `;
                 return;
             }
 
-            if (currentViewMode === 'grid') {
-                container.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
-                container.innerHTML = filtered.map((v) => `
-                    <div class="hitech-card p-5 rounded-3xl space-y-4 relative overflow-hidden group">
-                        <div class="flex justify-between items-start">
-                            <div class="space-y-1">
-                                <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Video Vault</span>
-                                <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1">${v.title}</h4>
-                                <p class="text-[11px] text-slate-400">เผยแพร่เมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
+            container.innerHTML = filtered.map(v => {
+                const isActive = activeVideoId === v.id;
+                return `
+                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}')" class="p-3.5 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
+                                <i class="fas ${isActive ? 'fa-play' : 'fa-video'}"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">${v.title}</h4>
+                                <p class="text-[10px] text-slate-400">${new Date(v.created_at).toLocaleDateString('th-TH')}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 pt-2">
-                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> เข้าชมบทเรียน
-                            </button>
-                        </div>
+                        ${isActive ? '<span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse shrink-0"></span>' : ''}
                     </div>
-                `).join('');
-            } else {
-                container.className = 'space-y-3';
-                container.innerHTML = filtered.map((v) => `
-                    <div class="hitech-card p-4 rounded-2xl flex items-center justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm shrink-0">
-                                <i class="fas fa-video"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">${v.title}</h4>
-                                <p class="text-[10px] text-slate-400">เผยแพร่เมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
-                                <i class="fas fa-play"></i> รับชม
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            }
+                `;
+            }).join('');
         }
 
-        function openDrivePlayer(fileId, encodedTitle) {
+        function playVideo(id, fileId, encodedTitle, createdAt) {
+            activeVideoId = id;
             const title = decodeURIComponent(encodedTitle);
-            document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
-            
+            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
+            document.getElementById('videoPublishDate').textContent = `เผยแพร่เมื่อ: ${new Date(createdAt).toLocaleString('th-TH')}`;
+
             const wrapper = document.getElementById('iframePlayerWrapper');
             wrapper.innerHTML = `
                 <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
             `;
 
-            document.getElementById('videoModal').classList.remove('hidden');
+            renderVideoList();
         }
 
         function alertPopoutBlocked() {
@@ -314,11 +269,6 @@
                 showConfirmButton: false,
                 timer: 2000
             });
-        }
-
-        function closeVideoModal() {
-            document.getElementById('videoModal').classList.add('hidden');
-            document.getElementById('iframePlayerWrapper').innerHTML = '';
         }
 
         loadVideos();
