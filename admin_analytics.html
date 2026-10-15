@@ -175,7 +175,7 @@
         <!-- SECTION 3: Insights & Alerts (Top Performers & At-Risk Students) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            <!-- Widget A: Top Performers Leaderboard (Show Full Name only) -->
+            <!-- Widget A: Top Performers Leaderboard -->
             <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-amber-500">
                 <div class="flex justify-between items-center">
                     <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -247,6 +247,13 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // ฟังก์ชันช่วยดึงคะแนนจาก attempt (รองรับทุกชื่อฟิลด์ที่เป็นไปได้)
+        function getAttemptScore(att) {
+            if (att.total_score !== undefined && att.total_score !== null) return Number(att.total_score);
+            if (att.score !== undefined && att.score !== null) return Number(att.score);
+            return 0;
+        }
+
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -294,7 +301,7 @@
             document.getElementById('globalUniqueStudents').textContent = `${uniqueStudents} คน`;
 
             if (totalSubmissions > 0) {
-                const scores = allAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
+                const scores = allAttempts.map(a => getAttemptScore(a));
                 const sum = scores.reduce((a, b) => a + b, 0);
                 const avg = (sum / totalSubmissions).toFixed(1);
                 document.getElementById('globalAvgScore').textContent = `${avg} คะแนน`;
@@ -309,7 +316,7 @@
             const avgScores = activeExams.map(e => {
                 const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
                 if (matched.length === 0) return 0;
-                const sum = matched.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0);
+                const sum = matched.reduce((acc, curr) => acc + getAttemptScore(curr), 0);
                 return (sum / matched.length).toFixed(1);
             });
 
@@ -344,7 +351,7 @@
             // --- Chart 3: Grade Distribution Doughnut Chart ---
             let gradeRanges = [0, 0, 0, 0]; 
             allAttempts.forEach(a => {
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const score = getAttemptScore(a);
                 const pct = (score / 10) * 100;
                 if (pct < 50) gradeRanges[0]++;
                 else if (pct < 70) gradeRanges[1]++;
@@ -383,7 +390,7 @@
                 if (!studentStats[a.student_id]) {
                     studentStats[a.student_id] = { totalScore: 0, count: 0 };
                 }
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const score = getAttemptScore(a);
                 studentStats[a.student_id].totalScore += score;
                 studentStats[a.student_id].count += 1;
             });
@@ -394,7 +401,7 @@
                 return { id, name: info.name, total: studentStats[id].totalScore, avg: avg.toFixed(1), count: studentStats[id].count };
             });
 
-            // 1. Top Performers (แสดงเฉพาะ Full Name และคะแนนรวม)
+            // 1. Top Performers
             let topList = [...studentList].sort((a, b) => b.total - a.total).slice(0, 5);
             const topContainer = document.getElementById('topPerformersContainer');
             if (topList.length === 0) {
@@ -464,7 +471,7 @@
                 examsList.forEach(exam => {
                     const matchedAttempts = allAttempts.filter(a => String(a.exam_id) === String(exam.id));
                     const submittedCount = matchedAttempts.length;
-                    const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0) / submittedCount).toFixed(1) : '-';
+                    const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : '-';
 
                     html += `
                         <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="hitech-card exam-card-hover p-4 rounded-xl cursor-pointer flex flex-col justify-between space-y-3 border border-slate-200 dark:border-slate-800">
@@ -502,7 +509,7 @@
             allExams.forEach(exam => {
                 const matchedAttempts = allAttempts.filter(a => String(a.exam_id) === String(exam.id));
                 const submittedCount = matchedAttempts.length;
-                const avgScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + (curr.total_score !== undefined ? curr.total_score : (curr.score || 0)), 0) / submittedCount).toFixed(1) : 0;
+                const avgScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : 0;
                 const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
 
                 csvContent += `"${exam.exam_code || 'EXAM'}","${exam.title}","${catName}",${submittedCount},${avgScore}\n`;
