@@ -854,10 +854,11 @@
 // 🌟 ฟังก์ชันบันทึกและ Regrade พร้อมตัวเช็คข้อมูลดิบ (Debug) เพื่อดูโครงสร้างใน Supabase
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade อัปเดตทุกฟิลด์คะแนนที่เป็นไปได้ใน Supabase
 // 🌟 ระบบบันทึกและ Regrade พร้อมตรวจสอบ Error จาก Supabase
+// 🌟 ระบบบันทึกและ Regrade พร้อมจับ Error แบบละเอียด
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
-                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตลงตาราง exam_attempts...</div>',
+                html: '<div class="text-xs text-slate-400 mt-1">กำลังคำนวณและอัปเดตคะแนน...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
@@ -878,9 +879,11 @@
             const { data: attempts, error: fetchErr } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
 
             if (fetchErr) {
-                Swal.fire('ข้อผิดพลาดในการดึงข้อมูลสอบ', fetchErr.message, 'error');
+                Swal.fire('ข้อผิดพลาด', fetchErr.message, 'error');
                 return;
             }
+
+            let updateErrorLog = [];
 
             if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
@@ -918,7 +921,7 @@
                         }
                     });
 
-                    // 4. บันทึกค่าลงคอลัมน์ total_score โดยระบุ Primary Key ให้ถูกต้อง (รองรับทั้ง id และ attempt_id)
+                    // อัปเดตข้อมูลและเก็บ Error (ถ้ามี)
                     const targetId = att.id || att.attempt_id;
                     if (targetId) {
                         const { error: updateErr } = await mySupabase.from('exam_attempts').update({
@@ -927,20 +930,29 @@
                         }).eq('id', targetId);
 
                         if (updateErr) {
-                            console.error(`อัปเดตไม่สำเร็จสำหรับ ID ${targetId}:`, updateErr.message);
+                            updateErrorLog.push(updateErr.message);
                         }
                     }
                 }
             }
 
             clearModifiedFlag();
-            Swal.fire({
-                icon: 'success',
-                title: 'บันทึกและ Regrade สำเร็จ!',
-                text: 'อัปเดตคะแนนลงช่อง total_score เรียบร้อยแล้ว',
-                timer: 1800,
-                showConfirmButton: false
-            });
+
+            if (updateErrorLog.length > 0) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'บันทึกคำถามสำเร็จ แต่ติดปัญหา RLS ของ Supabase',
+                    html: `<div class="text-xs text-left text-red-400 font-mono mt-2 p-2 bg-slate-900 rounded">Supabase Error: ${updateErrorLog[0]}<br><br>💡 คำแนะนำ: กรุณาไปเปิดสิทธิ์ Policy (UPDATE) ให้กับตาราง exam_attempts ใน Supabase Dashboard</div>`
+                });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกและ Regrade สำเร็จ!',
+                    text: 'อัปเดตคะแนนลงช่อง total_score เรียบร้อยแล้ว',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+            }
         }
 
         initPage();
