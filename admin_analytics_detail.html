@@ -231,14 +231,38 @@
                    (q.solution !== undefined ? q.solution : '')));
         }
 
-        // 🎯 ดึงคำตอบจากฟิลด์ answer_saved (รองรับทั้ง JSON string, Object และ Array)
-        function getAttemptAnswers(att) {
+        // 🎯 ฟังก์ชันสกัดคำตอบจาก answer_saved แบบครอบคลุมทุกรูปแบบ (JSON, Object, Array, Key มั่ว)
+        function extractStudentAnswer(att, q, index) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
-            if (!raw) return {};
+            if (!raw) return null;
             if (typeof raw === 'string') {
-                try { raw = JSON.parse(raw); } catch(e) { return {}; }
+                try { raw = JSON.parse(raw); } catch(e) { return null; }
             }
-            return raw;
+
+            if (typeof raw === 'object' && raw !== null) {
+                // 1. ลองหาด้วย q.id ตรงๆ
+                if (raw[q.id] !== undefined) return raw[q.id];
+                if (raw[String(q.id)] !== undefined) return raw[String(q.id)];
+
+                // 2. ลองหาด้วย question_number (เช่น 1, 2, 3...)
+                if (q.question_number !== undefined) {
+                    if (raw[q.question_number] !== undefined) return raw[q.question_number];
+                    if (raw[String(q.question_number)] !== undefined) return raw[String(q.question_number)];
+                    if (raw[`q${q.question_number}`] !== undefined) return raw[`q${q.question_number}`];
+                    if (raw[`question_${q.question_number}`] !== undefined) return raw[`question_${q.question_number}`];
+                }
+
+                // 3. ถ้าเป็น Array 
+                if (Array.isArray(raw)) {
+                    if (raw[index] !== undefined) return raw[index];
+                    if (raw[index + 1] !== undefined) return raw[index + 1];
+                }
+
+                // 4. วนลูปหา Property ทั้งหมดเผื่อเป็นคีย์แบบสุ่มหรือ Index
+                const keys = Object.keys(raw);
+                if (keys[index] !== undefined) return raw[keys[index]];
+            }
+            return null;
         }
 
         function getAttemptTimeMinutes(att) {
@@ -373,13 +397,7 @@
                 const correctAns = String(getCorrectAnswer(q)).trim().toLowerCase();
 
                 fetchedAttempts.forEach(att => {
-                    const ansMap = getAttemptAnswers(att);
-                    // รองรับทั้ง Key เป็น q.id, question_number, หรือ Array index
-                    let studentAns = ansMap[q.id] !== undefined ? ansMap[q.id] : 
-                                     (ansMap[String(q.id)] !== undefined ? ansMap[String(q.id)] : 
-                                     (ansMap[q.question_number] !== undefined ? ansMap[q.question_number] : 
-                                     (Array.isArray(ansMap) ? ansMap[index] : ansMap[index + 1])));
-                    
+                    const studentAns = extractStudentAnswer(att, q, index);
                     const userAnsStr = studentAns !== undefined && studentAns !== null ? String(studentAns).trim().toLowerCase() : '';
                     if (userAnsStr !== correctAns) {
                         wrongCount++;
@@ -523,7 +541,6 @@
             const att = fetchedAttempts.find(a => a.id === attemptId);
             if (!att) return;
 
-            const studentAnswers = getAttemptAnswers(att);
             const score = getAttemptScore(att);
 
             let detailsHtml = `
@@ -541,11 +558,7 @@
             `;
 
             fetchedQuestions.forEach((q, index) => {
-                let userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
-                              (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
-                              (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : 
-                              (Array.isArray(studentAnswers) ? studentAnswers[index] : studentAnswers[index + 1])));
-                
+                const userAns = extractStudentAnswer(att, q, index);
                 const correctAns = getCorrectAnswer(q);
                 const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                 const correctAnsStr = String(correctAns).trim().toLowerCase();
@@ -610,13 +623,8 @@
                         <tr><th>ข้อที่</th><th>โจทย์</th><th>นักเรียนตอบ</th><th>เฉลย</th><th>ผลลัพธ์</th></tr>
             `);
 
-            const studentAnswers = getAttemptAnswers(att);
             fetchedQuestions.forEach((q, index) => {
-                let userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
-                              (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : 
-                              (studentAnswers[q.question_number] !== undefined ? studentAnswers[q.question_number] : 
-                              (Array.isArray(studentAnswers) ? studentAnswers[index] : studentAnswers[index + 1])));
-                
+                const userAns = extractStudentAnswer(att, q, index);
                 const correctAns = getCorrectAnswer(q);
                 const userAnsStr = userAns !== undefined && userAns !== null ? String(userAns).trim().toLowerCase() : '';
                 const correctAnsStr = String(correctAns).trim().toLowerCase();
