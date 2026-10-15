@@ -133,6 +133,7 @@
         let allAttemptsRaw = [];
         let examQuestionsMap = {};
         let chart1 = null, chart2 = null, chart3 = null;
+        let currentTab = 'curriculum';
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -161,62 +162,65 @@
 
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).single();
-            if (courseRes.error || !courseRes.data) {
-                Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
-                return;
-            }
-            currentCourse = courseRes.data;
+            try {
+                const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).single();
+                if (courseRes.error || !courseRes.data) {
+                    Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
+                    return;
+                }
+                currentCourse = courseRes.data;
 
-            const studentsRes = await mySupabase.from('profiles').select('*');
-            if (studentsRes.data) allStudents = studentsRes.data.filter(function(p) { return !isUserAdmin(p); });
+                const studentsRes = await mySupabase.from('profiles').select('*');
+                if (studentsRes.data) {
+                    allStudents = studentsRes.data.filter(p => !isUserAdmin(p));
+                }
 
-            const enrollRes = await mySupabase.from('course_enrollments').select('*').eq('course_id', courseId);
-            enrolledStudentIds = (enrollRes.data || []).map(function(e) { return String(e.student_id); });
+                const enrollRes = await mySupabase.from('course_enrollments').select('*').eq('course_id', courseId);
+                enrolledStudentIds = (enrollRes.data || []).map(e => String(e.student_id));
 
-            const modulesRes = await mySupabase.from('course_modules').select('*').eq('course_id', courseId).order('sequence_order', { ascending: true });
-            courseModules = modulesRes.data || [];
+                const modulesRes = await mySupabase.from('course_modules').select('*').eq('course_id', courseId).order('sequence_order', { ascending: true });
+                courseModules = modulesRes.data || [];
 
-            const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
-            courseLessons = lessonsRes.data || [];
+                const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
+                courseLessons = lessonsRes.data || [];
 
-            const examsRes = await mySupabase.from('exams').select('*');
-            if (examsRes.data) {
-                courseExams = examsRes.data.filter(ex => {
-                    if (!ex.course_id) return false;
-                    if (Array.isArray(ex.course_id)) {
-                        return ex.course_id.includes(courseId);
-                    }
-                    return String(ex.course_id) === String(courseId);
+                const examsRes = await mySupabase.from('exams').select('*');
+                if (examsRes.data) {
+                    courseExams = examsRes.data.filter(ex => {
+                        if (!ex.course_id) return false;
+                        if (Array.isArray(ex.course_id)) return ex.course_id.includes(courseId);
+                        return String(ex.course_id) === String(courseId);
+                    });
+                }
+
+                const activeExamIds = new Set(courseExams.map(e => String(e.id)));
+                const attemptsRes = await mySupabase.from('exam_attempts').select('*');
+                allAttemptsRaw = (attemptsRes.data || []).filter(a => activeExamIds.has(String(a.exam_id)));
+
+                courseAttemptsMap = {};
+                allAttemptsRaw.forEach(att => {
+                    const eId = String(att.exam_id);
+                    if (!courseAttemptsMap[eId]) courseAttemptsMap[eId] = [];
+                    const score = att.total_score !== undefined && att.total_score !== null ? Number(att.total_score) : (Number(att.score) || 0);
+                    courseAttemptsMap[eId].push(score);
                 });
-            } else {
-                courseExams = [];
+
+                const qRes = await mySupabase.from('questions').select('id, exam_id');
+                if (qRes.data) {
+                    qRes.data.forEach(q => {
+                        const eId = String(q.exam_id);
+                        examQuestionsMap[eId] = (examQuestionsMap[eId] || 0) + 1;
+                    });
+                }
+
+                const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
+                courseAnnouncements = annRes.data || [];
+
+            } catch (err) {
+                console.error("Initialization error:", err);
+            } finally {
+                Swal.close();
             }
-
-            const activeExamIds = new Set(courseExams.map(e => String(e.id)));
-            const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
-            allAttemptsRaw = (attempts || []).filter(a => activeExamIds.has(String(a.exam_id)));
-
-            courseAttemptsMap = {};
-            allAttemptsRaw.forEach(att => {
-                const eId = String(att.exam_id);
-                if (!courseAttemptsMap[eId]) courseAttemptsMap[eId] = [];
-                const score = att.total_score !== undefined && att.total_score !== null ? Number(att.total_score) : (Number(att.score) || 0);
-                courseAttemptsMap[eId].push(score);
-            });
-
-            const { data: allQuestions } = await mySupabase.from('questions').select('id, exam_id');
-            if (allQuestions) {
-                allQuestions.forEach(q => {
-                    const eId = String(q.exam_id);
-                    examQuestionsMap[eId] = (examQuestionsMap[eId] || 0) + 1;
-                });
-            }
-
-            const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
-            courseAnnouncements = annRes.data || [];
-
-            Swal.close();
 
             document.getElementById('navCourseTitle').innerHTML = '<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chalkboard"></i></span> ' + currentCourse.title;
             document.getElementById('courseBadgeCode').textContent = currentCourse.course_code || 'COURSE';
@@ -224,10 +228,11 @@
             document.getElementById('headerCourseDesc').textContent = currentCourse.description || 'ไม่มีรายละเอียดคอร์ส';
             document.getElementById('statEnrolledStudents').textContent = enrolledStudentIds.length;
 
-            switchCourseTab('curriculum');
+            switchCourseTab(currentTab);
         }
 
         function switchCourseTab(tabName) {
+            currentTab = tabName;
             document.querySelectorAll('.course-tab-btn').forEach(btn => {
                 btn.className = 'course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all';
             });
@@ -245,40 +250,47 @@
         function renderCurriculumTab(container) {
             let modulesHtml = '';
             if (courseModules.length > 0) {
-                modulesHtml = courseModules.map(function(m, idx) {
-                    const lessons = courseLessons.filter(function(l) { return String(l.module_id) === String(m.id); });
-                    let lessonsHtml = '';
-                    if (lessons.length > 0) {
-                        lessonsHtml = lessons.map(function(l) {
-                            return '<div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl flex justify-between items-center border dark:border-slate-700">' +
-                                   '<div class="flex items-center gap-2"><i class="fas fa-play-circle text-purple-500"></i><span class="font-bold text-xs">' + l.title + '</span></div>' +
-                                   '<button onclick="deleteLesson(\'' + l.id + '\')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>' +
-                                   '</div>';
-                        }).join('');
-                    } else {
-                        lessonsHtml = '<div class="text-xs text-slate-400 italic py-2">ยังไม่มีเนื้อหาย่อยในบทนี้</div>';
-                    }
+                modulesHtml = courseModules.map((m, idx) => {
+                    const lessons = courseLessons.filter(l => String(l.module_id) === String(m.id));
+                    let lessonsHtml = lessons.length > 0 ? lessons.map(l => `
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl flex justify-between items-center border dark:border-slate-700">
+                            <div class="flex items-center gap-2"><i class="fas fa-play-circle text-purple-500"></i><span class="font-bold text-xs">${l.title}</span></div>
+                            <button onclick="deleteLesson('${l.id}')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `).join('') : '<div class="text-xs text-slate-400 italic py-2">ยังไม่มีเนื้อหาย่อยในบทนี้</div>';
 
-                    return '<div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-purple-500">' +
-                           '<div class="flex justify-between items-center">' +
-                           '<div class="flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">' + (idx + 1) + '</span>' +
-                           '<h4 class="font-extrabold text-base text-slate-900 dark:text-white">' + m.title + '</h4></div>' +
-                           '<div class="flex items-center gap-2">' +
-                           '<button onclick="openLessonModal(\'' + m.id + '\')" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-xl text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มเนื้อหาย่อย</button>' +
-                           '<button onclick="deleteModule(\'' + m.id + '\')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all"><i class="fas fa-trash text-xs"></i></button>' +
-                           '</div></div>' +
-                           '<div class="space-y-2 pl-4 border-l-2 border-purple-500/20">' + lessonsHtml + '</div></div>';
+                    return `
+                        <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-purple-500">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
+                                    <h4 class="font-extrabold text-base text-slate-900 dark:text-white">${m.title}</h4>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="openLessonModal('${m.id}')" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-xl text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มเนื้อหาย่อย</button>
+                                    <button onclick="deleteModule('${m.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all"><i class="fas fa-trash text-xs"></i></button>
+                                </div>
+                            </div>
+                            <div class="space-y-2 pl-4 border-l-2 border-purple-500/20">${lessonsHtml}</div>
+                        </div>
+                    `;
                 }).join('');
             } else {
                 modulesHtml = '<div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs">ยังไม่มีบทเรียนในคอร์สนี้</div>';
             }
 
-            container.innerHTML = '<div class="space-y-4">' +
-                '<div class="hitech-card p-6 rounded-3xl flex justify-between items-center">' +
-                '<div><h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>' +
-                '<p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons) พร้อมวิดีโอและเอกสาร</p></div>' +
-                '<button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>' +
-                '</div><div class="space-y-4">' + modulesHtml + '</div></div>';
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="hitech-card p-6 rounded-3xl flex justify-between items-center">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>
+                            <p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons)</p>
+                        </div>
+                        <button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>
+                    </div>
+                    <div class="space-y-4">${modulesHtml}</div>
+                </div>
+            `;
         }
 
         async function openModuleModal() {
@@ -353,44 +365,59 @@
         }
 
         function renderStudentsTab(container) {
-            const enrolledStudents = allStudents.filter(function(s) { return enrolledStudentIds.includes(String(s.id || s.user_id)); });
-            let rowsHtml = '';
-            if (enrolledStudents.length > 0) {
-                rowsHtml = enrolledStudents.map(function(s, idx) {
-                    return '<tr><td class="p-3 font-mono font-bold">' + (idx + 1) + '</td>' +
-                           '<td class="p-3 font-mono text-purple-600">' + (s.student_id || '-') + '</td>' +
-                           '<td class="p-3 font-bold">' + (s.first_name || '-') + ' ' + (s.last_name || '') + '</td>' +
-                           '<td class="p-3">' + (s.nickname || '-') + '</td>' +
-                           '<td class="p-3">' + (s.grade_level || '-') + ' (' + (s.school || '-') + ')</td></tr>';
-                }).join('');
-            } else {
-                rowsHtml = '<tr><td colspan="5" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนในคอร์สนี้</td></tr>';
-            }
+            const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
+            let rowsHtml = enrolledStudents.length > 0 ? enrolledStudents.map((s, idx) => `
+                <tr>
+                    <td class="p-3 font-mono font-bold">${idx + 1}</td>
+                    <td class="p-3 font-mono text-purple-600">${s.student_id || '-'}</td>
+                    <td class="p-3 font-bold">${s.first_name || '-'} ${s.last_name || ''}</td>
+                    <td class="p-3">${s.nickname || '-'}</td>
+                    <td class="p-3">${s.grade_level || '-'} (${s.school || '-'})</td>
+                </tr>
+            `).join('') : '<tr><td colspan="5" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนในคอร์สนี้</td></tr>';
 
-            container.innerHTML = '<div class="hitech-card p-6 rounded-3xl space-y-4">' +
-                '<div class="flex justify-between items-center pb-3 border-b border-purple-500/20">' +
-                '<span class="text-xs font-bold text-slate-400">รายชื่อนักเรียนในคอร์ส (' + enrolledStudents.length + ' คน)</span>' +
-                '<button onclick="openManageEnrollmentsModal()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-user-plus"></i> จัดการรายชื่อนักเรียน</button>' +
-                '</div><div class="overflow-x-auto"><table class="w-full text-left text-xs border-collapse">' +
-                '<thead><tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700"><th class="p-3">ลำดับ</th><th class="p-3">รหัส</th><th class="p-3">ชื่อ-นามสกุล</th><th class="p-3">ชื่อเล่น</th><th class="p-3">ระดับชั้น / โรงเรียน</th></tr></thead>' +
-                '<tbody class="divide-y divide-slate-100 dark:divide-slate-800">' + rowsHtml + '</tbody></table></div></div>';
+            container.innerHTML = `
+                <div class="hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
+                        <span class="text-xs font-bold text-slate-400">รายชื่อนักเรียนในคอร์ส (${enrolledStudents.length} คน)</span>
+                        <button onclick="openManageEnrollmentsModal()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-user-plus"></i> จัดการรายชื่อนักเรียน</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700">
+                                    <th class="p-3">ลำดับ</th><th class="p-3">รหัส</th><th class="p-3">ชื่อ-นามสกุล</th><th class="p-3">ชื่อเล่น</th><th class="p-3">ระดับชั้น / โรงเรียน</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
         async function openManageEnrollmentsModal() {
-            let studentCheckboxes = allStudents.map(function(s) {
+            let studentCheckboxes = allStudents.map(s => {
                 const sId = s.id || s.user_id;
                 const isChecked = enrolledStudentIds.includes(String(sId)) ? 'checked' : '';
-                return '<label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500">' +
-                       '<div class="flex items-center gap-2.5"><input type="checkbox" name="courseStudent" value="' + sId + '" ' + isChecked + ' class="w-4 h-4 accent-purple-600 rounded">' +
-                       '<div><div class="font-bold">' + (s.first_name || '-') + ' ' + (s.last_name || '') + '</div>' +
-                       '<div class="text-[10px] text-slate-400 font-mono">รหัส: ' + (s.student_id || '-') + ' | ชั้น: ' + (s.grade_level || '-') + '</div></div></div></label>';
+                return `
+                    <label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border dark:border-slate-700 cursor-pointer hover:border-purple-500">
+                        <div class="flex items-center gap-2.5">
+                            <input type="checkbox" name="courseStudent" value="${sId}" ${isChecked} class="w-4 h-4 accent-purple-600 rounded">
+                            <div>
+                                <div class="font-bold">${s.first_name || '-'} ${s.last_name || ''}</div>
+                                <div class="text-[10px] text-slate-400 font-mono">รหัส: ${s.student_id || '-'} | ชั้น: ${s.grade_level || '-'}</div>
+                            </div>
+                        </div>
+                    </label>
+                `;
             }).join('');
 
             const isDark = document.documentElement.classList.contains('dark');
             const { isConfirmed } = await Swal.fire({
                 title: '👥 จัดการรายชื่อนักเรียนในคอร์ส',
                 width: '600px',
-                html: '<div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-left">' + studentCheckboxes + '</div>',
+                html: `<div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-left">${studentCheckboxes}</div>`,
                 showCancelButton: true,
                 confirmButtonText: 'บันทึก',
                 confirmButtonColor: '#9333ea',
@@ -401,11 +428,11 @@
             if (isConfirmed) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 const checkboxes = document.querySelectorAll('input[name="courseStudent"]:checked');
-                const selectedIds = Array.from(checkboxes).map(function(cb) { return cb.value; });
+                const selectedIds = Array.from(checkboxes).map(cb => cb.value);
 
                 await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
                 if (selectedIds.length > 0) {
-                    const rows = selectedIds.map(function(sId) { return { student_id: sId, course_id: courseId }; });
+                    const rows = selectedIds.map(sId => ({ student_id: sId, course_id: courseId }));
                     await mySupabase.from('course_enrollments').insert(rows);
                 }
                 initCourseDetail();
@@ -413,7 +440,6 @@
             }
         }
 
-        // --- TAB 3: ข้อสอบประจำคอร์ส ---
         async function renderExamsTab(container) {
             if (courseExams.length === 0) {
                 container.innerHTML = `
@@ -495,18 +521,14 @@
                             <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-plus mr-1"></i> สร้างชุดข้อสอบใหม่</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                        ${cardsHtml}
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">${cardsHtml}</div>
                 </div>
             `;
         }
 
-        // --- TAB 4: สถิติ & ผลคะแนนคอร์ส (Analytics Dashboard) ---
         function renderAnalyticsTab(container) {
             container.innerHTML = `
                 <div class="space-y-6">
-                    <!-- KPI Cards -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
                             <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div>
@@ -538,29 +560,21 @@
                         </div>
                     </div>
 
-                    <!-- Charts Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
-                            <div class="flex justify-between items-center">
-                                <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-sky-500"></i> ร้อยละคะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ</h3>
-                            </div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-sky-500"></i> ร้อยละคะแนนเฉลี่ยเปรียบเทียบในแต่ละชุดข้อสอบ</h3>
                             <div class="relative h-64 w-full"><canvas id="anTrendChart"></canvas></div>
                         </div>
                         <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
-                            <div class="flex justify-between items-center">
-                                <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users-rectangle text-indigo-500"></i> อัตราการส่งงาน / เข้าสอบ</h3>
-                            </div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users-rectangle text-indigo-500"></i> อัตราการส่งงาน / เข้าสอบ</h3>
                             <div class="relative h-56 w-full"><canvas id="anSubRateChart"></canvas></div>
                         </div>
                         <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
-                            <div class="flex justify-between items-center">
-                                <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-pie text-emerald-500"></i> สัดส่วนช่วงคะแนนภาพรวม</h3>
-                            </div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-pie text-emerald-500"></i> สัดส่วนช่วงคะแนนภาพรวม</h3>
                             <div class="relative h-56 w-full flex items-center justify-center"><canvas id="anGradeDistChart"></canvas></div>
                         </div>
                     </div>
 
-                    <!-- Top Performers & At-Risk -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-amber-500">
                             <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-trophy text-amber-500"></i> 🏆 อันดับนักเรียนยอดเยี่ยมในคอร์ส (Top Performers)</h3>
@@ -574,14 +588,21 @@
                 </div>
             `;
 
-            populateAnalyticsData();
+            setTimeout(() => populateAnalyticsData(), 50);
         }
 
         function populateAnalyticsData() {
             const activeExams = courseExams.filter(e => e.status !== 'draft');
-            document.getElementById('anTotalExams').textContent = `${activeExams.length} ชุด`;
-            document.getElementById('anTotalSubmissions').textContent = `${allAttemptsRaw.length} ครั้ง`;
-            document.getElementById('anTotalStudentsCount').textContent = `${enrolledStudentIds.length} คน`;
+            const totalExamsEl = document.getElementById('anTotalExams');
+            const totalSubsEl = document.getElementById('anTotalSubmissions');
+            const totalStuEl = document.getElementById('anTotalStudentsCount');
+            const avgPctEl = document.getElementById('anAvgPercentile');
+
+            if (!totalExamsEl) return;
+
+            totalExamsEl.textContent = `${activeExams.length} ชุด`;
+            totalSubsEl.textContent = `${allAttemptsRaw.length} ครั้ง`;
+            totalStuEl.textContent = `${enrolledStudentIds.length} คน`;
 
             let studentStats = {};
             let enrolledProfiles = allStudents.filter(s => enrolledStudentIds.includes(String(s.id || s.user_id)));
@@ -618,33 +639,34 @@
 
             if (studentList.length > 0) {
                 const sumPct = studentList.reduce((acc, curr) => acc + curr.percentile, 0);
-                document.getElementById('anAvgPercentile').textContent = `${Math.round(sumPct / studentList.length)}%`;
+                avgPctEl.textContent = `${Math.round(sumPct / studentList.length)}%`;
             }
 
-            // Top Performers
             let topList = [...studentList].sort((a, b) => b.total - a.total).slice(0, 5);
             const topEl = document.getElementById('anTopPerformers');
-            topEl.innerHTML = topList.length === 0 ? '<div class="text-center py-4 text-slate-400 text-xs">ยังไม่มีข้อมูลคะแนน</div>' : topList.map((s, idx) => `
-                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex justify-between items-center text-xs border border-slate-200 dark:border-slate-800">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
-                        <span class="font-bold text-slate-900 dark:text-white">${s.name}</span>
+            if (topEl) {
+                topEl.innerHTML = topList.length === 0 ? '<div class="text-center py-4 text-slate-400 text-xs">ยังไม่มีข้อมูลคะแนน</div>' : topList.map((s, idx) => `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex justify-between items-center text-xs border border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
+                            <span class="font-bold text-slate-900 dark:text-white">${s.name}</span>
+                        </div>
+                        <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${s.total} คะแนน</span>
                     </div>
-                    <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${s.total} คะแนน</span>
-                </div>
-            `).join('');
+                `).join('');
+            }
 
-            // At-Risk
             let riskList = studentList.filter(s => Number(s.avgPct) < 50 && s.count > 0);
             const riskEl = document.getElementById('anAtRiskStudents');
-            riskEl.innerHTML = riskList.length === 0 ? '<div class="p-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ไม่มีนักเรียนกลุ่มเสี่ยง</div>' : riskList.map(s => `
-                <div class="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-xl flex justify-between items-center text-xs border border-rose-200">
-                    <span class="font-bold text-slate-900 dark:text-white">${s.name}</span>
-                    <span class="px-2.5 py-1 bg-rose-100 text-rose-600 font-bold rounded-lg text-xs">เฉลี่ย ${s.avgPct}%</span>
-                </div>
-            `).join('');
+            if (riskEl) {
+                riskEl.innerHTML = riskList.length === 0 ? '<div class="p-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ไม่มีนักเรียนกลุ่มเสี่ยง</div>' : riskList.map(s => `
+                    <div class="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-xl flex justify-between items-center text-xs border border-rose-200">
+                        <span class="font-bold text-slate-900 dark:text-white">${s.name}</span>
+                        <span class="px-2.5 py-1 bg-rose-100 text-rose-600 font-bold rounded-lg text-xs">เฉลี่ย ${s.avgPct}%</span>
+                    </div>
+                `).join('');
+            }
 
-            // Render Charts
             const labels = activeExams.map(e => e.title);
             const avgPercentages = activeExams.map(e => {
                 const matched = allAttemptsRaw.filter(a => String(a.exam_id) === String(e.id));
@@ -656,19 +678,25 @@
 
             const subCounts = activeExams.map(e => allAttemptsRaw.filter(a => String(a.exam_id) === String(e.id)).length);
 
-            if (chart1) chart1.destroy();
-            chart1 = new Chart(document.getElementById('anTrendChart').getContext('2d'), {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'ร้อยละคะแนนเฉลี่ย (%)', data: avgPercentages, backgroundColor: '#0284c7', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
-            });
+            const ctx1 = document.getElementById('anTrendChart');
+            if (ctx1) {
+                if (chart1) chart1.destroy();
+                chart1 = new Chart(ctx1.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'ร้อยละคะแนนเฉลี่ย (%)', data: avgPercentages, backgroundColor: '#0284c7', borderRadius: 8 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+                });
+            }
 
-            if (chart2) chart2.destroy();
-            chart2 = new Chart(document.getElementById('anSubRateChart').getContext('2d'), {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'จำนวนคนส่ง', data: subCounts, backgroundColor: '#6366f1', borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: enrolledStudentIds.length || 10 } } }
-            });
+            const ctx2 = document.getElementById('anSubRateChart');
+            if (ctx2) {
+                if (chart2) chart2.destroy();
+                chart2 = new Chart(ctx2.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'จำนวนคนส่ง', data: subCounts, backgroundColor: '#6366f1', borderRadius: 8 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: enrolledStudentIds.length || 10 } } }
+                });
+            }
 
             let gradeRanges = [0, 0, 0, 0];
             allAttemptsRaw.forEach(a => {
@@ -681,31 +709,215 @@
                 else gradeRanges[3]++;
             });
 
-            if (chart3) chart3.destroy();
-            chart3 = new Chart(document.getElementById('anGradeDistChart').getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['ต่ำกว่า 50%', '50%-69%', '70%-84%', '85%-100%'],
-                    datasets: [{ data: gradeRanges, backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 2 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            const ctx3 = document.getElementById('anGradeDistChart');
+            if (ctx3) {
+                if (chart3) chart3.destroy();
+                chart3 = new Chart(ctx3.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ต่ำกว่า 50%', '50%-69%', '70%-84%', '85%-100%'],
+                        datasets: [{ data: gradeRanges, backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'], borderWidth: 2 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        }
+
+        function renderAnnouncementsTab(container) {
+            let annHtml = courseAnnouncements.length > 0 ? courseAnnouncements.map(an => `
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">
+                    <div class="font-extrabold text-amber-600">${an.title}</div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300">${an.content}</div>
+                </div>
+            `).join('') : '<div class="text-center py-8 text-slate-400">ยังไม่มีประกาศในคอร์สนี้</div>';
+
+            container.innerHTML = `
+                <div class="hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
+                        <span class="text-xs font-bold text-slate-400">ประกาศข่าวสารในคอร์ส (${courseAnnouncements.length} ประกาศ)</span>
+                        <button onclick="openAddAnnouncementModal()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-bullhorn mr-1"></i> สร้างประกาศใหม่</button>
+                    </div>
+                    <div class="space-y-3">${annHtml}</div>
+                </div>
+            `;
+        }
+
+        async function openAddAnnouncementModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const { value: formValues } = await Swal.fire({
+                title: '📢 สร้างประกาศใหม่ในคอร์ส',
+                width: '500px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div><label class="block font-bold mb-1">หัวข้อประกาศ</label><input id="swalAnTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold"></div>
+                        <div><label class="block font-bold mb-1">เนื้อหาประกาศ</label><textarea id="swalAnContent" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none"></textarea></div>
+                    </div>
+                `,
+                showCancelButton: true, confirmButtonText: 'โพสต์ประกาศ', confirmButtonColor: '#d97706',
+                background: isDark ? '#090d16' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => ({ title: document.getElementById('swalAnTitle').value.trim(), content: document.getElementById('swalAnContent').value.trim(), course_id: courseId })
+            });
+
+            if (formValues && formValues.title) {
+                await mySupabase.from('announcements').insert([formValues]);
+                initCourseDetail();
+                Swal.fire({ icon: 'success', title: 'โพสต์ประกาศสำเร็จ!', timer: 1000, showConfirmButton: false });
+            }
+        }
+
+        async function openExamScheduleModal(examData) {
+            const isDark = document.documentElement.classList.contains('dark');
+            const { value: formValues } = await Swal.fire({
+                title: `⏱️ ตั้งเวลาสอบ: ${examData.title}`,
+                width: '520px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">สถานะเปิดข้อสอบ</label>
+                            <select id="swalModalStatus" onchange="toggleModalCountdown(this.value)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
+                                <option value="draft" ${examData.status === 'draft' ? 'selected' : ''}>ซ่อนอยู่ (Draft)</option>
+                                <option value="public" ${examData.status === 'public' ? 'selected' : ''}>เปิดบริการทันที (Public)</option>
+                                <option value="countdown" ${examData.status === 'countdown' ? 'selected' : ''}>ตั้งเวลาเปิดบริการ (Countdown)</option>
+                            </select>
+                        </div>
+                        <div id="modalCountdownBox" class="${examData.status === 'countdown' ? '' : 'hidden'}">
+                            <label class="block font-bold mb-1 text-amber-500"><i class="fas fa-clock mr-1"></i> วันเวลาเริ่มเปิดบริการ</label>
+                            <input type="datetime-local" id="swalModalStartTime" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData.start_time ? new Date(new Date(examData.start_time).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
+                        </div>
+                        <div class="pt-2 border-t dark:border-slate-800 space-y-2">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-800 dark:text-slate-200">
+                                <input type="checkbox" id="swalModalHasDueDate" onchange="toggleModalDueDate(this.checked)" ${examData.due_date ? 'checked' : ''} class="w-4 h-4 rounded text-sky-600">
+                                <span>กำหนดวันเวลาสิ้นสุดการทำข้อสอบ (Due Date)</span>
+                            </label>
+                            <div id="modalDueDateBox" class="${examData.due_date ? '' : 'hidden'} space-y-2">
+                                <input type="datetime-local" id="swalModalDueDate" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" value="${examData.due_date ? new Date(new Date(examData.due_date).getTime() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true, confirmButtonText: 'บันทึกเวลาสอบ', confirmButtonColor: '#9333ea',
+                background: isDark ? '#090d16' : '#ffffff', color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const status = document.getElementById('swalModalStatus').value;
+                    const hasDue = document.getElementById('swalModalHasDueDate').checked;
+                    return {
+                        status: status,
+                        start_time: (status === 'countdown' && document.getElementById('swalModalStartTime').value) ? new Date(document.getElementById('swalModalStartTime').value).toISOString() : null,
+                        due_date: (hasDue && document.getElementById('swalModalDueDate').value) ? new Date(document.getElementById('swalModalDueDate').value).toISOString() : null
+                    };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const { error } = await mySupabase.from('exams').update(formValues).eq('id', examData.id);
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'บันทึกเวลาสอบสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    initCourseDetail();
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            }
+        }
+
+        window.toggleModalCountdown = function(val) {
+            document.getElementById('modalCountdownBox').className = val === 'countdown' ? '' : 'hidden';
+        }
+        window.toggleModalDueDate = function(checked) {
+            document.getElementById('modalDueDateBox').className = checked ? 'space-y-2' : 'hidden';
+        }
+
+        function getStatusBadge(st) {
+            if (st === 'public') return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold text-[10px]">เปิดบริการ</span>';
+            if (st === 'countdown') return '<span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold text-[10px]">ตั้งเวลา</span>';
+            return '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-bold text-[10px]">ซ่อน</span>';
+        }
+        function getDeliveryBadge(dt) {
+            if (dt === 'online') return '<span class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>ออนไลน์</span>';
+            return '<span class="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
+        }
+        function getChoiceFormatLabel(fmt) {
+            if (fmt === 'th_num') return 'ก, ข, ค, ง';
+            if (fmt === 'upper') return 'A, B, C, D';
+            if (fmt === 'lower') return 'a, b, c, d';
+            return '1, 2, 3, 4';
+        }
+        function getExamAverageScore(examId) {
+            const scores = courseAttemptsMap[String(examId)] || [];
+            if (scores.length === 0) return '-';
+            const sum = scores.reduce((a, b) => a + b, 0);
+            return (sum / scores.length).toFixed(1);
+        }
+
+        async function deleteCourseExam(examId) {
+            if ((await Swal.fire({ title: 'ยืนยันลบชุดข้อสอบนี้?', icon: 'warning', showCancelButton: true })).isConfirmed) {
+                await mySupabase.from('exams').delete().eq('id', examId);
+                initCourseDetail();
+            }
+        }
+
+        async function openCourseExamReport(examId, examTitle) {
+            Swal.fire({ title: 'กำลังประมวลผลข้อมูลด้วย AI...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const scores = courseAttemptsMap[String(examId)] || [];
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
+            Swal.close();
+
+            const total = scores.length;
+            const avg = total > 0 ? (scores.reduce((a,b)=>a+b,0)/total).toFixed(1) : 0;
+
+            Swal.fire({
+                title: `📊 AI Diagnostic Report: ${examTitle}`,
+                width: '600px',
+                html: `
+                    <div class="space-y-4 text-left text-xs">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-sky-600">${total}</div><div class="text-[10px] text-slate-400">คนส่งสอบ</div></div>
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-emerald-600">${avg}</div><div class="text-[10px] text-slate-400">คะแนนเฉลี่ย</div></div>
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-purple-600">${questions?.length || 0}</div><div class="text-[10px] text-slate-400">จำนวนข้อ</div></div>
+                        </div>
+                        <div class="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border border-purple-500/30">
+                            <h4 class="font-bold text-purple-600 mb-1"><i class="fas fa-robot"></i> AI Pedagogical Insights:</h4>
+                            <p class="text-slate-700 dark:text-slate-300">ภาพรวมนักเรียนในคอร์สนี้ทำคะแนนเฉลี่ย ${avg} คะแนน แนะนำทบทวนหัวข้อที่ทำคะแนนได้น้อยก่อนสอบเก็บคะแนนจริง</p>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'ปิดหน้าต่าง'
             });
         }
 
-        // --- TAB 5: ประกาศเฉพาะคอร์ส ---
-        function renderAnnouncementsTab(container) {
-            let annHtml = '';
-            if (courseAnnouncements.length > 0) {
-                annHtml = courseAnnouncements.map(function(an) {
-                    return '<div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">' +
-                           '<div class="font-extrabold text-amber-600">' + an.title + '</div>' +
-                           '<div class="text-xs text-slate-600 dark:text-slate-300">' + an.content + '</div></div>';
-                }).join('');
-            } else {
-                annHtml = '<div class="text-center py-8 text-slate-400">ยังไม่มีประกาศในคอร์สนี้</div>';
+        async function openCourseAttemptManager(examId, examTitle) {
+            Swal.fire({ title: 'กำลังโหลดรายชื่อผู้ส่งสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*, profiles(full_name)').eq('exam_id', examId);
+            Swal.close();
+
+            if (!attempts || attempts.length === 0) {
+                Swal.fire('ไม่พบประวัติการสอบ', 'ยังไม่มีนักเรียนทำข้อสอบชุดนี้', 'info');
+                return;
             }
 
-            container.innerHTML = '<div class="hitech-card p-6 rounded-3xl space-y-4">' +
-                '<div class="flex justify-between items-center pb-3 border-b border-purple-500/20">' +
-                '<span class="text-xs font-bold text-slate-400">ประกาศข่าวสารในคอร์ส (' + courseAnnouncements.length + ' ประกาศ)</span>' +
-                '<button onclick="openAddAnnouncementModal()" class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-50
+            const rows = attempts.map(att => `
+                <div class="flex justify-between items-center p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs">
+                    <div>
+                        <div class="font-bold">${att.profiles?.full_name || 'ไม่ระบุชื่อ'}</div>
+                        <div class="text-[10px] text-slate-400">คะแนน: ${att.total_score ?? att.score ?? '-'}</div>
+                    </div>
+                    <button onclick="deleteCourseAttempt('${att.id}', '${examId}', '${examTitle}')" class="px-2.5 py-1 bg-red-500 text-white rounded-lg font-bold text-[10px]">ลบสิทธิ์สอบใหม่</button>
+                </div>
+            `).join('');
+
+            Swal.fire({ title: `จัดการสิทธิ์สอบ: ${examTitle}`, width: '550px', html: `<div class="space-y-2 max-h-60 overflow-y-auto text-left">${rows}</div>`, showConfirmButton: false, showCloseButton: true });
+        }
+
+        async function deleteCourseAttempt(attId, examId, examTitle) {
+            if ((await Swal.fire({ title: 'ยืนยันลบสิทธิ์สอบ?', icon: 'warning', showCancelButton: true })).isConfirmed) {
+                await mySupabase.from('exam_answers').delete().eq('attempt_id', attId);
+                await mySupabase.from('exam_attempts').delete().eq('id', attId);
+                Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
+                setTimeout(() => openCourseAttemptManager(examId, examTitle), 300);
+            }
+        }
+
+        initCourseDetail();
+    </script>
+</body>
+</html>
