@@ -173,7 +173,7 @@
             return false;
         }
 
-        async function initCourseDetail() {
+async function initCourseDetail() {
             if (!courseId) { window.location.replace('admin_courses.html'); return; }
 
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -241,8 +241,14 @@
                     });
                 }
 
-                const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
-                courseAnnouncements = annRes.data || [];
+                // 🌟 ป้องกัน Error 400 กรณีตาราง announcements ไม่มีคอลัมน์ course_id
+                try {
+                    const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
+                    courseAnnouncements = annRes.data || [];
+                } catch (annErr) {
+                    console.warn("Announcements table query skipped:", annErr);
+                    courseAnnouncements = [];
+                }
 
             } catch (err) {
                 console.error("Initialization error:", err);
@@ -257,6 +263,7 @@
             document.getElementById('statEnrolledStudents').textContent = enrolledStudentIds.length;
 
             switchCourseTab(currentTab);
+        }eTab(currentTab);
         }
 
         function switchCourseTab(tabName) {
