@@ -42,6 +42,10 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        .glow-badge-sky { background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .dark .glow-badge-sky { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
@@ -120,6 +124,7 @@
         let courseModules = [];
         let courseLessons = [];
         let courseExams = [];
+        let courseAttemptsMap = {};
         let courseAnnouncements = [];
 
         const htmlElement = document.documentElement;
@@ -149,7 +154,6 @@
 
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // โหลดทีละส่วนอย่างปลอดภัย
             const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).single();
             if (courseRes.error || !courseRes.data) {
                 Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
@@ -169,7 +173,19 @@
             const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
             courseLessons = lessonsRes.data || [];
 
-            // ดึงข้อสอบทั้งหมดแล้วกรองเฉพาะชุดที่มี courseId นี้อยู่ในอาเรย์
+            // โหลดประวัติ attempts สำหรับคำนวณคะแนนเฉลี่ย
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
+            courseAttemptsMap = {};
+            if (attempts) {
+                attempts.forEach(att => {
+                    const eId = String(att.exam_id);
+                    if (!courseAttemptsMap[eId]) courseAttemptsMap[eId] = [];
+                    const score = att.total_score !== undefined && att.total_score !== null ? Number(att.total_score) : (Number(att.score) || 0);
+                    courseAttemptsMap[eId].push(score);
+                });
+            }
+
+            // โหลดข้อสอบทั้งหมดแล้วกรองเฉพาะชุดที่มี courseId นี้อยู่ในอาเรย์
             const examsRes = await mySupabase.from('exams').select('*');
             if (examsRes.data) {
                 courseExams = examsRes.data.filter(ex => {
@@ -382,31 +398,182 @@
             }
         }
 
-        function renderExamsTab(container) {
-            let examsHtml = '';
-            if (courseExams.length > 0) {
-                examsHtml = courseExams.map(function(ex) {
-                    return '<div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 flex justify-between items-center">' +
-                           '<div class="space-y-1">' +
-                           '<div class="font-extrabold text-slate-900 dark:text-white">' + (ex.title || ex.exam_name || 'ชุดข้อสอบ') + '</div>' +
-                           '<div class="text-xs text-slate-500">รหัส: ' + (ex.exam_code || '-') + ' | เวลา: ' + (ex.time_limit || 60) + ' นาที</div>' +
-                           '</div>' +
-                           '<div class="flex items-center gap-2">' +
-                           '<button onclick="window.location.href=\'admin_exam_editor.html?id=' + ex.id + '\'" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-list-check mr-1"></i> จัดการโจทย์</button>' +
-                           '</div>' +
-                           '</div>';
-                }).join('');
-            } else {
-                examsHtml = '<div class="col-span-full text-center py-8 text-slate-400">ยังไม่มีชุดข้อสอบที่ผูกกับคอร์สนี้</div>';
+        // --- TAB 3: ข้อสอบประจำคอร์ส (Layout เดียวกับ admin_exams) ---
+        async function renderExamsTab(container) {
+            if (courseExams.length === 0) {
+                container.innerHTML = `
+                    <div class="hitech-card p-6 rounded-3xl space-y-4">
+                        <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
+                            <span class="text-xs font-bold text-slate-400">ชุดข้อสอบที่ผูกกับคอร์สนี้ (0 ชุด)</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-file-signature mr-1"></i> ศูนย์จัดการข้อสอบคอร์สนี้</button>
+                                <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-plus mr-1"></i> สร้างชุดข้อสอบใหม่</button>
+                            </div>
+                        </div>
+                        <div class="text-center py-12 text-slate-400 text-xs">ยังไม่มีชุดข้อสอบที่ผูกกับคอร์สนี้</div>
+                    </div>
+                `;
+                return;
             }
 
-            container.innerHTML = '<div class="hitech-card p-6 rounded-3xl space-y-4">' +
-                '<div class="flex justify-between items-center pb-3 border-b border-purple-500/20">' +
-                '<span class="text-xs font-bold text-slate-400">ชุดข้อสอบที่ผูกกับคอร์สนี้ (' + courseExams.length + ' ชุด)</span>' +
-                '<div class="flex items-center gap-2">' +
-                '<button onclick="window.location.href=\'admin_exams.html?course_id=' + courseId + '\'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-file-signature mr-1"></i> ไปที่ศูนย์จัดการข้อสอบเฉพาะคอร์สนี้</button>' +
-                '</div></div>' +
-                '<div class="space-y-3">' + examsHtml + '</div></div>';
+            const { data: essayQuestions } = await mySupabase.from('questions').select('exam_id').eq('question_type', 'essay');
+            const examsWithEssay = new Set((essayQuestions || []).map(q => q.exam_id));
+
+            const cardsHtml = courseExams.map(e => {
+                const statusBadge = getStatusBadge(e.status);
+                const deliveryBadge = getDeliveryBadge(e.delivery_type || e.exam_type);
+                const choiceLabel = getChoiceFormatLabel(e.choice_format);
+                const avgScore = getExamAverageScore(e.id);
+                const submittedCount = (courseAttemptsMap[String(e.id)] || []).length;
+                const hasEssay = examsWithEssay.has(e.id);
+                
+                return `
+                    <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between space-y-3">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center gap-1">
+                                <span class="font-mono text-[11px] font-bold glow-badge-sky px-2 py-0.5 rounded-md">${e.exam_code || 'CODE'}</span>
+                                ${statusBadge}
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-snug line-clamp-1">${e.title}</h3>
+                            <div class="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-slate-500">
+                                ${deliveryBadge}
+                                <span><i class="far fa-clock text-sky-500 mr-1"></i>${e.time_limit || 60} นาที</span>
+                                <span class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded font-mono text-[10px]">ตัวเลือก: ${choiceLabel}</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-1.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 text-xs">
+                                <span class="text-slate-500">คะแนนเฉลี่ยคลาส:</span>
+                                <span class="font-extrabold text-indigo-600 dark:text-indigo-400">${avgScore} คะแนน <span class="text-[10px] font-normal text-slate-400">(${submittedCount} คน)</span></span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                            <button onclick="window.location.href='admin_exam_editor.html?id=${e.id}'" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5">
+                                <i class="fas fa-list-check"></i> จัดการโจทย์ & เฉลย OMR
+                            </button>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                ${hasEssay ? `<button onclick="window.location.href='admin_exam_grading.html?exam_id=${e.id}'" class="py-1.5 bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-lg text-[11px] font-bold transition-all"><i class="fas fa-pen-nib mr-1"></i>ตรวจอัตนัย</button>` : ''}
+                                <button onclick="openCourseExamReport('${e.id}', '${e.title}')" class="py-1.5 bg-purple-500/10 hover:bg-purple-500 hover:text-white text-purple-600 dark:text-purple-400 border border-purple-500/30 rounded-lg text-[11px] font-bold transition-all"><i class="fas fa-brain mr-1"></i>AI วิเคราะห์</button>
+                                <button onclick="openCourseAttemptManager('${e.id}', '${e.title}')" class="py-1.5 bg-indigo-500/10 hover:bg-indigo-500 hover:text-white text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 rounded-lg text-[11px] font-bold transition-all"><i class="fas fa-users-gear mr-1"></i>จัดการสิทธิ์</button>
+                                <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-lg text-[11px] font-bold hover:bg-slate-200">แก้ไขในหน้ารวม</button>
+                            </div>
+                            <button onclick="deleteCourseExam('${e.id}')" class="w-full py-1 bg-red-50 dark:bg-red-950/40 text-red-600 rounded-lg text-[10px] font-bold hover:bg-red-100"><i class="fas fa-trash-can mr-1"></i> ลบชุดข้อสอบ</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-purple-500/20">
+                        <span class="text-xs font-bold text-slate-400">ชุดข้อสอบที่ผูกกับคอร์สนี้ (${courseExams.length} ชุด)</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-file-signature mr-1"></i> ศูนย์จัดการข้อสอบคอร์สนี้</button>
+                            <button onclick="window.location.href='admin_exams.html?course_id=${courseId}'" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-plus mr-1"></i> สร้างชุดข้อสอบใหม่</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusBadge(st) {
+            if (st === 'public') return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">เปิดบริการ</span>';
+            if (st === 'countdown') return '<span class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>';
+            return '<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px]">ซ่อน</span>';
+        }
+
+        function getDeliveryBadge(dt) {
+            if (dt === 'online') return '<span class="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 text-[10px] font-bold"><i class="fas fa-keyboard mr-1"></i>ออนไลน์</span>';
+            return '<span class="px-2 py-0.5 rounded-md bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-300 text-[10px] font-bold"><i class="fas fa-file-pdf mr-1"></i>ไฟล์ PDF</span>';
+        }
+
+        function getChoiceFormatLabel(fmt) {
+            if (fmt === 'th_num') return 'ก, ข, ค, ง';
+            if (fmt === 'upper') return 'A, B, C, D';
+            if (fmt === 'lower') return 'a, b, c, d';
+            return '1, 2, 3, 4';
+        }
+
+        function getExamAverageScore(examId) {
+            const scores = courseAttemptsMap[String(examId)] || [];
+            if (scores.length === 0) return '-';
+            const sum = scores.reduce((a, b) => a + b, 0);
+            return (sum / scores.length).toFixed(1);
+        }
+
+        async function deleteCourseExam(examId) {
+            const res = await Swal.fire({ title: 'ยืนยันลบชุดข้อสอบนี้?', icon: 'warning', showCancelButton: true });
+            if (res.isConfirmed) {
+                await mySupabase.from('exams').delete().eq('id', examId);
+                initCourseDetail();
+            }
+        }
+
+        async function openCourseExamReport(examId, examTitle) {
+            Swal.fire({ title: 'กำลังประมวลผลข้อมูลด้วย AI...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const scores = courseAttemptsMap[String(examId)] || [];
+            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
+            Swal.close();
+
+            const totalStudents = scores.length;
+            let avgScore = 0;
+            if (totalStudents > 0) {
+                const sum = scores.reduce((a, b) => a + b, 0);
+                avgScore = (sum / totalStudents).toFixed(1);
+            }
+
+            Swal.fire({
+                title: `📊 AI Diagnostic Report: ${examTitle}`,
+                width: '650px',
+                html: `
+                    <div class="space-y-4 text-left text-xs">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-sky-600">${totalStudents}</div><div class="text-[10px] text-slate-400">นักเรียนที่ส่งสอบ</div></div>
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-emerald-600">${avgScore}</div><div class="text-[10px] text-slate-400">คะแนนเฉลี่ยรวม</div></div>
+                            <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl"><div class="text-lg font-extrabold text-purple-600">${questions?.length || 0}</div><div class="text-[10px] text-slate-400">จำนวนข้อสอบ</div></div>
+                        </div>
+                        <div class="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border border-purple-500/30 space-y-2">
+                            <h4 class="font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI Pedagogical Insights:</h4>
+                            <p class="text-slate-700 dark:text-slate-300">${totalStudents > 0 ? `ภาพรวมนักเรียนในคอร์สทำคะแนนเฉลี่ยอยู่ที่ ${avgScore} คะแนน แนะนำทบทวนเนื้อหาก่อนสอบจริง` : 'ยังไม่มีนักเรียนส่งข้อสอบชุดนี้'}</p>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'ปิดหน้าต่าง'
+            });
+        }
+
+        async function openCourseAttemptManager(examId, examTitle) {
+            Swal.fire({ title: 'กำลังโหลดรายชื่อผู้ส่งสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*, profiles(full_name)').eq('exam_id', examId);
+            Swal.close();
+
+            if (!attempts || attempts.length === 0) {
+                Swal.fire('ไม่พบประวัติการสอบ', 'ยังไม่มีนักเรียนทำข้อสอบชุดนี้', 'info');
+                return;
+            }
+
+            const rows = attempts.map(att => `
+                <div class="flex justify-between items-center p-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs">
+                    <div>
+                        <div class="font-bold">${att.profiles?.full_name || 'ไม่ระบุชื่อ'}</div>
+                        <div class="text-[10px] text-slate-400">คะแนน: ${att.score ?? '-'}</div>
+                    </div>
+                    <button onclick="deleteCourseAttempt('${att.id}', '${examId}', '${examTitle}')" class="px-2.5 py-1 bg-red-500 text-white rounded-lg font-bold text-[10px]">ลบสิทธิ์สอบใหม่</button>
+                </div>
+            `).join('');
+
+            Swal.fire({ title: `จัดการสิทธิ์สอบ: ${examTitle}`, width: '550px', html: `<div class="space-y-2 max-h-60 overflow-y-auto text-left">${rows}</div>`, showConfirmButton: false, showCloseButton: true });
+        }
+
+        async function deleteCourseAttempt(attId, examId, examTitle) {
+            if ((await Swal.fire({ title: 'ยืนยันลบสิทธิ์สอบ?', icon: 'warning', showCancelButton: true })).isConfirmed) {
+                await mySupabase.from('exam_answers').delete().eq('attempt_id', attId);
+                await mySupabase.from('exam_attempts').delete().eq('id', attId);
+                Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
+                setTimeout(() => openCourseAttemptManager(examId, examTitle), 300);
+            }
         }
 
         function renderAnnouncementsTab(container) {
