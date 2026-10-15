@@ -231,7 +231,34 @@
                    (q.solution !== undefined ? q.solution : '')));
         }
 
-        // 🎯 ฟังก์ชันสกัดคำตอบจาก answer_saved แบบครอบคลุมทุกรูปแบบ (JSON, Object, Array, Key มั่ว)
+        // 🎯 ฟังก์ชันแปลง Index ตัวเลือก (0, 1, 2, 3) เป็นอักษรตัวเลือก (ก, ข, ค, ง)
+        function formatAnswerText(ansValue) {
+            if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
+            
+            // ถ้าเก็บมาเป็นตัวเลข Index (0, 1, 2, 3)
+            const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
+            const engChoices = ['A', 'B', 'C', 'D', 'E'];
+
+            if (typeof ansValue === 'number' || (!isNaN(ansValue) && String(ansValue).trim() !== '')) {
+                const idx = Number(ansValue);
+                if (idx >= 0 && idx < thaiChoices.length) {
+                    return thaiChoices[idx];
+                }
+            }
+
+            // ถ้าเป็นสตริงตัวเลข เช่น "0", "1", "2"
+            const trimmed = String(ansValue).trim();
+            if (/^\d+$/.test(trimmed)) {
+                const idx = Number(trimmed);
+                if (idx >= 0 && idx < thaiChoices.length) {
+                    return thaiChoices[idx];
+                }
+            }
+
+            return trimmed;
+        }
+
+        // 🎯 ดึงคำตอบจาก answer_saved และแปลงค่าให้เทียบตรงกับเฉลยได้
         function extractStudentAnswer(att, q, index) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
             if (!raw) return null;
@@ -239,30 +266,26 @@
                 try { raw = JSON.parse(raw); } catch(e) { return null; }
             }
 
+            let val = null;
             if (typeof raw === 'object' && raw !== null) {
-                // 1. ลองหาด้วย q.id ตรงๆ
-                if (raw[q.id] !== undefined) return raw[q.id];
-                if (raw[String(q.id)] !== undefined) return raw[String(q.id)];
-
-                // 2. ลองหาด้วย question_number (เช่น 1, 2, 3...)
-                if (q.question_number !== undefined) {
-                    if (raw[q.question_number] !== undefined) return raw[q.question_number];
-                    if (raw[String(q.question_number)] !== undefined) return raw[String(q.question_number)];
-                    if (raw[`q${q.question_number}`] !== undefined) return raw[`q${q.question_number}`];
-                    if (raw[`question_${q.question_number}`] !== undefined) return raw[`question_${q.question_number}`];
+                if (raw[q.id] !== undefined) val = raw[q.id];
+                else if (raw[String(q.id)] !== undefined) val = raw[String(q.id)];
+                else if (q.question_number !== undefined) {
+                    if (raw[q.question_number] !== undefined) val = raw[q.question_number];
+                    else if (raw[String(q.question_number)] !== undefined) val = raw[String(q.question_number)];
+                    else if (raw[`q${q.question_number}`] !== undefined) val = raw[`q${q.question_number}`];
                 }
-
-                // 3. ถ้าเป็น Array 
-                if (Array.isArray(raw)) {
-                    if (raw[index] !== undefined) return raw[index];
-                    if (raw[index + 1] !== undefined) return raw[index + 1];
+                if (val === null && Array.isArray(raw)) {
+                    if (raw[index] !== undefined) val = raw[index];
+                    else if (raw[index + 1] !== undefined) val = raw[index + 1];
                 }
-
-                // 4. วนลูปหา Property ทั้งหมดเผื่อเป็นคีย์แบบสุ่มหรือ Index
-                const keys = Object.keys(raw);
-                if (keys[index] !== undefined) return raw[keys[index]];
+                if (val === null) {
+                    const keys = Object.keys(raw);
+                    if (keys[index] !== undefined) val = raw[keys[index]];
+                }
             }
-            return null;
+
+            return formatAnswerText(val);
         }
 
         function getAttemptTimeMinutes(att) {
