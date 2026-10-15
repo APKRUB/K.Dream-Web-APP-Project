@@ -261,7 +261,13 @@
             let allExams = exams || [];
 
             if (filterCourseId) {
-                allExams = allExams.filter(e => String(e.course_id) === String(filterCourseId));
+                allExams = allExams.filter(e => {
+                    if (!e.course_id) return false;
+                    if (Array.isArray(e.course_id)) {
+                        return e.course_id.includes(filterCourseId);
+                    }
+                    return String(e.course_id) === String(filterCourseId);
+                });
             }
 
             currentExamsData = allExams;
@@ -375,8 +381,10 @@
             const submittedCount = (allAttemptsMap[String(e.id)] || []).length;
             
             let courseTagHtml = '';
-            if (e.course_id && coursesMap[e.course_id]) {
-                const cObj = coursesMap[e.course_id];
+            let targetCourseId = e.course_id;
+            if (Array.isArray(targetCourseId)) targetCourseId = targetCourseId[0];
+            if (targetCourseId && coursesMap[targetCourseId]) {
+                const cObj = coursesMap[targetCourseId];
                 courseTagHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-md"><i class="fas fa-chalkboard"></i> ${cObj.title}</span>`;
             }
 
@@ -433,8 +441,10 @@
             const submittedCount = (allAttemptsMap[String(e.id)] || []).length;
             
             let courseTagHtml = '';
-            if (e.course_id && coursesMap[e.course_id]) {
-                const cObj = coursesMap[e.course_id];
+            let targetCourseId = e.course_id;
+            if (Array.isArray(targetCourseId)) targetCourseId = targetCourseId[0];
+            if (targetCourseId && coursesMap[targetCourseId]) {
+                const cObj = coursesMap[targetCourseId];
                 courseTagHtml = `<span class="px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-md"><i class="fas fa-chalkboard mr-1"></i>${cObj.title}</span>`;
             }
 
@@ -740,6 +750,9 @@
 
                     if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อชุดข้อสอบ'); return false; }
 
+                    // แปลง course_id ให้เป็นอาเรย์ [selectedCourseId] เพื่อให้รองรับคอลัมน์ type[] ใน Supabase
+                    const courseIdPayload = selectedCourseId ? [selectedCourseId] : null;
+
                     return {
                         title,
                         exam_code: exam_code || `EXAM-${Math.floor(Math.random()*9000+1000)}`,
@@ -747,7 +760,7 @@
                         exam_type: delivery_type,
                         choice_format,
                         category_id: catVal ? catVal : null,
-                        course_id: selectedCourseId ? selectedCourseId : null,
+                        course_id: courseIdPayload,
                         time_limit: parseInt(document.getElementById('swalTimeLimit').value) || 60,
                         max_attempts: parseInt(document.getElementById('swalMaxAttempts').value) || 0,
                         status: status,
