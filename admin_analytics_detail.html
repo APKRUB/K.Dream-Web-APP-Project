@@ -119,12 +119,24 @@
             </div>
         </div>
 
-        <!-- Chart & Distribution -->
+        <!-- Charts Layout (Difficulty & Score Spread / Distribution with SD Marker) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
+            <!-- Difficulty Chart -->
+            <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-sky-500"></i> สถิติความยาก-ง่ายรายข้อ (เปอร์เซ็นต์ผู้ตอบถูก)</h3>
-                <div class="relative h-72 w-full"><canvas id="questionDifficultyChart"></canvas></div>
+                <div class="relative h-64 w-full"><canvas id="questionDifficultyChart"></canvas></div>
             </div>
+
+            <!-- Score Spread / Distribution Chart (คล้าย SD / ระฆังควาย) -->
+            <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-area text-purple-500"></i> กราฟกระจายตัวของคะแนน (Score Frequency Distribution & Median Marker)</h3>
+                    <span id="medianBadge" class="text-[11px] font-bold px-2.5 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 rounded-lg">ค่ากลางห้อง (50%): -</span>
+                </div>
+                <div class="relative h-72 w-full"><canvas id="scoreSpreadChart"></canvas></div>
+            </div>
+
+            <!-- Grade Doughnut Chart -->
             <div class="lg:col-span-4 hitech-card p-6 rounded-3xl space-y-4">
                 <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users-viewfinder text-indigo-500"></i> สัดส่วนช่วงคะแนน</h3>
                 <div class="relative h-72 w-full flex items-center justify-center"><canvas id="scoreDistChart"></canvas></div>
@@ -175,6 +187,7 @@
         let filteredAttempts = [];
         let diffChartInstance = null;
         let distChartInstance = null;
+        let spreadChartInstance = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -190,7 +203,6 @@
         });
 
         function goBack() {
-            // เช็คว่ามี course_id ติดมาใน URL หรือไม่ ถ้ามีให้กลับไปหน้า analytics ของคอร์สนั้น
             if (courseId) {
                 window.location.href = `admin_analytics.html?course_id=${courseId}`;
             } else {
@@ -263,6 +275,7 @@
             document.getElementById('statAvgPercent').textContent = `${avgPercent}%`;
 
             renderDifficultyChart();
+            renderScoreSpreadChart(scores, maxScore);
             renderScoreDistributionChart(scores, maxScore);
             renderSubmissionsTable();
         }
@@ -305,6 +318,87 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: { y: { beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+
+        // กราฟกระจายตัวคะแนน พร้อมทำ Mark ค่ากลาง 50% คล้ายกราฟ SD
+        function renderScoreSpreadChart(scores, maxScore) {
+            const ctx = document.getElementById('scoreSpreadChart').getContext('2d');
+
+            // สร้างช่วงคะแนนจาก 0 ถึง maxScore
+            let freqMap = {};
+            for (let i = 0; i <= maxScore; i++) {
+                freqMap[i] = 0;
+            }
+            scores.forEach(s => {
+                let rounded = Math.round(s);
+                if (rounded > maxScore) rounded = maxScore;
+                if (rounded < 0) rounded = 0;
+                freqMap[rounded] = (freqMap[rounded] || 0) + 1;
+            });
+
+            let labels = [];
+            let dataValues = [];
+            for (let i = 0; i <= maxScore; i++) {
+                labels.push(`${i} คะแนน`);
+                dataValues.push(freqMap[i]);
+            }
+
+            // คำนวณค่า Median (50th percentile) ของห้อง
+            let sortedScores = [...scores].sort((a, b) => a - b);
+            let medianVal = 0;
+            if (sortedScores.length > 0) {
+                let mid = Math.floor(sortedScores.length / 2);
+                if (sortedScores.length % 2 === 0) {
+                    medianVal = (sortedScores[mid - 1] + sortedScores[mid]) / 2;
+                } else {
+                    medianVal = sortedScores[mid];
+                }
+            }
+            document.getElementById('medianBadge').textContent = `ค่ากลางห้อง (Median): ${medianVal.toFixed(1)} คะแนน`;
+
+            // กำหนดสีแท่งกราฟ โดยเน้นแท่งที่ตรงกับค่า Median เป็นสีพิเศษ (เช่น สีม่วง/ส้ม) เพื่อให้เป็นจุดสังเกต
+            let backgroundColors = labels.map((lbl, idx) => {
+                let scoreNum = idx;
+                if (Math.abs(scoreNum - medianVal) <= 0.5) {
+                    return '#f59e0b'; // สีส้มทอง สำหรับค่ากลางห้อง
+                }
+                return '#8b5cf6'; // สีม่วงสำหรับช่วงอื่นๆ
+            });
+
+            if (spreadChartInstance) spreadChartInstance.destroy();
+            spreadChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'จำนวนนักเรียน (คน)',
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderRadius: 8,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` จำนวนนักเรียน: ${context.raw} คน`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
                 }
             });
         }
