@@ -211,7 +211,7 @@
         let allExams = [];
         let categoriesMap = {};
         let userAttempts = [];
-        let currentViewMode = 'card'; // 'card' หรือ 'list'
+        let currentViewMode = 'card';
 
         let chartProgressInstance = null;
         let chartRadarInstance = null;
@@ -285,7 +285,6 @@
             renderExamCatalog();
             renderExamHistory();
 
-            // เตรียมข้อมูลแท็บ Analytics
             const examIds = [...new Set(userAttempts.map(a => a.exam_id))];
             const { data: questions } = await mySupabase.from('questions').select('category_tag').in('exam_id', examIds);
             (questions || []).forEach(q => {
@@ -313,12 +312,10 @@
                 return;
             }
 
-            // จัดกลุ่มตามหมวดหมู่ถ้าเป็น Card view
             container.innerHTML = filtered.map(exam => {
                 const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
-                const status = exam.status || 'publish'; // 'publish', 'countdown'
+                const status = exam.status || 'publish';
                 
-                // ตรวจสอบประวัติการทำข้อสอบ & attempts_allowed
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const inProgressAttempt = myAttemptsForExam.find(a => a.status === 'in_progress');
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
@@ -328,7 +325,6 @@
                 let statusBadge = '';
 
                 if (status === 'countdown') {
-                    // คำนวณวันเปิดสอบ (สมมติ exam.open_date หรือ countdown_date มีค่า)
                     statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-bold"><i class="fas fa-clock mr-1"></i> กำลังจะเปิดในเร็วๆ นี้</span>`;
                     actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-300 dark:bg-slate-800 text-slate-500 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิดสอบ</button>`;
                 } else if (inProgressAttempt) {
@@ -379,7 +375,7 @@
             }).join('');
         }
 
-        // แสดง Instructions ก่อนเริ่มสอบ
+        // แสดง Instructions ก่อนลิงก์ไป exam_take.html
         async function handleExamClick(examId, mode, attemptId) {
             const exam = allExams.find(e => e.id === examId);
             const instructionsText = exam && exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
@@ -396,9 +392,9 @@
 
             if (isConfirmed) {
                 if (mode === 'resume') {
-                    window.location.href = `exam_room.html?exam_id=${examId}&attempt_id=${attemptId}`;
+                    window.location.href = `exam_take.html?exam_id=${examId}&attempt_id=${attemptId}`;
                 } else {
-                    window.location.href = `exam_room.html?exam_id=${examId}`;
+                    window.location.href = `exam_take.html?exam_id=${examId}`;
                 }
             }
         }
@@ -436,7 +432,6 @@
             }).join('');
         }
 
-        // ฟังก์ชันฝั่ง Analytics (แท็บที่ 2)
         function renderExamCheckboxes() {
             const container = document.getElementById('examCheckboxGroup');
             if (allExams.length === 0) {
@@ -502,7 +497,7 @@
             if (chartProgressInstance) chartProgressInstance.destroy();
             const labels = attempts.map(a => { const exam = allExams.find(e => e.id === a.exam_id); return exam ? exam.title : 'ข้อสอบ'; });
             const userScores = attempts.map(a => a.total_score || a.score || 0);
-            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] === undefined ? 0 : classAvgMap[a.exam_id]);
 
             chartProgressInstance = new Chart(ctx, {
                 type: 'line',
@@ -522,7 +517,7 @@
             if (chartBarInstance) chartBarInstance.destroy();
             const labels = attempts.map(a => { const exam = allExams.find(e => e.id === a.exam_id); return exam ? exam.title : 'ข้อสอบ'; });
             const userScores = attempts.map(a => a.total_score || a.score || 0);
-            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] || 0);
+            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] === undefined ? 0 : classAvgMap[a.exam_id]);
 
             chartBarInstance = new Chart(ctx, {
                 type: 'bar',
