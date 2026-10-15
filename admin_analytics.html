@@ -247,10 +247,15 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // 🎯 ดึงฟิลด์ total_score จากตาราง exam_attempts โดยตรง
+        // 🎯 ฟังก์ชันดึงคะแนนที่รองรับทุกความเป็นไปได้ในตาราง
         function getAttemptScore(att) {
-            if (att.total_score !== undefined && att.total_score !== null) return Number(att.total_score);
-            if (att.score !== undefined && att.score !== null) return Number(att.score);
+            if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) {
+                return Number(att.total_score);
+            }
+            if (att.score !== undefined && att.score !== null && !isNaN(att.score)) {
+                return Number(att.score);
+            }
+            // ถ้าเก็บไว้ในฟิลด์อื่นหรือ object
             return 0;
         }
 
@@ -284,6 +289,7 @@
             // 4. โหลดผลการทำข้อสอบทั้งหมดจาก exam_attempts
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             allAttempts = attempts || [];
+            console.log("Fetched Exam Attempts:", allAttempts); // ตรวจสอบข้อมูลใน Console
 
             Swal.close();
 
