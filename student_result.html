@@ -297,21 +297,44 @@
             await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, exam ? exam.title : 'ข้อสอบ', exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
         }
 
-        async function loadClassAnalytics(examId, studentScore, totalQuestions) {
+       async function loadClassAnalytics(examId, studentScore, totalQuestions) {
+            if (!examId) return;
+
+            // ดึงข้อมูลการสอบของชุดนี้ทั้งหมด
             const { data: attempts, error } = await mySupabase
                 .from('exam_attempts')
-                .select('total_score, score')
+                .select('*')
                 .eq('exam_id', examId);
 
-            if (error || !attempts || attempts.length === 0) return;
+            if (error) {
+                console.error("Supabase Analytics Error (เช็ก RLS Policy):", error);
+                return;
+            }
 
-            const scores = attempts.map(a => a.total_score !== undefined && a.total_score !== null ? a.total_score : (a.score || 0));
+            if (!attempts || attempts.length === 0) {
+                // ถ้ายังไม่มีข้อมูลเพื่อนในห้อง ให้ใช้ข้อมูลของตัวเองแสดงผลเป็นคนแรก
+                document.getElementById('rankDisplay').textContent = `#1 / 1`;
+                document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
+                document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
+                document.getElementById('percentileDisplay').textContent = `Top 100%`;
+                document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: 1 คน`;
+                return;
+            }
+
+            const scores = attempts.map(a => {
+                if (a.total_score !== undefined && a.total_score !== null) return Number(a.total_score);
+                if (a.score !== undefined && a.score !== null) return Number(a.score);
+                return 0;
+            });
+
             const totalStudents = scores.length;
-
             const sortedScores = [...scores].sort((a, b) => b - a);
+            
+            // หาอันดับ (ถ้าคะแนนเท่ากันให้อยู่อันดับเดียวกัน)
             const rank = sortedScores.indexOf(studentScore) + 1;
 
-            const avgScore = (scores.reduce((a, b) => a + b, 0) / totalStudents).toFixed(1);
+            const sumScore = scores.reduce((a, b) => a + b, 0);
+            const avgScore = (sumScore / totalStudents).toFixed(1);
             const maxScore = Math.max(...scores);
             const topPercentile = Math.round((rank / totalStudents) * 100);
 
@@ -321,6 +344,7 @@
             document.getElementById('percentileDisplay').textContent = `Top ${topPercentile}%`;
             document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: ${totalStudents} คน`;
 
+            // แบ่งช่วงคะแนนสำหรับกราฟ
             const buckets = [0, 0, 0, 0, 0];
             scores.forEach(s => {
                 const pct = totalQuestions > 0 ? (s / totalQuestions) * 100 : 0;
@@ -342,7 +366,11 @@
             const borderColors = buckets.map((_, idx) => idx === myBucketIndex ? '#0369a1' : 'rgba(148, 163, 184, 0.5)');
 
             const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
-            new Chart(ctx, {
+            
+            // ลบ Canvas เก่าออกถ้ามีการวาดซ้ำ
+            if (window.myScoreChart) window.myScoreChart.destroy();
+
+            window.myScoreChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'],
@@ -377,7 +405,6 @@
                 }
             });
         }
-
         async function renderSecurePDF(url) {
             const container = document.getElementById('pdfContainer');
             try {
