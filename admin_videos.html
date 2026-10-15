@@ -164,7 +164,7 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const urlParams = new URLSearchParams(window.location.search);
-        let selectedCourseId = urlParams.get('course_id') || 'all';
+        let selectedCourseId = urlParams.get('course_id') || urlParams.get('id') || 'all';
 
         let allCourses = [];
         let allVideos = [];
@@ -223,7 +223,7 @@
                 allVideos = fetchedVideos.map(v => ({
                     id: v.id,
                     title: v.title || v.name || 'ไม่มีชื่อวิดีโอ',
-                    course_id: v.course_id || v.courseId || selectedCourseId,
+                    course_id: v.course_id || v.courseid || v.course || null,
                     video_url: v.video_url || v.video || v.url || '',
                     views: Number(v.views || v.view_count || Math.floor(Math.random() * 50) + 5),
                     created_at: v.created_at || new Date().toISOString()
@@ -301,7 +301,7 @@
 
             tbody.innerHTML = filtered.map((v, idx) => {
                 const cObj = allCourses.find(c => String(c.id) === String(v.course_id));
-                const courseName = cObj ? cObj.title : '<span class="text-slate-400 italic">ไม่ระบุคอร์ส</span>';
+                const courseName = cObj ? cObj.title : '<span class="text-amber-500 italic">⚠️ ยังไม่ระบุคอร์ส</span>';
                 const dateStr = v.created_at ? new Date(v.created_at).toLocaleDateString('th-TH') : '-';
 
                 return `
@@ -318,6 +318,9 @@
                             <a href="${v.video_url}" target="_blank" class="px-2.5 py-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ดูคลิป">
                                 <i class="fas fa-play"></i>
                             </a>
+                            <button onclick="openEditVideoModal('${v.id}')" class="px-2.5 py-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="แก้ไขคอร์ส/ข้อมูล">
+                                <i class="fas fa-edit"></i>
+                            </button>
                             <button onclick="deleteVideo('${v.id}')" class="px-2.5 py-1 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ลบวิดีโอ">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -329,8 +332,8 @@
 
         async function openAddVideoModal() {
             const isDark = document.documentElement.classList.contains('dark');
-            
-            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === String(selectedCourseId) ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
+            let defaultId = (selectedCourseId !== 'all') ? selectedCourseId : (allCourses[0]?.id || '');
+            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === String(defaultId) ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
 
             const { value: formValues } = await Swal.fire({
                 title: '🎬 เพิ่มวิดีโอประกอบคอร์สใหม่',
@@ -375,6 +378,7 @@
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
                 const { error } = await mySupabase.from('course_lessons').insert([{
+                    course_id: formValues.course_id,
                     title: formValues.title,
                     video_url: formValues.video_url
                 }]);
@@ -384,6 +388,69 @@
                 }
 
                 Swal.fire({ icon: 'success', title: 'เพิ่มวิดีโอสำเร็จ!', timer: 1200, showConfirmButton: false });
+                initVideoManagement();
+            }
+        }
+
+        async function openEditVideoModal(videoId) {
+            const video = allVideos.find(v => String(v.id) === String(videoId));
+            if (!video) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === String(video.course_id) ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
+
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ แก้ไขคอร์สและข้อมูลวิดีโอ',
+                width: '550px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">เลือกคอร์สที่สังกัด <span class="text-red-500">*</span></label>
+                            <select id="swalEditCourse" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
+                                ${courseOptionsHtml}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อหัวข้อวิดีโอ <span class="text-red-500">*</span></label>
+                            <input id="swalEditTitle" value="${video.title}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ลิงก์วิดีโอ <span class="text-red-500">*</span></label>
+                            <input id="swalEditUrl" value="${video.video_url}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการแก้ไข',
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#ef4444',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const cId = document.getElementById('swalEditCourse').value;
+                    const title = document.getElementById('swalEditTitle').value.trim();
+                    const url = document.getElementById('swalEditUrl').value.trim();
+                    if (!title || !url) {
+                        Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                        return false;
+                    }
+                    return { course_id: cId, title, video_url: url };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const { error: err1 } = await mySupabase.from('course_lessons').update({
+                    course_id: formValues.course_id,
+                    title: formValues.title,
+                    video_url: formValues.video_url
+                }).eq('id', videoId);
+
+                if (err1) {
+                    await mySupabase.from('videos').update(formValues).eq('id', videoId);
+                }
+
+                Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ!', timer: 1200, showConfirmButton: false });
                 initVideoManagement();
             }
         }
