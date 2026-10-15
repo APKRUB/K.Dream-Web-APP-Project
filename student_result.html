@@ -422,12 +422,14 @@
 async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
             const container = document.getElementById('aiAnalysisContainer');
             
-            // เช็กเฉพาะถ้ายังเป็น Placeholder หรือค่าว่างเท่านั้น
-            if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+            // 1. เช็กว่าคีย์มีอยู่จริงไหม
+            if (!GEMINI_API_KEY || GEMINI_API_KEY.trim() === "" || GEMINI_API_KEY.includes("__GEMINI_API_KEY__")) {
+                container.innerHTML = `<div class="p-4 bg-amber-500/10 text-amber-500 rounded-xl text-xs">⚠️ ยังไม่ได้ใส่ Gemini API Key หรือ GitHub Actions ยังไม่ได้ประมวลผล</div>`;
                 renderLocalAIAnalysis(questions, answerMap, score, total);
                 return;
             }
 
+            // 2. ดึงข้อความจาก PDF แบบเซฟตี้ (ถ้าพังให้ข้ามไปเลย ไม่ทำให้ระบบล่ม)
             let pdfTextContent = "";
             if (pdfUrl) {
                 try {
@@ -436,13 +438,14 @@ async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTit
                     for (let i = 1; i <= Math.min(pdfDoc.numPages, 3); i++) {
                         const page = await pdfDoc.getPage(i);
                         const textContent = await page.getTextContent();
-                        pdfTextContent += textContent.items.map(item => item.str).join(" ") + "\n";
+                        pdfTextContent += textContent.items.map(item => item.str).join(" ") + " ";
                     }
                 } catch (e) {
-                    console.log("Could not extract PDF text for AI, proceeding with questions data.");
+                    console.warn("ไม่สามารถอ่านข้อความจาก PDF ได้ ใช้เฉพาะข้อมูลโจทย์แทน:", e);
                 }
             }
 
+            // 3. เตรียมข้อมูลคำตอบ
             let summaryData = questions.map((q, idx) => {
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
@@ -458,26 +461,27 @@ async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTit
                 };
             });
 
+            // 4. สร้าง Prompt บังคับวิเคราะห์จุดแข็ง/จุดอ่อน
             const prompt = `
-คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียนและทักษะเชิงลึก
+คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียน
 ข้อมูลประกอบการวิเคราะห์:
 - ชื่อชุดข้อสอบ: "${examTitle}"
-- เนื้อหาและโจทย์จากไฟล์ PDF ข้อสอบ: ${pdfTextContent.substring(0, 2500)}
+- เนื้อหาข้อสอบจาก PDF: ${pdfTextContent ? pdfTextContent.substring(0, 2000) : "ไม่มีข้อมูล PDF"}
 
 คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
-รายละเอียดการตอบรายข้อ (ข้อที่ทำถูก vs ข้อที่ทำผิด):
+รายละเอียดคำตอบรายข้อ:
 ${JSON.stringify(summaryData, null, 2)}
 
-กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โดย **"เน้นเจาะจงที่จุดแข็งและจุดอ่อนของนักเรียน โดยเทียบผลการตอบถูก-ผิดเข้ากับเนื้อหาใน PDF เป็นหลัก"** ตามโครงสร้างนี้เท่านั้น:
+กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โดย **เน้นวิเคราะห์จุดแข็งและจุดอ่อนของนักเรียนแบบเจาะจงเทียบกับข้อที่ทำถูกและทำผิด** ตามโครงสร้างนี้:
 
-1. 🎯 **จุดแข็ง (Strengths):** วิเคราะห์จากข้อที่นักเรียนทำถูก ว่านักเรียนมีความเข้าใจในหัวข้อหรือเงื่อนไขส่วนใดของเอกสาร PDF เป็นอย่างดีแล้ว
-2. ⚠️ **จุดอ่อนและข้อผิดพลาด (Weaknesses):** วิเคราะห์จากข้อที่นักเรียนทำผิด ว่าไปพลาดตรงจุดไหนของเนื้อหาหรือเงื่อนไขใน PDF
-3. 💡 **คำแนะนำเฉพาะจุด (Actionable Advice):** แนะนำแนวทางสั้นๆ ว่าต้องกลับไปทบทวนหัวข้อใดใน PDF เพื่ออุดรอยรั่วนี้
+1. 🎯 **จุดแข็ง (Strengths):** สรุปทักษะหรือเนื้อหาที่นักเรียนทำได้ดีเยี่ยมจากข้อที่ทำถูก
+2. ⚠️ **จุดอ่อนและข้อผิดพลาด (Weaknesses):** วิเคราะห์จุดที่นักเรียนทำผิดอย่างละเอียดว่าไปพลาดที่เรื่องอะไรหรือเงื่อนไขไหน
+3. 💡 **แนวทางทบทวน (Actionable Advice):** แนะนำข้อที่ต้องกลับไปอ่านทบทวนเพิ่ม
 
-ตอบกลับในรูปแบบ HTML สั้นๆ กระชับ ชัดเจน (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
+ตอบเป็น HTML สั้นๆ กระชับ ชัดเจน (ใช้แท็ก h4, p, ul, li, b ได้)
 `;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
             try {
@@ -493,17 +497,19 @@ ${JSON.stringify(summaryData, null, 2)}
                     aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
                     container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
                 } else if (data.error) {
-                    // แสดงข้อความ Error จาก Google ออกมาบนหน้าจอตรงๆ
-                    container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs space-y-1">
-                        <div class="font-bold">⚠️ Google Gemini API Error (${data.error.code || 'Uncaught'}):</div>
-                        <div>${data.error.message || 'ไม่สามารถประมวลผลคำตอบได้'}</div>
-                    </div>`;
+                    // ถ้า Google พ่น Error กลับมา ให้โชว์ตรงๆ ในกล่อง AI เลย
+                    container.innerHTML = `
+                        <div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs space-y-2">
+                            <div class="font-bold"><i class="fas fa-exclamation-circle mr-1"></i> Google Gemini API ตอบกลับข้อผิดพลาด (${data.error.code}):</div>
+                            <div class="font-mono bg-red-950/30 p-2 rounded">${data.error.message}</div>
+                            <div class="text-[11px] text-slate-400">วิธีแก้: ตรวจสอบว่าคีย์ใน GitHub Secrets เป็น Gemini API Key จริงที่ขึ้นต้นด้วย AIzaSy... หรือไม่</div>
+                        </div>
+                    `;
                 } else {
                     renderLocalAIAnalysis(questions, answerMap, score, total);
                 }
             } catch (err) {
-                console.error("Gemini API Error:", err);
-                container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">⚠️ Fetch Error: ${err.message || 'ไม่สามารถเชื่อมต่อกับ Gemini API ได้'}</div>`;
+                container.innerHTML = `<div class="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">⚠️ Fetch Error: ${err.message}</div>`;
             }
         }
 
