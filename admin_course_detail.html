@@ -62,9 +62,25 @@
         }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
+        
+        /* Anti-Download Shield */
+        .secure-video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .secure-video-wrapper::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 10;
+            pointer-events: none; /* ป้องกันคลิกขวาและลากไฟล์ทับแต่ยังกด Play ได้ผ่าน iframe เบื้องต้น */
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24" oncontextmenu="return false;">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
@@ -97,7 +113,10 @@
                 <h2 id="headerCourseTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">กำลังโหลด...</h2>
                 <p id="headerCourseDesc" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">กำลังดึงรายละเอียด...</p>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
+            <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+                <button onclick="openPreviewVideoModal()" class="px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:opacity-90 text-white font-bold rounded-2xl text-xs shadow-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-play-circle text-base"></i> ตัวอย่างคลิปที่นักเรียนเห็น
+                </button>
                 <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-center">
                     <div id="statEnrolledStudents" class="text-xl font-extrabold text-purple-600 dark:text-purple-400">0</div>
                     <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนในคอร์ส</div>
@@ -178,7 +197,6 @@
             Swal.fire({ title: 'กำลังโหลดข้อมูลคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 1. ดึงข้อมูลคอร์ส
                 const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).maybeSingle();
                 if (!courseRes.data) {
                     Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
@@ -186,7 +204,6 @@
                 }
                 currentCourse = courseRes.data;
 
-                // 2. ดึงรายชื่อนักเรียน (Safe fallback)
                 let rawProfiles = [];
                 const studentsRes = await mySupabase.from('profiles').select('*');
                 if (studentsRes.data) {
@@ -201,25 +218,20 @@
                     uid: String(p.id || p.user_id || p.student_id || '')
                 })).filter(p => !isUserAdmin(p));
 
-                // 3. ดึงข้อมูลการลงทะเบียน (Course Enrollments)
                 const enrollRes = await mySupabase.from('course_enrollments').select('*').eq('course_id', courseId);
                 enrolledStudentIds = (enrollRes.data || []).map(e => String(e.student_id || e.user_id || ''));
 
-                // 4. ดึงข้อมูลบทเรียนหลัก (Modules)
                 const modulesRes = await mySupabase.from('course_modules').select('*').eq('course_id', courseId).order('sequence_order', { ascending: true });
                 courseModules = modulesRes.data || [];
 
-                // 5. ดึงข้อมูลบทเรียนย่อย (Lessons)
                 const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
                 courseLessons = lessonsRes.data || [];
 
-                // 6. ดึงข้อมูลหมวดหมู่ข้อสอบ
                 const catsRes = await mySupabase.from('exam_categories').select('*');
                 if (catsRes.data) {
                     catsRes.data.forEach(c => { categoriesMap[c.id] = c.name; });
                 }
 
-                // 7. ดึงชุดข้อสอบทั้งหมด
                 const examsRes = await mySupabase.from('exams').select('*');
                 if (examsRes.data) {
                     courseExams = examsRes.data.filter(ex => {
@@ -229,7 +241,6 @@
                     });
                 }
 
-                // 8. ดึงประวัติการส่งข้อสอบ (Exam Attempts)
                 const activeExamIds = new Set(courseExams.map(e => String(e.id)));
                 const attemptsRes = await mySupabase.from('exam_attempts').select('*');
                 allAttemptsRaw = (attemptsRes.data || []).filter(a => activeExamIds.has(String(a.exam_id)));
@@ -242,7 +253,6 @@
                     courseAttemptsMap[eId].push(score);
                 });
 
-                // 9. ดึงข้อมูลคำถามในข้อสอบ
                 const qRes = await mySupabase.from('questions').select('id, exam_id');
                 if (qRes.data) {
                     qRes.data.forEach(q => {
@@ -264,6 +274,78 @@
             document.getElementById('statEnrolledStudents').textContent = enrolledStudentIds.length;
 
             switchCourseTab(currentTab);
+        }
+
+        // --- ฟังก์ชันแปลง Google Drive URL เป็น Secure Preview Embed ---
+        function getSecureEmbedUrl(url) {
+            if (!url) return '';
+            let videoUrl = url.trim();
+            // ถ้าเป็น Google Drive ให้แปลงเป็นแบบ preview เพื่อซ่อนปุ่ม Download ด้านบน
+            if (videoUrl.includes('drive.google.com')) {
+                let fileId = '';
+                if (videoUrl.includes('/file/d/')) {
+                    const parts = videoUrl.split('/file/d/');
+                    if (parts[1]) fileId = parts[1].split('/')[0];
+                } else if (videoUrl.includes('id=')) {
+                    const urlParamsObj = new URLSearchParams(videoUrl.split('?')[1]);
+                    fileId = urlParamsObj.get('id');
+                }
+                if (fileId) {
+                    return `https://drive.google.com/file/d/${fileId}/preview`;
+                }
+            }
+            return videoUrl;
+        }
+
+        // --- เปิดหน้าต่างทดสอบดูคลิปตัวอย่างเสมือนที่นักเรียนเห็น พร้อมระบบป้องกันดาวน์โหลด ---
+        function openPreviewVideoModal() {
+            const previewLessons = courseLessons.filter(l => l.video_url || l.video || l.url);
+            if (previewLessons.length === 0) {
+                Swal.fire('แจ้งเตือน', 'คอร์สนี้ยังไม่มีวิดีโอตัวอย่างหรือบทเรียนวิดีโอที่เพิ่มเข้ามา', 'warning');
+                return;
+            }
+
+            let optionsHtml = previewLessons.map((l, idx) => `<option value="${l.video_url || l.video || l.url}">บทที่ ${idx + 1}: ${l.title}</option>`).join('');
+            const initialEmbedUrl = getSecureEmbedUrl(previewLessons[0].video_url || previewLessons[0].video || previewLessons[0].url);
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            Swal.fire({
+                title: '🎓 ตัวอย่างคลิปวิดีโอ (มุมมองนักเรียน)',
+                width: '750px',
+                html: `
+                    <div class="space-y-4 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">เลือกบทเรียนวิดีโอตัวอย่าง:</label>
+                            <select id="previewSelectLesson" onchange="changePreviewVideo(this)" class="w-full px-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-300 dark:border-slate-700 rounded-xl font-bold outline-none cursor-pointer">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                        <div class="secure-video-wrapper relative w-full aspect-video rounded-2xl overflow-hidden shadow-inner border border-slate-700">
+                            <!-- แผ่นใสทับเพื่อป้องกันการคลิกขวาหรือลากไฟล์วิดีโอโดยตรง -->
+                            <div class="absolute inset-0 z-20" oncontextmenu="return false;" style="background: transparent;"></div>
+                            <iframe id="previewVideoIframe" src="${initialEmbedUrl}" class="w-full h-full border-0 relative z-10" allow="autoplay" allowfullscreen></iframe>
+                        </div>
+                        <div class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 flex items-center gap-2">
+                            <i class="fas fa-shield-halved text-sm"></i> ระบบเปิดใช้งานโหมดป้องกันการดาวน์โหลด (Anti-Download Protection) เรียบร้อยแล้ว
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'ปิดหน้าต่างตัวอย่าง',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b'
+            });
+        }
+
+        function changePreviewVideo(selectEl) {
+            const rawUrl = selectEl.value;
+            const embedUrl = getSecureEmbedUrl(rawUrl);
+            const iframe = document.getElementById('previewVideoIframe');
+            if (iframe) {
+                iframe.src = embedUrl;
+            }
         }
 
         function switchCourseTab(tabName) {
@@ -369,8 +451,8 @@
                             <input id="swalLessonTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (YouTube / Video URL)</label>
-                            <input id="swalLessonVideo" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono">
+                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (Google Drive / Video URL)</label>
+                            <input id="swalLessonVideo" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono" placeholder="วางลิงก์ Google Drive หรือ YouTube">
                         </div>
                     </div>
                 `,
