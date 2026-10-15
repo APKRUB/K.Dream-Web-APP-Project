@@ -67,7 +67,7 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.2</span>
+                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.3</span>
                     </div>
                     <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">Student Examination Center</p>
                 </div>
@@ -472,14 +472,19 @@
                 currentStudentData = profileData;
                 studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
             } else {
-                const { data: studentData } = await mySupabase
-                    .from('students')
-                    .select('*')
-                    .eq('id', currentStudentId)
-                    .maybeSingle();
-                if (studentData) {
-                    currentStudentData = studentData;
-                    studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                // Fallback ป้องกัน error ถ้าไม่มีตาราง students โดยตรง
+                try {
+                    const { data: studentData } = await mySupabase
+                        .from('students')
+                        .select('*')
+                        .eq('id', currentStudentId)
+                        .maybeSingle();
+                    if (studentData) {
+                        currentStudentData = studentData;
+                        studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                    }
+                } catch (err) {
+                    console.warn("Table students not found or skipped:", err);
                 }
             }
 
@@ -606,7 +611,7 @@
                         </div>
                         <div>
                             <label class="block font-bold mb-1 text-slate-400">เลขประจำตัวนักเรียน (ล็อกโดย Admin)</label>
-                            <input disabled value="${currentStudentData.student_id || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                            <input disabled value="${currentStudentData.student_id || currentStudentData.id || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
                         </div>
                     </div>
                 `,
@@ -632,8 +637,7 @@
 
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const tableName = currentStudentData.student_id !== undefined ? 'students' : 'profiles';
-                const { error } = await mySupabase.from(tableName).update(formValues).eq('id', currentStudentId);
+                const { error } = await mySupabase.from('profiles').update(formValues).eq('id', currentStudentId);
                 
                 if (!error) {
                     currentStudentData = { ...currentStudentData, ...formValues };
@@ -736,19 +740,25 @@
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
+            // 1. ดึงข้อมูลคอร์สเรียนทั้งหมด
             const { data: coursesData } = await mySupabase.from('courses').select('*');
             allCourses = coursesData || [];
 
+            // 2. ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียน (รองรับฟิลด์ student_id และ user_id)
             const { data: enrollments } = await mySupabase
                 .from('course_enrollments')
                 .select('*')
                 .or(`student_id.eq.${currentStudentId},user_id.eq.${currentStudentId}`);
 
-            enrolledCourseIds = (enrollments || []).map(e => String(e.course_id || e.courseid));
+            enrolledCourseIds = (enrollments || []).map(e => String(e.course_id || e.courseid || ''));
             
+            // กรองคอร์สที่ลงทะเบียนจริง
             enrolledCoursesList = allCourses.filter(c => enrolledCourseIds.includes(String(c.id)));
-            if (enrolledCoursesList.length === 0 && enrollments && enrollments.length > 0) {
-                enrolledCoursesList = allCourses; 
+            
+            // ถ้าไม่พบในตาราง course_enrollments หรือยังไม่ได้ผูก ให้ดึงคอร์สทั้งหมดเป็น Fallback เพื่อไม่ให้หน้าว่าง
+            if (enrolledCoursesList.length === 0) {
+                enrolledCoursesList = allCourses;
+                enrolledCourseIds = allCourses.map(c => String(c.id));
             }
 
             // Populate Global Course Dropdown
@@ -883,8 +893,13 @@
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
                 const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
                 
+                // ตรวจสอบสถานะ countdown (ถ้ามี start_time และยังไม่ถึงเวลา)
                 let isCountdown = false;
-                if (exam.status === 'countdown' || (exam.start_time && new Date(exam.start_time).getTime() > Date.now())) {
+                if (exam.start_time) {
+                    if (new Date(exam.start_time).getTime() > Date.now()) {
+                        isCountdown = true;
+                    }
+                } else if (exam.status === 'countdown') {
                     isCountdown = true;
                 }
 
@@ -1009,13 +1024,15 @@
                 let statusBadge = '';
                 let cardHighlightClass = '';
 
-                let isCountdown = status === 'countdown';
+                let isCountdown = false;
                 let startTimeMs = 0;
                 if (exam.start_time) {
                     startTimeMs = new Date(exam.start_time).getTime();
                     if (startTimeMs > Date.now()) {
                         isCountdown = true;
                     }
+                } else if (status === 'countdown') {
+                    isCountdown = true;
                 }
 
                 if (completedCount > 0) {
@@ -1109,8 +1126,10 @@
                 return;
             }
 
-            let isCountdown = exam.status === 'countdown';
+            let isCountdown = false;
             if (exam.start_time && new Date(exam.start_time).getTime() > Date.now()) {
+                isCountdown = true;
+            } else if (exam.status === 'countdown') {
                 isCountdown = true;
             }
 
@@ -1168,7 +1187,6 @@
             const container = document.getElementById('examHistoryList');
             const searchKeyword = (document.getElementById('searchHistoryInput').value || '').toLowerCase().trim();
 
-            // แสดงเฉพาะชุดข้อสอบที่นักเรียนได้ทำและส่งแล้วเท่านั้น (completed / submitted)
             const completedAttempts = userAttempts.filter(a => {
                 const isCompleted = a.status === 'completed' || a.submitted_at || a.submission_time;
                 if (!isCompleted) return false;
@@ -1240,7 +1258,6 @@
         function renderExamCheckboxes() {
             const container = document.getElementById('examCheckboxGroup');
             
-            // กรองเฉพาะข้อสอบที่นักเรียนได้ทำเสร็จแล้วและอยู่ในคอร์สที่เลือก
             const completedAttempts = userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time);
             const completedExamIds = [...new Set(completedAttempts.map(a => a.exam_id))];
 
