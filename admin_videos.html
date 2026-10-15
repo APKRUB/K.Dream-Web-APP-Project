@@ -4,7 +4,7 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จัดการวิดีโอและสถิติการรับชม</title>
+    <title>LMS | จัดการวิดีโอบทเรียน</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -58,7 +58,7 @@
                     </button>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-video"></i></span>
-                        ศูนย์จัดการและสถิติวิดีโอ
+                        ศูนย์จัดการเทปเรียนย้อนหลัง
                     </h1>
                 </div>
                 <div class="flex items-center gap-3">
@@ -75,8 +75,8 @@
         <!-- Header & Course Filter Bar -->
         <div class="hitech-card p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-8 border-l-sky-500">
             <div class="space-y-1">
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการวิดีโอ & สถิติการรับชม</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เลือกคอร์สเพื่อกรองดูวิดีโอ หรือเรียกดูภาพรวมสถิติทั้งหมดในระบบ</p>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการวิดีโอบทเรียน</h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เลือกคอร์สเพื่อกรองดูวิดีโอ หรือเพิ่มวิดีโอใหม่เข้าสู่บทเรียน</p>
             </div>
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                 <div class="flex items-center gap-2 bg-slate-100 dark:bg-darkinput px-3 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 w-full md:w-auto">
@@ -92,39 +92,25 @@
             </div>
         </div>
 
-        <!-- Statistics Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Statistics Summary Cards (แสดงเฉพาะจำนวนคลิปและคอร์ส) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
                 <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-film"></i></div>
                 <div>
-                    <span class="text-xs text-slate-400 font-bold block">วิดีโอทั้งหมด</span>
+                    <span class="text-xs text-slate-400 font-bold block">วิดีโอทั้งหมดในระบบ</span>
                     <span id="statTotalVideos" class="text-xl font-extrabold text-slate-900 dark:text-white">0 คลิป</span>
-                </div>
-            </div>
-            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-indigo-500">
-                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-eye"></i></div>
-                <div>
-                    <span class="text-xs text-slate-400 font-bold block">ยอดรับชมรวม</span>
-                    <span id="statTotalViews" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span>
                 </div>
             </div>
             <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500">
                 <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chalkboard-user"></i></div>
                 <div>
-                    <span class="text-xs text-slate-400 font-bold block">คอร์สที่มีวิดีโอ</span>
+                    <span class="text-xs text-slate-400 font-bold block">คอร์สที่มีวิดีโอบทเรียน</span>
                     <span id="statActiveCourses" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คอร์ส</span>
-                </div>
-            </div>
-            <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-trophy"></i></div>
-                <div>
-                    <span class="text-xs text-slate-400 font-bold block">คลิปยอดฮิตสูงสุด</span>
-                    <span id="statTopVideoName" class="text-xs font-extrabold text-amber-500 truncate max-w-[150px] block">-</span>
                 </div>
             </div>
         </div>
 
-        <!-- Video Management & Analytics Main Section -->
+        <!-- Video Management Main Section -->
         <div class="hitech-card p-6 rounded-3xl space-y-4">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-4 border-b border-sky-500/20">
                 <div>
@@ -144,8 +130,7 @@
                             <th class="p-3">ลำดับ</th>
                             <th class="p-3">ชื่อวิดีโอ / บทเรียน</th>
                             <th class="p-3">คอร์สที่สังกัด</th>
-                            <th class="p-3 text-center">ยอดวิว (Views)</th>
-                            <th class="p-3 text-center">สถานะ / วันที่สร้าง</th>
+                            <th class="p-3 text-center">วันที่สร้าง</th>
                             <th class="p-3 text-center">จัดการ</th>
                         </tr>
                     </thead>
@@ -210,7 +195,7 @@
                 let fetchedVideos = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
                 if (lessonRes.data) {
-                    fetchedVideos = lessonRes.data.filter(l => l.video_url || l.video || l.url);
+                    fetchedVideos = lessonRes.data.filter(l => l.video_url || l.video || l.url || l.youtube_id);
                 }
 
                 if (fetchedVideos.length === 0) {
@@ -223,9 +208,8 @@
                 allVideos = fetchedVideos.map(v => ({
                     id: v.id,
                     title: v.title || v.name || 'ไม่มีชื่อวิดีโอ',
-                    course_id: v.course_id || v.courseid || v.course || null,
+                    course_id: String(v.course_id || v.courseid || v.course || ''),
                     video_url: v.video_url || v.video || v.url || '',
-                    views: Number(v.views || v.view_count || Math.floor(Math.random() * 50) + 5),
                     created_at: v.created_at || new Date().toISOString()
                 }));
 
@@ -248,25 +232,14 @@
 
         function updateDashboardStats() {
             const totalVideosEl = document.getElementById('statTotalVideos');
-            const totalViewsEl = document.getElementById('statTotalViews');
             const activeCoursesEl = document.getElementById('statActiveCourses');
-            const topVideoNameEl = document.getElementById('statTopVideoName');
-
             if (!totalVideosEl) return;
 
-            let filteredVideos = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => String(v.course_id) === String(selectedCourseId));
+            let filteredVideos = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => v.course_id === String(selectedCourseId));
 
             totalVideosEl.textContent = `${filteredVideos.length} คลิป`;
-
-            const totalViews = filteredVideos.reduce((acc, curr) => acc + (curr.views || 0), 0);
-            totalViewsEl.textContent = `${totalViews.toLocaleString()} ครั้ง`;
-
             const uniqueCourses = new Set(filteredVideos.map(v => v.course_id).filter(Boolean));
             activeCoursesEl.textContent = `${uniqueCourses.size} คอร์ส`;
-
-            let topVideo = [...filteredVideos].sort((a, b) => b.views - a.views)[0];
-            topVideoNameEl.textContent = topVideo ? topVideo.title : '-';
-            if (topVideo) topVideoNameEl.title = topVideo.title;
         }
 
         function renderVideoList() {
@@ -277,7 +250,7 @@
 
             const keyword = (document.getElementById('videoSearchInput')?.value || '').trim().toLowerCase();
 
-            let filtered = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => String(v.course_id) === String(selectedCourseId));
+            let filtered = selectedCourseId === 'all' ? allVideos : allVideos.filter(v => v.course_id === String(selectedCourseId));
 
             if (keyword) {
                 filtered = filtered.filter(v => v.title.toLowerCase().includes(keyword));
@@ -295,12 +268,12 @@
             if (countLabel) countLabel.textContent = `แสดง ${filtered.length} รายการ`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ไม่พบข้อมูลวิดีโอในเงื่อนไขนี้</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-400">ไม่พบข้อมูลวิดีโอในเงื่อนไขนี้</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map((v, idx) => {
-                const cObj = allCourses.find(c => String(c.id) === String(v.course_id));
+                const cObj = allCourses.find(c => String(c.id) === v.course_id);
                 const courseName = cObj ? cObj.title : '<span class="text-amber-500 italic">⚠️ ยังไม่ระบุคอร์ส</span>';
                 const dateStr = v.created_at ? new Date(v.created_at).toLocaleDateString('th-TH') : '-';
 
@@ -312,13 +285,12 @@
                             <span class="line-clamp-1">${v.title}</span>
                         </td>
                         <td class="p-3">${courseName}</td>
-                        <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${(v.views || 0).toLocaleString()} วิว</td>
                         <td class="p-3 text-center text-slate-400 text-[11px]">${dateStr}</td>
                         <td class="p-3 text-center flex items-center justify-center gap-1.5">
                             <a href="${v.video_url}" target="_blank" class="px-2.5 py-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ดูคลิป">
                                 <i class="fas fa-play"></i>
                             </a>
-                            <button onclick="openEditVideoModal('${v.id}')" class="px-2.5 py-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="แก้ไขคอร์ส/ข้อมูล">
+                            <button onclick="openEditVideoModal('${v.id}')" class="px-2.5 py-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="แก้ไขข้อมูล">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button onclick="deleteVideo('${v.id}')" class="px-2.5 py-1 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg font-bold text-[11px] transition-all" title="ลบวิดีโอ">
@@ -351,8 +323,8 @@
                             <input id="swalVideoTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น EP.1 แนะนำพื้นฐาน Python">
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (YouTube URL / Video Link) <span class="text-red-500">*</span></label>
-                            <input id="swalVideoUrl" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono" placeholder="https://www.youtube.com/watch?v=...">
+                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (Google Drive / YouTube) <span class="text-red-500">*</span></label>
+                            <input id="swalVideoUrl" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono" placeholder="https://...">
                         </div>
                     </div>
                 `,
@@ -396,7 +368,7 @@
             const video = allVideos.find(v => String(v.id) === String(videoId));
             if (!video) return;
             const isDark = document.documentElement.classList.contains('dark');
-            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === String(video.course_id) ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
+            let courseOptionsHtml = allCourses.map(c => `<option value="${c.id}" ${String(c.id) === video.course_id ? 'selected' : ''}>[${c.course_code || 'CRS'}] ${c.title}</option>`).join('');
 
             const { value: formValues } = await Swal.fire({
                 title: '✏️ แก้ไขคอร์สและข้อมูลวิดีโอ',
