@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ระบบจัดการเทปเรียนย้อนหลัง (Secure Video Vault)</title>
+    <title>LMS | ระบบจัดการเทปเรียนย้อนหลัง (Google Drive Vault)</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -75,12 +75,12 @@
                     <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30">
-                        <i class="fas fa-video"></i>
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
+                        <i class="fas fa-brands fa-google-drive"></i>
                     </div>
                     <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Secure Video Vault</h1>
-                        <span class="text-[10px] text-rose-600 dark:text-rose-400 font-bold tracking-wider uppercase">ระบบจัดการเทปเรียนย้อนหลัง</span>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Google Drive Video Vault</h1>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">ระบบเทปเรียนย้อนหลัง (กรอได้ / ปรับสปีดได้)</span>
                     </div>
                 </div>
 
@@ -96,18 +96,18 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
         <!-- ส่วนหัวข้อ & ฟอร์มเพิ่มเทปเรียน -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl space-y-6 border-rose-500/30">
+        <div class="hitech-card p-6 sm:p-8 rounded-3xl space-y-6 border-sky-500/30">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div>
                     <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-shield-halved text-rose-500"></i> อัปโหลดและจัดการเทปเรียนย้อนหลัง
+                        <i class="fas fa-cloud-arrow-up text-sky-500"></i> เพิ่มเทปเรียนผ่านลิงก์ Google Drive
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        นักเรียนสามารถกดเล่น กรอคลิป และปรับความเร็วได้ปกติ พร้อมระบบซ่อนลิงก์และป้องกันการดาวน์โหลด
+                        รองรับลิงก์แชร์จาก Google Drive (ตั้งค่าสิทธิ์เป็น "ทุกคนที่มีลิงก์สามารถดูได้") ผู้เรียนสามารถกดเล่น กรอ และปรับสปีดได้อิสระ
                     </p>
                 </div>
-                <span class="px-3 py-1 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold border border-rose-500/20">
-                    <i class="fas fa-lock mr-1"></i> Secure Player Mode
+                <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20">
+                    <i class="fas fa-bolt mr-1"></i> Google Drive Stream Mode
                 </span>
             </div>
 
@@ -115,15 +115,15 @@
             <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                 <div class="md:col-span-5 space-y-1.5">
                     <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">ชื่อหัวข้อบทเรียน / วิชา</label>
-                    <input type="text" id="videoTitleInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-rose-500" placeholder="เช่น ตะลุยโจทย์ฟิสิกส์ ม.3 ครั้งที่ 1">
+                    <input type="text" id="videoTitleInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500" placeholder="เช่น ตะลุยโจทย์ฟิสิกส์ ม.3 ครั้งที่ 1">
                 </div>
                 <div class="md:col-span-5 space-y-1.5">
-                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">ลิงก์ YouTube (Unlisted หรือ URL เต็ม)</label>
-                    <input type="text" id="videoUrlInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-rose-500" placeholder="https://youtu.be/xxxxx">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">ลิงก์ Google Drive (Share Link)</label>
+                    <input type="text" id="videoUrlInput" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500" placeholder="https://drive.google.com/file/d/xxxx/view?usp=sharing">
                 </div>
                 <div class="md:col-span-2">
-                    <button onclick="addNewVideo()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5">
-                        <i class="fas fa-cloud-arrow-up"></i> เพิ่มเทปเรียน
+                    <button onclick="addNewVideo()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5">
+                        <i class="fas fa-plus"></i> เพิ่มเทปเรียน
                     </button>
                 </div>
             </div>
@@ -147,10 +147,10 @@
 
                     <!-- ปุ่มสลับมุมมอง (Grid / List) -->
                     <div class="flex items-center gap-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl border border-slate-300 dark:border-slate-700 text-xs shrink-0">
-                        <button onclick="switchViewMode('grid')" id="btn-mode-grid" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5">
+                        <button onclick="switchViewMode('grid')" id="btn-mode-grid" class="px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5">
                             <i class="fas fa-border-all"></i> การ์ด
                         </button>
-                        <button onclick="switchViewMode('list')" id="btn-mode-list" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5">
+                        <button onclick="switchViewMode('list')" id="btn-mode-list" class="px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5">
                             <i class="fas fa-list"></i> รายการ
                         </button>
                     </div>
@@ -169,25 +169,25 @@
 
     </main>
 
-    <!-- Modal สำหรับดูวิดีโอ -->
+    <!-- Modal สำหรับดูวิดีโอ Google Drive -->
     <div id="videoModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-darkbox border border-slate-800 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative space-y-4 p-6">
             <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                 <h3 id="modalVideoTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-play-circle text-rose-500"></i> กำลังเล่นเทปเรียน
+                    <i class="fas fa-play-circle text-sky-500"></i> กำลังเล่นเทปเรียน
                 </h3>
-                <button onclick="closeVideoModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-white hover:bg-rose-600 transition-all">
+                <button onclick="closeVideoModal()" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-white hover:bg-sky-600 transition-all">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <!-- ตัวเล่นวิดีโอ (อนุญาตให้กดปุ่ม ควบคุม เล่น/หยุด กรอ และปรับสปีดได้ปกติ) -->
+            <!-- ตัวเล่นวิดีโอ Google Drive (กรอได้ ปรับสปีดได้ผ่าน Player ปกติ) -->
             <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
                 <div id="iframePlayerWrapper" class="w-full h-full relative"></div>
             </div>
 
             <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
-                <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ผู้เรียนสามารถกดเล่น หยุด กรอ และปรับความเร็ววิดีโอได้อิสระ</span>
+                <span><i class="fas fa-check-circle text-emerald-500 mr-1"></i> ผู้เรียนสามารถกดเล่น หยุด กรอ และปรับความเร็ววิดีโอได้อิสระ</span>
                 <button onclick="closeVideoModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all">ปิดหน้าต่าง</button>
             </div>
         </div>
@@ -247,11 +247,11 @@
             const btnList = document.getElementById('btn-mode-list');
 
             if (mode === 'grid') {
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5';
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5';
+                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
+                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
             } else {
-                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-rose-600 text-white shadow-sm flex items-center gap-1.5';
-                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-rose-500 flex items-center gap-1.5';
+                btnList.className = 'px-3 py-1.5 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1.5';
+                btnGrid.className = 'px-3 py-1.5 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1.5';
             }
             renderVideos();
         }
@@ -280,7 +280,7 @@
 
             if (currentViewMode === 'grid') {
                 container.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
-                container.innerHTML = filtered.map((v, index) => `
+                container.innerHTML = filtered.map((v) => `
                     <div class="hitech-card p-5 rounded-3xl space-y-4 relative overflow-hidden group draggable-item" draggable="true" data-id="${v.id}">
                         <div class="flex justify-between items-start">
                             <div class="flex items-center gap-2.5">
@@ -288,7 +288,7 @@
                                     <i class="fas fa-grip-vertical"></i>
                                 </div>
                                 <div class="space-y-1">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-500/20">Secure Vault</span>
+                                    <span class="px-2.5 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20">Google Drive Stream</span>
                                     <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1">${v.title}</h4>
                                     <p class="text-[11px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleString('th-TH')}</p>
                                 </div>
@@ -298,22 +298,22 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-3 pt-2">
-                            <button onclick="openSecurePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i> รับชมเทปเรียน (ควบคุมได้ปกติ)
+                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
+                                <i class="fas fa-play"></i> รับชมเทปเรียน (Google Drive)
                             </button>
                         </div>
                     </div>
                 `).join('');
             } else {
                 container.className = 'space-y-3';
-                container.innerHTML = filtered.map((v, index) => `
+                container.innerHTML = filtered.map((v) => `
                     <div class="hitech-card p-4 rounded-2xl flex items-center justify-between gap-4 draggable-item" draggable="true" data-id="${v.id}">
                         <div class="flex items-center gap-3">
                             <div class="drag-handle text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab p-1" title="ลากเพื่อจัดลำดับ">
                                 <i class="fas fa-grip-vertical"></i>
                             </div>
-                            <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center font-bold text-sm shrink-0">
-                                <i class="fas fa-video"></i>
+                            <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-sm shrink-0">
+                                <i class="fas fa-brands fa-google-drive"></i>
                             </div>
                             <div>
                                 <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">${v.title}</h4>
@@ -321,7 +321,7 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <button onclick="openSecurePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
+                            <button onclick="openDrivePlayer('${v.youtube_id}', '${encodeURIComponent(v.title)}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1.5">
                                 <i class="fas fa-play"></i> รับชม
                             </button>
                             <button onclick="deleteVideo('${v.id}')" class="w-9 h-9 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl flex items-center justify-center transition-all text-xs" title="ลบ">
@@ -391,25 +391,24 @@
             const urlInput = document.getElementById('videoUrlInput').value.trim();
 
             if (!title || !urlInput) {
-                Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบถ้วน', text: 'โปรดใส่ชื่อหัวข้อและลิงก์ YouTube ให้เรียบร้อย' });
+                Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบถ้วน', text: 'โปรดใส่ชื่อหัวข้อและลิงก์ Google Drive ให้เรียบร้อย' });
                 return;
             }
 
-            let videoId = '';
-            if (urlInput.includes('youtu.be/')) {
-                videoId = urlInput.split('youtu.be/')[1].split('?')[0];
-            } else if (urlInput.includes('watch?v=')) {
-                videoId = urlInput.split('watch?v=')[1].split('&')[0];
-            } else if (urlInput.includes('embed/')) {
-                videoId = urlInput.split('embed/')[1].split('?')[0];
+            // แปลงลิงก์ Google Drive ให้เป็นรหัส File ID
+            let fileId = '';
+            if (urlInput.includes('/file/d/')) {
+                fileId = urlInput.split('/file/d/')[1].split('/')[0];
+            } else if (urlInput.includes('id=')) {
+                fileId = urlInput.split('id=')[1].split('&')[0];
             } else {
-                videoId = urlInput;
+                fileId = urlInput; // เผื่อกรณีใส่ File ID มาตรงๆ
             }
 
             try {
                 const { error } = await mySupabase.from('videos').insert([{
                     title: title,
-                    youtube_id: videoId,
+                    youtube_id: fileId, // ใช้คอลัมน์เดิมเก็บ File ID ของ Google Drive
                     display_order: cachedVideos.length,
                     created_at: new Date().toISOString()
                 }]);
@@ -433,14 +432,14 @@
             }
         }
 
-        function openSecurePlayer(videoId, encodedTitle) {
+        function openDrivePlayer(fileId, encodedTitle) {
             const title = decodeURIComponent(encodedTitle);
-            document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-rose-500"></i> ${title}`;
+            document.getElementById('modalVideoTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
             
             const wrapper = document.getElementById('iframePlayerWrapper');
-            // อนุญาตให้ผู้ใช้กดควบคุม (เล่น, หยุด, กรอ, ปรับความเร็ว) ได้ปกติ แต่ใช้ nocookie และซ่อนโลโก้เพื่อความเรียบร้อย
+            // ใช้ลิงก์ Preview ของ Google Drive ซึ่งรองรับการเล่น กรอ และปรับสปีดได้เต็มรูปแบบ
             wrapper.innerHTML = `
-                <iframe class="w-full h-full" src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3" title="Secure Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <iframe class="w-full h-full" src="https://drive.google.com/file/d/${fileId}/preview" title="Google Drive Video Player" frameborder="0" allow="autoplay" allowfullscreen></iframe>
             `;
 
             document.getElementById('videoModal').classList.remove('hidden');
