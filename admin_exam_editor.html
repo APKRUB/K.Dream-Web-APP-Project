@@ -188,8 +188,12 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('id') || urlParams.get('exam_id');
-        // 🌟 ดึง course_id ติดมาจาก URL ตั้งแต่แรก (ถ้ามี)
-        let examCourseId = urlParams.get('course_id') || null;
+        
+        // 🌟 บันทึก course_id ลง localStorage ทันทีถ้ามีส่งมาใน URL
+        const urlCourseId = urlParams.get('course_id');
+        if (urlCourseId) {
+            localStorage.setItem('active_exam_course_id', urlCourseId);
+        }
 
         let hasUnsavedChanges = false;
         let cachedQuestions = [];
@@ -220,14 +224,15 @@
             if (banner) banner.classList.remove('show');
         }
 
-        // 🌟 ฟังก์ชันจัดการปุ่มย้อนกลับ เช็คจากทั้ง URL Parameter และข้อมูลในฐานข้อมูล
+        // 🌟 ฟังก์ชันจัดการปุ่มย้อนกลับ ดึงจาก localStorage หรือ URL
         function handleNavigate(targetUrl) {
             if (hasUnsavedChanges) {
                 triggerScreenShakeWarning();
                 return;
             }
-            if (examCourseId) {
-                window.location.href = `admin_exams.html?course_id=${examCourseId}`;
+            const savedCourseId = localStorage.getItem('active_exam_course_id');
+            if (savedCourseId) {
+                window.location.href = `admin_exams.html?course_id=${savedCourseId}`;
             } else {
                 window.location.href = targetUrl;
             }
@@ -300,12 +305,16 @@
             if (data) {
                 currentExamData = data;
                 
-                // ถ้าใน URL ไม่มี course_id ให้ดึงจากข้อมูลคอร์สที่ผูกไว้ในฐานข้อมูล
-                if (!examCourseId && data.course_id) {
+                // 🌟 หากใน localStorage ยังไม่มี ให้เช็คจากคอร์สที่ผูกไว้ในฐานข้อมูลแล้วเซฟเก็บไว้
+                if (!localStorage.getItem('active_exam_course_id') && data.course_id) {
+                    let cId = null;
                     if (Array.isArray(data.course_id) && data.course_id.length > 0) {
-                        examCourseId = data.course_id[0];
+                        cId = data.course_id[0];
                     } else if (typeof data.course_id === 'string') {
-                        examCourseId = data.course_id;
+                        cId = data.course_id;
+                    }
+                    if (cId) {
+                        localStorage.setItem('active_exam_course_id', cId);
                     }
                 }
 
