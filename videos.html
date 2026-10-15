@@ -10,27 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- STUDENT AUTH GUARD -->
-    <script>
-        (function() {
-            let hasSession = false;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) {
-                        hasSession = true;
-                        break;
-                    }
-                }
-            }
-            const fallbackId = localStorage.getItem('id') || localStorage.getItem('user_id');
-            if (!hasSession && !fallbackId) {
-                window.location.replace('index.html');
-            }
-        })();
-    </script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -57,13 +36,16 @@
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
-        /* ปิดการใช้งานปุ่มเปิดหน้าต่างภายนอก (Pop-out) ที่มุมขวาบนของ Google Drive iframe */
         .popout-blocker {
             position: absolute; top: 0; right: 0; width: 80px; height: 60px; z-index: 30; background: transparent; cursor: not-allowed;
         }
         .hide-scrollbar::-webkit-scrollbar { width: 6px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
+        
+        #sidebarPanel {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-12" oncontextmenu="return false;">
@@ -73,7 +55,6 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <!-- แก้ไขปุ่มย้อนกลับให้กลับไป student.html -->
                     <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm" title="กลับหน้าหลักนักเรียน">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
@@ -87,6 +68,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" id="sidebarToggleBtn" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 hover:bg-sky-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5" title="ซ่อน/แสดงรายการบทเรียน">
+                        <i class="fas fa-columns"></i> <span class="hidden sm:inline">ซ่อน/แสดงรายการ</span>
+                    </button>
+
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
                     </button>
@@ -98,42 +83,41 @@
     <!-- Main Split View Layout -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="flex flex-col lg:flex-row gap-5 items-start">
             
-            <!-- ฝั่งซ้าย: รายการบทเรียน (List View) พร้อมช่องค้นหา -->
-            <div class="lg:col-span-5 hitech-card p-5 rounded-3xl space-y-4 flex flex-col h-[calc(100vh-140px)] sticky top-24">
-                <div class="space-y-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <!-- ฝั่งซ้าย: รายการบทเรียน -->
+            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-120px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
+                <div class="space-y-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-list text-sky-500"></i> รายการบทเรียน (<span id="videoCountDisplay">0</span>)
                         </h3>
                     </div>
                     <!-- ช่องค้นหาแบบ Live Search -->
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-                            <i class="fas fa-search text-xs"></i>
+                            <i class="fas fa-search text-[10px]"></i>
                         </span>
-                        <input type="text" id="videoSearchInput" oninput="handleLiveSearch()" class="w-full pl-9 pr-4 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500 shadow-sm" placeholder="ค้นหาชื่อบทเรียน...">
+                        <input type="text" id="videoSearchInput" oninput="handleLiveSearch()" class="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-sky-500 shadow-sm" placeholder="ค้นหาบทเรียน...">
                     </div>
                 </div>
 
                 <!-- รายการวิดีโอแบบเลื่อนได้ -->
-                <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2.5 pr-1 hide-scrollbar">
+                <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดรายการเทปเรียน...
+                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังตรวจสอบสิทธิ์และโหลดข้อมูล...
                     </div>
                 </div>
             </div>
 
-            <!-- ฝั่งขวา: หน้าจอเล่นวิดีโอขนาดใหญ่ (Large Player View) -->
-            <div class="lg:col-span-7 hitech-card p-6 rounded-3xl space-y-4 flex flex-col">
-                <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
-                    <h3 id="currentPlayingTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+            <!-- ฝั่งขวา: หน้าจอเล่นวิดีโอขนาดใหญ่ -->
+            <div id="mainPlayerPanel" class="flex-1 w-full hitech-card p-5 sm:p-6 rounded-3xl space-y-4 flex flex-col">
+                <div class="flex justify-between items-center pb-2.5 border-b border-slate-200 dark:border-slate-800">
+                    <h3 id="currentPlayingTitle" class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2 truncate pr-2">
                         <i class="fas fa-play-circle text-sky-500"></i> กรุณาเลือกบทเรียนจากรายการด้านซ้าย
                     </h3>
                 </div>
 
-                <!-- ตัวเล่นวิดีโอ Google Drive ขนาดใหญ่ -->
                 <div class="w-full aspect-video bg-black rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center">
                     <div id="iframePlayerWrapper" class="w-full h-full relative flex items-center justify-center text-slate-500 text-xs bg-slate-900">
                         <div class="text-center space-y-2">
@@ -144,7 +128,7 @@
                     <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
                 </div>
 
-                <div class="flex justify-between items-center pt-2 text-[11px] text-slate-400">
+                <div class="flex justify-between items-center pt-1 text-[11px] text-slate-400">
                     <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลด • รองรับการกรอและปรับความเร็ว</span>
                     <span id="videoPublishDate">--</span>
                 </div>
@@ -162,6 +146,7 @@
         let cachedVideos = [];
         let searchQuery = '';
         let activeVideoId = null;
+        let isSidebarOpen = true;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -176,7 +161,18 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // ป้องกันคีย์ลัดอันตรายและคลิกขวา
+        function toggleSidebar() {
+            isSidebarOpen = !isSidebarOpen;
+            const sidebar = document.getElementById('sidebarPanel');
+            if (isSidebarOpen) {
+                sidebar.classList.remove('hidden');
+                sidebar.classList.add('flex');
+            } else {
+                sidebar.classList.remove('flex');
+                sidebar.classList.add('hidden');
+            }
+        }
+
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c' || e.key === 'i')) {
@@ -185,14 +181,50 @@
             if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
         });
 
-        async function loadVideos() {
+        // 🛡️ ระบบตรวจสอบสิทธิ์ความปลอดภัยขั้นสูง (Robust Auth Guard)
+        async function verifyStudentAccess() {
+            const studentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            if (!studentId) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่อนุญาตให้เข้าถึง',
+                    text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
+                    confirmButtonColor: '#0284c7'
+                });
+                window.location.replace('index.html');
+                return false;
+            }
+
+            // ตรวจสอบว่ามี ID นี้อยู่ในตาราง profiles หรือ students จริงหรือไม่
+            const { data: profile } = await mySupabase.from('profiles').select('id').eq('id', studentId).single();
+            if (profile) return true;
+
+            const { data: student } = await mySupabase.from('students').select('id').eq('id', studentId).single();
+            if (student) return true;
+
+            // หากไม่พบข้อมูลในฐานข้อมูล ให้เตะออกทันที
+            localStorage.removeItem('student_id');
+            localStorage.removeItem('id');
+            await Swal.fire({
+                icon: 'error',
+                title: 'เซสชันไม่ถูกต้อง',
+                text: 'ไม่พบข้อมูลบัญชีนักเรียนในระบบ กรุณาเข้าสู่ระบบใหม่อีกครั้ง',
+                confirmButtonColor: '#0284c7'
+            });
+            window.location.replace('index.html');
+            return false;
+        }
+
+        async function initVideoVault() {
+            const isValid = await verifyStudentAccess();
+            if (!isValid) return;
+
             try {
                 const { data, error } = await mySupabase.from('videos').select('*').order('display_order', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
                 if (error) throw error;
                 cachedVideos = data || [];
                 renderVideoList();
 
-                // ถ้ามีวิดีโอ ให้เลือกเล่นวิดีโอแรกโดยอัตโนมัติ
                 if (cachedVideos.length > 0) {
                     playVideo(cachedVideos[0].id, cachedVideos[0].youtube_id, cachedVideos[0].title, cachedVideos[0].created_at);
                 }
@@ -220,7 +252,7 @@
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12 text-slate-400 text-xs">
-                        <i class="fas fa-search text-2xl mb-2"></i>
+                        <i class="fas fa-search text-xl mb-2"></i>
                         <p>ไม่พบบทเรียนที่ค้นหา</p>
                     </div>
                 `;
@@ -230,17 +262,17 @@
             container.innerHTML = filtered.map(v => {
                 const isActive = activeVideoId === v.id;
                 return `
-                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}')" class="p-3.5 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="w-9 h-9 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
-                                <i class="fas ${isActive ? 'fa-play' : 'fa-video'}"></i>
+                    <div onclick="playVideo('${v.id}', '${v.youtube_id}', '${encodeURIComponent(v.title)}', '${v.created_at}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
+                                <i class="fas ${isActive ? 'fa-play' : 'fa-video'} text-[10px]"></i>
                             </div>
                             <div class="min-w-0">
-                                <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">${v.title}</h4>
+                                <h4 class="font-bold text-xs text-slate-900 dark:text-white truncate">${v.title}</h4>
                                 <p class="text-[10px] text-slate-400">${new Date(v.created_at).toLocaleDateString('th-TH')}</p>
                             </div>
                         </div>
-                        ${isActive ? '<span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse shrink-0"></span>' : ''}
+                        ${isActive ? '<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse shrink-0"></span>' : ''}
                     </div>
                 `;
             }).join('');
@@ -271,7 +303,7 @@
             });
         }
 
-        loadVideos();
+        initVideoVault();
     </script>
 </body>
 </html>
