@@ -188,11 +188,12 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const examId = urlParams.get('id') || urlParams.get('exam_id');
+        // 🌟 ดึง course_id ติดมาจาก URL ตั้งแต่แรก (ถ้ามี)
+        let examCourseId = urlParams.get('course_id') || null;
 
         let hasUnsavedChanges = false;
         let cachedQuestions = [];
         let currentExamData = null;
-        let examCourseId = null; // ตัวแปรเก็บ course_id ของข้อสอบชุดนี้
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -219,7 +220,7 @@
             if (banner) banner.classList.remove('show');
         }
 
-        // ฟังก์ชันจัดการปุ่มย้อนกลับให้กลับไปถูกคอร์สเดิมเสมอ
+        // 🌟 ฟังก์ชันจัดการปุ่มย้อนกลับ เช็คจากทั้ง URL Parameter และข้อมูลในฐานข้อมูล
         function handleNavigate(targetUrl) {
             if (hasUnsavedChanges) {
                 triggerScreenShakeWarning();
@@ -299,8 +300,8 @@
             if (data) {
                 currentExamData = data;
                 
-                // ดึง course_id หากมีผูกไว้ (รองรับทั้งแบบ string เดี่ยวและ Array)
-                if (data.course_id) {
+                // ถ้าใน URL ไม่มี course_id ให้ดึงจากข้อมูลคอร์สที่ผูกไว้ในฐานข้อมูล
+                if (!examCourseId && data.course_id) {
                     if (Array.isArray(data.course_id) && data.course_id.length > 0) {
                         examCourseId = data.course_id[0];
                     } else if (typeof data.course_id === 'string') {
