@@ -4,12 +4,13 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จัดการรายวิชาและคอร์สทั้งหมด</title>
+    <title>LMS | ควบคุมเนื้อหาและสถิติภายในคอร์ส</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         (function() {
@@ -42,19 +43,22 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
-        .course-card {
-            background: linear-gradient(135deg, rgba(2, 132, 199, 0.02) 0%, rgba(147, 51, 234, 0.04) 100%);
-            border: 1px solid rgba(186, 230, 253, 0.6);
+        .glow-badge-sky { background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .dark .glow-badge-sky { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
+        
+        .exam-catalog-card {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.03) 0%, rgba(99, 102, 241, 0.05) 100%);
+            border: 1px solid rgba(2, 132, 199, 0.25);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .dark .course-card {
-            background: linear-gradient(135deg, rgba(2, 132, 199, 0.05) 0%, rgba(147, 51, 234, 0.08) 100%);
-            border: 1px solid rgba(30, 58, 138, 0.6);
+        .dark .exam-catalog-card {
+            background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(99, 102, 241, 0.12) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.3);
         }
-        .course-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(147, 51, 234, 0.6);
-            box-shadow: 0 20px 40px -15px rgba(147, 51, 234, 0.15);
+        .exam-catalog-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            border-color: rgba(2, 132, 199, 0.8);
+            box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.25);
         }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
@@ -67,49 +71,58 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin_dashboard.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
+                    <button onclick="window.location.href='admin_courses.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-book"></i></span>
-                        ศูนย์จัดการรายวิชาและคอร์ส
+                    <h1 id="navCourseTitle" class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chalkboard"></i></span>
+                        ศูนย์ควบคุมภายในคอร์ส
                     </h1>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin_videos.html'" class="px-3.5 py-1.5 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 border border-indigo-500/20">
-                        <i class="fas fa-video"></i> ศูนย์วิดีโอกลาง
-                    </button>
-                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
-                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
-                    </button>
-                </div>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Header Controls & Search Bar -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-8 border-l-purple-500">
-            <div class="space-y-1">
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคอร์สเรียนทั้งหมด</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">สร้าง จัดการเนื้อหา กำหนดข้อสอบ และเชื่อมโยงวิดีโอรายวิชา</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <div class="relative flex-1 md:w-64">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="courseSearchInput" oninput="renderCourseList()" placeholder="ค้นหาชื่อคอร์ส หรือรหัส..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-2xl text-xs outline-none font-bold">
+        <!-- Course Header Info Banner -->
+        <div class="hitech-card p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-l-8 border-l-purple-500">
+            <div class="space-y-2">
+                <div id="courseBadgeCode" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold text-xs border border-purple-500/20">
+                    COURSE
                 </div>
-                <button onclick="openCreateCourseModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-2xl text-xs shadow transition-all flex items-center gap-1.5 shrink-0">
-                    <i class="fas fa-plus"></i> สร้างคอร์สใหม่
-                </button>
+                <h2 id="headerCourseTitle" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">กำลังโหลด...</h2>
+                <p id="headerCourseDesc" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">กำลังดึงรายละเอียด...</p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <div class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-center">
+                    <div id="statEnrolledStudents" class="text-xl font-extrabold text-purple-600 dark:text-purple-400">0</div>
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนในคอร์ส</div>
+                </div>
             </div>
         </div>
 
-        <!-- Course Cards Grid Container -->
-        <div id="coursesGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Rendered dynamically -->
+        <!-- Navigation Tabs Inside Course -->
+        <div class="flex gap-2 overflow-x-auto pb-2 border-b border-purple-500/20">
+            <button onclick="switchCourseTab('curriculum')" id="tab-btn-curriculum" class="course-tab-btn px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs shrink-0 transition-all shadow">
+                <i class="fas fa-book-open mr-1.5"></i> บทเรียน & เนื้อหา
+            </button>
+            <button onclick="switchCourseTab('students')" id="tab-btn-students" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
+                <i class="fas fa-users mr-1.5"></i> นักเรียนในคอร์ส
+            </button>
+            <button onclick="switchCourseTab('exams')" id="tab-btn-exams" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
+                <i class="fas fa-file-signature mr-1.5"></i> ชุดข้อสอบทั้งหมดในคอร์ส
+            </button>
+            <button onclick="switchCourseTab('analytics')" id="tab-btn-analytics" class="course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all">
+                <i class="fas fa-chart-pie mr-1.5"></i> สถิติ & ผลคะแนน
+            </button>
         </div>
+
+        <!-- Tab Content Container -->
+        <div id="tabContentContainer" class="space-y-4"></div>
 
     </main>
 
@@ -118,7 +131,21 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allCourses = [];
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id');
+
+        let currentCourse = null;
+        let allStudents = [];
+        let enrolledStudentIds = [];
+        let courseModules = [];
+        let courseLessons = [];
+        let courseExams = [];
+        let courseAttemptsMap = {};
+        let allAttemptsRaw = [];
+        let examQuestionsMap = {};
+        let categoriesMap = {};
+        let chart1 = null, chart2 = null, chart3 = null;
+        let currentTab = 'curriculum';
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -133,155 +160,353 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        async function initAdminCourses() {
+        function isUserAdmin(profileObj) {
+            if (!profileObj) return false;
+            const role = String(profileObj.role || profileObj.user_role || '').toLowerCase();
+            const email = String(profileObj.email || '').toLowerCase();
+            if (role === 'admin' || role === 'teacher' || role === 'instructor') return true;
+            if (email.includes('admin') || email.includes('teacher')) return true;
+            return false;
+        }
+
+        async function initCourseDetail() {
+            if (!courseId) { window.location.replace('admin_courses.html'); return; }
+
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                const { data, error } = await mySupabase.from('courses').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
-                allCourses = data || [];
+                const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).single();
+                if (courseRes.error || !courseRes.data) {
+                    Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
+                    return;
+                }
+                currentCourse = courseRes.data;
+
+                const studentsRes = await mySupabase.from('profiles').select('*');
+                let rawProfiles = studentsRes.data || [];
+                if (rawProfiles.length === 0) {
+                    const fallbackStudentsRes = await mySupabase.from('students').select('*');
+                    rawProfiles = fallbackStudentsRes.data || [];
+                }
+
+                allStudents = rawProfiles.map(p => ({
+                    ...p,
+                    uid: String(p.id || p.user_id || p.student_id || '')
+                })).filter(p => !isUserAdmin(p));
+
+                const enrollRes = await mySupabase.from('course_enrollments').select('*').eq('course_id', courseId);
+                enrolledStudentIds = (enrollRes.data || []).map(e => String(e.student_id || e.user_id));
+
+                const modulesRes = await mySupabase.from('course_modules').select('*').eq('course_id', courseId).order('sequence_order', { ascending: true });
+                courseModules = modulesRes.data || [];
+
+                const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
+                courseLessons = lessonsRes.data || [];
+
+                const catsRes = await mySupabase.from('exam_categories').select('*');
+                if (catsRes.data) {
+                    catsRes.data.forEach(c => { categoriesMap[c.id] = c.name; });
+                }
+
+                const examsRes = await mySupabase.from('exams').select('*');
+                if (examsRes.data) {
+                    courseExams = examsRes.data.filter(ex => {
+                        if (!ex.course_id) return false;
+                        if (Array.isArray(ex.course_id)) return ex.course_id.includes(courseId);
+                        return String(ex.course_id) === String(courseId);
+                    });
+                }
+
+                const activeExamIds = new Set(courseExams.map(e => String(e.id)));
+                const attemptsRes = await mySupabase.from('exam_attempts').select('*');
+                allAttemptsRaw = (attemptsRes.data || []).filter(a => activeExamIds.has(String(a.exam_id)));
+
+                courseAttemptsMap = {};
+                allAttemptsRaw.forEach(att => {
+                    const eId = String(att.exam_id);
+                    if (!courseAttemptsMap[eId]) courseAttemptsMap[eId] = [];
+                    const score = att.total_score !== undefined && att.total_score !== null ? Number(att.total_score) : (Number(att.score) || 0);
+                    courseAttemptsMap[eId].push(score);
+                });
+
+                const qRes = await mySupabase.from('questions').select('id, exam_id');
+                if (qRes.data) {
+                    qRes.data.forEach(q => {
+                        const eId = String(q.exam_id);
+                        examQuestionsMap[eId] = (examQuestionsMap[eId] || 0) + 1;
+                    });
+                }
+
             } catch (err) {
-                console.error("Error loading courses:", err);
+                console.error("Initialization error:", err);
             } finally {
                 Swal.close();
             }
 
-            renderCourseList();
+            document.getElementById('navCourseTitle').innerHTML = '<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chalkboard"></i></span> ' + currentCourse.title;
+            document.getElementById('courseBadgeCode').textContent = currentCourse.course_code || 'COURSE';
+            document.getElementById('headerCourseTitle').textContent = currentCourse.title;
+            document.getElementById('headerCourseDesc').textContent = currentCourse.description || 'ไม่มีรายละเอียดคอร์ส';
+            document.getElementById('statEnrolledStudents').textContent = enrolledStudentIds.length;
+
+            switchCourseTab(currentTab);
         }
 
-        function renderCourseList() {
-            const container = document.getElementById('coursesGridContainer');
-            if (!container) return;
-
-            const keyword = (document.getElementById('courseSearchInput')?.value || '').trim().toLowerCase();
-            let filtered = allCourses.filter(c => {
-                if (!keyword) return true;
-                const title = String(c.title || '').toLowerCase();
-                const code = String(c.course_code || '').toLowerCase();
-                const desc = String(c.description || '').toLowerCase();
-                return title.includes(keyword) || code.includes(keyword) || desc.includes(keyword);
+        function switchCourseTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.course-tab-btn').forEach(btn => {
+                btn.className = 'course-tab-btn px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs shrink-0 transition-all';
             });
+            const activeBtn = document.getElementById('tab-btn-' + tabName);
+            if (activeBtn) activeBtn.className = 'course-tab-btn px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs shrink-0 transition-all shadow';
 
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs">
-                        <i class="fas fa-folder-open text-3xl mb-2 text-slate-300 dark:text-slate-700"></i>
-                        <p>ไม่พบรายการคอร์สเรียนในระบบ</p>
-                    </div>
-                `;
-                return;
+            const container = document.getElementById('tabContentContainer');
+            if (tabName === 'curriculum') renderCurriculumTab(container);
+            else if (tabName === 'students') renderStudentsTab(container);
+            else if (tabName === 'exams') renderExamsTab(container);
+            else if (tabName === 'analytics') renderAnalyticsTab(container);
+        }
+
+        function renderCurriculumTab(container) {
+            let modulesHtml = '';
+            if (courseModules.length > 0) {
+                modulesHtml = courseModules.map((m, idx) => {
+                    const lessons = courseLessons.filter(l => String(l.module_id) === String(m.id));
+                    let lessonsHtml = lessons.length > 0 ? lessons.map(l => `
+                        <div class="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl flex justify-between items-center border dark:border-slate-700">
+                            <div class="flex items-center gap-2"><i class="fas fa-play-circle text-purple-500"></i><span class="font-bold text-xs">${l.title}</span></div>
+                            <button onclick="deleteLesson('${l.id}')" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `).join('') : '<div class="text-xs text-slate-400 italic py-2">ยังไม่มีเนื้อหาย่อยในบทนี้</div>';
+
+                    return `
+                        <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-purple-500">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 font-bold flex items-center justify-center text-xs">${idx + 1}</span>
+                                    <h4 class="font-extrabold text-base text-slate-900 dark:text-white">${m.title}</h4>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="openLessonModal('${m.id}')" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-xl text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> เพิ่มเนื้อหาย่อย</button>
+                                    <button onclick="deleteModule('${m.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all"><i class="fas fa-trash text-xs"></i></button>
+                                </div>
+                            </div>
+                            <div class="space-y-2 pl-4 border-l-2 border-purple-500/20">${lessonsHtml}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                modulesHtml = '<div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs">ยังไม่มีบทเรียนในคอร์สนี้</div>';
             }
 
-            container.innerHTML = filtered.map(c => {
-                return `
-                    <div class="course-card p-6 rounded-3xl flex flex-col justify-between space-y-4 relative overflow-hidden">
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="font-mono text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                                    ${c.course_code || 'COURSE'}
-                                </span>
-                                <button onclick="deleteCourse('${c.id}')" class="w-8 h-8 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all" title="ลบคอร์ส">
-                                    <i class="fas fa-trash text-xs"></i>
-                                </button>
-                            </div>
-                            <h3 class="font-extrabold text-base text-slate-900 dark:text-white line-clamp-1">${c.title}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${c.description || 'ไม่มีคำอธิบายคอร์ส'}</p>
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="hitech-card p-6 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">โครงสร้างบทเรียนในคอร์ส</h3>
+                            <p class="text-xs text-slate-500">จัดการเพิ่มบทเรียน (Modules) และบทเรียนย่อย (Lessons) หรือจัดการวิดีโอประกอบคอร์ส</p>
                         </div>
-                        
-                        <div class="pt-4 border-t border-purple-500/20 flex flex-wrap items-center gap-2">
-                            <!-- ปุ่มจัดการคอร์ส -->
-                            <button onclick="window.location.href='admin_course_detail.html?id=${c.id}'" class="flex-1 px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-all shadow flex items-center justify-center gap-1.5">
-                                <i class="fas fa-cog"></i> จัดการคอร์ส
-                            </button>
-                            
-                            <!-- ปุ่มลัดไปข้อสอบ -->
-                            <button onclick="window.location.href='admin_exams.html?course_id=${c.id}'" class="px-3 py-2 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1" title="ชุดข้อสอบ">
-                                <i class="fas fa-file-signature"></i> ข้อสอบ
-                            </button>
-
-                            <!-- 🌟 ปุ่มลัดไปวิดีโอ -->
-                            <button onclick="window.location.href='admin_videos.html?course_id=${c.id}'" class="px-3 py-2 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500 hover:text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1" title="จัดการวิดีโอ">
-                                <i class="fas fa-video"></i> วิดีโอ
-                            </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.location.href='admin_videos.html?course_id=${courseId}'" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-video"></i> จัดการวิดีโอ (Videos)</button>
+                            <button onclick="openModuleModal()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-plus"></i> เพิ่มบทเรียนใหม่</button>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div class="space-y-4">${modulesHtml}</div>
+                </div>
+            `;
         }
 
-        async function openCreateCourseModal() {
+        async function openModuleModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const { value: title } = await Swal.fire({
+                title: '📚 เพิ่มบทเรียนหลัก (Module)',
+                input: 'text',
+                inputPlaceholder: 'เช่น บทที่ 1: พื้นฐานการเขียนโปรแกรม',
+                showCancelButton: true,
+                confirmButtonText: 'สร้างบทเรียน',
+                confirmButtonColor: '#9333ea',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b'
+            });
+
+            if (title) {
+                await mySupabase.from('course_modules').insert([{ course_id: courseId, title: title.trim(), sequence_order: courseModules.length + 1 }]);
+                initCourseDetail();
+            }
+        }
+
+        async function deleteModule(modId) {
+            const { isConfirmed } = await Swal.fire({ title: 'ลบบทเรียนนี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
+            if (isConfirmed) {
+                await mySupabase.from('course_modules').delete().eq('id', modId);
+                initCourseDetail();
+            }
+        }
+
+        async function openLessonModal(moduleId) {
             const isDark = document.documentElement.classList.contains('dark');
             const { value: formValues } = await Swal.fire({
-                title: '📚 สร้างคอร์สเรียนใหม่',
-                width: '500px',
+                title: '🎬 เพิ่มเนื้อหาย่อย (Lesson / Video)',
+                width: '550px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
                         <div>
-                            <label class="block font-bold mb-1">รหัสคอร์ส (Course Code) <span class="text-red-500">*</span></label>
-                            <input id="swalCourseCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" placeholder="เช่น CS101">
+                            <label class="block font-bold mb-1">ชื่อหัวข้อเนื้อหา/วิดีโอ <span class="text-red-500">*</span></label>
+                            <input id="swalLessonTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold">
                         </div>
                         <div>
-                            <label class="block font-bold mb-1">ชื่อคอร์สเรียน <span class="text-red-500">*</span></label>
-                            <input id="swalCourseTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น พื้นฐานการเขียนโปรแกรม C++">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">รายละเอียดคอร์ส</label>
-                            <textarea id="swalCourseDesc" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="อธิบายเนื้อหาโดยย่อ..."></textarea>
+                            <label class="block font-bold mb-1">ลิงก์วิดีโอ (YouTube / Video URL)</label>
+                            <input id="swalLessonVideo" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono">
                         </div>
                     </div>
                 `,
                 showCancelButton: true,
-                confirmButtonText: 'สร้างคอร์ส',
+                confirmButtonText: 'บันทึกเนื้อหา',
                 confirmButtonColor: '#9333ea',
-                cancelButtonColor: '#ef4444',
                 background: isDark ? '#090d16' : '#ffffff',
                 color: isDark ? '#f1f5f9' : '#1e293b',
                 preConfirm: () => {
-                    const code = document.getElementById('swalCourseCode').value.trim();
-                    const title = document.getElementById('swalCourseTitle').value.trim();
-                    if (!code || !title) {
-                        Swal.showValidationMessage('กรุณากรอกรหัสคอร์สและชื่อคอร์สให้ครบถ้วน');
-                        return false;
-                    }
+                    const title = document.getElementById('swalLessonTitle').value.trim();
+                    if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อหัวข้อ'); return false; }
                     return {
-                        course_code: code,
+                        module_id: moduleId,
                         title: title,
-                        description: document.getElementById('swalCourseDesc').value.trim()
+                        video_url: document.getElementById('swalLessonVideo').value.trim()
                     };
                 }
             });
 
             if (formValues) {
-                Swal.fire({ title: 'กำลังสร้าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const { error } = await mySupabase.from('courses').insert([formValues]);
-                if (error) {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                } else {
-                    Swal.fire({ icon: 'success', title: 'สร้างคอร์สสำเร็จ!', timer: 1200, showConfirmButton: false });
-                    initAdminCourses();
-                }
+                await mySupabase.from('course_lessons').insert([formValues]);
+                initCourseDetail();
             }
         }
 
-        async function deleteCourse(courseId) {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ลบคอร์สนี้?',
-                text: 'การลบคอร์สอาจส่งผลต่อข้อมูลบทเรียนและข้อสอบภายในคอร์ส',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ยืนยันลบ',
-                cancelButtonText: 'ยกเลิก'
+        async function deleteLesson(lessonId) {
+            await mySupabase.from('course_lessons').delete().eq('id', lessonId);
+            initCourseDetail();
+        }
+
+        function renderStudentsTab(container) {
+            const enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(s.uid) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)));
+            
+            container.innerHTML = `
+                <div class="hitech-card p-6 rounded-3xl space-y-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pb-4 border-b border-purple-500/20">
+                        <div>
+                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white">รายชื่อนักเรียนในคอร์ส</h3>
+                            <span id="courseStudentCountLabel" class="text-xs text-slate-400">แสดง ${enrolledStudents.length} รายการ</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            <select id="courseStudentSort" onchange="filterAndRenderCourseStudents()" class="px-3 py-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none">
+                                <option value="default">-- เรียงลำดับ --</option>
+                                <option value="id_asc">รหัสนักเรียน น้อย -> มาก</option>
+                                <option value="name_asc">ชื่อ ก -> ฮ</option>
+                            </select>
+                            <div class="relative flex-1 md:w-60">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                                <input type="text" id="courseStudentSearch" oninput="filterAndRenderCourseStudents()" placeholder="ค้นหาชื่อ หรือ รหัส..." class="w-full pl-9 pr-3 py-1.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs">
+                            </div>
+                            <button onclick="openManageEnrollmentsModal()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1.5"><i class="fas fa-user-plus"></i> จัดการรายชื่อ</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700">
+                                    <th class="p-3">ลำดับ</th><th class="p-3">รหัส</th><th class="p-3">ชื่อ-นามสกุล</th><th class="p-3">ชื่อเล่น</th><th class="p-3">ระดับชั้น / โรงเรียน</th><th class="p-3 text-center">จัดการรายบุคคล</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courseStudentsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            filterAndRenderCourseStudents();
+        }
+
+        function filterAndRenderCourseStudents() {
+            const tbody = document.getElementById('courseStudentsTableBody');
+            if (!tbody) return;
+
+            const keyword = (document.getElementById('courseStudentSearch')?.value || '').trim().toLowerCase();
+            const sortMode = document.getElementById('courseStudentSort')?.value || 'default';
+
+            let enrolledStudents = allStudents.filter(s => enrolledStudentIds.includes(s.uid) || enrolledStudentIds.includes(String(s.id)) || enrolledStudentIds.includes(String(s.user_id)));
+
+            let filtered = enrolledStudents.filter(s => {
+                if (!keyword) return true;
+                const fullName = `${s.first_name || ''} ${s.last_name || ''} ${s.full_name || ''}`.toLowerCase();
+                const sIdCode = String(s.student_id || '').toLowerCase();
+                return fullName.includes(keyword) || sIdCode.includes(keyword);
             });
 
-            if (isConfirmed) {
-                await mySupabase.from('courses').delete().eq('id', courseId);
-                initAdminCourses();
-                Swal.fire({ icon: 'success', title: 'ลบคอร์สเรียบร้อย', timer: 1000, showConfirmButton: false });
+            filtered.sort((a, b) => {
+                if (sortMode === 'id_asc') {
+                    return String(a.student_id || '').localeCompare(String(b.student_id || ''));
+                } else if (sortMode === 'name_asc') {
+                    return String(a.first_name || '').localeCompare(String(b.first_name || ''));
+                }
+                return 0;
+            });
+
+            const countLbl = document.getElementById('courseStudentCountLabel');
+            if (countLbl) countLbl.textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${enrolledStudents.length} คน)`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
+                return;
             }
+
+            tbody.innerHTML = filtered.map((s, idx) => {
+                const sId = s.id || s.user_id;
+                const fullName = `${s.first_name || '-'} ${s.last_name || ''}`.trim() || s.full_name || '-';
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
+                        <td class="p-3 font-mono text-purple-600">${s.student_id || '-'}</td>
+                        <td class="p-3 font-bold">${fullName}</td>
+                        <td class="p-3">${s.nickname || '-'}</td>
+                        <td class="p-3">${s.grade_level || '-'} (${s.school || '-'})</td>
+                        <td class="p-3 text-center">
+                            <button onclick="viewIndividualStudentProfile('${sId}')" class="px-3 py-1 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-[11px] rounded-xl shadow hover:opacity-90 transition-all flex items-center gap-1 mx-auto">
+                                <i class="fas fa-eye"></i> ดูภาพรวม
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        initAdminCourses();
-    </script>
-</body>
-</html>
+        async function openManageEnrollmentsModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            let modalHtml = `
+                <div class="space-y-3 text-left">
+                    <div class="flex flex-col sm:flex-row gap-2 items-center justify-between bg-slate-100 dark:bg-slate-800 p-3 rounded-2xl">
+                        <div class="relative w-full sm:w-64">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" id="modalStudentSearch" oninput="filterModalStudents()" placeholder="ค้นหาชื่อ, นามสกุล, หรือรหัส..." class="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none">
+                        </div>
+                        <div class="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                            <button type="button" onclick="toggleAllModalCheckboxes(true)" class="px-2.5 py-1 bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white rounded-lg font-bold text-[11px] transition-all">เลือกทั้งหมด</button>
+                            <button type="button" onclick="toggleAllModalCheckboxes(false)" class="px-2.5 py-1 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white rounded-lg font-bold text-[11px] transition-all">ล้างทั้งหมด</button>
+                        </div>
+                    </div>
+                    <div id="modalStudentListContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        <!-- รายชื่อนักเรียนจะถูกเรนเดอร์ตรงนี้ -->
+                    </div>
+                </div>
+            `;
+
+            Swal.fire({
+                title: '👥 จัดการรายชื่อนักเรียนในคอร์ส',
+                width: '650px',
+                html: modalHtml,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการเปลี่ยนแปลง',
+                cancelButtonColor: '#ef4444',
+                confirmButtonColor: '#9333ea',
+                background: isDark
