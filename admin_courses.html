@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <script src="lms_core.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | ศูนย์จัดการคอร์สเรียน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) { hasSession = true; break; }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
+        })();
+    </script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
+        .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
+        .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+
+    <!-- Navbar -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-sm"></i>
+                    </button>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-graduation-cap"></i></span>
+                        ศูนย์จัดการคอร์สเรียน (Course Management)
+                    </h1>
+                </div>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+        
+        <!-- Header Banner & Add Course Button -->
+        <div class="hitech-card p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-book-open text-purple-500"></i> รายชื่อคอร์สเรียนทั้งหมดในระบบ
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">สร้างและจัดการคอร์สเรียน พร้อมกำหนดสิทธิ์การลงทะเบียนของนักเรียนแต่ละคน</p>
+            </div>
+            
+            <button onclick="openCourseModal()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i> สร้างคอร์สเรียนใหม่
+            </button>
+        </div>
+
+        <!-- Courses Grid -->
+        <div id="coursesGridContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs col-span-full">
+                <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดข้อมูลคอร์สเรียน...
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let coursesList = [];
+        let allStudents = [];
+        let enrollmentsList = [];
+
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
+        function isUserAdmin(profileObj) {
+            if (!profileObj) return false;
+            const role = String(profileObj.role || profileObj.user_role || '').toLowerCase();
+            const email = String(profileObj.email || '').toLowerCase();
+            if (role === 'admin' || role === 'teacher' || role === 'instructor') return true;
+            if (email.includes('admin') || email.includes('teacher')) return true;
+            return false;
+        }
+
+        async function initPage() {
+            Swal.fire({ title: 'กำลังโหลดข้อมูลคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const [coursesRes, studentsRes, enrollRes] = await Promise.all([
+                mySupabase.from('courses').select('*').order('created_at', { ascending: false }),
+                mySupabase.from('profiles').select('*'),
+                mySupabase.from('course_enrollments').select('*')
+            ]);
+
+            Swal.close();
+
+            coursesList = coursesRes.data || [];
+            if (studentsRes.data) {
+                allStudents = studentsRes.data.filter(p => !isUserAdmin(p));
+            }
+            enrollmentsList = enrollRes.data || [];
+
+            renderCoursesGrid();
+        }
+
+        function renderCoursesGrid() {
+            const container = document.getElementById('coursesGridContainer');
+            if (coursesList.length === 0) {
+                container.innerHTML = `
+                    <div class="hitech-card p-12 rounded-3xl text-center text-slate-400 text-xs col-span-full space-y-3">
+                        <i class="fas fa-folder-open text-3xl text-purple-400"></i>
+                        <div>ยังไม่มีคอร์สเรียนในระบบ กดปุ่ม "สร้างคอร์สเรียนใหม่" ด้านบนได้เลย</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = coursesList.map(c => {
+                const enrolledCount = enrollmentsList.filter(e => String(e.course_id) === String(c.id)).length;
+                return `
+                    <div class="hitech-card p-6 rounded-3xl space-y-4 flex flex-col justify-between border-l-4 border-l-purple-500">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="px-2.5 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono font-bold rounded-lg text-xs">${c.course_code || 'COURSE'}</span>
+                                <span class="text-xs font-bold text-slate-500"><i class="fas fa-users mr-1 text-purple-500"></i> ลงทะเบียนแล้ว ${enrolledCount} คน</span>
+                            </div>
+                            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${c.title}</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">${c.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
+                        </div>
+                        <div class="pt-3 border-t border-purple-500/20 flex items-center justify-between gap-2">
+                            <button onclick="openManageEnrollments('${c.id}')" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center justify-center gap-1.5">
+                                <i class="fas fa-user-check"></i> จัดการรายชื่อนักเรียน
+                            </button>
+                            <button onclick="openCourseModal('${c.id}')" class="w-9 h-9 flex items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 hover:bg-sky-500 hover:text-white transition-all" title="แก้ไขคอร์ส">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteCourse('${c.id}')" class="w-9 h-9 flex items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-all" title="ลบคอร์ส">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function openCourseModal(courseId = null) {
+            let course = { course_code: '', title: '', description: '' };
+            let isEdit = false;
+            if (courseId) {
+                isEdit = true;
+                course = coursesList.find(c => String(c.id) === String(courseId)) || course;
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            const { value: formValues } = await Swal.fire({
+                title: isEdit ? '✏️ แก้ไขข้อมูลคอร์สเรียน' : '➕ สร้างคอร์สเรียนใหม่',
+                width: '500px',
+                html: `
+                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">รหัสคอร์ส (Course Code) <span class="text-red-500">*</span></label>
+                            <input id="swalCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" value="${course.course_code || ''}" placeholder="เช่น CS-M3">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อคอร์สเรียน <span class="text-red-500">*</span></label>
+                            <input id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${course.title || ''}" placeholder="เช่น ค่ายคอมพิวเตอร์ สอวน. ม.3">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">รายละเอียดคอร์ส</label>
+                            <textarea id="swalDesc" rows="3" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="คำอธิบายสั้นๆ เกี่ยวกับคอร์สนี้...">${course.description || ''}</textarea>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#9333ea',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const code = document.getElementById('swalCode').value.trim();
+                    const title = document.getElementById('swalTitle').value.trim();
+                    const desc = document.getElementById('swalDesc').value.trim();
+                    const errBox = document.getElementById('swalErrorMsg');
+
+                    if (!code || !title) {
+                        errBox.textContent = '⚠️ กรุณากรอกรหัสคอร์สและชื่อคอร์สให้ครบถ้วน';
+                        errBox.classList.remove('hidden');
+                        return false;
+                    }
+                    return { course_code: code, title: title, description: desc };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                let error = null;
+                if (isEdit) {
+                    const res = await mySupabase.from('courses').update(formValues).eq('id', courseId);
+                    error = res.error;
+                } else {
+                    const res = await mySupabase.from('courses').insert([formValues]);
+                    error = res.error;
+                }
+
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    initPage();
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            }
+        }
+
+        async function openManageEnrollments(courseId) {
+            const course = coursesList.find(c => String(c.id) === String(courseId));
+            if (!course) return;
+
+            const enrolledStudentIds = enrollmentsList
+                .filter(e => String(e.course_id) === String(courseId))
+                .map(e => String(e.student_id));
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            let studentCheckboxes = allStudents.map(s => {
+                const sId = s.id || s.user_id;
+                const name = s.first_name ? `${s.first_name} ${s.last_name || ''}` : (s.full_name || 'นักเรียน');
+                const studentIdCode = s.student_id || '-';
+                const isChecked = enrolledStudentIds.includes(String(sId)) ? 'checked' : '';
+
+                return `
+                    <label class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-purple-500 transition-all">
+                        <div class="flex items-center gap-2.5">
+                            <input type="checkbox" name="enrollStudent" value="${sId}" ${isChecked} class="w-4 h-4 accent-purple-600 rounded">
+                            <div>
+                                <div class="font-bold text-slate-900 dark:text-white">${name}</div>
+                                <div class="text-[10px] text-slate-400 font-mono">รหัส: ${studentIdCode} | ชั้น: ${s.grade_level || '-'}</div>
+                            </div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            const { isConfirmed } = await Swal.fire({
+                title: `👥 จัดการนักเรียนในคอร์ส: ${course.title}`,
+                width: '600px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <p class="text-slate-500">ติ๊กเลือกรายชื่อนักเรียนที่ต้องการให้ลงทะเบียนในคอร์สนี้:</p>
+                        <div class="space-y-2 max-h-72 overflow-y-auto pr-1" id="enrollmentListContainer">
+                            ${allStudents.length > 0 ? studentCheckboxes : '<div class="text-center py-6 text-slate-400">ไม่พบรายชื่อนักเรียนในระบบ</div>'}
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการลงทะเบียน',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#9333ea',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b'
+            });
+
+            if (isConfirmed) {
+                Swal.fire({ title: 'กำลังอัปเดตรายชื่อ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                const checkboxes = document.querySelectorAll('input[name="enrollStudent"]:checked');
+                const selectedStudentIds = Array.from(checkboxes).map(cb => cb.value);
+
+                // ลบสิทธิ์เดิมทั้งหมดของคอร์สนี้ก่อน แล้วเพิ่มใหม่ตามที่ติ๊ก
+                await mySupabase.from('course_enrollments').delete().eq('course_id', courseId);
+
+                if (selectedStudentIds.length > 0) {
+                    const newRows = selectedStudentIds.map(sId => ({
+                        student_id: sId,
+                        course_id: courseId
+                    }));
+                    await mySupabase.from('course_enrollments').insert(newRows);
+                }
+
+                const { data: updatedEnroll } = await mySupabase.from('course_enrollments').select('*');
+                enrollmentsList = updatedEnroll || [];
+
+                Swal.fire({ icon: 'success', title: 'อัปเดตรายชื่อนักเรียนในคอร์สสำเร็จ!', timer: 1200, showConfirmButton: false });
+                renderCoursesGrid();
+            }
+        }
+
+        async function deleteCourse(courseId) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'ยืนยันการลบคอร์สเรียน?',
+                text: 'การลบคอร์สจะยกเลิกการลงทะเบียนของนักเรียนในคอร์สนี้ทั้งหมด',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ลบคอร์ส',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef4444'
+            });
+
+            if (isConfirmed) {
+                Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                await mySupabase.from('courses').delete().eq('id', courseId);
+                Swal.fire({ icon: 'success', title: 'ลบคอร์สสำเร็จ!', timer: 1000, showConfirmButton: false });
+                initPage();
+            }
+        }
+
+        initPage();
+    </script>
+</body>
+</html>
