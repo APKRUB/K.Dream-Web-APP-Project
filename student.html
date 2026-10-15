@@ -429,9 +429,21 @@
             }).join('');
         }
 
-        async function handleExamClick(examId, mode, attemptId) {
-            const exam = allExams.find(e => e.id === examId);
-            const instructionsText = exam && exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
+async function handleExamClick(examId, mode, attemptId) {
+            console.log("กำลังคลิกข้อสอบ ID:", examId); // เช็กว่าส่ง ID อะไรมา
+            
+            const exam = allExams.find(e => String(e.id) === String(examId));
+            if (!exam) {
+                console.error("ไม่พบข้อมูลข้อสอบในตัวแปร allExams สำหรับ ID:", examId);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ข้อผิดพลาด',
+                    text: `ไม่พบข้อมูลชุดข้อสอบ (ID: ${examId}) ในระบบ กรุณารีเฟรชหน้าจอแล้วลองใหม่อีกครั้ง`
+                });
+                return;
+            }
+
+            const instructionsText = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
 
             const { isConfirmed } = await Swal.fire({
                 title: `<span class="text-base font-extrabold">📌 ข้อปฏิบัติก่อนเริ่มสอบ</span>`,
@@ -444,11 +456,10 @@
             });
 
             if (isConfirmed) {
-                // แนบ student_id ไปที่ URL ปลายทางด้วย เพื่อความปลอดภัยต่อเนื่อง
                 if (mode === 'resume') {
-                    window.location.href = `exam_take.html?exam_id=${examId}&attempt_id=${attemptId}&student_id=${currentStudentId}`;
+                    window.location.href = `exam_take.html?id=${examId}&exam_id=${examId}&attempt_id=${attemptId}&student_id=${currentStudentId}`;
                 } else {
-                    window.location.href = `exam_take.html?exam_id=${examId}&student_id=${currentStudentId}`;
+                    window.location.href = `exam_take.html?id=${examId}&exam_id=${examId}&student_id=${currentStudentId}`;
                 }
             }
         }
