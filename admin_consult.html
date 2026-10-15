@@ -237,7 +237,7 @@
         let displayedYear = new Date().getFullYear();
         let displayedMonth = new Date().getMonth();
         let selectedDateStr = new Date().toISOString().split('T')[0];
-        let isInitialLoaded = false; // ป้องกันการรีเซ็ตช่อง input ซ้ำซ้อนขณะกำลังแก้ไข
+        let isInitialLoaded = false;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -253,7 +253,7 @@
         });
 
         function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username'] || localStorage.getItem('user_name') || 'ผู้ดูแลระบบ';
+            const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'ผู้ดูแลระบบ';
             localStorage.setItem('admin_username', currentUsername);
             return true;
         }
@@ -274,7 +274,6 @@
                     loadBookedStudents();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, (payload) => {
-                    // อัปเดตเฉพาะตอนที่มีการเปลี่ยนแปลงจากภายนอกจริง ๆ และผู้ใช้ไม่ได้โฟกัสช่อง input อยู่
                     if (payload.new && document.activeElement.tagName !== 'INPUT') {
                         currentSetting = payload.new;
                         updateStatusDisplay();
@@ -299,7 +298,6 @@
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
             currentSetting = data || { is_open: false, prune_hours: 24 };
 
-            // เติมค่าลงในฟอร์มครั้งแรกสุด หรือตอนที่ยังไม่ได้โฟกัสแก้ไขอยู่
             if (!isInitialLoaded || document.activeElement.tagName !== 'INPUT') {
                 if (currentSetting?.open_at) {
                     document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
