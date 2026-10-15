@@ -114,12 +114,12 @@
             <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (${quickPendingCount})
+                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
                     </h3>
                     <span class="text-[11px] text-slate-400">เลือกทำจากด้านล่างนี้ได้ทันที</span>
                 </div>
-                <div id="quickPendingContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- โหลดข้อสอบที่ยังไม่ทำมาแสดงที่นี่อัตโนมัติ -->
+                <div id="quickPendingContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- โหลดข้อสอบที่ยังไม่ทำมาแสดงที่นี่อัตโนมัติด้วยดีไซน์เดียวกับการ์ดปกติ -->
                 </div>
             </div>
 
@@ -423,13 +423,11 @@
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
-            // 1. ดึงหมวดหมู่จากตาราง exam_categories
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
             }
 
-            // 2. ดึงชุดข้อสอบทั้งหมด
             const { data: exams, error: examError } = await mySupabase
                 .from('exams')
                 .select('*')
@@ -441,7 +439,6 @@
 
             allExams = exams || [];
 
-            // 3. นับจำนวนข้อสอบจริงจากตาราง questions
             const { data: questionsData } = await mySupabase.from('questions').select('exam_id');
             if (questionsData) {
                 questionsData.forEach(q => {
@@ -451,7 +448,6 @@
                 });
             }
 
-            // 4. ดึงประวัติการทำข้อสอบของผู้ใช้
             const { data: attempts } = await mySupabase
                 .from('exam_attempts')
                 .select('*')
@@ -498,7 +494,6 @@
 
             document.getElementById('examCountBadge').textContent = `${availableExams.length} ชุดข้อสอบ`;
 
-            // คำนวณความคืบหน้าภาพรวม (Overall Progress)
             const activeExams = allExams.filter(e => e.status !== 'draft');
             const completedExamIds = new Set(userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).map(a => a.exam_id));
             const completedCountTotal = activeExams.filter(e => completedExamIds.has(e.id)).length;
@@ -507,36 +502,60 @@
             document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
             document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
 
-            // กรองชุดข้อสอบที่ "ยังไม่ได้ทำ" สำหรับแสดงในกล่องด่วนด้านบน
+            // กรองชุดข้อสอบที่ยังไม่ได้ทำสำหรับแสดงในกล่องด่วนด้านบนสุด
             const pendingExamsList = activeExams.filter(exam => {
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
                 const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
-                return completedCount === 0 && !isExhausted && exam.status !== 'countdown';
+                
+                // ตรวจสอบสถานะ Countdown จากฟิลด์ start_time
+                let isCountdown = false;
+                if (exam.status === 'countdown' || (exam.start_time && new Date(exam.start_time).getTime() > Date.now())) {
+                    isCountdown = true;
+                }
+
+                return completedCount === 0 && !isExhausted && !isCountdown;
             });
 
             quickPendingCount = pendingExamsList.length;
+            document.getElementById('quickPendingCountText').textContent = quickPendingCount;
 
             if (quickPendingCount > 0 && currentStatusFilter === 'all' && !keyword) {
                 quickPendingSection.classList.remove('hidden');
                 quickPendingContainer.innerHTML = pendingExamsList.map(exam => {
+                    const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
+                    const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
+                    const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
                     const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || '0';
                     const durationMins = exam.duration || exam.time_limit || 'ไม่จำกัด';
-                    const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
+                    const isStarred = starredExams.includes(exam.id);
+
+                    const statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold"><i class="fas fa-check-circle mr-1"></i> พร้อมสอบ</span>`;
+                    const actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
+                    const starBtnHtml = `
+                        <button onclick="toggleStarExam('${exam.id}', event)" class="w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/10' : 'text-slate-300 hover:text-amber-400 bg-slate-100 dark:bg-slate-800'}">
+                            <i class="${isStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                        </button>
+                    `;
 
                     return `
-                        <div class="p-4 bg-white dark:bg-darkinput border border-sky-500/30 rounded-2xl flex flex-col justify-between space-y-3 shadow-sm hover:shadow-md transition-all">
-                            <div class="space-y-1">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[10px] font-extrabold px-2 py-0.5 bg-sky-500/10 text-sky-500 rounded-md">${catName}</span>
-                                    <span class="text-[11px] text-slate-400"><i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                        <div class="hitech-card exam-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 relative">
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center gap-2">
+                                    <span class="text-[11px] text-slate-400 font-bold"><i class="fas fa-list-ol mr-1 text-sky-500"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                                    <div class="flex items-center gap-1.5">
+                                        ${statusBadge}
+                                        ${starBtnHtml}
+                                    </div>
                                 </div>
-                                <h4 class="font-extrabold text-xs sm:text-sm text-slate-800 dark:text-white line-clamp-1">${exam.title}</h4>
+                                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1 leading-snug">${exam.title}</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบชุดนี้'}</p>
                             </div>
-                            <button onclick="handleExamClick('${exam.id}', 'start', null)" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5">
-                                <i class="fas fa-play text-[10px]"></i> เริ่มทำข้อสอบนี้ทันที
-                            </button>
+                            <div class="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                                <div class="text-[11px] text-slate-400 font-medium">สิทธิ์สอบ: <span class="text-slate-700 dark:text-slate-300 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts} ครั้ง</span></div>
+                                ${actionBtnHtml}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -611,6 +630,15 @@
                 let statusBadge = '';
                 let cardHighlightClass = '';
 
+                // ตรวจสอบเวลาเริ่มต้น (start_time) สำหรับ Countdown
+                let isCountdown = status === 'countdown';
+                if (exam.start_time) {
+                    const startTimeMs = new Date(exam.start_time).getTime();
+                    if (startTimeMs > Date.now()) {
+                        isCountdown = true;
+                    }
+                }
+
                 if (completedCount > 0) {
                     cardHighlightClass = 'border-emerald-500/70 bg-emerald-50/40 dark:bg-emerald-950/25 ring-1 ring-emerald-500/20';
                     statusBadge = `<span class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-extrabold shadow-sm"><i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว (${maxScoreAchieved} คะแนน)</span>`;
@@ -620,8 +648,9 @@
                     } else {
                         actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
                     }
-                } else if (status === 'countdown') {
-                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-bold"><i class="fas fa-clock mr-1"></i> ยังไม่ถึงเวลาเปิดสอบ</span>`;
+                } else if (isCountdown) {
+                    const openTimeStr = exam.start_time ? new Date(exam.start_time).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : 'เร็วๆ นี้';
+                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-sm"><i class="fas fa-clock mr-1"></i> เปิด: ${openTimeStr}</span>`;
                     actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิด</button>`;
                 } else if (inProgressAttempt) {
                     statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-500 rounded-lg text-[10px] font-bold animate-pulse"><i class="fas fa-spinner fa-spin mr-1"></i> ทำค้างไว้</span>`;
@@ -697,7 +726,12 @@
                 return;
             }
 
-            if (exam.status === 'countdown') {
+            let isCountdown = exam.status === 'countdown';
+            if (exam.start_time && new Date(exam.start_time).getTime() > Date.now()) {
+                isCountdown = true;
+            }
+
+            if (isCountdown) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'ยังไม่ถึงเวลาเปิดสอบ',
@@ -707,7 +741,6 @@
                 return;
             }
 
-            // เช็คโควต้า attempts
             const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
             const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
             const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
