@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL ข้ามหน้าโดยไม่ได้รับอนุญาต -->
+    <!-- INSTANT ADMIN AUTH GUARD -->
     <script>
         (function() {
             let hasSession = false;
@@ -72,7 +72,7 @@
                             <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">ควบคุมเปิด-ปิด, รายชื่อจองรายคน และประวัติการแก้ไข (Realtime)</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ควบคุมเปิด-ปิด, ตารางคิวรายวัน และตั้งค่าระบบอัตโนมัติ (Realtime)</p>
                     </div>
                 </div>
                 <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
@@ -96,10 +96,24 @@
             </div>
         </div>
 
-        <!-- ตารางรายชื่อนักเรียนจอง Consult -->
+        <!-- 📅 มุมมองคิว Consult รายวัน (Daily Agenda View) -->
+        <div class="glossy-card p-8 rounded-3xl space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-calendar-day text-sky-600"></i> ตารางคิว Consult รายวัน</h3>
+                <div class="flex items-center gap-3">
+                    <input type="date" id="dailyAgendaDate" onchange="loadDailyAgenda()" class="px-4 py-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                    <button onclick="loadDailyAgenda()" class="text-xs text-sky-600 font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
+                </div>
+            </div>
+            <div id="dailyAgendaContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-1">
+                <div class="col-span-full text-center py-6 text-slate-400 text-sm">กำลังโหลดตารางคิวรายวัน...</div>
+            </div>
+        </div>
+
+        <!-- ตารางรายชื่อนักเรียนจอง Consult ทั้งหมด -->
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-sky-600"></i> รายชื่อนักเรียนที่จอง Consult แล้ว</h3>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-sky-600"></i> รายชื่อนักเรียนที่จอง Consult ทั้งหมด</h3>
                 <button onclick="loadBookedStudents()" class="text-xs text-sky-600 font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
             </div>
             <div id="bookedStudentsList" class="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
@@ -108,9 +122,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- ฝั่งตั้งค่าเวลาเปิด-ปิด & ปิดรับอัตโนมัติ -->
+            <!-- ฝั่งตั้งค่าเวลาเปิด-ปิด & ตั้งค่า Auto-Prune -->
             <div class="lg:col-span-5 glossy-card p-8 rounded-3xl space-y-6">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-sky-600"></i> ตั้งเวลาเปิด-ปิดรับจองอัตโนมัติ</h3>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-sky-600"></i> ตั้งเวลาและระบบอัตโนมัติ</h3>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">เวลาเปิดรับจอง (Open At)</label>
                     <input type="datetime-local" id="openAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:border-sky-500 outline-none">
@@ -119,7 +133,12 @@
                     <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">เวลาปิดรับจองอัตโนมัติ (Close At)</label>
                     <input type="datetime-local" id="closeAtInput" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:border-sky-500 outline-none">
                 </div>
-                <button onclick="saveCountdownTime()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">บันทึกเวลาเปิด-ปิด</button>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">ตัด Slot ว่างอัตโนมัติก่อนเริ่ม (ชั่วโมง)</label>
+                    <input type="number" id="pruneHoursInput" value="24" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:border-sky-500 outline-none" placeholder="เช่น 24 ชั่วโมง">
+                    <p class="text-[10px] text-slate-400 mt-1">Slot ว่างที่ไม่มีคนจองและใกล้ถึงเวลาในระยะเวลานี้จะถูกซ่อน/ลบอัตโนมัติ</p>
+                </div>
+                <button onclick="saveSystemSettings()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition-all">บันทึกการตั้งค่าระบบ</button>
 
                 <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
                     <button onclick="resetAllQuotas()" class="w-full bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 py-3.5 rounded-2xl font-bold text-sm transition-all border border-red-200/50 dark:border-red-900/50"><i class="fas fa-redo mr-2"></i> รีเซ็ตโควต้านักเรียนทุกคน</button>
@@ -166,7 +185,7 @@
             </div>
         </div>
 
-        <!-- ปุ่มเปิดดูประวัติการแก้ไข (Audit Logs) ด้านล่างสุด -->
+        <!-- ปุ่มเปิดดูประวัติการแก้ไข -->
         <div class="text-center pt-6">
             <button onclick="openHistoryModal()" class="px-6 py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-darkinput dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-sm transition-all shadow-sm border border-slate-300 dark:border-slate-700">
                 <i class="fas fa-history mr-2 text-sky-600"></i> ดูประวัติการแก้ไขและจัดการ Consult
@@ -194,64 +213,79 @@
         });
 
         function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username') || 
-                                    localStorage.getItem('user_name') || 
-                                    localStorage.getItem('account_name') || 
-                                    localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
-                                    'ผู้ดูแลระบบ';
-
+            const currentUsername = localStorage.getItem('admin_username') || localStorage.getItem('user_name') || 'ผู้ดูแลระบบ';
             localStorage.setItem('admin_username', currentUsername);
             return true;
         }
         
         async function initPage() {
             if (!checkAdminAuth()) return;
-            loadSettings();
-            loadSlots();
-            loadBookedStudents();
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('dailyAgendaDate').value = todayStr;
+
+            await loadSettings();
+            await loadSlots();
+            await loadBookedStudents();
+            await loadDailyAgenda();
             setupConsultRealtime();
         }
 
         function setupConsultRealtime() {
             mySupabase
                 .channel('consult_manager_realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, payload => {
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, () => {
                     loadSlots();
                     loadBookedStudents();
+                    loadDailyAgenda();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, () => {
+                    loadSettings();
                 })
                 .subscribe();
         }
 
         async function loadSettings() {
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            currentSetting = data || { is_open: false };
+            currentSetting = data || { is_open: false, prune_hours: 24 };
+
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
             const countdownInfo = document.getElementById('countdownInfo');
 
             const now = new Date();
-            if (data?.close_at && new Date(data.close_at) <= now && data.is_open) {
-                await mySupabase.from('consult_settings').update({ is_open: false }).eq('id', 1);
-                currentSetting.is_open = false;
+            let isOpen = currentSetting.is_open;
+
+            if (currentSetting?.open_at && new Date(currentSetting.open_at) > now) {
+                isOpen = false;
+            }
+            if (currentSetting?.close_at && new Date(currentSetting.close_at) <= now) {
+                isOpen = false;
+            }
+
+            if (isOpen !== currentSetting.is_open) {
+                await mySupabase.from('consult_settings').update({ is_open: isOpen }).eq('id', 1);
+                currentSetting.is_open = isOpen;
             }
 
             if (currentSetting.is_open) {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
                 statusText.textContent = 'เปิดรับจอง Consult แล้ว';
-                countdownInfo.textContent = data.close_at ? `⏳ ระบบจะปิดรับจองอัตโนมัติใน: ${new Date(data.close_at).toLocaleString('th-TH')}` : 'ระบบเปิดให้นักเรียนเข้ามาเลือกจอง Slot เวลาได้ทันที';
+                countdownInfo.textContent = currentSetting.close_at ? `⏳ ระบบจะปิดรับจองอัตโนมัติใน: ${new Date(currentSetting.close_at).toLocaleString('th-TH')}` : 'ระบบเปิดให้นักเรียนเข้ามาเลือกจอง Slot เวลาได้ทันที';
             } else {
                 statusIndicator.className = 'w-3 h-3 rounded-full bg-amber-500';
                 statusText.textContent = 'ปิดรับจอง';
-                if (data?.open_at) {
-                    const localDt = new Date(data.open_at);
+                if (currentSetting?.open_at) {
+                    const localDt = new Date(currentSetting.open_at);
                     document.getElementById('openAtInput').value = new Date(localDt.getTime() - (localDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
                 }
-                if (data?.close_at) {
-                    const closeDt = new Date(data.close_at);
+                if (currentSetting?.close_at) {
+                    const closeDt = new Date(currentSetting.close_at);
                     document.getElementById('closeAtInput').value = new Date(closeDt.getTime() - (closeDt.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
                 }
-                countdownInfo.textContent = 'ระบบปิดรับจองในขณะนี้';
+                if (currentSetting?.prune_hours !== undefined) {
+                    document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
+                }
+                countdownInfo.textContent = 'ระบบปิดรับจองในขณะนี้ (หรือยังไม่ถึงกำหนดการเปิด)';
             }
         }
 
@@ -263,18 +297,57 @@
             loadSettings();
         }
 
-        async function saveCountdownTime() {
+        async function saveSystemSettings() {
             const openVal = document.getElementById('openAtInput').value;
             const closeVal = document.getElementById('closeAtInput').value;
+            const pruneVal = parseInt(document.getElementById('pruneHoursInput').value) || 24;
             
             await mySupabase.from('consult_settings').update({ 
                 open_at: openVal ? new Date(openVal).toISOString() : null,
-                close_at: closeVal ? new Date(closeVal).toISOString() : null
+                close_at: closeVal ? new Date(closeVal).toISOString() : null,
+                prune_hours: pruneVal
             }).eq('id', 1);
 
-            await logHistory('อัปเดตเวลาเปิด-ปิดรับจองอัตโนมัติ');
-            Swal.fire({ icon: 'success', title: 'บันทึกเวลาเปิด-ปิดสำเร็จ', timer: 1200, showConfirmButton: false });
+            await logHistory('อัปเดตเวลาเปิด-ปิด และค่า Auto-Prune');
+            Swal.fire({ icon: 'success', title: 'บันทึกการตั้งค่าสำเร็จ', timer: 1200, showConfirmButton: false });
             loadSettings();
+        }
+
+        async function loadDailyAgenda() {
+            const dateVal = document.getElementById('dailyAgendaDate').value;
+            const container = document.getElementById('dailyAgendaContainer');
+            if (!dateVal) return;
+
+            const startOfDay = new Date(dateVal + 'T00:00:00+07:00').toISOString();
+            const endOfDay = new Date(dateVal + 'T23:59:59+07:00').toISOString();
+
+            const { data: slots } = await mySupabase
+                .from('consult_slots')
+                .select('*, profiles(full_name)')
+                .gte('start_time', startOfDay)
+                .lte('start_time', endOfDay)
+                .order('start_time', { ascending: true });
+
+            if (!slots || slots.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">ไม่มีคิว Consult ในวันที่เลือก</div>`;
+                return;
+            }
+
+            container.innerHTML = slots.map(s => {
+                const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                const isBooked = s.status === 'booked';
+
+                return `
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-darkinput border ${isBooked ? 'border-emerald-500/50 bg-emerald-50/20 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-slate-700'} flex justify-between items-center">
+                        <div>
+                            <div class="font-extrabold text-sm text-slate-900 dark:text-white"><i class="far fa-clock text-sky-600 mr-1.5"></i> ${startStr} - ${endStr} น.</div>
+                            <div class="text-xs mt-1">สถานะ: ${isBooked ? `<span class="text-emerald-600 font-bold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-slate-400">ว่าง</span>'}</div>
+                        </div>
+                        ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3 py-1 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         async function generateSlots() {
@@ -355,8 +428,8 @@
                             <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">⏰ เวลาเดิม: ${startStr} - ${endStr} น.</div>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300 rounded-xl text-xs font-bold hover:bg-sky-100 transition-colors">ย้ายเวลา</button>
-                            <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>
+                            <button onclick="openRescheduleModal('${s.id}', '${s.student_id}')" class="px-3.5 py-1.5 bg-sky-50 text-sky-600 dark:bg-sky-950/40 rounded-xl text-xs font-bold hover:bg-sky-100">ย้ายเวลา</button>
+                            <button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>
                         </div>
                     </div>
                 `;
@@ -420,8 +493,8 @@
                             <div class="text-xs text-slate-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
                         </div>
                         <div class="flex gap-2">
-                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">ยกเลิกการจอง</button>` : ''}
-                            <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-100 transition-colors">ลบ</button>
+                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>` : ''}
+                            <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 rounded-xl text-xs font-bold hover:bg-red-100">ลบ</button>
                         </div>
                     </div>
                 `;
@@ -451,21 +524,12 @@
                     }]);
                 }
                 await logHistory(`ยกเลิกการจอง Consult ของนักเรียน: ${studentName || studentId}`);
-                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จและแจ้งเตือนนักเรียนแล้ว', timer: 1500, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'ยกเลิกการจองสำเร็จ', timer: 1500, showConfirmButton: false });
             }
         }
 
         async function deleteSlot(id) {
-            const res = await Swal.fire({
-                title: 'ยืนยันลบช่วงเวลานี้?',
-                text: 'การลบจะไม่สามารถกู้คืนได้',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'ยืนยันลบ',
-                cancelButtonText: 'ยกเลิก'
-            });
-
+            const res = await Swal.fire({ title: 'ยืนยันลบช่วงเวลานี้?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
             if (res.isConfirmed) {
                 await mySupabase.from('consult_slots').delete().eq('id', id);
                 await logHistory(`ลบช่วงเวลา Slot ID: ${id}`);
@@ -485,40 +549,19 @@
 
         async function logHistory(actionText) {
             try {
-                const { data: { session } } = await mySupabase.auth.getSession();
                 const adminName = localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
-                await mySupabase.from('consult_logs').insert([{
-                    admin_id: session?.user?.id,
-                    action: `${adminName}: ${actionText}`
-                }]);
+                await mySupabase.from('consult_logs').insert([{ action: `${adminName}: ${actionText}` }]);
             } catch (err) { console.error("Log Error:", err); }
         }
 
         async function openHistoryModal() {
-            Swal.fire({ title: 'กำลังโหลดประวัติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const { data: logs, error } = await mySupabase.from('consult_logs').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(20);
-
-            if (error || !logs || logs.length === 0) {
-                Swal.fire({ title: 'ประวัติการแก้ไข', text: 'ยังไม่มีบันทึกประวัติการดำเนินการในระบบ', icon: 'info' });
+            const { data: logs } = await mySupabase.from('consult_logs').select('*').order('created_at', { ascending: false }).limit(20);
+            if (!logs || logs.length === 0) {
+                Swal.fire({ title: 'ประวัติการแก้ไข', text: 'ยังไม่มีบันทึกประวัติการดำเนินการ', icon: 'info' });
                 return;
             }
-
-            let logsHtml = logs.map(l => {
-                const timeStr = new Date(l.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-                return `
-                    <div class="py-2.5 border-b dark:border-slate-800 text-left text-xs">
-                        <div class="font-bold text-slate-900 dark:text-white"><i class="fas fa-history text-sky-600 mr-1.5"></i> ${l.action}</div>
-                        <div class="text-slate-400 mt-0.5">เวลา: ${timeStr} น.</div>
-                    </div>
-                `;
-            }).join('');
-
-            Swal.fire({
-                title: '<i class="fas fa-clipboard-list text-sky-600"></i> ประวัติการแก้ไขและจัดการ Consult',
-                html: `<div class="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 pr-1">${logsHtml}</div>`,
-                width: '600px',
-                confirmButtonText: 'ปิดหน้าต่าง'
-            });
+            let logsHtml = logs.map(l => `<div class="py-2.5 border-b dark:border-slate-800 text-left text-xs"><div class="font-bold text-slate-900 dark:text-white">${l.action}</div><div class="text-slate-400 mt-0.5">${new Date(l.created_at).toLocaleString('th-TH')}</div></div>`).join('');
+            Swal.fire({ title: 'ประวัติการจัดการ Consult', html: `<div class="max-h-72 overflow-y-auto">${logsHtml}</div>`, width: '600px' });
         }
 
         initPage();
