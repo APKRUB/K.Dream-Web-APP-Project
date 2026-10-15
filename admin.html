@@ -193,7 +193,6 @@
                     </div>
                 </div>
 
-                <!-- ปุ่มจัดการเทปเรียนย้อนหลัง (เพิ่มใหม่) -->
                 <div onclick="window.location.href='admin_videos.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-rose-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
@@ -207,7 +206,8 @@
                     </div>
                 </div>
 
-                <div onclick="openFeatureComingSoon('ระบบจัดการบัญชีผู้ใช้งาน')" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                <!-- 🔗 ปุ่มจัดการบัญชีผู้ใช้งาน (ลิงก์ไปยัง admin_users.html แล้ว) -->
+                <div onclick="window.location.href='admin_users.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-teal-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-users-gear"></i>
@@ -216,7 +216,7 @@
                     </div>
                     <div class="space-y-1">
                         <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน สิทธิ์การเข้าถึง และจัดการรหัสผ่านผู้ใช้งานในระบบ</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน แก้ไขชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน และระดับชั้น</p>
                     </div>
                 </div>
             </div>
@@ -410,10 +410,6 @@
             updateNotifBadge();
             Swal.close();
             Swal.fire({ icon: 'success', title: 'ล้างรายการแจ้งเตือนเรียบร้อยแล้ว!', timer: 1000, showConfirmButton: false });
-        }
-
-        function openFeatureComingSoon(featureName) {
-            Swal.fire({ title: featureName, text: 'ฟังก์ชันนี้พร้อมให้ใช้งานในอัปเดตถัดไปครับ', icon: 'info', confirmButtonText: 'รับทราบ' });
         }
 
         function logoutAdmin() {
