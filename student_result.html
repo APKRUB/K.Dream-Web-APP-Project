@@ -418,71 +418,88 @@ await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, total
         }
 
         // ฟังก์ชันเรียก Google Gemini API พร้อมระบบสำรอง (Smart Fallback)
-async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives) {
-    const container = document.getElementById('aiAnalysisContainer');
-    
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
-        renderLocalAIAnalysis(questions, answerMap, score, total, learningObjectives);
-        return;
-    }
+async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
+            const container = document.getElementById('aiAnalysisContainer');
+            
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
+                renderLocalAIAnalysis(questions, answerMap, score, total, learningObjectives);
+                return;
+            }
 
-    let summaryData = questions.map((q, idx) => {
-        const ans = answerMap[q.id] || {};
-        const studentIdx = ans.selected_option_index;
-        const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-        const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-        return {
-            ข้อที่: q.question_number || (idx + 1),
-            หมวดหมู่: q.category_tag || 'ทั่วไป',
-            โจทย์: q.question_text || q.content || 'คำถาม',
-            นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
-            เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
-            สถานะ: isCorrect ? 'ถูก' : 'ผิด'
-        };
-    });
+            // ดึงข้อความจาก PDF (ถ้ามี) มาใช้วิเคราะห์เนื้อหาโจทย์เชิงลึก
+            let pdfTextContent = "";
+            if (pdfUrl) {
+                try {
+                    const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                    const pdfDoc = await loadingTask.promise;
+                    for (let i = 1; i <= Math.min(pdfDoc.numPages, 3); i++) { // อ่านสูงสุด 3 หน้าแรกเพื่อดึงเนื้อหาโจทย์
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent();
+                        pdfTextContent += textContent.items.map(item => item.str).join(" ") + "\n";
+                    }
+                } catch (e) {
+                    console.log("Could not extract PDF text for AI, proceeding with questions data.");
+                }
+            }
 
-    // กำหนดวัตถุประสงค์เริ่มต้นเผื่อไม่ได้ใส่ในฐานข้อมูล
-    const objectivesText = learningObjectives || "เพื่อประเมินความรู้ความเข้าใจและทักษะการคิดวิเคราะห์ตามเนื้อหาของชุดข้อสอบ";
+            let summaryData = questions.map((q, idx) => {
+                const ans = answerMap[q.id] || {};
+                const studentIdx = ans.selected_option_index;
+                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
+                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
+                return {
+                    ข้อที่: q.question_number || (idx + 1),
+                    หมวดหมู่: q.category_tag || 'ทั่วไป',
+                    โจทย์: q.question_text || q.content || 'คำถาม',
+                    นักเรียนตอบ: studentIdx !== null ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ',
+                    เฉลยที่ถูก: correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-',
+                    สถานะ: isCorrect ? 'ถูก' : 'ผิด'
+                };
+            });
 
-    const prompt = `
-คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวัดและประเมินผลการศึกษา
-นี่คือข้อมูลผลการสอบของนักเรียนในชุดข้อสอบ "${examTitle}"
-🎯 **วัตถุประสงค์การเรียนรู้ของชุดข้อสอบนี้:** ${objectivesText}
+            const objectivesText = learningObjectives || "เพื่อประเมินความรู้ความเข้าใจตามเนื้อหาในเอกสารข้อสอบ";
+
+            const prompt = `
+คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียนและทักษะเชิงลึกจากเอกสารข้อสอบ
+นี่คือข้อมูลประกอบการวิเคราะห์:
+- ชื่อชุดข้อสอบ: "${examTitle}"
+- วัตถุประสงค์การเรียนรู้: ${objectivesText}
+- เนื้อหา/โจทย์บางส่วนจากไฟล์ PDF ข้อสอบ: ${pdfTextContent.substring(0, 2000)}
 
 คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
-รายละเอียดการตอบรายข้อ:
+รายละเอียดการทำข้อสอบรายข้อของนักเรียน:
 ${JSON.stringify(summaryData, null, 2)}
 
-กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โครงสร้างกระชับ เข้าใจง่าย และให้กำลังใจนักเรียน โดยเน้นประเมินว่านักเรียนบรรลุ "วัตถุประสงค์การเรียนรู้" ตามที่กำหนดไว้หรือไม่ แบ่งเป็น:
-1. การประเมินความบรรลุตามวัตถุประสงค์ (Objective Alignment & Mastery) ว่าทำได้ดีแค่ไหนในเป้าหมายนี้
-2. จุดแข็ง (Strengths) และจุดที่ต้องพัฒนาเพิ่มเติม (Weaknesses) ที่สัมพันธ์กับวัตถุประสงค์
-3. คำแนะนำและแนวทางพัฒนาเฉพาะประเด็นเพื่อให้บรรลุวัตถุประสงค์อย่างสมบูรณ์
-ตอบกลับในรูปแบบ HTML สั้นๆ (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
+กรุณาวิเคราะห์ผลการสอบเป็นภาษาไทย โดย **"เทียบผลการตอบถูก-ผิดของนักเรียนเข้ากับเนื้อหาและโจทย์ในไฟล์ PDF อย่างเจาะจง"** แบ่งเป็น:
+1. **การวิเคราะห์อิงเนื้อหาใน PDF (PDF Content Alignment):** วิเคราะห์ว่าข้อที่นักเรียนทำผิดสะท้อนถึงจุดอ่อนตรงหัวข้อไหนในเอกสาร PDF (เช่น พลาดในส่วนเงื่อนไขการตัดคำ การแปลงพิมพ์เล็ก/ใหญ่ หรือการเรียงลำดับ) และข้อที่ทำถูกแสดงว่าเข้าใจหัวข้อใดในเอกสารแล้ว
+2. **จุดแข็งและจุดที่ต้องพัฒนา (Strengths & Weaknesses):** สรุปทักษะที่ทำได้ดีเยี่ยมเทียบกับเนื้อหาต้นฉบับ และจุดที่ยังต้องฝึกฝนเพิ่มเติม
+3. **คำแนะนำเชิงลึก (Actionable Advice):** แนะนำวิธีทบทวนเนื้อหาเฉพาะจุดจากเอกสาร PDF เพื่อให้แก้ปัญหาข้อที่ผิดได้ขาด
+ตอบกลับในรูปแบบ HTML สั้นๆ กระชับ เข้าใจง่าย (ใช้แท็ก h4, p, ul, li, b ได้ตามความเหมาะสม)
 `;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-    const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        
-        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-            let aiText = data.candidates[0].content.parts[0].text;
-            aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
-            container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
-        } else {
-            renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    let aiText = data.candidates[0].content.parts[0].text;
+                    aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
+                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-2xl border">${aiText}</div>`;
+                } else {
+                    renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
+                }
+            } catch (err) {
+                console.error("Gemini API Error, falling back to local analysis:", err);
+                renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
+            }
         }
-    } catch (err) {
-        console.error("Gemini API Error, falling back to local analysis:", err);
-        renderLocalAIAnalysis(questions, answerMap, score, total, objectivesText);
-    }
-}
 
         // ฟังก์ชันวิเคราะห์สำรอง (ทำงานรวดเร็วและแม่นยำ)
         function renderLocalAIAnalysis(questions, answerMap, score, total) {
