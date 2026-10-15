@@ -140,18 +140,21 @@
             </div>
 
             <!-- Calendar Days Container -->
-            <div id="calendarGrid" class="grid grid-cols-7 gap-1.5">
-                <!-- โหลดวันในปฏิทิน -->
-            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
         </div>
 
         <!-- รายละเอียด Slot / คิวในวันที่เลือก -->
         <div class="hitech-card p-5 rounded-2xl space-y-3">
-            <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-clock text-sky-500"></i> รายการ Slot & คิววันที่: <span id="selectedDateText" class="text-sky-500 font-bold">-</span>
                 </h3>
-                <span class="px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-md text-[10px] font-bold" id="slotCountBadge">0 ช่วงเวลา</span>
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold" id="slotCountBadge">0 ช่วงเวลา</span>
+                    <button onclick="exportSelectedDateExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-file-excel"></i> Export Excel (วันนี้)
+                    </button>
+                </div>
             </div>
             <div id="dailySlotsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
                 <div class="col-span-full text-center py-6 text-slate-400 text-xs"><i class="far fa-calendar-alt text-xl mb-1 block text-sky-500"></i> กรุณาเลือกวันที่ต้องการจากปฏิทินด้านบน</div>
@@ -162,7 +165,12 @@
         <div class="hitech-card p-5 rounded-2xl space-y-3">
             <div class="flex justify-between items-center pb-2">
                 <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-indigo-500"></i> รายชื่อนักเรียนที่จอง Consult ทั้งหมด</h3>
-                <button onclick="loadBookedStudents()" class="px-2.5 py-1 bg-slate-100 dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold transition-all border border-slate-200 dark:border-slate-800"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
+                <div class="flex gap-2">
+                    <button onclick="exportAllBookingsExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5">
+                        <i class="fas fa-file-excel"></i> Export ทั้งหมด
+                    </button>
+                    <button onclick="loadBookedStudents()" class="px-2.5 py-1 bg-slate-100 dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-600 dark:text-slate-300 rounded-lg text-[11px] font-bold transition-all border border-slate-200 dark:border-slate-800"><i class="fas fa-sync-alt"></i></button>
+                </div>
             </div>
             <div id="bookedStudentsList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
                 <div class="text-center py-6 text-slate-400 text-xs">กำลังโหลดรายชื่อ...</div>
@@ -171,7 +179,7 @@
 
         <!-- Settings & Auto Slot Generation Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <!-- ตั้งค่าเวลาเปิด-ปิด & Auto-Prune -->
+            <!-- ตั้งค่าเวลาเปิด-ปิด & ข้อมูลระบบ -->
             <div class="lg:col-span-5 hitech-card p-5 rounded-2xl space-y-4">
                 <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-sliders text-sky-500"></i> ตั้งเวลาและระบบอัตโนมัติ</h3>
                 <div class="space-y-3">
@@ -190,8 +198,9 @@
                 </div>
                 <button onclick="saveSystemSettings()" class="w-full bg-sky-600 hover:bg-sky-500 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">บันทึกการตั้งค่าระบบ</button>
 
-                <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
-                    <button onclick="resetAllQuotas()" class="w-full bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 py-2.5 rounded-xl font-bold text-xs transition-all border border-red-500/20"><i class="fas fa-redo mr-1"></i> รีเซ็ตโควต้านักเรียนทุกคน</button>
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <button onclick="resetAllQuotas()" class="w-full bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-500 py-2.5 rounded-xl font-bold text-xs transition-all border border-amber-500/20"><i class="fas fa-redo mr-1"></i> รีเซ็ตโควต้านักเรียนทุกคน</button>
+                    <button onclick="clearAllSlots()" class="w-full bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 py-2.5 rounded-xl font-bold text-xs transition-all border border-red-500/20"><i class="fas fa-trash-alt mr-1"></i> ลบ Slot ทั้งหมดในระบบ (Clear Data)</button>
                 </div>
             </div>
 
@@ -286,12 +295,7 @@
             if (!isoString) return '';
             const date = new Date(isoString);
             const pad = (n) => String(n).padStart(2, '0');
-            const year = date.getFullYear();
-            const month = pad(date.getMonth() + 1);
-            const day = pad(date.getDate());
-            const hours = pad(date.getHours());
-            const minutes = pad(date.getMinutes());
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
         }
 
         async function loadSettings() {
@@ -299,18 +303,11 @@
             currentSetting = data || { is_open: false, prune_hours: 24 };
 
             if (!isInitialLoaded || document.activeElement.tagName !== 'INPUT') {
-                if (currentSetting?.open_at) {
-                    document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
-                }
-                if (currentSetting?.close_at) {
-                    document.getElementById('closeAtInput').value = formatLocalDateTime(currentSetting.close_at);
-                }
-                if (currentSetting?.prune_hours !== undefined) {
-                    document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
-                }
+                if (currentSetting?.open_at) document.getElementById('openAtInput').value = formatLocalDateTime(currentSetting.open_at);
+                if (currentSetting?.close_at) document.getElementById('closeAtInput').value = formatLocalDateTime(currentSetting.close_at);
+                if (currentSetting?.prune_hours !== undefined) document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
                 isInitialLoaded = true;
             }
-
             updateStatusDisplay();
         }
 
@@ -324,9 +321,7 @@
             if (currentSetting?.open_at && currentSetting?.close_at) {
                 const openTime = new Date(currentSetting.open_at);
                 const closeTime = new Date(currentSetting.close_at);
-                if (now >= openTime && now < closeTime) {
-                    autoOpen = true;
-                }
+                if (now >= openTime && now < closeTime) autoOpen = true;
             }
 
             if (autoOpen !== currentSetting.is_open) {
@@ -355,7 +350,7 @@
             await mySupabase.from('consult_settings').update({ is_open: newStatus }).eq('id', 1);
             currentSetting.is_open = newStatus;
             await logHistory(newStatus ? 'Manual Override: เปิดระบบรับจอง' : 'Manual Override: ปิดระบบรับจอง');
-            Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบด้วย Manual สำเร็จ' : 'ปิดระบบด้วย Manual สำเร็จ', timer: 1200, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: newStatus ? 'เปิดระบบสำเร็จ' : 'ปิดระบบสำเร็จ', timer: 1200, showConfirmButton: false });
             updateStatusDisplay();
         }
 
@@ -370,16 +365,11 @@
             const now = new Date();
             let initialOpen = false;
             if (openVal && closeVal) {
-                const openTime = new Date(openVal);
-                const closeTime = new Date(closeVal);
-                if (now >= openTime && now < closeTime) initialOpen = true;
+                if (now >= new Date(openVal) && now < new Date(closeVal)) initialOpen = true;
             }
 
             const { error } = await mySupabase.from('consult_settings').update({ 
-                open_at: openIso,
-                close_at: closeIso,
-                prune_hours: pruneVal,
-                is_open: initialOpen
+                open_at: openIso, close_at: closeIso, prune_hours: pruneVal, is_open: initialOpen
             }).eq('id', 1);
 
             if (!error) {
@@ -509,6 +499,76 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // 📊 EXPORT EXCEL FUNCTIONS (CSV format)
+        function exportSelectedDateExcel() {
+            const filtered = allSlots.filter(s => s.start_time.startsWith(selectedDateStr) && s.status === 'booked');
+            if (filtered.length === 0) {
+                Swal.fire('ไม่พบข้อมูลการจอง', 'ไม่มีรายชื่อนักเรียนจองคิวในวันที่เลือกสำหรับ Export', 'info');
+                return;
+            }
+            let csvContent = "\uFEFFลำดับ,ชื่อ-นามสกุลนักเรียน,เวลาเริ่ม,เวลาสิ้นสุด\n";
+            filtered.forEach((s, index) => {
+                const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                csvContent += `${index + 1},"${s.profiles?.full_name || 'นักเรียน'}",${startStr},${endStr}\n`;
+            });
+            downloadCSV(csvContent, `Consult_Bookings_${selectedDateStr}.csv`);
+        }
+
+        function exportAllBookingsExcel() {
+            const booked = allSlots.filter(s => s.status === 'booked');
+            if (booked.length === 0) {
+                Swal.fire('ไม่พบข้อมูลการจอง', 'ไม่มีรายชื่อนักเรียนจองคิวในระบบ', 'info');
+                return;
+            }
+            let csvContent = "\uFEFFลำดับ,วันที่,ชื่อ-นามสกุลนักเรียน,เวลาเริ่ม,เวลาสิ้นสุด\n";
+            booked.forEach((s, index) => {
+                const dateStr = s.start_time.split('T')[0];
+                const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                csvContent += `${index + 1},${dateStr},"${s.profiles?.full_name || 'นักเรียน'}",${startStr},${endStr}\n`;
+            });
+            downloadCSV(csvContent, `Consult_Bookings_All.csv`);
+        }
+
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 🗑️ CLEAR ALL SLOTS
+        async function clearAllSlots() {
+            const res = await Swal.fire({
+                title: '⚠️ ยืนยันลบ Slot ทั้งหมด?',
+                text: 'การกระทำนี้จะลบช่วงเวลาทั้งหมดในระบบและยกเลิกการจองทั้งหมดอย่างถาวร!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'ใช่, ลบทั้งหมด',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (res.isConfirmed) {
+                Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                await mySupabase.from('consult_quotas').update({ has_booked: false, booked_slot_id: null });
+                const { error } = await mySupabase.from('consult_slots').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                if (!error) {
+                    await logHistory('ลบ Slot ทั้งหมดในระบบ (Clear Data)');
+                    Swal.fire({ icon: 'success', title: 'ลบข้อมูลทั้งหมดเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
+                    loadAllSlots();
+                    loadBookedStudents();
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            }
         }
 
         async function generateSlots() {
