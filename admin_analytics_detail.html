@@ -701,7 +701,7 @@
             });
         }
 
-        function printIndividualReport(attemptId) {
+      function printIndividualReport(attemptId) {
             const att = fetchedAttempts.find(a => a.id === attemptId);
             if (!att) return;
             const score = getAttemptScore(att);
@@ -728,7 +728,8 @@
                     <h2>รายงานผลคะแนนสอบรายบุคคล</h2>
                     <p>ชุดข้อสอบ: <strong>${examTitle}</strong></p>
                     <div class="box">
-                        <p>ชื่อ-นามสกุล: <strong>${att.resolvedName}</strong> (รหัส: ${att.resolvedIdCode})</p>
+                        <!-- 🌟 ตัดส่วนแสดงรหัส (ID) ออก เหลือเพียงชื่อ-นามสกุล -->
+                        <p>ชื่อ-นามสกุล: <strong>${att.resolvedName}</strong></p>
                         <p>คะแนนที่ได้: <strong>${score} / ${totalQ} คะแนน (${((score/totalQ)*100).toFixed(1)}%)</strong></p>
                         <p>สถานะ: <strong>${score >= (totalQ/2) ? 'ผ่านเกณฑ์' : 'ไม่ผ่านเกณฑ์'}</strong></p>
                     </div>
