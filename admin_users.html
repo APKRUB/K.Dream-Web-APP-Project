@@ -74,13 +74,13 @@
                 <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-address-book text-sky-500"></i> รายชื่อบัญชีนักเรียนในระบบ
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น)</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น, โรงเรียน, LINE ID, อีเมล)</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
                 <div class="relative flex-1 md:w-72">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, รหัส..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
+                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, โรงเรียน..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
                 </div>
             </div>
         </div>
@@ -89,7 +89,7 @@
         <div class="hitech-card p-6 rounded-3xl space-y-4">
             <div class="flex justify-between items-center text-xs text-slate-400 border-b border-sky-500/20 pb-3">
                 <span id="studentCountLabel">แสดง 0 รายการ</span>
-                <span class="text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-circle-info mr-1"></i> คลิกปุ่ม "แก้ไขข้อมูล" เพื่อปรับปรุงรายละเอียดนักเรียน</span>
+                <span class="text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-circle-info mr-1"></i> ข้อมูลทั้งหมดจำเป็นต้องกรองให้ครบถ้วน</span>
             </div>
 
             <div class="overflow-x-auto">
@@ -100,12 +100,13 @@
                             <th class="p-3">เลขประจำตัว</th>
                             <th class="p-3">ชื่อจริง - นามสกุล</th>
                             <th class="p-3">ชื่อเล่น</th>
-                            <th class="p-3 text-center">ระดับชั้น</th>
+                            <th class="p-3">ระดับชั้น / โรงเรียน</th>
+                            <th class="p-3">LINE ID / อีเมล</th>
                             <th class="p-3 text-center">จัดการข้อมูล</th>
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr><td colspan="6" class="text-center py-8 text-slate-400">กำลังโหลดข้อมูลบัญชีผู้ใช้...</td></tr>
+                        <tr><td colspan="7" class="text-center py-8 text-slate-400">กำลังโหลดข้อมูลบัญชีผู้ใช้...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -155,7 +156,6 @@
             }
 
             if (profiles) {
-                // กรองเอาเฉพาะบัญชีที่เป็นนักเรียน (ไม่ใช่แอดมิน/ครู)
                 studentsList = profiles.filter(p => !isUserAdmin(p));
             }
 
@@ -172,13 +172,15 @@
                 const lname = (s.last_name || '').toLowerCase();
                 const nickname = (s.nickname || '').toLowerCase();
                 const studentId = String(s.student_id || '').toLowerCase();
-                return fname.includes(keyword) || lname.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword);
+                const school = (s.school || '').toLowerCase();
+                const email = (s.email || '').toLowerCase();
+                return fname.includes(keyword) || lname.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword) || school.includes(keyword) || email.includes(keyword);
             });
 
             document.getElementById('studentCountLabel').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${studentsList.length} คน)`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
                 return;
             }
 
@@ -189,6 +191,9 @@
                 const nickname = s.nickname || '-';
                 const studentId = s.student_id || '-';
                 const gradeLevel = s.grade_level || s.grade || '-';
+                const school = s.school || '-';
+                const lineId = s.line_id || '-';
+                const email = s.email || '-';
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -196,7 +201,14 @@
                         <td class="p-3 font-mono font-bold text-sky-600 dark:text-sky-400">${studentId}</td>
                         <td class="p-3 font-bold text-slate-900 dark:text-white">${firstName} ${lastName !== '-' ? lastName : ''}</td>
                         <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${nickname}</td>
-                        <td class="p-3 text-center"><span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg text-[11px]">${gradeLevel}</span></td>
+                        <td class="p-3">
+                            <div class="font-bold text-indigo-600 dark:text-indigo-400">${gradeLevel}</div>
+                            <div class="text-[10px] text-slate-400">${school}</div>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-mono text-slate-700 dark:text-slate-300">LINE: ${lineId}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${email}</div>
+                        </td>
                         <td class="p-3 text-center">
                             <button onclick="openEditStudentModal('${sId}')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1 mx-auto">
                                 <i class="fas fa-user-pen"></i> แก้ไขข้อมูล
@@ -215,11 +227,12 @@
 
             const { value: formValues } = await Swal.fire({
                 title: '✏️ แก้ไขข้อมูลบัญชีนักเรียน',
-                width: '550px',
+                width: '600px',
                 html: `
+                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
                     <div class="space-y-3 text-left text-xs">
                         <div>
-                            <label class="block font-bold mb-1">เลขประจำตัวนักเรียน</label>
+                            <label class="block font-bold mb-1">เลขประจำตัวนักเรียน <span class="text-red-500">*</span></label>
                             <input id="swalStudentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" value="${student.student_id || ''}" placeholder="เช่น 6701">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
@@ -228,19 +241,33 @@
                                 <input id="swalFirstName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.first_name || student.full_name || ''}">
                             </div>
                             <div>
-                                <label class="block font-bold mb-1">นามสกุล</label>
+                                <label class="block font-bold mb-1">นามสกุล <span class="text-red-500">*</span></label>
                                 <input id="swalLastName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.last_name || ''}">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block font-bold mb-1">ชื่อเล่น</label>
+                                <label class="block font-bold mb-1">ชื่อเล่น <span class="text-red-500">*</span></label>
                                 <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.nickname || ''}">
                             </div>
                             <div>
-                                <label class="block font-bold mb-1">ระดับชั้น</label>
+                                <label class="block font-bold mb-1">ระดับชั้น <span class="text-red-500">*</span></label>
                                 <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.grade_level || student.grade || ''}" placeholder="เช่น ม.3/1 หรือ ม.304">
                             </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">โรงเรียน <span class="text-red-500">*</span></label>
+                                <input id="swalSchool" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.school || ''}" placeholder="เช่น สวนกุหลาบวิทยาลัย">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
+                                <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.line_id || ''}" placeholder="เช่น @line_id">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">อีเมล (Email) <span class="text-red-500">*</span></label>
+                            <input type="email" id="swalEmail" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.email || ''}" placeholder="student@example.com">
                         </div>
                     </div>
                 `,
@@ -251,18 +278,34 @@
                 background: isDark ? '#090d16' : '#ffffff',
                 color: isDark ? '#f1f5f9' : '#1e293b',
                 preConfirm: () => {
+                    const studentIdVal = document.getElementById('swalStudentId').value.trim();
                     const firstName = document.getElementById('swalFirstName').value.trim();
-                    if (!firstName) {
-                        Swal.showValidationMessage('กรุณากรอกชื่อจริงของนักเรียน');
-                        return false;
+                    const lastName = document.getElementById('swalLastName').value.trim();
+                    const nickname = document.getElementById('swalNickname').value.trim();
+                    const gradeLevel = document.getElementById('swalGradeLevel').value.trim();
+                    const school = document.getElementById('swalSchool').value.trim();
+                    const lineId = document.getElementById('swalLineId').value.trim();
+                    const email = document.getElementById('swalEmail').value.trim();
+
+                    const errorBox = document.getElementById('swalErrorMsg');
+
+                    // ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
+                    if (!studentIdVal || !firstName || !lastName || !nickname || !gradeLevel || !school || !lineId || !email) {
+                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง (ข้อมูลจำเป็นทั้งหมด)';
+                        errorBox.classList.remove('hidden');
+                        return false; // ป้องกันไม่ให้ modal ปิดตัวลง
                     }
+
                     return {
-                        student_id: document.getElementById('swalStudentId').value.trim(),
+                        student_id: studentIdVal,
                         first_name: firstName,
-                        last_name: document.getElementById('swalLastName').value.trim(),
-                        nickname: document.getElementById('swalNickname').value.trim(),
-                        grade_level: document.getElementById('swalGradeLevel').value.trim(),
-                        full_name: firstName + (document.getElementById('swalLastName').value.trim() ? ' ' + document.getElementById('swalLastName').value.trim() : '')
+                        last_name: lastName,
+                        nickname: nickname,
+                        grade_level: gradeLevel,
+                        school: school,
+                        line_id: lineId,
+                        email: email,
+                        full_name: `${firstName} ${lastName}`
                     };
                 }
             });
