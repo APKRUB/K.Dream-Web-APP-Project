@@ -4,15 +4,13 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | ศูนย์วิเคราะห์ผลคะแนน & สถิติข้อสอบภาพรวม</title>
+    <title>LMS | ศูนย์วิเคราะห์ผลคะแนนภาพรวม</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- INSTANT ADMIN AUTH GUARD -->
     <script>
         (function() {
             let hasSession = false;
@@ -20,19 +18,13 @@
                 const key = localStorage.key(i);
                 if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
                     const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) {
-                        hasSession = true;
-                        break;
-                    }
+                    if (val && val.includes('access_token')) { hasSession = true; break; }
                 }
             }
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
-            if (!hasSession && !fallbackId) {
-                window.location.replace('index.html');
-            }
+            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
         })();
     </script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -51,8 +43,6 @@
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
         .exam-card-hover:hover { transform: translateY(-3px); border-color: rgba(2, 132, 199, 0.6); box-shadow: 0 15px 35px -10px rgba(2, 132, 199, 0.15); }
-        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
@@ -65,140 +55,61 @@
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-indigo-500 to-sky-500 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-line"></i></span>
-                        ศูนย์วิเคราะห์ผลคะแนน & สถิติล่าสุด
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-indigo-500 to-sky-500 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-chart-pie"></i></span>
+                        ศูนย์วิเคราะห์ผลคะแนนภาพรวม (Admin Dashboard)
                     </h1>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
-                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
-                    </button>
-                </div>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-8">
         
-        <!-- ส่วนที่ 1: ภาพรวมชุดข้อสอบทั้งหมดที่เปิดอยู่ (แบ่งตามหมวดหมู่) -->
+        <!-- ส่วนที่ 1: ภาพรวมระดับระบบทั้งหมด (System-wide KPIs) -->
         <div class="space-y-4">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-folder-open text-sky-500"></i> เลือกชุดข้อสอบเพื่อดูสถิติแยกตามหมวดหมู่
-                    </h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">คลิกที่ชุดข้อสอบเพื่อดูผลวิเคราะห์เจาะลึกและตารางคะแนนนักเรียนรายบุคคล</p>
+            <h2 class="font-extrabold text-sm text-slate-500 uppercase tracking-wider"><i class="fas fa-globe text-sky-500 mr-1"></i> ภาพรวมระบบ LMS ทั้งหมด</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block">ชุดข้อสอบทั้งหมด</span>
+                        <span id="globalTotalExams" class="text-2xl font-extrabold text-slate-900 dark:text-white">0 ชุด</span>
+                    </div>
                 </div>
-                <div class="w-full md:w-72">
-                    <select id="examSelectDropdown" onchange="loadAnalyticsData(this.value)" class="w-full px-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs text-sky-600 dark:text-sky-400 outline-none shadow-sm cursor-pointer">
-                        <option value="">-- หรือเลือกจากรายการดรอปดาวน์ --</option>
-                    </select>
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-users"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block">จำนวนการส่งข้อสอบรวม</span>
+                        <span id="globalTotalSubmissions" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span>
+                    </div>
                 </div>
-            </div>
-
-            <!-- แสดงการ์ดข้อสอบทั้งหมดแยกหมวดหมู่ -->
-            <div id="examsCatalogGroupContainer" class="space-y-6">
-                <div class="hitech-card p-8 rounded-2xl text-center text-slate-400 text-xs">
-                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดรายการชุดข้อสอบ...
+                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-bold block">คะแนนเฉลี่ยภาพรวม</span>
+                        <span id="globalAvgScore" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">--</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ส่วนที่ 2: พื้นที่แสดงผลสถิติและวิเคราะห์ข้อสอบ (จะแสดงเมื่อเลือกชุดข้อสอบ) -->
-        <div id="analyticsContentArea" class="space-y-6 hidden pt-4 border-t border-slate-200 dark:border-slate-800">
-            
-            <div class="flex justify-between items-center bg-sky-500/10 p-4 rounded-2xl border border-sky-500/20">
-                <div>
-                    <span class="text-[10px] font-extrabold text-sky-600 dark:text-sky-400 uppercase tracking-wider">กำลังวิเคราะห์ชุดข้อสอบ</span>
-                    <h3 id="activeExamTitleBanner" class="font-extrabold text-base text-slate-900 dark:text-white">ชื่อชุดข้อสอบ</h3>
-                </div>
-                <button onclick="clearSelectedExam()" class="px-3.5 py-1.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs border shadow-sm hover:bg-slate-100">
-                    <i class="fas fa-times mr-1"></i> ปิดหน้านี้
-                </button>
+        <!-- ส่วนที่ 2: รายการชุดข้อสอบแยกตามหมวดหมู่ (คลิกเพื่อเข้าไปดูสถิติรายข้อสอบ) -->
+        <div class="space-y-4 pt-2">
+            <div class="flex justify-between items-center">
+                <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-folder-open text-sky-500"></i> เลือกชุดข้อสอบเพื่อดูสถิติเชิงลึกรายบุคคล
+                </h2>
+                <span id="examCountBadge" class="text-xs text-slate-400 font-bold">0 ชุดข้อสอบ</span>
             </div>
 
-            <!-- 4 KPI Cards สรุปตัวเลขสำคัญ -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="hitech-card p-4 rounded-2xl space-y-1">
-                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-users text-sky-500 mr-1"></i> ผู้เข้าสอบทั้งหมด</div>
-                    <div id="kpiTotalStudents" class="text-2xl font-extrabold text-slate-900 dark:text-white">0 คน</div>
-                </div>
-                <div class="hitech-card p-4 rounded-2xl space-y-1">
-                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-calculator text-indigo-500 mr-1"></i> คะแนนเฉลี่ย (Average)</div>
-                    <div id="kpiAvgScore" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">0 / 0</div>
-                </div>
-                <div class="hitech-card p-4 rounded-2xl space-y-1">
-                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-trophy text-amber-500 mr-1"></i> คะแนนสูงสุด / ต่ำสุด</div>
-                    <div id="kpiMaxMinScore" class="text-2xl font-extrabold text-amber-500">0 / 0</div>
-                </div>
-                <div class="hitech-card p-4 rounded-2xl space-y-1">
-                    <div class="text-xs text-slate-500 font-bold"><i class="fas fa-chart-pie text-emerald-500 mr-1"></i> อัตราผ่านเกณฑ์ (≥50%)</div>
-                    <div id="kpiPassRate" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">0%</div>
+            <div id="examsCatalogGroupContainer" class="space-y-6">
+                <div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">
+                    <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดรายการชุดข้อสอบ...
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- ฝั่งซ้าย: จุดที่ต้องเน้นสอนเพิ่ม (ข้อที่ผิดเยอะสุด) -->
-                <div class="lg:col-span-7 space-y-4">
-                    <div class="hitech-card p-5 rounded-2xl space-y-4 border-l-4 border-l-rose-500">
-                        <div>
-                            <h3 class="font-extrabold text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
-                                <i class="fas fa-triangle-exclamation"></i> จุดที่ต้องเน้นสอนเพิ่ม (ข้อที่นักเรียนผิดเยอะสุด)
-                            </h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">วิเคราะห์จากข้อสอบที่มีอัตราการตอบผิดสูงที่สุด เพื่อนำไปเน้นย้ำในชั้นเรียน</p>
-                        </div>
-                        <div id="weakPointsContainer" class="space-y-3">
-                            <div class="text-center py-6 text-slate-400 text-xs">กำลังประมวลผลข้อสอบ...</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ฝั่งขวา: กราฟการกระจายตัวของคะแนน -->
-                <div class="lg:col-span-5 space-y-4">
-                    <div class="hitech-card p-5 rounded-2xl space-y-3">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                                <i class="fas fa-chart-bar text-sky-500"></i> การกระจายตัวของคะแนน
-                            </h3>
-                            <button onclick="exportToCSV()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg shadow transition-all flex items-center gap-1">
-                                <i class="fas fa-file-excel"></i> CSV
-                            </button>
-                        </div>
-                        <div class="relative h-64 w-full">
-                            <canvas id="scoreDistributionChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ตารางคะแนนรายบุคคล -->
-            <div class="hitech-card p-5 rounded-2xl space-y-4">
-                <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
-                    <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-list-ol text-sky-500"></i> ตารางคะแนนนักเรียนรายบุคคล
-                    </h3>
-                    <span id="studentTableCount" class="text-xs text-slate-400 font-bold">0 รายการ</span>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
-                                <th class="p-3">ลำดับ</th>
-                                <th class="p-3">ชื่อ-นามสกุล / ID</th>
-                                <th class="p-3 text-center">คะแนนรวม</th>
-                                <th class="p-3 text-center">สถานะ</th>
-                                <th class="p-3 text-center">วันที่ทำข้อสอบ</th>
-                                <th class="p-3 text-center">จัดการรายคน</th>
-                            </tr>
-                        </thead>
-                        <tbody id="studentScoreTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="6" class="text-center py-6 text-slate-400">ยังไม่มีข้อมูลผลสอบ</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
 
     </main>
@@ -210,10 +121,6 @@
 
         let allExams = [];
         let categoriesMap = {};
-        let currentExamId = null;
-        let fetchedAttempts = [];
-        let fetchedQuestions = [];
-        let distributionChart = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -228,35 +135,38 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        async function initPage() {
+        async function initDashboard() {
             // โหลดหมวดหมู่
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
             }
 
-            // โหลดชุดข้อสอบทั้งหมด
+            // โหลดชุดข้อสอบ
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             allExams = exams || [];
+            document.getElementById('globalTotalExams').textContent = `${allExams.length} ชุด`;
+            document.getElementById('examCountBadge').textContent = `${allExams.length} ชุดข้อสอบ`;
 
-            renderExamDropdown();
-            renderExamsCatalogByCategories();
-        }
-
-        function renderExamDropdown() {
-            const dd = document.getElementById('examSelectDropdown');
-            if (allExams.length === 0) {
-                dd.innerHTML = `<option value="">ยังไม่มีชุดข้อสอบในระบบ</option>`;
-                return;
+            // โหลดสถิติรวมทั้งหมดจาก exam_attempts
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('score, total_score');
+            if (attempts && attempts.length > 0) {
+                document.getElementById('globalTotalSubmissions').textContent = `${attempts.length} ครั้ง`;
+                const scores = attempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
+                const avg = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+                document.getElementById('globalAvgScore').textContent = `${avg} คะแนน`;
+            } else {
+                document.getElementById('globalTotalSubmissions').textContent = `0 ครั้ง`;
+                document.getElementById('globalAvgScore').textContent = `0 คะแนน`;
             }
-            dd.innerHTML = `<option value="">-- เลือกชุดข้อสอบจากรายการดรอปดาวน์ --</option>` + 
-                allExams.map(e => `<option value="${e.id}">${e.title} (${e.exam_code || 'CODE'})</option>`).join('');
+
+            renderExamsCatalogByCategories();
         }
 
         function renderExamsCatalogByCategories() {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (allExams.length === 0) {
-                container.innerHTML = `<div class="hitech-card p-8 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ</div>`;
+                container.innerHTML = `<div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ</div>`;
                 return;
             }
 
@@ -280,7 +190,7 @@
 
                 examsList.forEach(exam => {
                     html += `
-                        <div onclick="loadAnalyticsData('${exam.id}')" class="hitech-card exam-card-hover p-4 rounded-xl cursor-pointer flex flex-col justify-between space-y-3 border border-slate-200 dark:border-slate-800">
+                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="hitech-card exam-card-hover p-4 rounded-xl cursor-pointer flex flex-col justify-between space-y-3 border border-slate-200 dark:border-slate-800">
                             <div class="space-y-1">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] font-bold px-2 py-0.5 bg-sky-500/10 text-sky-600 rounded-md">${exam.exam_code || 'EXAM'}</span>
@@ -290,7 +200,7 @@
                                 <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${exam.description || 'ไม่มีคำอธิบาย'}</p>
                             </div>
                             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs font-bold text-sky-600 dark:text-sky-400">
-                                <span><i class="fas fa-chart-line mr-1"></i> คลิกดูสถิติผลสอบ</span>
+                                <span><i class="fas fa-chart-line mr-1"></i> ดูสถิติและคะแนนรายบุคคล</span>
                                 <i class="fas fa-arrow-right"></i>
                             </div>
                         </div>
@@ -303,314 +213,7 @@
             container.innerHTML = html;
         }
 
-        async function loadAnalyticsData(examId) {
-            if (!examId) return;
-            currentExamId = examId;
-            document.getElementById('examSelectDropdown').value = examId;
-
-            const exam = allExams.find(e => e.id === examId);
-            if (exam) {
-                document.getElementById('activeExamTitleBanner').textContent = exam.title;
-            }
-
-            const contentArea = document.getElementById('analyticsContentArea');
-            contentArea.classList.remove('hidden');
-            contentArea.scrollIntoView({ behavior: 'smooth' });
-
-            Swal.fire({ title: 'กำลังประมวลผลข้อมูลสถิติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            // 1. โหลดคำถาม
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
-            fetchedQuestions = questions || [];
-
-            // 2. โหลดผลการทำข้อสอบจาก exam_attempts และ join profiles หรือดึง students มารวม
-            const { data: attempts } = await mySupabase
-                .from('exam_attempts')
-                .select('*')
-                .eq('exam_id', examId);
-
-            let enhancedAttempts = [];
-            if (attempts) {
-                for (let att of attempts) {
-                    let studentName = 'นักเรียนทั่วไป';
-                    let studentIdCode = att.student_id || '-';
-
-                    // พยายามดึงจากตาราง profiles
-                    if (att.student_id) {
-                        const { data: prof } = await mySupabase.from('profiles').select('full_name, name, student_id').eq('id', att.student_id).single();
-                        if (prof) {
-                            studentName = prof.full_name || prof.name || studentName;
-                            studentIdCode = prof.student_id || studentIdCode;
-                        } else {
-                            // ลองดึงจากตาราง students
-                            const { data: std } = await mySupabase.from('students').select('name, fullname, username').eq('id', att.student_id).single();
-                            if (std) {
-                                studentName = std.fullname || std.name || std.username || studentName;
-                            }
-                        }
-                    }
-                    enhancedAttempts.push({ ...att, resolvedName: studentName, resolvedIdCode: studentIdCode });
-                }
-            }
-
-            fetchedAttempts = enhancedAttempts;
-            Swal.close();
-
-            renderKPIs();
-            renderWeakPoints();
-            renderDistributionChart();
-            renderStudentTable();
-        }
-
-        function clearSelectedExam() {
-            currentExamId = null;
-            document.getElementById('examSelectDropdown').value = '';
-            document.getElementById('analyticsContentArea').classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function renderKPIs() {
-            const total = fetchedAttempts.length;
-            document.getElementById('kpiTotalStudents').textContent = `${total} คน`;
-
-            if (total === 0) {
-                document.getElementById('kpiAvgScore').textContent = `0 / ${fetchedQuestions.length}`;
-                document.getElementById('kpiMaxMinScore').textContent = `0 / 0`;
-                document.getElementById('kpiPassRate').textContent = `0%`;
-                return;
-            }
-
-            const scores = fetchedAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
-            const sum = scores.reduce((a, b) => a + b, 0);
-            const avg = (sum / total).toFixed(1);
-            const max = Math.max(...scores);
-            const min = Math.min(...scores);
-            const passCount = scores.filter(s => s >= (fetchedQuestions.length / 2)).length;
-            const passRate = ((passCount / total) * 100).toFixed(0);
-
-            document.getElementById('kpiAvgScore').textContent = `${avg} / ${fetchedQuestions.length}`;
-            document.getElementById('kpiMaxMinScore').textContent = `${max} / ${min}`;
-            document.getElementById('kpiPassRate').textContent = `${passRate}%`;
-        }
-
-        function renderWeakPoints() {
-            const container = document.getElementById('weakPointsContainer');
-            if (fetchedAttempts.length === 0 || fetchedQuestions.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีข้อมูลคำตอบเพื่อนำมาวิเคราะห์</div>`;
-                return;
-            }
-
-            const wrongStats = fetchedQuestions.map(q => {
-                let wrongCount = 0;
-                fetchedAttempts.forEach(att => {
-                    const ansMap = att.answers || {};
-                    if (String(ansMap[q.id]) !== String(q.correct_answer)) {
-                        wrongCount++;
-                    }
-                });
-                const wrongPercent = Math.round((wrongCount / fetchedAttempts.length) * 100);
-                return { question: q, wrongCount, wrongPercent };
-            });
-
-            wrongStats.sort((a, b) => b.wrongPercent - a.wrongPercent);
-            const topWeak = wrongStats.slice(0, 5).filter(w => w.wrongPercent > 0);
-
-            if (topWeak.length === 0) {
-                container.innerHTML = `<div class="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 นักเรียนทุกคนตอบถูกต้องทุกข้อ!</div>`;
-                return;
-            }
-
-            container.innerHTML = topWeak.map((w, idx) => `
-                <div class="p-3.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-rose-200 dark:border-rose-900/40 space-y-2">
-                    <div class="flex justify-between items-center text-xs">
-                        <span class="font-extrabold text-rose-600 dark:text-rose-400">
-                            อันดับ ${idx+1}: ข้อที่ ${w.question.question_number} ${w.question.category_tag ? `[${w.question.category_tag}]` : ''}
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 font-bold text-[10px]">
-                            ตอบผิด ${w.wrongPercent}% (${w.wrongCount}/${fetchedAttempts.length} คน)
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-700 dark:text-slate-300 font-semibold line-clamp-2">
-                        ${w.question.question_text || w.question.content || 'โจทย์ในข้อสอบ'}
-                    </p>
-                </div>
-            `).join('');
-        }
-
-        function renderDistributionChart() {
-            const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
-            if (distributionChart) distributionChart.destroy();
-
-            const totalQ = fetchedQuestions.length || 10;
-            const ranges = ['0-20%', '21-40%', '41-60%', '61-80%', '81-100%'];
-            const counts = [0, 0, 0, 0, 0];
-
-            fetchedAttempts.forEach(a => {
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
-                const pct = (score / totalQ) * 100;
-                if (pct <= 20) counts[0]++;
-                else if (pct <= 40) counts[1]++;
-                else if (pct <= 60) counts[2]++;
-                else if (pct <= 80) counts[3]++;
-                else counts[4]++;
-            });
-
-            distributionChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ranges,
-                    datasets: [{
-                        label: 'จำนวนนักเรียน (คน)',
-                        data: counts,
-                        backgroundColor: '#0284c7',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
-            });
-        }
-
-        function renderStudentTable() {
-            const tbody = document.getElementById('studentScoreTableBody');
-            document.getElementById('studentTableCount').textContent = `${fetchedAttempts.length} รายการ`;
-
-            if (fetchedAttempts.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">ยังไม่มีนักเรียนทำข้อสอบชุดนี้</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = fetchedAttempts.map((a, idx) => {
-                const totalQ = fetchedQuestions.length;
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
-                const isPass = score >= (totalQ / 2);
-                const submitTime = a.submission_time || a.submitted_at || a.created_at;
-
-                return `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-900 dark:text-white">${a.resolvedName}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">ID: ${a.resolvedIdCode}</div>
-                        </td>
-                        <td class="p-3 text-center font-mono font-extrabold text-indigo-600 dark:text-indigo-400">${score} / ${totalQ}</td>
-                        <td class="p-3 text-center">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isPass ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600' : 'bg-rose-100 dark:bg-rose-950 text-rose-600'}">
-                                ${isPass ? 'ผ่าน' : 'ไม่ผ่าน'}
-                            </span>
-                        </td>
-                        <td class="p-3 text-center text-[11px] text-slate-400">${submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-'}</td>
-                        <td class="p-3 text-center space-x-1">
-                            <button onclick="viewStudentDetail('${a.id}')" class="px-2.5 py-1 bg-sky-50 dark:bg-sky-950/40 text-sky-600 hover:bg-sky-100 font-bold text-[11px] rounded-lg border border-sky-200 dark:border-sky-900 transition-all" title="ดูรายละเอียดรายคน">
-                                <i class="fas fa-eye"></i> ดู
-                            </button>
-                            <button onclick="resetStudentAttempt('${a.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซ็ตสิทธิ์สอบใหม่">
-                                <i class="fas fa-rotate-right"></i> Reset
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        function viewStudentDetail(attemptId) {
-            const att = fetchedAttempts.find(a => a.id === attemptId);
-            if (!att) return;
-
-            const studentAnswers = att.answers || {};
-            const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
-
-            let detailsHtml = `
-                <div class="text-left space-y-3 max-h-96 overflow-y-auto pr-1 text-xs">
-                    <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-500/30">
-                        <div>นักเรียน: <strong class="text-sky-600 dark:text-sky-400">${att.resolvedName}</strong> (รหัส: ${att.resolvedIdCode})</div>
-                        <div>คะแนนรวม: <strong class="text-indigo-600 dark:text-indigo-400">${score} / ${fetchedQuestions.length}</strong></div>
-                    </div>
-                    <div class="space-y-2">
-            `;
-
-            fetchedQuestions.forEach((q) => {
-                const userAns = studentAnswers[q.id];
-                const isCorrect = String(userAns) === String(q.correct_answer);
-                
-                detailsHtml += `
-                    <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1">
-                        <div class="flex justify-between font-bold">
-                            <span>ข้อที่ ${q.question_number}: ${q.question_text || q.content || 'โจทย์'}</span>
-                            <span class="${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '✅ ถูกต้อง' : '❌ ตอบผิด'}</span>
-                        </div>
-                        <div class="text-[11px] text-slate-500">
-                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${q.correct_answer}</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            detailsHtml += `</div></div>`;
-
-            Swal.fire({
-                title: `📋 รายละเอียดข้อสอบรายบุคคล`,
-                html: detailsHtml,
-                width: '600px',
-                confirmButtonColor: '#0284c7'
-            });
-        }
-
-        async function resetStudentAttempt(attemptId) {
-            Swal.fire({
-                title: 'ยืนยันการ Reset สิทธิ์สอบ?',
-                text: 'การกระทำนี้จะลบผลคะแนนและคำตอบเดิมของนักเรียน เพื่อให้พวกเขาสามารถกลับมาทำข้อสอบใหม่ได้อีกครั้ง',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยัน Reset',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#d97706'
-            }).then(async (res) => {
-                if (res.isConfirmed) {
-                    const { error } = await mySupabase.from('exam_attempts').delete().eq('id', attemptId);
-                    if (error) {
-                        Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                    } else {
-                        Swal.fire({ icon: 'success', title: 'Reset สำเร็จ!', text: 'ลบประวัติการสอบเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
-                        loadAnalyticsData(currentExamId);
-                    }
-                }
-            });
-        }
-
-        function exportToCSV() {
-            if (fetchedAttempts.length === 0) {
-                Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลคะแนนสำหรับ Export', 'info');
-                return;
-            }
-
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "ลำดับ,ชื่อ-นามสกุล,รหัสนักเรียน,คะแนนรวม,คะแนนเต็ม,สถานะ,วันที่ทำข้อสอบ\n";
-
-            fetchedAttempts.forEach((a, idx) => {
-                const totalQ = fetchedQuestions.length;
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
-                const status = score >= (totalQ / 2) ? 'ผ่าน' : 'ไม่ผ่าน';
-                const submitTime = a.submission_time || a.submitted_at || a.created_at;
-                const date = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
-
-                csvContent += `${idx + 1},"${a.resolvedName}",${a.resolvedIdCode},${score},${totalQ},${status},${date}\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `รายงานคะแนน_${Date.now()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        initPage();
+        initDashboard();
     </script>
 </body>
 </html>
