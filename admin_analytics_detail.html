@@ -201,6 +201,7 @@
         let examTitle = '';
         let fetchedAttempts = [];
         let fetchedQuestions = [];
+        let examTimeLimitMinutes = 60; // ค่าเริ่มต้นเวลาสอบรวม (นาที)
         let currentFilter = 'all';
         let distributionChart = null;
 
@@ -227,12 +228,36 @@
             return 0;
         }
 
-        // 🎯 ฟังก์ชันดึงเฉลยคำตอบที่ถูกต้อง รองรับทุกชื่อฟิลด์ในฐานข้อมูล
         function getCorrectAnswer(q) {
             return q.correct_answer !== undefined ? q.correct_answer : 
                    (q.answer !== undefined ? q.answer : 
                    (q.key !== undefined ? q.key : 
                    (q.solution !== undefined ? q.solution : '')));
+        }
+
+        // 🎯 ฟังก์ชันดึงเวลาที่ใช้ทำจริง โดยใช้ remaining_time จากตาราง
+        function getAttemptTimeMinutes(att) {
+            // ถ้าเก็บ remaining_time มา (สมมติหน่วยเป็นวินาที หรือนาที)
+            if (att.remaining_time !== undefined && att.remaining_time !== null && !isNaN(att.remaining_time)) {
+                let remSec = Number(att.remaining_time);
+                // ถ้า remaining_time มีค่ามากกว่า 300 น่าจะเป็นหน่วยวินาที ให้แปลงเป็นนาที
+                if (remSec > 300) remSec = remSec / 60; 
+                let spent = examTimeLimitMinutes - remSec;
+                return spent > 0 ? spent : 0.5;
+            }
+            if (att.time_spent !== undefined && att.time_spent !== null && !isNaN(att.time_spent)) {
+                return Number(att.time_spent) / 60;
+            }
+            if (att.duration !== undefined && att.duration !== null && !isNaN(att.duration)) {
+                return Number(att.duration) / 60;
+            }
+            const start = att.started_at || att.created_at;
+            const end = att.submitted_at || att.submission_time;
+            if (start && end) {
+                const diffMs = new Date(end) - new Date(start);
+                if (diffMs > 0) return diffMs / (1000 * 60);
+            }
+            return null;
         }
 
         async function initDetail() {
@@ -248,10 +273,13 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data: examData } = await mySupabase.from('exams').select('title').eq('id', examId).single();
+            // โหลดข้อมูลชุดข้อสอบ (ดึง duration หรือ time_limit ถ้ามี)
+            const { data: examData } = await mySupabase.from('exams').select('title, duration, time_limit').eq('id', examId).single();
             if (examData) {
                 examTitle = examData.title;
                 document.getElementById('activeExamTitleBanner').textContent = examTitle;
+                if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
+                else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
             }
 
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
@@ -319,15 +347,16 @@
         function renderTimeAnalysis() {
             if (fetchedAttempts.length === 0) return;
 
-            let times = fetchedAttempts.map(a => {
-                if (a.time_spent !== undefined && !isNaN(a.time_spent)) return Number(a.time_spent) / 60;
-                if (a.duration !== undefined && !isNaN(a.duration)) return Number(a.duration) / 60;
-                if (a.started_at && (a.submitted_at || a.submission_time)) {
-                    const diff = new Date(a.submitted_at || a.submission_time) - new Date(a.started_at);
-                    if (diff > 0) return diff / (1000 * 60);
-                }
-                return Math.floor(Math.random() * 20) + 15;
-            });
+            let times = fetchedAttempts
+                .map(a => getAttemptTimeMinutes(a))
+                .filter(t => t !== null && t > 0);
+
+            if (times.length === 0) {
+                document.getElementById('statAvgTime').textContent = `ไม่พบข้อมูลเวลา`;
+                document.getElementById('statFastestTime').textContent = `--`;
+                document.getElementById('statSlowestTime').textContent = `--`;
+                return;
+            }
 
             const avgTime = (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1);
             const fastTime = Math.min(...times).toFixed(1);
@@ -463,7 +492,8 @@
                 const score = getAttemptScore(a);
                 const isPass = score >= (totalQ / 2);
                 const submitTime = a.submission_time || a.submitted_at || a.created_at;
-                const timeSpent = a.time_spent ? `${Math.round(a.time_spent / 60)} นาที` : '15 นาที';
+                const timeMins = getAttemptTimeMinutes(a);
+                const timeSpent = timeMins !== null ? `${timeMins.toFixed(1)} นาที` : '-';
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -638,16 +668,18 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "ลำดับ,ชื่อ-นามสกุล,รหัสนักเรียน,คะแนนรวม,คะแนนเต็ม,สถานะ,วันที่ทำข้อสอบ\n";
+            csvContent += "ลำดับ,ชื่อ-นามสกุล,รหัสนักเรียน,คะแนนรวม,คะแนนเต็ม,สถานะ,เวลาที่ใช้,วันที่ทำข้อสอบ\n";
 
             fetchedAttempts.forEach((a, idx) => {
                 const totalQ = fetchedQuestions.length;
                 const score = getAttemptScore(a);
                 const status = score >= (totalQ / 2) ? 'ผ่าน' : 'ไม่ผ่าน';
+                const timeMins = getAttemptTimeMinutes(a);
+                const timeSpent = timeMins !== null ? `${timeMins.toFixed(1)} นาที` : '-';
                 const submitTime = a.submission_time || a.submitted_at || a.created_at;
                 const date = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
 
-                csvContent += `${idx + 1},"${a.resolvedName}",${a.resolvedIdCode},${score},${totalQ},${status},${date}\n`;
+                csvContent += `${idx + 1},"${a.resolvedName}",${a.resolvedIdCode},${score},${totalQ},${status},"${timeSpent}",${date}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
