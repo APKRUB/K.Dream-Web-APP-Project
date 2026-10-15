@@ -334,11 +334,15 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function goBack() {
-            if (filterCourseId) {
-                window.location.href = `admin_course_detail.html?id=${filterCourseId}`;
+       function goBack() {
+            // เช็ค course_id จาก URL โดยตรงแบบชัวร์ที่สุด
+            const params = new URLSearchParams(window.location.search);
+            const cId = params.get('course_id') || filterCourseId;
+
+            if (cId) {
+                window.location.href = `admin_course_detail.html?id=${cId}`;
             } else {
-                window.location.href = 'admin.html';
+                window.location.href = 'admin_courses.html'; // หรือหน้าแอดมินหลักของพี่ AP
             }
         }
 
