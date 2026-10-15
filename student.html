@@ -62,18 +62,13 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] rounded-md border border-sky-500/20">Portal v2.9</span>
+                        <span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] rounded-md border border-sky-500/20">Portal v3.0</span>
                     </div>
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Student Examination Center</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-3">
-                <!-- 🚀 ปุ่มลิงก์ไปหน้าจองเวลา Consult -->
-                <button onclick="goToConsultPage()" class="px-4 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 dark:text-sky-400 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 border border-sky-500/20 shadow-sm">
-                    <i class="fas fa-calendar-alt"></i> <span class="hidden sm:inline">จอง Consult</span>
-                </button>
-
                 <button onclick="logoutStudent()" class="px-4 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-2 border border-red-500/20 shadow-sm">
                     <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                 </button>
@@ -85,6 +80,24 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-28 space-y-8">
+
+        <!-- 🚀 เด่นชัดยิ่งขึ้น: Banner จองเวลา Consult ดีไซน์ใหม่พรีเมียม -->
+        <div class="relative overflow-hidden hitech-card p-6 sm:p-7 rounded-3xl border-2 border-sky-500/30 bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-purple-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-xl">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="flex items-center gap-4 relative z-10">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-lg shadow-sky-500/30 shrink-0">
+                    <i class="fas fa-calendar-check animate-pulse"></i>
+                </div>
+                <div class="space-y-1">
+                    <span class="px-2.5 py-0.5 bg-sky-500 text-white font-extrabold text-[10px] rounded-full uppercase tracking-wider">ระบบนัดหมายอาจารย์</span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">จองเวลา Consult ส่วนตัวกับอาจารย์</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">เลือกช่วงเวลาว่างเพื่อพูดคุย ซักถาม หรือขอคำปรึกษาปัญหาการเรียนได้ทันที</p>
+                </div>
+            </div>
+            <button onclick="goToConsultPage()" class="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:opacity-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 shrink-0 relative z-10">
+                <i class="fas fa-calendar-alt text-sm"></i> ไปหน้าจองเวลา Consult <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+        </div>
 
         <!-- Banner & Main Feature Tabs -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 p-6 sm:p-8 rounded-3xl text-white shadow-xl shadow-indigo-500/10 relative overflow-hidden">
@@ -299,6 +312,7 @@
         let chartRadarInstance = null;
         let chartBarInstance = null;
         let allCategoryTags = new Set();
+        let countdownInterval = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -466,6 +480,10 @@
             renderExamCatalog();
             renderExamHistory();
 
+            // Setup live countdown ticker every second
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateCountdownsLive, 1000);
+
             const examIds = [...new Set(userAttempts.map(a => a.exam_id))];
             if (examIds.length > 0) {
                 const { data: questions } = await mySupabase.from('questions').select('category_tag').in('exam_id', examIds);
@@ -475,6 +493,22 @@
             }
             renderExamCheckboxes();
             renderCategoryOptions();
+        }
+
+        function updateCountdownsLive() {
+            const now = Date.now();
+            document.querySelectorAll('.exam-countdown-timer').forEach(el => {
+                const startTime = parseInt(el.getAttribute('data-start-time'));
+                const diff = startTime - now;
+                if (diff <= 0) {
+                    el.textContent = 'ถึงเวลาเปิดสอบแล้ว! (รีเฟรชหน้าจอ)';
+                    return;
+                }
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                el.textContent = `⏳ เปิดใน: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            });
         }
 
         function renderExamCatalog() {
@@ -636,8 +670,9 @@
                 let cardHighlightClass = '';
 
                 let isCountdown = status === 'countdown';
+                let startTimeMs = 0;
                 if (exam.start_time) {
-                    const startTimeMs = new Date(exam.start_time).getTime();
+                    startTimeMs = new Date(exam.start_time).getTime();
                     if (startTimeMs > Date.now()) {
                         isCountdown = true;
                     }
@@ -653,9 +688,8 @@
                         actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
                     }
                 } else if (isCountdown) {
-                    const openTimeStr = exam.start_time ? new Date(exam.start_time).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : 'เร็วๆ นี้';
-                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-sm"><i class="fas fa-clock mr-1"></i> เปิด: ${openTimeStr}</span>`;
-                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิด</button>`;
+                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-sm exam-countdown-timer" data-start-time="${startTimeMs}"><i class="fas fa-clock mr-1"></i> กำลังโหลดเวลา...</span>`;
+                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิดสอบ</button>`;
                 } else if (inProgressAttempt) {
                     statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-500 rounded-lg text-[10px] font-bold animate-pulse"><i class="fas fa-spinner fa-spin mr-1"></i> ทำค้างไว้</span>`;
                     actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-play"></i> ทำต่อ</button>`;
