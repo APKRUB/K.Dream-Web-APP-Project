@@ -67,15 +67,12 @@
         }
         .bottom-floating-banner.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
 
-        /* 🌟 คลาสแอนิเมชันหน้าจอสั่น */
         @keyframes shake {
             0%, 100% { transform: translateX(-50%) translateY(0); }
             20%, 60% { transform: translateX(calc(-50% - 10px)) translateY(0); }
             40%, 80% { transform: translateX(calc(-50% + 10px)) translateY(0); }
         }
-        .shake-animation {
-            animation: shake 0.4s ease-in-out;
-        }
+        .shake-animation { animation: shake 0.4s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-32">
@@ -171,7 +168,7 @@
         </div>
     </main>
 
-    <!-- 🌟 แบนเนอร์ลอยเตือนให้บันทึก -->
+    <!-- แบนเนอร์ลอยเตือนให้บันทึก -->
     <div id="floatingSaveBanner" class="bottom-floating-banner">
         <div id="floatingBannerInner" class="px-6 py-3.5 bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 rounded-full shadow-2xl border border-sky-500/50 flex items-center gap-4">
             <div class="flex items-center gap-2 text-xs font-bold">
@@ -195,6 +192,7 @@
         let hasUnsavedChanges = false;
         let cachedQuestions = [];
         let currentExamData = null;
+        let examCourseId = null; // ตัวแปรเก็บ course_id ของข้อสอบชุดนี้
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -221,20 +219,24 @@
             if (banner) banner.classList.remove('show');
         }
 
-        // 🌟 ฟังก์ชันจัดการป้องกันการออกหน้าอื่น พร้อมเอฟเฟกต์หน้าจอสั่นเตือน
+        // ฟังก์ชันจัดการปุ่มย้อนกลับให้กลับไปถูกคอร์สเดิมเสมอ
         function handleNavigate(targetUrl) {
             if (hasUnsavedChanges) {
                 triggerScreenShakeWarning();
                 return;
             }
-            window.location.href = targetUrl;
+            if (examCourseId) {
+                window.location.href = `admin_exams.html?course_id=${examCourseId}`;
+            } else {
+                window.location.href = targetUrl;
+            }
         }
 
         function triggerScreenShakeWarning() {
             const bannerInner = document.getElementById('floatingBannerInner');
             if (bannerInner) {
                 bannerInner.classList.remove('shake-animation');
-                void bannerInner.offsetWidth; // Trigger reflow
+                void bannerInner.offsetWidth;
                 bannerInner.classList.add('shake-animation');
             }
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -248,7 +250,6 @@
             });
         }
 
-        // ดักจับการปิดแท็บหรือรีเฟรชเบราว์เซอร์
         window.addEventListener('beforeunload', (e) => {
             if (hasUnsavedChanges) {
                 e.preventDefault();
@@ -297,6 +298,16 @@
             const { data } = await mySupabase.from('exams').select('*').eq('id', examId).single();
             if (data) {
                 currentExamData = data;
+                
+                // ดึง course_id หากมีผูกไว้ (รองรับทั้งแบบ string เดี่ยวและ Array)
+                if (data.course_id) {
+                    if (Array.isArray(data.course_id) && data.course_id.length > 0) {
+                        examCourseId = data.course_id[0];
+                    } else if (typeof data.course_id === 'string') {
+                        examCourseId = data.course_id;
+                    }
+                }
+
                 document.getElementById('examTitleHeader').textContent = `${data.title}`;
                 document.getElementById('examSubHeader').textContent = `CODE: ${data.exam_code || 'ไม่มี'} | โหมด: ${data.delivery_type === 'online' ? 'พิมพ์โจทย์ลงระบบ' : 'ไฟล์ PDF'} | รูปแบบตัวเลือก: ${getChoiceFormatLabelText(data.choice_format)}`;
                 
@@ -849,7 +860,6 @@
             window.open(`exam_take.html?id=${examId}&preview=true`, '_blank');
         }
 
-// 🌟 ระบบบันทึกและ Regrade อัปเดตเฉพาะคอลัมน์ total_score ที่มีอยู่จริง
         async function saveAllChangesSticky() {
             Swal.fire({
                 title: 'กำลังบันทึกและ Regrade คะแนน...',
@@ -858,7 +868,6 @@
                 didOpen: () => Swal.showLoading()
             });
             
-            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase
             for (const q of cachedQuestions) {
                 await mySupabase.from('questions').update({
                     correct_answer: q.correct_answer,
@@ -867,10 +876,8 @@
                 }).eq('id', q.id);
             }
 
-            // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
-            // 3. ดึงประวัติการสอบ
             let { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
             if (!attempts || attempts.length === 0) {
                 const altFetch = await mySupabase.from('exam_attempts').select('*');
@@ -922,14 +929,12 @@
                     const primaryKeyName = att.id !== undefined ? 'id' : (att.attempt_id !== undefined ? 'attempt_id' : 'uuid');
 
                     if (targetId) {
-                        // 🌟 อัปเดตเฉพาะคอลัมน์ total_score ที่มีอยู่จริงในตาราง
                         const { error: updateErr } = await mySupabase.from('exam_attempts').update({
                             total_score: recalculatedScore
                         }).eq(primaryKeyName, targetId);
 
                         if (updateErr) {
                             errorLogs.push(updateErr.message);
-                            console.error(`Update failed for ${primaryKeyName}=${targetId}:`, updateErr);
                         } else {
                             successCount++;
                         }
