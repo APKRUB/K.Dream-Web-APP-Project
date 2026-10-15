@@ -74,9 +74,11 @@
                 <span class="text-[10px] font-extrabold text-sky-600 dark:text-sky-400 uppercase tracking-wider">รายงานผลคะแนนเฉพาะชุดข้อสอบ</span>
                 <h2 id="activeExamTitleBanner" class="font-extrabold text-lg text-slate-900 dark:text-white">กำลังโหลดชื่อชุดข้อสอบ...</h2>
             </div>
-            <button onclick="exportToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 shrink-0">
-                <i class="fas fa-file-excel"></i> Export CSV
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="exportToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1.5 shrink-0">
+                    <i class="fas fa-file-excel"></i> Export CSV
+                </button>
+            </div>
         </div>
 
         <!-- 4 KPI Cards -->
@@ -182,6 +184,18 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // 🎯 ฟังก์ชันดึงคำตอบของนักเรียนแบบครอบคลุมทุกคอลัมน์ที่เป็นไปได้
+        function getAttemptAnswers(att) {
+            return att.answers || att.user_answers || att.student_answers || {};
+        }
+
+        // 🎯 ฟังก์ชันเช็คคะแนนรวม
+        function getAttemptScore(att) {
+            if (att.total_score !== undefined && att.total_score !== null && !isNaN(att.total_score)) return Number(att.total_score);
+            if (att.score !== undefined && att.score !== null && !isNaN(att.score)) return Number(att.score);
+            return 0;
+        }
+
         async function initDetail() {
             const urlParams = new URLSearchParams(window.location.search);
             examId = urlParams.get('exam_id');
@@ -213,15 +227,16 @@
             if (attempts) {
                 for (let att of attempts) {
                     let studentName = 'นักเรียนทั่วไป';
-                    let studentIdCode = att.student_id || '-';
+                    let studentIdCode = att.student_id || att.user_id || '-';
+                    const targetId = att.student_id || att.user_id;
 
-                    if (att.student_id) {
-                        const { data: prof } = await mySupabase.from('profiles').select('full_name, name, student_id').eq('id', att.student_id).single();
+                    if (targetId) {
+                        const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', targetId).single();
                         if (prof) {
-                            studentName = prof.full_name || prof.name || studentName;
+                            studentName = prof.full_name || prof.name || prof.username || studentName;
                             studentIdCode = prof.student_id || studentIdCode;
                         } else {
-                            const { data: std } = await mySupabase.from('students').select('name, fullname, username').eq('id', att.student_id).single();
+                            const { data: std } = await mySupabase.from('students').select('*').eq('id', targetId).single();
                             if (std) {
                                 studentName = std.fullname || std.name || std.username || studentName;
                             }
@@ -232,6 +247,9 @@
             }
 
             fetchedAttempts = enhancedAttempts;
+            console.log("Exam Attempts Loaded:", fetchedAttempts);
+            console.log("Questions Loaded:", fetchedQuestions);
+
             Swal.close();
 
             renderKPIs();
@@ -251,7 +269,7 @@
                 return;
             }
 
-            const scores = fetchedAttempts.map(a => a.total_score !== undefined ? a.total_score : (a.score || 0));
+            const scores = fetchedAttempts.map(a => getAttemptScore(a));
             const sum = scores.reduce((a, b) => a + b, 0);
             const avg = (sum / total).toFixed(1);
             const max = Math.max(...scores);
@@ -274,8 +292,11 @@
             const wrongStats = fetchedQuestions.map(q => {
                 let wrongCount = 0;
                 fetchedAttempts.forEach(att => {
-                    const ansMap = att.answers || {};
-                    if (String(ansMap[q.id]) !== String(q.correct_answer)) {
+                    const ansMap = getAttemptAnswers(att);
+                    // เช็คคำตอบเทียบหลายรูปแบบ ID (q.id, String(q.id), q.question_number)
+                    const studentAns = ansMap[q.id] !== undefined ? ansMap[q.id] : (ansMap[String(q.id)] !== undefined ? ansMap[String(q.id)] : ansMap[q.question_number]);
+                    
+                    if (String(studentAns).trim() !== String(q.correct_answer).trim()) {
                         wrongCount++;
                     }
                 });
@@ -317,7 +338,7 @@
             const counts = [0, 0, 0, 0, 0];
 
             fetchedAttempts.forEach(a => {
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const score = getAttemptScore(a);
                 const pct = (score / totalQ) * 100;
                 if (pct <= 20) counts[0]++;
                 else if (pct <= 40) counts[1]++;
@@ -357,7 +378,7 @@
 
             tbody.innerHTML = fetchedAttempts.map((a, idx) => {
                 const totalQ = fetchedQuestions.length;
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const score = getAttemptScore(a);
                 const isPass = score >= (totalQ / 2);
                 const submitTime = a.submission_time || a.submitted_at || a.created_at;
 
@@ -392,8 +413,8 @@
             const att = fetchedAttempts.find(a => a.id === attemptId);
             if (!att) return;
 
-            const studentAnswers = att.answers || {};
-            const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
+            const studentAnswers = getAttemptAnswers(att);
+            const score = getAttemptScore(att);
 
             let detailsHtml = `
                 <div class="text-left space-y-3 max-h-96 overflow-y-auto pr-1 text-xs">
@@ -405,8 +426,11 @@
             `;
 
             fetchedQuestions.forEach((q) => {
-                const userAns = studentAnswers[q.id];
-                const isCorrect = String(userAns) === String(q.correct_answer);
+                // ค้นหาคำตอบของเด็กเทียบหลายรูปแบบ Key เพื่อป้องกันปัญหา Data Type mismatch
+                const userAns = studentAnswers[q.id] !== undefined ? studentAnswers[q.id] : 
+                                (studentAnswers[String(q.id)] !== undefined ? studentAnswers[String(q.id)] : studentAnswers[q.question_number]);
+                
+                const isCorrect = userAns !== undefined && String(userAns).trim() === String(q.correct_answer).trim();
                 
                 detailsHtml += `
                     <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1">
@@ -464,7 +488,7 @@
 
             fetchedAttempts.forEach((a, idx) => {
                 const totalQ = fetchedQuestions.length;
-                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                const score = getAttemptScore(a);
                 const status = score >= (totalQ / 2) ? 'ผ่าน' : 'ไม่ผ่าน';
                 const submitTime = a.submission_time || a.submitted_at || a.created_at;
                 const date = submitTime ? new Date(submitTime).toLocaleDateString('th-TH') : '-';
