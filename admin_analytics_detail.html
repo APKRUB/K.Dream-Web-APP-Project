@@ -229,7 +229,7 @@
         let fetchedQuestions = [];
         let examTimeLimitMinutes = 60;
         let currentFilter = 'all';
-        let scoreSortOrder = 'desc'; // 'desc' = มากไปน้อย, 'asc' = น้อยไปมาก
+        let scoreSortOrder = 'desc'; 
         let distributionChart = null;
         let passPieChartInstance = null;
 
@@ -252,34 +252,45 @@
             return 0;
         }
 
-        function formatAnswerText(ansValue) {
+        // 🌟 แปลงตัวเลือกให้ตรงกับ Format ป้ายกำกับ (เช่น '0' -> '1' หรือ 'ก' หรือตาม options ของโจทย์)
+        function formatAnswerText(ansValue, q = null) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
-            const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
-            if (typeof ansValue === 'number' || (!isNaN(ansValue) && String(ansValue).trim() !== '')) {
-                const idx = Number(ansValue);
-                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
+            const strVal = String(ansValue).trim();
+
+            if (q && q.options && Array.isArray(q.options) && q.options.length > 0) {
+                // ถ้าเก็บมาเป็น Index ตัวเลข (เช่น 0, 1, 2, 3)
+                if (/^\d+$/.test(strVal)) {
+                    const idx = Number(strVal);
+                    // ตรวจสอบว่าตรงกับ index ของ options หรือไม่
+                    if (idx >= 0 && idx < q.options.length) {
+                        // คืนค่าป้ายกำกับมาตรฐานตาม format ตัวเลือก (1,2,3,4 หรือ ก,ข,ค,ง หรือ A,B,C,D)
+                        const formatType = q.exam_choice_format || 'num';
+                        let labels = ['1', '2', '3', '4', '5'];
+                        if (formatType === 'th_num') labels = ['ก', 'ข', 'ค', 'ง', 'จ'];
+                        else if (formatType === 'upper') labels = ['A', 'B', 'C', 'D', 'E'];
+                        else if (formatType === 'lower') labels = ['a', 'b', 'c', 'd', 'e'];
+                        return labels[idx] || q.options[idx] || strVal;
+                    }
+                }
             }
-            const trimmed = String(ansValue).trim();
-            if (/^\d+$/.test(trimmed)) {
-                const idx = Number(trimmed);
-                if (idx >= 0 && idx < thaiChoices.length) return thaiChoices[idx];
-            }
-            return trimmed;
+
+            // ถ้าไม่มี q หรือตรงกับตัวอักษรอยู่แล้ว คืนค่าเดิม
+            return strVal;
         }
 
         function getCorrectAnswer(q) {
             let raw = q.correct_answer !== undefined ? q.correct_answer : 
-                      (q.answer !== undefined ? q.answer : 
-                      (q.key !== undefined ? q.key : 
-                      (q.solution !== undefined ? q.solution : '')));
-            return formatAnswerText(raw);
+                    (q.answer !== undefined ? q.answer : 
+                    (q.key !== undefined ? q.key : 
+                    (q.solution !== undefined ? q.solution : '')));
+            return formatAnswerText(raw, q);
         }
 
         function extractStudentAnswer(att, q, index) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
-            if (!raw) return null;
+            if (!raw) return '-';
             if (typeof raw === 'string') {
-                try { raw = JSON.parse(raw); } catch(e) { return null; }
+                try { raw = JSON.parse(raw); } catch(e) { return '-'; }
             }
 
             let val = null;
@@ -301,7 +312,7 @@
                 }
             }
 
-            return formatAnswerText(val);
+            return formatAnswerText(val, q);
         }
 
         function getAttemptTimeMinutes(att) {
@@ -339,12 +350,14 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+            let examChoiceFormat = 'num';
             try {
                 const { data: examData, error } = await mySupabase.from('exams').select('*').eq('id', examId).maybeSingle();
                 if (examData) {
                     examTitle = examData.title || examData.name || examData.exam_name || examData.topic || `ชุดข้อสอบรหัส: ${examId}`;
                     if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
                     else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
+                    if (examData.choice_format) examChoiceFormat = examData.choice_format;
                 } else {
                     examTitle = `ชุดข้อสอบรหัส: ${examId}`;
                 }
@@ -357,7 +370,7 @@
             document.getElementById('loadingBannerIcon').className = "w-10 h-10 rounded-xl bg-sky-500/20 text-sky-500 flex items-center justify-center font-bold text-base";
 
             const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', examId).order('question_number', { ascending: true });
-            fetchedQuestions = questions || [];
+            fetchedQuestions = (questions || []).map(q => ({ ...q, exam_choice_format: examChoiceFormat }));
 
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
             
@@ -575,14 +588,13 @@
                 return true;
             });
 
-            // 🎯 จัดเรียงคะแนน (Sort) ตามเงื่อนไขปัจจุบัน
             filtered.sort((a, b) => {
                 const scoreA = getAttemptScore(a);
                 const scoreB = getAttemptScore(b);
                 if (scoreSortOrder === 'desc') {
-                    return scoreB - scoreA; // มากไปน้อย
+                    return scoreB - scoreA;
                 } else {
-                    return scoreA - scoreB; // น้อยไปมาก
+                    return scoreA - scoreB;
                 }
             });
 
