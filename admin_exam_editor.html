@@ -232,11 +232,13 @@
             await loadQuestions();
         }
 
-        function getChoiceLabels(formatType) {
-            if (formatType === 'th_num') return ['ก', 'ข', 'ค', 'ง', 'จ'];
-            if (formatType === 'upper') return ['A', 'B', 'C', 'D', 'E'];
-            if (formatType === 'lower') return ['a', 'b', 'c', 'd', 'e'];
-            return ['1', '2', '3', '4', '5'];
+        function getChoiceLabels(formatType, count = 4) {
+            let fullList = ['1', '2', '3', '4', '5'];
+            if (formatType === 'th_num') fullList = ['ก', 'ข', 'ค', 'ง', 'จ'];
+            else if (formatType === 'upper') fullList = ['A', 'B', 'C', 'D', 'E'];
+            else if (formatType === 'lower') fullList = ['a', 'b', 'c', 'd', 'e'];
+
+            return fullList.slice(0, count);
         }
 
         function getChoiceFormatLabelText(formatType) {
@@ -312,10 +314,10 @@
             }
 
             const formatType = currentExamData?.choice_format || 'num';
-            const standardLabels = getChoiceLabels(formatType);
 
             container.innerHTML = cachedQuestions.map((q, idx) => {
                 const isEssay = q.question_type === 'essay';
+                const standardLabels = getChoiceLabels(formatType, q.options ? q.options.length : 4);
                 const opts = (q.options && q.options.length > 0) ? q.options : standardLabels;
 
                 if (isEssay) {
@@ -360,10 +362,10 @@
             }
 
             const formatType = currentExamData?.choice_format || 'num';
-            const standardLabels = getChoiceLabels(formatType);
 
             container.innerHTML = filtered.map((q, idx) => {
                 const isEssay = q.question_type === 'essay';
+                const standardLabels = getChoiceLabels(formatType, q.options ? q.options.length : 4);
                 const opts = (q.options && q.options.length > 0) ? q.options : standardLabels;
 
                 const optionsListHtml = isEssay 
@@ -449,7 +451,7 @@
         async function openQuestionModal(qData = null) {
             const isEdit = !!qData;
             const formatType = currentExamData?.choice_format || 'num';
-            const standardLabels = getChoiceLabels(formatType);
+            const standardLabels = getChoiceLabels(formatType, qData?.options ? qData.options.length : 4);
 
             let currentOpts = (qData?.options && qData.options.length > 0) ? qData.options : standardLabels;
             let currentKeywords = qData?.keywords || [];
@@ -599,7 +601,7 @@
             if (currentCount >= 5) { Swal.fire('ข้อจำกัด', 'เพิ่มตัวเลือกได้สูงสุด 5 ตัวเลือกเท่านั้น', 'info'); return; }
 
             const formatType = currentExamData?.choice_format || 'num';
-            const standardLabels = getChoiceLabels(formatType);
+            const standardLabels = getChoiceLabels(formatType, 5);
             const label = standardLabels[currentCount] || String.fromCharCode(65 + currentCount);
 
             const div = document.createElement('div');
@@ -744,9 +746,20 @@
                                 <input type="number" id="genEndNum" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" value="20">
                             </div>
                         </div>
-                        <div>
-                            <label class="block font-bold mb-1">ระบุหมวดหมู่ย่อยสำหรับช่วงข้อนี้ (ถ้ามี)</label>
-                            <input id="genCategoryTag" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" placeholder="เช่น ฟิสิกส์คำนวณ">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">จำนวนตัวเลือกต่อข้อ</label>
+                                <select id="genChoiceCount" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800 font-bold text-sky-600">
+                                    <option value="4" selected>4 ตัวเลือก</option>
+                                    <option value="5">5 ตัวเลือก</option>
+                                    <option value="3">3 ตัวเลือก</option>
+                                    <option value="2">2 ตัวเลือก (ถูก/ผิด)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่ย่อย (ถ้ามี)</label>
+                                <input id="genCategoryTag" class="w-full px-3 py-1.5 border rounded-xl dark:bg-slate-800" placeholder="เช่น ฟิสิกส์คำนวณ">
+                            </div>
                         </div>
                     </div>
                 `,
@@ -755,6 +768,7 @@
                 preConfirm: () => ({
                     start: parseInt(document.getElementById('genStartNum').value) || 1,
                     end: parseInt(document.getElementById('genEndNum').value) || 20,
+                    choiceCount: parseInt(document.getElementById('genChoiceCount').value) || 4,
                     tag: document.getElementById('genCategoryTag').value.trim()
                 })
             });
@@ -762,7 +776,7 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังสร้าง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 const formatType = currentExamData?.choice_format || 'num';
-                const standardLabels = getChoiceLabels(formatType);
+                const standardLabels = getChoiceLabels(formatType, formValues.choiceCount);
 
                 const newItems = [];
                 for (let i = formValues.start; i <= formValues.end; i++) {
