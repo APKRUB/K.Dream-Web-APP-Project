@@ -225,6 +225,7 @@
 
         let examId = null;
         let examTitle = '';
+        let examChoiceFormat = 'num'; // ค่าเริ่มต้นเป็น 1, 2, 3, 4
         let fetchedAttempts = [];
         let fetchedQuestions = [];
         let examTimeLimitMinutes = 60;
@@ -252,29 +253,36 @@
             return 0;
         }
 
-        // 🌟 แปลงตัวเลือกให้ตรงกับ Format ป้ายกำกับ (เช่น '0' -> '1' หรือ 'ก' หรือตาม options ของโจทย์)
+        // 🌟 ฟังก์ชันแปลงค่าคำตอบ/เฉลยให้ตรงกับชนิดตัวเลือกที่ตั้งค่าไว้ในชุดข้อสอบ (num, th_num, upper, lower)
         function formatAnswerText(ansValue, q = null) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
             const strVal = String(ansValue).trim();
 
-            if (q && q.options && Array.isArray(q.options) && q.options.length > 0) {
-                // ถ้าเก็บมาเป็น Index ตัวเลข (เช่น 0, 1, 2, 3)
-                if (/^\d+$/.test(strVal)) {
-                    const idx = Number(strVal);
-                    // ตรวจสอบว่าตรงกับ index ของ options หรือไม่
-                    if (idx >= 0 && idx < q.options.length) {
-                        // คืนค่าป้ายกำกับมาตรฐานตาม format ตัวเลือก (1,2,3,4 หรือ ก,ข,ค,ง หรือ A,B,C,D)
-                        const formatType = q.exam_choice_format || 'num';
-                        let labels = ['1', '2', '3', '4', '5'];
-                        if (formatType === 'th_num') labels = ['ก', 'ข', 'ค', 'ง', 'จ'];
-                        else if (formatType === 'upper') labels = ['A', 'B', 'C', 'D', 'E'];
-                        else if (formatType === 'lower') labels = ['a', 'b', 'c', 'd', 'e'];
-                        return labels[idx] || q.options[idx] || strVal;
-                    }
+            // ใช้ format จากตัวข้อสอบหรือใช้ค่าจาก examChoiceFormat ภาพรวม
+            const formatType = (q && q.exam_choice_format) ? q.exam_choice_format : examChoiceFormat;
+            
+            let labels = ['1', '2', '3', '4', '5'];
+            if (formatType === 'th_num') labels = ['ก', 'ข', 'ค', 'ง', 'จ'];
+            else if (formatType === 'upper') labels = ['A', 'B', 'C', 'D', 'E'];
+            else if (formatType === 'lower') labels = ['a', 'b', 'c', 'd', 'e'];
+
+            // ถ้าเก็บค่ามาเป็นดัชนีตัวเลข (Index: 0, 1, 2, 3) ให้แปลงเป็นป้ายกำกับที่ถูกต้อง
+            if (/^\d+$/.test(strVal)) {
+                const idx = Number(strVal);
+                if (idx >= 0 && idx < labels.length) {
+                    return labels[idx];
                 }
             }
 
-            // ถ้าไม่มี q หรือตรงกับตัวอักษรอยู่แล้ว คืนค่าเดิม
+            // ถ้าบันทึกเป็นตัวอักษรหรือข้อความอยู่แล้ว ให้ตรวจสอบว่าตรงกับการแปลง index หรือไม่
+            // หรือถ้าตรงกับค่าใน options ของคำถาม
+            if (q && q.options && Array.isArray(q.options)) {
+                const optIdx = q.options.findIndex(opt => String(opt).trim().toLowerCase() === strVal.toLowerCase());
+                if (optIdx !== -1 && optIdx < labels.length) {
+                    return labels[optIdx];
+                }
+            }
+
             return strVal;
         }
 
@@ -350,14 +358,17 @@
 
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติเจาะลึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            let examChoiceFormat = 'num';
             try {
                 const { data: examData, error } = await mySupabase.from('exams').select('*').eq('id', examId).maybeSingle();
                 if (examData) {
                     examTitle = examData.title || examData.name || examData.exam_name || examData.topic || `ชุดข้อสอบรหัส: ${examId}`;
                     if (examData.duration) examTimeLimitMinutes = Number(examData.duration);
                     else if (examData.time_limit) examTimeLimitMinutes = Number(examData.time_limit);
-                    if (examData.choice_format) examChoiceFormat = examData.choice_format;
+                    
+                    // ดึงชนิดตัวเลือก (choice_format) มาเก็บไว้ใช้งาน
+                    if (examData.choice_format) {
+                        examChoiceFormat = examData.choice_format;
+                    }
                 } else {
                     examTitle = `ชุดข้อสอบรหัส: ${examId}`;
                 }
