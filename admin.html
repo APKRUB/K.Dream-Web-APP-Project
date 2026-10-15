@@ -105,7 +105,7 @@
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName" class="text-sky-600 dark:text-sky-400">ผู้ดูแลระบบ</span></h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-                    จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และตรวจสอบ Audit Logs ผ่านศูนย์ควบคุม Hi-Tech
+                    จัดการชุดข้อสอบ, สร้าง OMR, เทปเรียนย้อนหลัง, ประกาศข่าวสาร, และตรวจสอบ Audit Logs ผ่านศูนย์ควบคุม Hi-Tech
                 </p>
             </div>
 
@@ -138,6 +138,20 @@
                     <div class="space-y-1">
                         <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">ศูนย์จัดการชุดข้อสอบ</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้าง แก้ไข โคลน และตั้งค่าชุดข้อสอบ พร้อมระบบอัปโหลด PDF และ OMR ครบวงจร</p>
+                    </div>
+                </div>
+
+                <!-- ปุ่มระบบเทปเรียนย้อนหลัง (ลิงก์ไปหน้าใหม่ตามที่ต้องการ) -->
+                <div onclick="window.location.href='admin_videos.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-rose-500/30">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200 dark:border-rose-800">Secure Vault</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">ระบบเทปเรียนย้อนหลัง</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">จัดการคลังวิดีเทปเรียนย้อนหลัง ระบบ YouTube Unlisted และระบบป้องกันการดูดคลิป</p>
                     </div>
                 </div>
 
@@ -192,26 +206,13 @@
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ระบบรับข้อซักถาม ให้คำปรึกษา หรือพูดคุยตอบข้อสงสัยกับนักเรียนภายในแพลตฟอร์ม</p>
                     </div>
                 </div>
-
-                <div onclick="openFeatureComingSoon('ระบบจัดการบัญชีผู้ใช้งาน')" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
-                    <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
-                            <i class="fas fa-users-gear"></i>
-                        </div>
-                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">Users</span>
-                    </div>
-                    <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน สิทธิ์การเข้าถึง และจัดการรหัสผ่านผู้ใช้งานในระบบ</p>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let liveNotifications = [];
@@ -273,7 +274,6 @@
                     liveNotifications = [];
                 }
             } catch (err) {
-                console.error('Fetch Notifications Error:', err);
                 liveNotifications = [];
             }
             updateNotifBadge();
@@ -396,10 +396,6 @@
             updateNotifBadge();
             Swal.close();
             Swal.fire({ icon: 'success', title: 'ล้างรายการแจ้งเตือนเรียบร้อยแล้ว!', timer: 1000, showConfirmButton: false });
-        }
-
-        function openFeatureComingSoon(featureName) {
-            Swal.fire({ title: featureName, text: 'ฟังก์ชันนี้พร้อมให้ใช้งานในอัปเดตถัดไปครับ', icon: 'info', confirmButtonText: 'รับทราบ' });
         }
 
         function logoutAdmin() {
