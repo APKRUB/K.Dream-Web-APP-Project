@@ -206,7 +206,21 @@
                     </div>
                 </div>
 
-                <!-- 🔗 ปุ่มจัดการบัญชีผู้ใช้งาน (ลิงก์ไปยัง admin_users.html แล้ว) -->
+                <!-- 📚 ปุ่มศูนย์จัดการคอร์สเรียน (เพิ่มใหม่) -->
+                <div onclick="window.location.href='admin_courses.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-purple-500/30">
+                    <div class="flex justify-between items-start">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-bold text-[10px] border border-purple-200 dark:border-purple-800">Courses</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ศูนย์จัดการคอร์สเรียน</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้างคอร์ส จัดการรายชื่อนักเรียนที่ลงทะเบียนเรียนในแต่ละคอร์สได้อย่างอิสระ</p>
+                    </div>
+                </div>
+
+                <!-- 🔗 ปุ่มจัดการบัญชีผู้ใช้งาน -->
                 <div onclick="window.location.href='admin_users.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-teal-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
@@ -216,7 +230,7 @@
                     </div>
                     <div class="space-y-1">
                         <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน แก้ไขชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน และระดับชั้น</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน แก้ไขข้อมูลส่วนตัว และจัดการคอร์สเรียนรายบุคคล</p>
                     </div>
                 </div>
             </div>
