@@ -438,63 +438,63 @@
             }
         }
 
-        async function authenticateStudent() {
-            const urlParams = new URLSearchParams(window.location.search);
-            let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
+async function authenticateStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
 
-            if (studentIdFromUrl) {
-                localStorage.setItem('student_id', studentIdFromUrl);
-                localStorage.setItem('id', studentIdFromUrl);
-                currentStudentId = studentIdFromUrl;
-            } else {
-                currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
-            }
+    if (studentIdFromUrl) {
+        localStorage.setItem('student_id', studentIdFromUrl);
+        localStorage.setItem('id', studentIdFromUrl);
+        currentStudentId = studentIdFromUrl;
+    } else {
+        currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+    }
 
-            if (!currentStudentId) {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Access Denied',
-                    text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
-                    confirmButtonColor: '#0284c7'
-                });
-                window.location.href = 'index.html';
-                return false;
-            }
+    if (!currentStudentId) {
+        await Swal.fire({
+            icon: 'error',
+            title: 'Access Denied',
+            text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
+            confirmButtonColor: '#0284c7'
+        });
+        window.location.href = 'index.html';
+        return false;
+    }
 
-            let studentFullName = 'นักเรียน';
-            const { data: profileData } = await mySupabase
-                .from('profiles')
+    let studentFullName = 'นักเรียน';
+    const { data: profileData } = await mySupabase
+        .from('profiles')
+        .select('id, full_name, name, nickname, grade_level, school, email, line_id, line')
+        .eq('id', currentStudentId)
+        .maybeSingle();
+
+    if (profileData) {
+        currentStudentData = profileData;
+        studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
+    } else {
+        try {
+            const { data: studentData } = await mySupabase
+                .from('students')
                 .select('*')
                 .eq('id', currentStudentId)
                 .maybeSingle();
-
-            if (profileData) {
-                currentStudentData = profileData;
-                studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
-            } else {
-                try {
-                    const { data: studentData } = await mySupabase
-                        .from('students')
-                        .select('*')
-                        .eq('id', currentStudentId)
-                        .maybeSingle();
-                    if (studentData) {
-                        currentStudentData = studentData;
-                        studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
-                    }
-                } catch (err) {
-                    console.warn("Table students not found or skipped:", err);
-                }
+            if (studentData) {
+                currentStudentData = studentData;
+                studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
             }
-
-            currentStudentName = studentFullName;
-            document.getElementById('studentNavName').textContent = currentStudentName;
-            document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
-
-            updateNavAvatar(currentStudentData?.avatar_url);
-
-            return true;
+        } catch (err) {
+            console.warn("Table students not found or skipped:", err);
         }
+    }
+
+    currentStudentName = studentFullName;
+    document.getElementById('studentNavName').textContent = currentStudentName;
+    document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+
+    updateNavAvatar(currentStudentData?.avatar_url);
+
+    return true;
+}
 
         function updateNavAvatar(avatarUrl) {
             const imgEl = document.getElementById('navAvatarImg');
