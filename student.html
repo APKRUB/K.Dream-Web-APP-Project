@@ -248,7 +248,7 @@
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -351,7 +351,7 @@
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
-            // ดึงข้อมูลหมวดหมู่จากตาราง exam_categories ของฝั่งแอดมิน
+            // 1. ดึงหมวดหมู่จากตาราง exam_categories แยกอิสระ
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
@@ -364,10 +364,19 @@
                 });
             }
 
-            // ดึงชุดข้อสอบพร้อมเชื่อมโยงข้อมูลหมวดหมู่ (exam_categories) แบบเดียวกับแอดมิน
-            const { data: exams } = await mySupabase.from('exams').select('*, exam_categories(id, name)').neq('status', 'draft').order('created_at', { ascending: false });
+            // 2. ดึงชุดข้อสอบทั้งหมดจากตาราง exams โดยไม่ใช้ Join ให้เกิด error
+            const { data: exams, error: examError } = await mySupabase
+                .from('exams')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (examError) {
+                console.error("Error loading exams:", examError);
+            }
+
             allExams = exams || [];
 
+            // 3. ดึงประวัติการทำข้อสอบของผู้ใช้
             const { data: attempts } = await mySupabase
                 .from('exam_attempts')
                 .select('*')
@@ -395,7 +404,10 @@
             const keyword = document.getElementById('searchExamInput').value.toLowerCase();
             const selectedCat = document.getElementById('filterCategorySelect').value;
 
-            const filtered = allExams.filter(exam => {
+            // กรองข้อสอบเฉพาะที่ไม่ใช่ draft (หรือจะแสดงทั้งหมดที่ดึงมาได้เลย)
+            const availableExams = allExams.filter(exam => exam.status !== 'draft');
+
+            const filtered = availableExams.filter(exam => {
                 const matchKeyword = exam.title.toLowerCase().includes(keyword);
                 const matchCat = selectedCat === 'all' || String(exam.category_id) === String(selectedCat);
                 return matchKeyword && matchCat;
@@ -404,33 +416,34 @@
             document.getElementById('examCountBadge').textContent = `${filtered.length} ชุดข้อสอบ`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center col-span-full">ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center col-span-full">ไม่พบชุดข้อสอบในระบบ (หรือข้อสอบทั้งหมดอยู่ในสถานะ Draft)</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(exam => {
-                const catName = exam.exam_categories?.name || categoriesMap[exam.category_id] || 'ข้อสอบทั่วไป';
-                const status = exam.status || 'publish';
+                // ดึงชื่อหมวดหมู่จาก Map ที่ดึงมาแยกต่างหาก
+                const catName = categoriesMap[exam.category_id] || 'ทั่วไป';
+                const status = exam.status || 'public';
                 
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const inProgressAttempt = myAttemptsForExam.find(a => a.status === 'in_progress');
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
-                const maxAttempts = exam.max_attempts || exam.attempts_allowed || 3;
+                const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0; // 0 = ไม่จำกัด
 
                 let actionBtnHtml = '';
                 let statusBadge = '';
 
                 if (status === 'countdown') {
-                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-bold"><i class="fas fa-clock mr-1"></i> เร็วๆ นี้</span>`;
-                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ยังไม่เปิด</button>`;
-                } else if (inProgressAttempt) {
-                    statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-500 rounded-lg text-[10px] font-bold animate-pulse"><i class="fas fa-spinner fa-spin mr-1"></i> ทำค้างไว้</span>`;
-                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-play"></i> ทำต่อ</button>`;
-                } else if (maxAttempts > 0 && completedCount >= maxAttempts) {
-                    statusBadge = `<span class="px-2.5 py-1 bg-red-500/10 text-red-500 rounded-lg text-[10px] font-bold"><i class="fas fa-ban mr-1"></i> เต็มโควต้า</span>`;
-                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ครบแล้ว</button>`;
+                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-lg text-[10px] font-bold"><i class="fas fa-clock mr-1"></i> ตั้งเวลาเปิด</span>`;
                 } else {
                     statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 rounded-lg text-[10px] font-bold"><i class="fas fa-check-circle mr-1"></i> พร้อมสอบ</span>`;
+                }
+
+                if (inProgressAttempt) {
+                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-play"></i> ทำต่อ</button>`;
+                } else if (maxAttempts > 0 && completedCount >= maxAttempts) {
+                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ครบแล้ว</button>`;
+                } else {
                     actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
                 }
 
