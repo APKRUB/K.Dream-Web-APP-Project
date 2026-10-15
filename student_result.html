@@ -419,13 +419,14 @@
         }
 
         // ฟังก์ชันเรียก Google Gemini API วิเคราะห์จุดแข็ง-จุดอ่อนเทียบ PDF พร้อมระบบสำรอง
-        async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
-            const container = document.getElementById('aiAnalysisContainer');
-            
-            if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || GEMINI_API_KEY === "__GEMINI_API_KEY__") {
-                renderLocalAIAnalysis(questions, answerMap, score, total);
-                return;
-            }
+async function fetchGeminiAIAnalysis(questions, answerMap, score, total, examTitle, learningObjectives, pdfUrl) {
+    const container = document.getElementById('aiAnalysisContainer');
+    
+    // เช็กให้โชว์บนจอเลยว่าคีย์ที่ GitHub Actions ส่งมาคืออะไร
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("__GEMINI_API_KEY__")) {
+        container.innerHTML = `<div class="p-4 bg-red-500/10 text-red-500 rounded-xl text-xs">⚠️ Debug: GitHub Actions ยังไม่ได้แทนที่ค่า API Key (ค่าปัจจุบันคือ: ${GEMINI_API_KEY})</div>`;
+        return;
+    }
 
             let pdfTextContent = "";
             if (pdfUrl) {
