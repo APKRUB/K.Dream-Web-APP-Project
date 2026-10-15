@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันการแปะ URL ข้ามหน้าโดยไม่ได้รับอนุญาต -->
+    <!-- INSTANT ADMIN AUTH GUARD -->
     <script>
         (function() {
             let hasSession = false;
@@ -150,7 +150,7 @@
 
             </div>
 
-            <!-- ตารางคะแนนรายบุคคล พร้อมปุ่ม Reset Attempt -->
+            <!-- ตารางคะแนนรายบุคคล พร้อมปุ่มดูรายคน & Reset Attempt -->
             <div class="hitech-card p-5 rounded-2xl space-y-4">
                 <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
                     <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -170,7 +170,7 @@
                                 <th class="p-3 text-center">คะแนนรวม</th>
                                 <th class="p-3 text-center">สถานะ</th>
                                 <th class="p-3 text-center">วันที่ส่ง</th>
-                                <th class="p-3 text-center">จัดการ (Reset)</th>
+                                <th class="p-3 text-center">จัดการรายคน</th>
                             </tr>
                         </thead>
                         <tbody id="studentScoreTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -396,14 +396,62 @@
                             </span>
                         </td>
                         <td class="p-3 text-center text-[11px] text-slate-400">${new Date(s.created_at).toLocaleDateString('th-TH')}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="resetStudentAttempt('${s.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซสสิทธิ์สอบใหม่">
-                                <i class="fas fa-rotate-right mr-1"></i> Reset
+                        <td class="p-3 text-center space-x-1">
+                            <button onclick="viewStudentDetail('${s.id}')" class="px-2.5 py-1 bg-sky-50 dark:bg-sky-950/40 text-sky-600 hover:bg-sky-100 font-bold text-[11px] rounded-lg border border-sky-200 dark:border-sky-900 transition-all" title="ดูรายละเอียดรายคน">
+                                <i class="fas fa-eye"></i> ดู
+                            </button>
+                            <button onclick="resetStudentAttempt('${s.id}')" class="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 hover:bg-amber-100 font-bold text-[11px] rounded-lg border border-amber-200 dark:border-amber-900 transition-all" title="รีเซ็ตสิทธิ์สอบใหม่">
+                                <i class="fas fa-rotate-right"></i> Reset
                             </button>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // 👁️ ฟังก์ชันดูรายละเอียดรายคน (Individual Breakdown Modal)
+        function viewStudentDetail(submissionId) {
+            const sub = fetchedSubmissions.find(s => s.id === submissionId);
+            if (!sub) return;
+
+            const name = sub.profiles?.full_name || 'นักเรียน';
+            const stdId = sub.profiles?.student_id || '-';
+            const studentAnswers = sub.answers || {};
+
+            let detailsHtml = `
+                <div class="text-left space-y-3 max-h-96 overflow-y-auto pr-1 text-xs">
+                    <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-500/30">
+                        <div>นักเรียน: <strong class="text-sky-600 dark:text-sky-400">${name}</strong> (รหัส: ${stdId})</div>
+                        <div>คะแนนรวม: <strong class="text-indigo-600 dark:text-indigo-400">${sub.score || 0} / ${fetchedQuestions.length}</strong></div>
+                    </div>
+                    <div class="space-y-2">
+            `;
+
+            fetchedQuestions.forEach((q, idx) => {
+                const userAns = studentAnswers[q.id];
+                const isCorrect = String(userAns) === String(q.correct_answer);
+                
+                detailsHtml += `
+                    <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/30' : 'border-rose-500/30'} space-y-1">
+                        <div class="flex justify-between font-bold">
+                            <span>ข้อที่ ${q.question_number}: ${q.question_text || q.content || 'โจทย์'}</span>
+                            <span class="${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '✅ ถูกต้อง' : '❌ ตอบผิด'}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-500">
+                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns !== undefined ? userAns : '-'}</span> | เฉลย: <span class="font-bold text-emerald-600">${q.correct_answer}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            detailsHtml += `</div></div>`;
+
+            Swal.fire({
+                title: `📋 รายละเอียดข้อสอบรายบุคคล`,
+                html: detailsHtml,
+                width: '600px',
+                confirmButtonColor: '#0284c7'
+            });
         }
 
         async function resetStudentAttempt(submissionId) {
