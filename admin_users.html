@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="th" class="light">
+<head>
+    <script src="lms_core.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS | ศูนย์จัดการบัญชีผู้ใช้งานนักเรียน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        (function() {
+            let hasSession = false;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const val = localStorage.getItem(key);
+                    if (val && val.includes('access_token')) { hasSession = true; break; }
+                }
+            }
+            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
+        })();
+    </script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: { primary: '#0284c7', darkbg: '#020617', darkbox: '#090d16', darkinput: '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
+        .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
+        .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+
+    <!-- Top Navigation -->
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-sm"></i>
+                    </button>
+                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-users-gear"></i></span>
+                        ศูนย์จัดการบัญชีผู้ใช้งานนักเรียน
+                    </h1>
+                </div>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800">
+                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+        
+        <!-- Header Banner & Controls -->
+        <div class="hitech-card p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-address-book text-sky-500"></i> รายชื่อบัญชีนักเรียนในระบบ
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น)</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div class="relative flex-1 md:w-72">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, รหัส..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Table Card -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center text-xs text-slate-400 border-b border-sky-500/20 pb-3">
+                <span id="studentCountLabel">แสดง 0 รายการ</span>
+                <span class="text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-circle-info mr-1"></i> คลิกปุ่ม "แก้ไขข้อมูล" เพื่อปรับปรุงรายละเอียดนักเรียน</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
+                            <th class="p-3">ลำดับ</th>
+                            <th class="p-3">เลขประจำตัว</th>
+                            <th class="p-3">ชื่อจริง - นามสกุล</th>
+                            <th class="p-3">ชื่อเล่น</th>
+                            <th class="p-3 text-center">ระดับชั้น</th>
+                            <th class="p-3 text-center">จัดการข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tr><td colspan="6" class="text-center py-8 text-slate-400">กำลังโหลดข้อมูลบัญชีผู้ใช้...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let studentsList = [];
+
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
+        function isUserAdmin(profileObj) {
+            if (!profileObj) return false;
+            const role = String(profileObj.role || profileObj.user_role || '').toLowerCase();
+            const email = String(profileObj.email || '').toLowerCase();
+            if (role === 'admin' || role === 'teacher' || role === 'instructor') return true;
+            if (email.includes('admin') || email.includes('teacher')) return true;
+            return false;
+        }
+
+        async function initPage() {
+            Swal.fire({ title: 'กำลังโหลดบัญชีผู้ใช้...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            const { data: profiles, error } = await mySupabase.from('profiles').select('*');
+            Swal.close();
+
+            if (error) {
+                console.error("Error loading profiles:", error);
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้', 'error');
+                return;
+            }
+
+            if (profiles) {
+                // กรองเอาเฉพาะบัญชีที่เป็นนักเรียน (ไม่ใช่แอดมิน/ครู)
+                studentsList = profiles.filter(p => !isUserAdmin(p));
+            }
+
+            renderStudentsTable();
+        }
+
+        function renderStudentsTable() {
+            const tbody = document.getElementById('studentsTableBody');
+            const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            let filtered = studentsList.filter(s => {
+                if (!keyword) return true;
+                const fname = (s.first_name || s.full_name || '').toLowerCase();
+                const lname = (s.last_name || '').toLowerCase();
+                const nickname = (s.nickname || '').toLowerCase();
+                const studentId = String(s.student_id || '').toLowerCase();
+                return fname.includes(keyword) || lname.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword);
+            });
+
+            document.getElementById('studentCountLabel').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${studentsList.length} คน)`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((s, idx) => {
+                const sId = s.id || s.user_id;
+                const firstName = s.first_name || s.full_name || '-';
+                const lastName = s.last_name || '-';
+                const nickname = s.nickname || '-';
+                const studentId = s.student_id || '-';
+                const gradeLevel = s.grade_level || s.grade || '-';
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
+                        <td class="p-3 font-mono font-bold text-sky-600 dark:text-sky-400">${studentId}</td>
+                        <td class="p-3 font-bold text-slate-900 dark:text-white">${firstName} ${lastName !== '-' ? lastName : ''}</td>
+                        <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${nickname}</td>
+                        <td class="p-3 text-center"><span class="px-2.5 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg text-[11px]">${gradeLevel}</span></td>
+                        <td class="p-3 text-center">
+                            <button onclick="openEditStudentModal('${sId}')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1 mx-auto">
+                                <i class="fas fa-user-pen"></i> แก้ไขข้อมูล
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function openEditStudentModal(studentId) {
+            const student = studentsList.find(s => String(s.id || s.user_id) === String(studentId));
+            if (!student) return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ แก้ไขข้อมูลบัญชีนักเรียน',
+                width: '550px',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">เลขประจำตัวนักเรียน</label>
+                            <input id="swalStudentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" value="${student.student_id || ''}" placeholder="เช่น 6701">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อจริง <span class="text-red-500">*</span></label>
+                                <input id="swalFirstName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.first_name || student.full_name || ''}">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">นามสกุล</label>
+                                <input id="swalLastName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.last_name || ''}">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อเล่น</label>
+                                <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.nickname || ''}">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">ระดับชั้น</label>
+                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.grade_level || student.grade || ''}" placeholder="เช่น ม.3/1 หรือ ม.304">
+                            </div>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการแก้ไข',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const firstName = document.getElementById('swalFirstName').value.trim();
+                    if (!firstName) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อจริงของนักเรียน');
+                        return false;
+                    }
+                    return {
+                        student_id: document.getElementById('swalStudentId').value.trim(),
+                        first_name: firstName,
+                        last_name: document.getElementById('swalLastName').value.trim(),
+                        nickname: document.getElementById('swalNickname').value.trim(),
+                        grade_level: document.getElementById('swalGradeLevel').value.trim(),
+                        full_name: firstName + (document.getElementById('swalLastName').value.trim() ? ' ' + document.getElementById('swalLastName').value.trim() : '')
+                    };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const targetKey = student.id ? 'id' : 'user_id';
+                const targetId = student.id || student.user_id;
+
+                const { error } = await mySupabase.from('profiles').update(formValues).eq(targetKey, targetId);
+
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    initPage();
+                } else {
+                    Swal.fire('บันทึกล้มเหลว', `เกิดข้อผิดพลาดจากฐานข้อมูล:<br><code class="text-xs text-red-400 font-mono mt-2 block">${error.message}</code>`, 'error');
+                }
+            }
+        }
+
+        initPage();
+    </script>
+</body>
+</html>
