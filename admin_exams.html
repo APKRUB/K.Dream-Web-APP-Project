@@ -72,10 +72,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
+                    <button id="backNavBtn" onclick="goBack()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <h1 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <h1 id="navTitle" class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <span class="w-7 h-7 rounded-lg bg-gradient-to-r from-sky-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-file-signature"></i></span>
                         ศูนย์จัดการชุดข้อสอบ Hi-Tech
                     </h1>
@@ -89,6 +89,20 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-6">
         
+        <!-- Course Filter Info Banner (แสดงเมื่อกดมาจากหน้าคอร์ส) -->
+        <div id="courseFilterBanner" class="hidden hitech-card p-4 rounded-2xl bg-purple-500/10 border-l-4 border-l-purple-500 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center font-bold"><i class="fas fa-chalkboard"></i></div>
+                <div>
+                    <div class="text-xs text-purple-600 dark:text-purple-400 font-bold">กำลังแสดงข้อสอบเฉพาะในคอร์ส:</div>
+                    <div id="filterCourseTitleName" class="font-extrabold text-sm text-slate-900 dark:text-white">...</div>
+                </div>
+            </div>
+            <button onclick="clearCourseFilter()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-bold transition-all">
+                <i class="fas fa-times mr-1"></i> แสดงข้อสอบทั้งหมด
+            </button>
+        </div>
+
         <div id="upcomingExamSection" class="hidden space-y-3">
             <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-extrabold text-xs uppercase tracking-wider">
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
@@ -140,7 +154,11 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterCourseId = urlParams.get('course_id');
+
         let categoriesList = [];
+        let coursesMap = {};
         let currentExamsData = [];
         let allAttemptsMap = {};
         let currentViewMode = localStorage.getItem('exam_view_mode') || 'grid';
@@ -159,23 +177,33 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username') || 
-                                    localStorage.getItem('user_name') || 
-                                    localStorage.getItem('account_name') || 
-                                    localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
-                                    'ผู้ดูแลระบบ';
-            localStorage.setItem('admin_username', currentUsername);
-            return true;
+        function goBack() {
+            if (filterCourseId) {
+                window.location.href = `admin_course_detail.html?id=${filterCourseId}`;
+            } else {
+                window.location.href = 'admin.html';
+            }
+        }
+
+        function clearCourseFilter() {
+            window.location.href = 'admin_exams.html';
         }
 
         async function initPage() {
-            if (!checkAdminAuth()) return;
             updateViewSwitcherButtons();
             await loadCategories();
+            await loadCourses();
             await loadAttemptsData();
             await loadExams();
+
+            if (filterCourseId) {
+                const course = coursesMap[filterCourseId];
+                if (course) {
+                    document.getElementById('courseFilterBanner').classList.remove('hidden');
+                    document.getElementById('filterCourseTitleName').textContent = course.title;
+                    document.getElementById('navTitle').innerHTML = `<span class="w-7 h-7 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white flex items-center justify-center text-xs shadow-md"><i class="fas fa-file-signature"></i></span> ข้อสอบในคอร์ส: ${course.title}`;
+                }
+            }
         }
 
         function switchViewMode(mode) {
@@ -202,6 +230,14 @@
             categoriesList = data || [];
         }
 
+        async function loadCourses() {
+            const { data } = await mySupabase.from('courses').select('id, title, course_code');
+            coursesMap = {};
+            if (data) {
+                data.forEach(c => { coursesMap[c.id] = c; });
+            }
+        }
+
         async function loadAttemptsData() {
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*');
             allAttemptsMap = {};
@@ -216,11 +252,15 @@
         }
 
         async function loadExams() {
-            const { data: exams, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
+            let query = mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
+            if (filterCourseId) {
+                query = query.eq('course_id', filterCourseId);
+            }
+            const { data: exams, error } = await query;
             currentExamsData = exams || [];
             
             if (error || !exams || exams.length === 0) {
-                document.getElementById('classroomExamsContainer').innerHTML = `<div class="hitech-card p-8 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ</div>`;
+                document.getElementById('classroomExamsContainer').innerHTML = `<div class="hitech-card p-8 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบในระบบ${filterCourseId ? 'ของคอร์สนี้' : ''}</div>`;
                 return;
             }
 
@@ -325,6 +365,7 @@
             const avgScore = getExamAverageScore(e.id);
             const choiceLabel = getChoiceFormatLabel(e.choice_format);
             const submittedCount = (allAttemptsMap[String(e.id)] || []).length;
+            const courseObj = e.course_id ? coursesMap[e.course_id] : null;
 
             return `
                 <div class="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800/80 flex flex-col justify-between space-y-3">
@@ -334,6 +375,7 @@
                             ${statusBadge}
                         </div>
                         <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-snug line-clamp-1">${e.title}</h3>
+                        ${courseObj ? `<div class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-md"><i class="fas fa-chalkboard"></i> ${courseObj.title}</div>` : ''}
                         <div class="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-slate-500">
                             ${deliveryBadge}
                             <span><i class="far fa-clock text-sky-500 mr-1"></i>${e.time_limit || 60} นาที</span>
@@ -367,6 +409,7 @@
             const avgScore = getExamAverageScore(e.id);
             const choiceLabel = getChoiceFormatLabel(e.choice_format);
             const submittedCount = (allAttemptsMap[String(e.id)] || []).length;
+            const courseObj = e.course_id ? coursesMap[e.course_id] : null;
 
             return `
                 <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 hover:border-sky-500/50 transition-colors">
@@ -376,6 +419,7 @@
                             <div class="flex items-center gap-2">
                                 <h4 class="font-bold text-sm text-slate-900 dark:text-white">${e.title}</h4>
                                 ${statusBadge}
+                                ${courseObj ? `<span class="px-2 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-md"><i class="fas fa-chalkboard mr-1"></i>${courseObj.title}</span>` : ''}
                             </div>
                             <div class="flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
                                 ${deliveryBadge}
@@ -550,7 +594,7 @@
             const currentChoiceFormat = examData?.choice_format || 'num';
 
             const { value: formValues } = await Swal.fire({
-                title: isEdit ? 'แก้ไขชุดข้อสอบ' : 'สร้างชุดข้อสอบใหม่',
+                title: isEdit ? 'แก้ไขชุดข้อสอบ' : (filterCourseId ? 'สร้างชุดข้อสอบประจำคอร์สนี้' : 'สร้างชุดข้อสอบใหม่'),
                 width: '600px',
                 html: `
                     <div class="space-y-3 text-left text-xs">
@@ -574,7 +618,6 @@
                             </div>
                         </div>
 
-                        <!-- 🎯 ระบบเลือกรูปแบบกระดาษคำตอบ -->
                         <div>
                             <label class="block font-bold mb-1">รูปแบบกระดาษคำตอบ (Choice Format) <span class="text-red-500">*</span></label>
                             <select id="swalChoiceFormat" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold text-sky-600 dark:text-sky-400">
@@ -660,6 +703,7 @@
                         exam_type: delivery_type,
                         choice_format,
                         category_id: catVal ? catVal : null,
+                        course_id: examData?.course_id || filterCourseId || null,
                         time_limit: parseInt(document.getElementById('swalTimeLimit').value) || 60,
                         max_attempts: parseInt(document.getElementById('swalMaxAttempts').value) || 0,
                         status: status,
