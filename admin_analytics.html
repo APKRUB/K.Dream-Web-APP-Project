@@ -1105,7 +1105,7 @@
             printWindow.document.close();
         }
 
-        function renderExamsCatalogByCategories(activeExams) {
+function renderExamsCatalogByCategories(activeExams) {
             const container = document.getElementById('examsCatalogGroupContainer');
             if (activeExams.length === 0) {
                 container.innerHTML = `<div class="hitech-card p-12 rounded-2xl text-center text-slate-400 text-xs">ยังไม่มีชุดข้อสอบที่เปิดใช้งานในระบบ</div>`;
@@ -1138,8 +1138,13 @@
                     const submittedCount = matchedAttempts.length;
                     const avgExamScore = submittedCount > 0 ? (matchedAttempts.reduce((acc, curr) => acc + getAttemptScore(curr), 0) / submittedCount).toFixed(1) : '-';
 
+                    // 🌟 ปรับลิงก์ให้รองรับการส่ง course_id พ่วงไปด้วย (ถ้ามีการกรองคอร์สอยู่)
+                    const detailUrl = filterCourseId 
+                        ? `admin_analytics_detail.html?exam_id=${exam.id}&course_id=${filterCourseId}` 
+                        : `admin_analytics_detail.html?exam_id=${exam.id}`;
+
                     html += `
-                        <div onclick="window.location.href='admin_analytics_detail.html?exam_id=${exam.id}'" class="exam-catalog-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between space-y-4">
+                        <div onclick="window.location.href='${detailUrl}'" class="exam-catalog-card p-5 rounded-2xl cursor-pointer flex flex-col justify-between space-y-4">
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] font-extrabold px-2.5 py-1 bg-sky-500 text-white rounded-lg shadow-sm">${exam.exam_code || 'EXAM'}</span>
