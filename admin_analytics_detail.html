@@ -224,21 +224,13 @@
             return 0;
         }
 
-        function getCorrectAnswer(q) {
-            return q.correct_answer !== undefined ? q.correct_answer : 
-                   (q.answer !== undefined ? q.answer : 
-                   (q.key !== undefined ? q.key : 
-                   (q.solution !== undefined ? q.solution : '')));
-        }
-
-        // 🎯 ฟังก์ชันแปลง Index ตัวเลือก (0, 1, 2, 3) เป็นอักษรตัวเลือก (ก, ข, ค, ง)
+        // 🎯 ฟังก์ชันแปลง Index ตัวเลือก (0, 1, 2, 3) หรือค่าเฉลยให้เป็นตัวอักษร ก, ข, ค, ง
         function formatAnswerText(ansValue) {
             if (ansValue === undefined || ansValue === null || ansValue === '') return '-';
             
-            // ถ้าเก็บมาเป็นตัวเลข Index (0, 1, 2, 3)
             const thaiChoices = ['ก', 'ข', 'ค', 'ง', 'จ'];
-            const engChoices = ['A', 'B', 'C', 'D', 'E'];
 
+            // ถ้าเป็นตัวเลข Index (0, 1, 2, 3...)
             if (typeof ansValue === 'number' || (!isNaN(ansValue) && String(ansValue).trim() !== '')) {
                 const idx = Number(ansValue);
                 if (idx >= 0 && idx < thaiChoices.length) {
@@ -246,7 +238,6 @@
                 }
             }
 
-            // ถ้าเป็นสตริงตัวเลข เช่น "0", "1", "2"
             const trimmed = String(ansValue).trim();
             if (/^\d+$/.test(trimmed)) {
                 const idx = Number(trimmed);
@@ -258,7 +249,16 @@
             return trimmed;
         }
 
-        // 🎯 ดึงคำตอบจาก answer_saved และแปลงค่าให้เทียบตรงกับเฉลยได้
+        // 🎯 ดึงเฉลยคำตอบที่ถูกต้องแล้วแปลงเป็น ก, ข, ค, ง
+        function getCorrectAnswer(q) {
+            let raw = q.correct_answer !== undefined ? q.correct_answer : 
+                      (q.answer !== undefined ? q.answer : 
+                      (q.key !== undefined ? q.key : 
+                      (q.solution !== undefined ? q.solution : '')));
+            return formatAnswerText(raw);
+        }
+
+        // 🎯 ดึงคำตอบของนักเรียนแล้วแปลงเป็น ก, ข, ค, ง
         function extractStudentAnswer(att, q, index) {
             let raw = att.answer_saved || att.answers || att.user_answers || att.student_answers;
             if (!raw) return null;
