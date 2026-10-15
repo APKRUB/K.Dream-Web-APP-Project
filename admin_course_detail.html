@@ -149,7 +149,7 @@
 
             Swal.fire({ title: 'กำลังโหลดคอร์ส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // โหลดทีละส่วนอย่างปลอดภัย ป้องกันปัญหารอค้าง
+            // โหลดทีละส่วนอย่างปลอดภัย
             const courseRes = await mySupabase.from('courses').select('*').eq('id', courseId).single();
             if (courseRes.error || !courseRes.data) {
                 Swal.fire('ไม่พบคอร์ส', 'คอร์สนี้อาจถูกลบไปแล้ว', 'error').then(() => window.location.replace('admin_courses.html'));
@@ -157,7 +157,6 @@
             }
             currentCourse = courseRes.data;
 
-            // โหลดข้อมูลประกอบแบบอิสระ
             const studentsRes = await mySupabase.from('profiles').select('*');
             if (studentsRes.data) allStudents = studentsRes.data.filter(function(p) { return !isUserAdmin(p); });
 
@@ -170,8 +169,19 @@
             const lessonsRes = await mySupabase.from('course_lessons').select('*').order('sequence_order', { ascending: true });
             courseLessons = lessonsRes.data || [];
 
-            const examsRes = await mySupabase.from('exams').select('*').eq('course_id', courseId);
-            courseExams = examsRes.data || [];
+            // ดึงข้อสอบทั้งหมดแล้วกรองเฉพาะชุดที่มี courseId นี้อยู่ในอาเรย์
+            const examsRes = await mySupabase.from('exams').select('*');
+            if (examsRes.data) {
+                courseExams = examsRes.data.filter(ex => {
+                    if (!ex.course_id) return false;
+                    if (Array.isArray(ex.course_id)) {
+                        return ex.course_id.includes(courseId);
+                    }
+                    return String(ex.course_id) === String(courseId);
+                });
+            } else {
+                courseExams = [];
+            }
 
             const annRes = await mySupabase.from('announcements').select('*').eq('course_id', courseId);
             courseAnnouncements = annRes.data || [];
@@ -376,9 +386,15 @@
             let examsHtml = '';
             if (courseExams.length > 0) {
                 examsHtml = courseExams.map(function(ex) {
-                    return '<div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 space-y-1">' +
+                    return '<div class="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border dark:border-slate-700 flex justify-between items-center">' +
+                           '<div class="space-y-1">' +
                            '<div class="font-extrabold text-slate-900 dark:text-white">' + (ex.title || ex.exam_name || 'ชุดข้อสอบ') + '</div>' +
-                           '<div class="text-xs text-slate-500">' + (ex.description || 'ไม่มีคำอธิบาย') + '</div></div>';
+                           '<div class="text-xs text-slate-500">รหัส: ' + (ex.exam_code || '-') + ' | เวลา: ' + (ex.time_limit || 60) + ' นาที</div>' +
+                           '</div>' +
+                           '<div class="flex items-center gap-2">' +
+                           '<button onclick="window.location.href=\'admin_exam_editor.html?id=' + ex.id + '\'" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-list-check mr-1"></i> จัดการโจทย์</button>' +
+                           '</div>' +
+                           '</div>';
                 }).join('');
             } else {
                 examsHtml = '<div class="col-span-full text-center py-8 text-slate-400">ยังไม่มีชุดข้อสอบที่ผูกกับคอร์สนี้</div>';
@@ -387,8 +403,10 @@
             container.innerHTML = '<div class="hitech-card p-6 rounded-3xl space-y-4">' +
                 '<div class="flex justify-between items-center pb-3 border-b border-purple-500/20">' +
                 '<span class="text-xs font-bold text-slate-400">ชุดข้อสอบที่ผูกกับคอร์สนี้ (' + courseExams.length + ' ชุด)</span>' +
-                '<button onclick="window.location.href=\'admin_exams.html\'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-file-signature mr-1"></i> ไปที่ศูนย์จัดการชุดข้อสอบ</button>' +
-                '</div><div class="grid grid-cols-1 md:grid-cols-2 gap-4">' + examsHtml + '</div></div>';
+                '<div class="flex items-center gap-2">' +
+                '<button onclick="window.location.href=\'admin_exams.html?course_id=' + courseId + '\'" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all"><i class="fas fa-file-signature mr-1"></i> ไปที่ศูนย์จัดการข้อสอบเฉพาะคอร์สนี้</button>' +
+                '</div></div>' +
+                '<div class="space-y-3">' + examsHtml + '</div></div>';
         }
 
         function renderAnnouncementsTab(container) {
