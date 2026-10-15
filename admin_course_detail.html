@@ -146,7 +146,7 @@
         let allAttemptsRaw = [];
         let examQuestionsMap = {};
         let categoriesMap = {};
-        let chart1 = null, chart2 = null, chart3 = null;
+        let courseAnalyticsChartInstance = null;
         let currentTab = 'curriculum';
 
         const htmlElement = document.documentElement;
@@ -338,7 +338,10 @@
             if (tabName === 'curriculum') renderCurriculumTab(container);
             else if (tabName === 'students') renderStudentsTab(container);
             else if (tabName === 'exams') renderExamsTab(container);
-            else if (tabName === 'analytics') renderAnalyticsTab(container);
+            else if (tabName === 'analytics') {
+                renderAnalyticsTab(container);
+                renderAnalyticsCharts();
+            }
         }
 
         function renderCurriculumTab(container) {
@@ -742,16 +745,95 @@
         }
 
         function renderAnalyticsTab(container) {
+            const totalExams = courseExams.length;
+            const totalSubmissions = allAttemptsRaw.length;
+            const totalStudents = enrolledStudentIds.length;
+
+            let allScoresFlattened = [];
+            Object.values(courseAttemptsMap).forEach(arr => allScoresFlattened.push(...arr));
+            let sumAll = allScoresFlattened.reduce((a, b) => a + b, 0);
+            let avgClassScore = allScoresFlattened.length > 0 ? (sumAll / allScoresFlattened.length).toFixed(1) : '0.0';
+
             container.innerHTML = `
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500"><div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div><div><span class="text-xs text-slate-400 font-bold block">ชุดข้อสอบในคอร์ส</span><span id="anTotalExams" class="text-xl font-extrabold text-slate-900 dark:text-white">0 ชุด</span></div></div>
-                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-indigo-500"><div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-paper-plane"></i></div><div><span class="text-xs text-slate-400 font-bold block">จำนวนการส่งข้อสอบรวม</span><span id="anTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0 ครั้ง</span></div></div>
-                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500"><div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-users"></i></div><div><span class="text-xs text-slate-400 font-bold block">นักเรียนในคอร์สนี้</span><span id="anTotalStudentsCount" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">0 คน</span></div></div>
-                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500"><div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div><div><span class="text-xs text-slate-400 font-bold block">ค่าเฉลี่ย Percentile คลาส</span><span id="anAvgPercentile" class="text-xl font-extrabold text-amber-500">--%</span></div></div>
+                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500"><div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-file-alt"></i></div><div><span class="text-xs text-slate-400 font-bold block">ชุดข้อสอบในคอร์ส</span><span id="anTotalExams" class="text-xl font-extrabold text-slate-900 dark:text-white">${totalExams} ชุด</span></div></div>
+                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-indigo-500"><div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-paper-plane"></i></div><div><span class="text-xs text-slate-400 font-bold block">จำนวนการส่งข้อสอบรวม</span><span id="anTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">${totalSubmissions} ครั้ง</span></div></div>
+                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500"><div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-users"></i></div><div><span class="text-xs text-slate-400 font-bold block">นักเรียนในคอร์สนี้</span><span id="anTotalStudentsCount" class="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">${totalStudents} คน</span></div></div>
+                        <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500"><div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl"><i class="fas fa-chart-line"></i></div><div><span class="text-xs text-slate-400 font-bold block">คะแนนเฉลี่ยรวมคลาส</span><span id="anAvgPercentile" class="text-xl font-extrabold text-amber-500">${avgClassScore}</span></div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-bar text-sky-500"></i> คะแนนเฉลี่ยแยกตามชุดข้อสอบในคอร์ส</h3>
+                            <div class="relative h-72 w-full"><canvas id="courseExamAvgChart"></canvas></div>
+                        </div>
+                        <div class="lg:col-span-4 hitech-card p-6 rounded-3xl space-y-4">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-pie text-purple-500"></i> สัดส่วนการส่งงาน / สอบ</h3>
+                            <div class="relative h-72 w-full flex items-center justify-center"><canvas id="courseSubmissionsDistChart"></canvas></div>
+                        </div>
                     </div>
                 </div>
             `;
+        }
+
+        function renderAnalyticsCharts() {
+            setTimeout(() => {
+                // Chart 1: Average score per exam
+                const ctx1 = document.getElementById('courseExamAvgChart')?.getContext('2d');
+                if (ctx1) {
+                    let examLabels = courseExams.map(ex => ex.title || 'ชุดข้อสอบ');
+                    let examAvgs = courseExams.map(ex => {
+                        let scores = courseAttemptsMap[String(ex.id)] || [];
+                        if (scores.length === 0) return 0;
+                        let sum = scores.reduce((a, b) => a + b, 0);
+                        return Number((sum / scores.length).toFixed(1));
+                    });
+
+                    new Chart(ctx1, {
+                        type: 'bar',
+                        data: {
+                            labels: examLabels,
+                            datasets: [{
+                                label: 'คะแนนเฉลี่ย',
+                                data: examAvgs,
+                                backgroundColor: '#0284c7',
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+
+                // Chart 2: Submissions distribution / participation
+                const ctx2 = document.getElementById('courseSubmissionsDistChart')?.getContext('2d');
+                if (ctx2) {
+                    let submittedCount = new Set(allAttemptsRaw.map(a => a.student_id || a.user_id)).size;
+                    let notSubmittedCount = Math.max(0, enrolledStudentIds.length - submittedCount);
+
+                    new Chart(ctx2, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['ส่งข้อสอบแล้ว', 'ยังไม่ส่งข้อสอบ'],
+                            datasets: [{
+                                data: [submittedCount, notSubmittedCount],
+                                backgroundColor: ['#10b981', '#ef4444'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom' } }
+                        }
+                    });
+                }
+            }, 100);
         }
 
         function getExamAverageScore(examId) {
