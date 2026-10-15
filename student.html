@@ -23,22 +23,22 @@
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-bottom: 2px solid rgba(2, 132, 199, 0.15); }
-        .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 2px solid rgba(2, 132, 199, 0.3); }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(2, 132, 199, 0.15); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid rgba(2, 132, 199, 0.3); }
         .hitech-card { 
             background: rgba(255, 255, 255, 0.98); 
-            border: 2px solid rgba(186, 230, 253, 0.6); 
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 0 1px 1px rgba(2, 132, 199, 0.05);
+            border: 1px solid rgba(186, 230, 253, 0.8); 
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .dark .hitech-card { 
             background: #090d16; 
-            border: 2px solid rgba(30, 58, 138, 0.6);
+            border: 1px solid rgba(30, 58, 138, 0.6);
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
         }
         .exam-card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -10px rgba(2, 132, 199, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px -10px rgba(2, 132, 199, 0.2);
             border-color: #0284c7;
         }
         .feature-box {
@@ -46,163 +46,160 @@
         }
         .feature-box:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.2);
+            box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.15);
         }
         .hide-scrollbar::-webkit-scrollbar { height: 6px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
-        .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(2, 132, 199, 0.8); }
 
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-sky-50/40 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+<body class="bg-slate-50/70 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
     <!-- Header Navigation -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-xl shadow-lg shadow-sky-500/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-sky-500/20">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-600 text-white font-extrabold text-[10px] rounded-md shadow-sm">Portal v3.0</span>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
+                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.0</span>
                     </div>
-                    <p class="text-xs text-sky-600 dark:text-sky-400 font-semibold">Student Examination Center</p>
+                    <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">Student Examination Center</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2.5">
-                <button onclick="logoutStudent()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-2xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 border border-red-500/30 shadow-sm">
+                <button onclick="logoutStudent()" class="px-3 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-500/20">
                     <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                 </button>
 
-                <button id="themeToggle" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all">
-                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all">
+                    <i class="fas fa-moon text-xs" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-28 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
 
-        <!-- 🚀 พื้นที่รวมปุ่มฟีเจอร์เด่น ๆ (Feature Hub) -->
+        <!-- Welcome Banner & Quick Hub (จัดระเบียบรวมกันให้ดูสะอาดตา) -->
+        <div class="hitech-card p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl shadow-sky-500/10 relative overflow-hidden space-y-6">
+            <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                <div class="space-y-2">
+                    <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold tracking-wide uppercase">ศูนย์การเรียนรู้ออนไลน์อัจฉริยะ</span>
+                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
+                    <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามหมวดหมู่ ทบทวนเทปเรียนย้อนหลัง หรือนัดหมาย Consult อาจารย์ได้จากเมนูด้านล่างนี้</p>
+                </div>
+
+                <!-- Modern Tab Switches -->
+                <div class="flex items-center gap-1 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0 w-full md:w-auto">
+                    <button onclick="switchTab('exam')" id="tabBtnExam" class="flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2">
+                        <i class="fas fa-file-signature text-sky-600"></i> ทำข้อสอบ
+                    </button>
+                    <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2">
+                        <i class="fas fa-chart-line"></i> วิเคราะห์ผล & ประวัติ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overall Progress Bar Widget Inside Banner -->
+            <div class="pt-4 border-t border-white/15 relative z-10 max-w-xl space-y-1.5">
+                <div class="flex justify-between text-xs font-bold text-sky-100">
+                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวมในระบบ</span>
+                    <span id="overallProgressText">0/0 ชุด (0%)</span>
+                </div>
+                <div class="w-full bg-black/25 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/20">
+                    <div id="overallProgressBar" class="bg-sky-300 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Hub (ปุ่มฟีเจอร์เด่น: เทปย้อนหลัง & จอง Consult) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            <!-- ปุ่มเข้าสู่คลังเทปย้อนหลัง (Video Vault) -->
-            <div onclick="goToVideosPage()" class="feature-box hitech-card p-5 sm:p-6 rounded-3xl border-2 border-rose-500/40 bg-gradient-to-r from-rose-500/10 via-red-500/5 to-transparent flex items-center justify-between cursor-pointer group">
+            <!-- ปุ่มเข้าสู่คลังเทปย้อนหลัง -->
+            <div onclick="goToVideosPage()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-rose-500/30 bg-gradient-to-r from-rose-500/5 via-transparent to-transparent">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-xl shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-base shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
                         <i class="fas fa-video"></i>
                     </div>
-                    <div class="space-y-1">
-                        <span class="px-2.5 py-0.5 bg-rose-500/20 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] rounded-full uppercase tracking-wider">Video Vault</span>
-                        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-light">ทบทวนบทเรียนและคลิปย้อนหลังได้ตลอดเวลา</p>
+                    <div>
+                        <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Video Vault</span>
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
+                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา</p>
                     </div>
                 </div>
-                <div class="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <i class="fas fa-arrow-right text-sm"></i>
+                <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <i class="fas fa-arrow-right text-xs"></i>
                 </div>
             </div>
 
             <!-- ปุ่มจองเวลา Consult -->
-            <div onclick="goToConsultPage()" class="feature-box hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/40 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent flex items-center justify-between cursor-pointer group">
+            <div onclick="goToConsultPage()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-sky-500/30 bg-gradient-to-r from-sky-500/5 via-transparent to-transparent">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-base shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
                         <i class="fas fa-calendar-check animate-pulse"></i>
                     </div>
-                    <div class="space-y-1">
-                        <span class="px-2.5 py-0.5 bg-sky-500/20 text-sky-600 dark:text-sky-400 font-extrabold text-[10px] rounded-full uppercase tracking-wider">Consult Hub</span>
-                        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">จองเวลา Consult</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-light">นัดหมายปรึกษาปัญหาการเรียนกับอาจารย์</p>
+                    <div>
+                        <span class="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">Consult Hub</span>
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">จองเวลา Consult</h3>
+                        <p class="text-[11px] text-slate-500 font-light">นัดหมายปรึกษาปัญหาการเรียนกับอาจารย์ส่วนตัว</p>
                     </div>
                 </div>
-                <div class="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <i class="fas fa-arrow-right text-sm"></i>
+                <div class="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <i class="fas fa-arrow-right text-xs"></i>
                 </div>
             </div>
 
-        </div>
-
-        <!-- Banner & Main Feature Tabs -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-blue-700 via-sky-600 to-blue-800 p-6 sm:p-8 rounded-3xl text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
-            <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="space-y-3 relative z-10 w-full">
-                <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[11px] font-bold tracking-wide uppercase">ศูนย์การเรียนรู้ออนไลน์อัจฉริยะ</span>
-                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
-                <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามหมวดหมู่ หรือตรวจสอบสถิติวิเคราะห์พัฒนาการคะแนนรายบุคคลแบบ Real-time ได้ทันที</p>
-                
-                <!-- Overall Progress Bar Widget -->
-                <div class="pt-2 max-w-md space-y-1.5">
-                    <div class="flex justify-between text-xs font-bold text-sky-100">
-                        <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวม</span>
-                        <span id="overallProgressText">0/0 ชุด (0%)</span>
-                    </div>
-                    <div class="w-full bg-black/20 rounded-full h-2.5 overflow-hidden backdrop-blur-sm border border-white/20">
-                        <div id="overallProgressBar" class="bg-sky-300 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Modern Tab Switches -->
-            <div class="flex items-center gap-1.5 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 relative z-10 w-full sm:w-auto shrink-0">
-                <button onclick="switchTab('exam')" id="tabBtnExam" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2">
-                    <i class="fas fa-file-signature text-sky-600"></i> ทำข้อสอบ
-                </button>
-                <button onclick="switchTab('analytics')" id="tabBtnAnalytics" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2">
-                    <i class="fas fa-chart-line"></i> วิเคราะห์ผล & ประวัติ
-                </button>
-            </div>
         </div>
 
         <!-- ================= FEATURE 1: EXAM PORTAL (หน้าทำข้อสอบ) ================= -->
         <div id="sectionExam" class="space-y-6">
             
             <!-- ⚡ Quick Pending Exams Widget -->
-            <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-400 bg-gradient-to-br from-sky-500/10 via-transparent to-blue-500/10 space-y-4">
+            <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-sky-400/50 bg-gradient-to-br from-sky-500/5 via-transparent to-blue-500/5 space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
                     </h3>
                     <span class="text-[11px] text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-arrows-alt-h mr-1"></i> ปัดขวาเพื่อดูเพิ่มเติม</span>
                 </div>
-                <div id="quickPendingContainer" class="flex overflow-x-auto gap-5 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">
+                <div id="quickPendingContainer" class="flex overflow-x-auto gap-4 pb-2 pt-1 hide-scrollbar snap-x snap-mandatory">
                     <!-- โหลดการ์ดข้อสอบที่ยังไม่ทำ -->
                 </div>
             </div>
 
-            <!-- Filter & Search Bar Toolbar -->
-            <div class="hitech-card p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Filter & Search Bar Toolbar (จัดเรียงให้เป็นระเบียบ) -->
+            <div class="hitech-card p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                    <div class="relative w-full sm:w-80">
-                        <i class="fas fa-search absolute left-4 top-3.5 text-sky-500 text-xs"></i>
-                        <input type="text" id="searchExamInput" oninput="renderExamCatalog()" placeholder="ค้นหาชื่อชุดข้อสอบ หรือคีย์เวิร์ด..." class="w-full pl-10 pr-4 py-3 bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 rounded-2xl text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all font-medium">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fas fa-search absolute left-3.5 top-3.5 text-sky-500 text-xs"></i>
+                        <input type="text" id="searchExamInput" oninput="renderExamCatalog()" placeholder="ค้นหาชื่อชุดข้อสอบ..." class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none transition-all font-medium">
                     </div>
                     <!-- Status Filter Tabs -->
-                    <div class="flex items-center gap-1 bg-sky-100/60 dark:bg-darkinput p-1 rounded-2xl border-2 border-sky-200 dark:border-slate-800 w-full sm:w-auto">
-                        <button onclick="setStatusFilter('all')" id="statusFilterAll" class="flex-1 sm:flex-none px-3.5 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm">ทั้งหมด</button>
-                        <button onclick="setStatusFilter('pending')" id="statusFilterPending" class="flex-1 sm:flex-none px-3.5 py-2 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-xl text-xs font-bold transition-all">ยังไม่ได้ทำ</button>
-                        <button onclick="setStatusFilter('completed')" id="statusFilterCompleted" class="flex-1 sm:flex-none px-3.5 py-2 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-xl text-xs font-bold transition-all">ทำเสร็จแล้ว</button>
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
+                        <button onclick="setStatusFilter('all')" id="statusFilterAll" class="flex-1 sm:flex-none px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm">ทั้งหมด</button>
+                        <button onclick="setStatusFilter('pending')" id="statusFilterPending" class="flex-1 sm:flex-none px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-lg text-xs font-bold transition-all">ยังไม่ได้ทำ</button>
+                        <button onclick="setStatusFilter('completed')" id="statusFilterCompleted" class="flex-1 sm:flex-none px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-lg text-xs font-bold transition-all">ทำเสร็จแล้ว</button>
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between w-full md:w-auto gap-4">
-                    <span class="text-xs text-sky-700 dark:text-sky-400 font-bold bg-sky-100 dark:bg-sky-950/60 px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-900" id="examCountBadge">0 ชุดข้อสอบ</span>
+                <div class="flex items-center justify-between w-full md:w-auto">
+                    <span class="text-xs text-sky-700 dark:text-sky-400 font-bold bg-sky-50 dark:bg-sky-950/40 px-3 py-1.5 rounded-xl border border-sky-200 dark:border-sky-900" id="examCountBadge">0 ชุดข้อสอบ</span>
                 </div>
             </div>
 
             <!-- Exam Catalog Container -->
             <div class="space-y-6">
-                <div class="flex justify-between items-center px-1">
-                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-folder-open text-sky-600"></i> รายการชุดข้อสอบแยกตามหมวดหมู่ (ปัดขวาดูเพิ่มเติมได้)
-                    </h3>
-                </div>
-                <div id="examCategoriesGroupContainer" class="space-y-6">
+                <div id="examCategoriesGroupContainer" class="space-y-5">
                     <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบ...</div>
                 </div>
             </div>
@@ -211,24 +208,22 @@
         <!-- ================= FEATURE 2: ANALYTICS & HISTORY (หน้าวิเคราะห์ผล & ประวัติ) ================= -->
         <div id="sectionAnalytics" class="space-y-6 hidden">
             
-            <!-- Student Exam History Section (มีช่องค้นหา + ปุ่มสลับมุมมอง รายการ/การ์ด) -->
-            <div class="hitech-card p-6 sm:p-7 rounded-3xl space-y-4 border-2 border-blue-400/50">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b-2 border-sky-100 dark:border-slate-800">
+            <!-- Student Exam History Section -->
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                     <div>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลังทั้งหมด
+                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">เรียงลำดับตามการส่งล่าสุด พร้อมตัวเลือกมุมมองการแสดงผล</p>
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                        <!-- Search History Input -->
-                        <div class="relative flex-1 sm:w-64">
+                        <div class="relative flex-1 sm:w-60">
                             <i class="fas fa-search absolute left-3.5 top-3 text-sky-500 text-xs"></i>
-                            <input type="text" id="searchHistoryInput" oninput="renderExamHistory()" placeholder="ค้นหาประวัติการสอบ..." class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none">
+                            <input type="text" id="searchHistoryInput" oninput="renderExamHistory()" placeholder="ค้นหาประวัติการสอบ..." class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-none">
                         </div>
-                        <!-- View Mode Switcher Buttons -->
-                        <div class="flex items-center bg-sky-100/60 dark:bg-darkinput p-1 rounded-xl border-2 border-sky-200 dark:border-slate-800 shrink-0">
+                        <div class="flex items-center bg-slate-100 dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
                             <button onclick="setHistoryViewMode('list')" id="historyViewBtnList" class="px-3 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm" title="มุมมองรายการ">
                                 <i class="fas fa-list"></i>
                             </button>
@@ -245,27 +240,27 @@
             </div>
 
             <!-- Deep Analytics Filters -->
-            <div class="hitech-card p-6 sm:p-7 rounded-3xl space-y-5">
+            <div class="hitech-card p-6 rounded-3xl space-y-4">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-sliders text-sky-600"></i> ตัวกรองเปรียบเทียบพัฒนาการเชิงลึก
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">เลือกชุดข้อสอบที่ต้องการวิเคราะห์เปรียบเทียบสถิติ</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                        <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-4 py-2.5 bg-white dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer focus:border-sky-500">
+                        <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer focus:border-sky-500">
                             <option value="all">📚 ทุกหมวดหมู่เนื้อหา</option>
                         </select>
-                        <button onclick="resetAnalyticsFilter()" class="px-4 py-2.5 bg-sky-100 dark:bg-slate-800 hover:bg-sky-200 text-sky-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
-                            <i class="fas fa-undo mr-1"></i> รีเซ็ตตัวกรอง
+                        <button onclick="resetAnalyticsFilter()" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
+                            <i class="fas fa-undo mr-1"></i> รีเซ็ต
                         </button>
                     </div>
                 </div>
 
-                <div class="pt-4 border-t-2 border-sky-100 dark:border-slate-800 space-y-2.5">
+                <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
                     <span class="text-xs font-bold text-slate-600 dark:text-slate-400 block"><i class="fas fa-check-double mr-1 text-sky-600"></i> เลือกชุดข้อสอบ (ติ๊กเลือกเพื่อแสดงกราฟ):</span>
-                    <div id="examCheckboxGroup" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1 text-xs">
+                    <div id="examCheckboxGroup" class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 text-xs">
                         <div class="text-slate-400 text-xs py-2">กำลังโหลดรายการข้อสอบ...</div>
                     </div>
                 </div>
@@ -273,32 +268,32 @@
 
             <!-- KPI Metric Cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-sky-500">
-                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold text-xl shrink-0">📈</div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-sky-500">
+                    <div class="w-11 h-11 rounded-xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold text-base shrink-0">📈</div>
                     <div>
-                        <span class="text-[11px] text-slate-500 block font-semibold">อัตราพัฒนาการรวม</span>
-                        <span class="text-lg font-extrabold text-slate-900 dark:text-white" id="growthRateMetric">--%</span>
+                        <span class="text-[10px] text-slate-500 block font-semibold">อัตราพัฒนาการรวม</span>
+                        <span class="text-base font-extrabold text-slate-900 dark:text-white" id="growthRateMetric">--%</span>
                     </div>
                 </div>
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-blue-600">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-xl shrink-0">🎯</div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-blue-600">
+                    <div class="w-11 h-11 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-base shrink-0">🎯</div>
                     <div>
-                        <span class="text-[11px] text-slate-500 block font-semibold">คะแนนเฉลี่ยส่วนตัว</span>
-                        <span class="text-lg font-extrabold text-slate-900 dark:text-white" id="avgPersonalMetric">--%</span>
+                        <span class="text-[10px] text-slate-500 block font-semibold">คะแนนเฉลี่ยส่วนตัว</span>
+                        <span class="text-base font-extrabold text-slate-900 dark:text-white" id="avgPersonalMetric">--%</span>
                     </div>
                 </div>
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-emerald-500">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-xl shrink-0">🌟</div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-emerald-500">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">🌟</div>
                     <div>
-                        <span class="text-[11px] text-slate-500 block font-semibold">หมวดหมู่จุดแข็ง</span>
-                        <span class="text-xs font-extrabold text-emerald-600 truncate max-w-[120px] block mt-0.5" id="strongCategoryMetric">--</span>
+                        <span class="text-[10px] text-slate-500 block font-semibold">หมวดหมู่จุดแข็ง</span>
+                        <span class="text-xs font-extrabold text-emerald-600 truncate max-w-[110px] block mt-0.5" id="strongCategoryMetric">--</span>
                     </div>
                 </div>
-                <div class="hitech-card p-5 rounded-2xl flex items-center gap-4 border-l-4 border-l-amber-500">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xl shrink-0">⚠️</div>
+                <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-amber-500">
+                    <div class="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-base shrink-0">⚠️</div>
                     <div>
-                        <span class="text-[11px] text-slate-500 block font-semibold">จุดที่ต้องทบทวน</span>
-                        <span class="text-xs font-extrabold text-amber-600 truncate max-w-[120px] block mt-0.5" id="weakCategoryMetric">--</span>
+                        <span class="text-[10px] text-slate-500 block font-semibold">จุดที่ต้องทบทวน</span>
+                        <span class="text-xs font-extrabold text-amber-600 truncate max-w-[110px] block mt-0.5" id="weakCategoryMetric">--</span>
                     </div>
                 </div>
             </div>
@@ -306,33 +301,27 @@
             <!-- Charts Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
-                            <i class="fas fa-chart-line text-sky-600"></i> พัฒนาการคะแนนสอบตามลำดับเวลา (เทียบค่าเฉลี่ยห้อง)
-                        </h4>
-                    </div>
+                    <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-sky-600"></i> พัฒนาการคะแนนสอบตามลำดับเวลา (เทียบค่าเฉลี่ยห้อง)
+                    </h4>
                     <div class="h-72 w-full">
                         <canvas id="progressTrendChart"></canvas>
                     </div>
                 </div>
 
                 <div class="lg:col-span-4 hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
-                            <i class="fas fa-bullseye text-blue-600"></i> ความเชี่ยวชาญรายหมวดหมู่ (%)
-                        </h4>
-                    </div>
+                    <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-bullseye text-blue-600"></i> ความเชี่ยวชาญรายหมวดหมู่ (%)
+                    </h4>
                     <div class="h-72 w-full flex items-center justify-center">
                         <canvas id="categoryRadarChart"></canvas>
                     </div>
                 </div>
 
                 <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
-                            <i class="fas fa-chart-bar text-emerald-600"></i> เปรียบเทียบคะแนนชุดข้อสอบที่เลือก (คะแนนของคุณ VS ค่าเฉลี่ยห้อง)
-                        </h4>
-                    </div>
+                    <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
+                        <i class="fas fa-chart-bar text-emerald-600"></i> เปรียบเทียบคะแนนชุดข้อสอบที่เลือก (คะแนนของคุณ VS ค่าเฉลี่ยห้อง)
+                    </h4>
                     <div class="h-64 w-full">
                         <canvas id="multiExamBarChart"></canvas>
                     </div>
@@ -356,7 +345,7 @@
         let examQuestionCounts = {};
         let starredExams = JSON.parse(localStorage.getItem('student_starred_exams') || '[]');
         let currentStatusFilter = 'all';
-        let historyViewMode = 'list'; // 'list' หรือ 'card'
+        let historyViewMode = 'list';
         let collapsedCategories = {};
         let quickPendingCount = 0;
 
@@ -457,11 +446,11 @@
             const btnAnalytics = document.getElementById('tabBtnAnalytics');
 
             if (isExam) {
-                btnExam.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
-                btnAnalytics.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
+                btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
+                btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
             } else {
-                btnExam.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
-                btnAnalytics.className = 'flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
+                btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
+                btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
                 updateAnalyticsDashboard();
             }
         }
@@ -471,9 +460,9 @@
             ['All', 'Pending', 'Completed'].forEach(s => {
                 const btn = document.getElementById(`statusFilter${s}`);
                 if (s.toLowerCase() === status || (status === 'all' && s === 'All')) {
-                    btn.className = 'flex-1 sm:flex-none px-3.5 py-2 bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm';
+                    btn.className = 'flex-1 sm:flex-none px-3.5 py-1.5 bg-sky-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm';
                 } else {
-                    btn.className = 'flex-1 sm:flex-none px-3.5 py-2 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-xl text-xs font-bold transition-all';
+                    btn.className = 'flex-1 sm:flex-none px-3.5 py-1.5 text-slate-600 dark:text-slate-300 hover:text-sky-600 rounded-lg text-xs font-bold transition-all';
                 }
             });
             renderExamCatalog();
@@ -569,7 +558,7 @@
                 const startTime = parseInt(el.getAttribute('data-start-time'));
                 const diff = startTime - now;
                 if (diff <= 0) {
-                    el.textContent = 'ถึงเวลาเปิดสอบแล้ว! (รีเฟรชหน้าจอ)';
+                    el.textContent = 'ถึงเวลาเปิดสอบแล้ว!';
                     return;
                 }
                 const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -638,29 +627,29 @@
                     const durationMins = exam.duration || exam.time_limit || 'ไม่จำกัด';
                     const isStarred = starredExams.includes(exam.id);
 
-                    const statusBadge = `<span class="px-2.5 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold border border-sky-300"><i class="fas fa-check-circle mr-1"></i> ยังไม่ได้ทำ</span>`;
-                    const actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
+                    const statusBadge = `<span class="px-2 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-md text-[10px] font-bold border border-sky-300">ยังไม่ได้ทำ</span>`;
+                    const actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5">เริ่มสอบ</button>`;
                     const starBtnHtml = `
-                        <button onclick="toggleStarExam('${exam.id}', event)" class="w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/15' : 'text-slate-400 hover:text-amber-400 bg-sky-100 dark:bg-slate-800'}">
-                            <i class="${isStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                        <button onclick="toggleStarExam('${exam.id}', event)" class="w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/15' : 'text-slate-400 hover:text-amber-400 bg-sky-50 dark:bg-slate-800'}">
+                            <i class="${isStarred ? 'fas' : 'far'} fa-star text-[11px]"></i>
                         </button>
                     `;
 
                     return `
-                        <div class="hitech-card exam-card-hover border-l-4 border-l-sky-500 p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-80 snap-start">
-                            <div class="space-y-2">
+                        <div class="hitech-card exam-card-hover border-l-4 border-l-sky-500 p-4 rounded-2xl flex flex-col justify-between space-y-3 shrink-0 w-72 snap-start">
+                            <div class="space-y-1.5">
                                 <div class="flex justify-between items-center gap-2">
-                                    <span class="text-[11px] text-slate-500 font-bold"><i class="fas fa-list-ol mr-1 text-sky-500"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
+                                    <span class="text-[10px] text-slate-500 font-bold">${questionCount} ข้อ | ${durationMins} นาที</span>
                                     <div class="flex items-center gap-1.5">
                                         ${statusBadge}
                                         ${starBtnHtml}
                                     </div>
                                 </div>
-                                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1 leading-snug">${exam.title}</h3>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบชุดนี้'}</p>
+                                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1">${exam.title}</h3>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบาย'}</p>
                             </div>
-                            <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800">
-                                <div class="text-[11px] text-slate-500 font-medium">สิทธิ์สอบ: <span class="text-slate-700 dark:text-slate-300 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts} ครั้ง</span></div>
+                            <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <div class="text-[10px] text-slate-500">สิทธิ์: <span class="text-slate-700 dark:text-slate-300 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts}</span></div>
                                 ${actionBtnHtml}
                             </div>
                         </div>
@@ -671,7 +660,7 @@
             }
 
             if (availableExams.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center">ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-12 text-center">ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
                 return;
             }
 
@@ -695,25 +684,25 @@
             const isCollapsed = collapsedCategories[catId] || false;
 
             let sectionHtml = `
-                <div class="hitech-card rounded-3xl overflow-hidden">
-                    <div onclick="toggleCategoryCollapse('${catId}')" class="p-5 bg-sky-50/70 dark:bg-darkinput border-b-2 border-sky-200 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-sky-100/60 transition-all">
+                <div class="hitech-card rounded-2xl overflow-hidden">
+                    <div onclick="toggleCategoryCollapse('${catId}')" class="p-4 bg-sky-50/50 dark:bg-darkinput border-b border-sky-100 dark:border-slate-800 flex justify-between items-center cursor-pointer hover:bg-sky-100/50 transition-all">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                            <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
                                 <i class="fas fa-folder-open"></i>
                             </div>
                             <div>
-                                <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">${catName}</h4>
-                                <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">${examsList.length} ชุดข้อสอบในหมวดหมู่นี้ (<i class="fas fa-arrows-alt-h"></i> ปัดขวา)</p>
+                                <h4 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">${catName}</h4>
+                                <p class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold">${examsList.length} ชุดข้อสอบ</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-slate-600 dark:text-slate-400">${isCollapsed ? 'แสดง' : 'ยุบ'}</span>
-                            <i class="fas fa-chevron-${isCollapsed ? 'down' : 'up'} text-xs text-sky-600 transition-transform"></i>
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                            <span>${isCollapsed ? 'แสดง' : 'ยุบ'}</span>
+                            <i class="fas fa-chevron-${isCollapsed ? 'down' : 'up'} text-[10px]"></i>
                         </div>
                     </div>
                     
-                    <div class="p-5 ${isCollapsed ? 'hidden' : ''}">
-                        <div class="flex overflow-x-auto gap-5 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">
+                    <div class="p-4 ${isCollapsed ? 'hidden' : ''}">
+                        <div class="flex overflow-x-auto gap-4 pb-2 pt-1 hide-scrollbar snap-x snap-mandatory">
             `;
 
             examsList.forEach(exam => {
@@ -747,53 +736,53 @@
                 }
 
                 if (completedCount > 0) {
-                    cardHighlightClass = 'border-l-4 border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20';
-                    statusBadge = `<span class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-extrabold shadow-sm"><i class="fas fa-check-circle mr-1"></i> ทำเสร็จแล้ว (${maxScoreAchieved})</span>`;
+                    cardHighlightClass = 'border-l-4 border-l-emerald-500 bg-emerald-50/20';
+                    statusBadge = `<span class="px-2 py-0.5 bg-emerald-600 text-white rounded-md text-[10px] font-bold shadow-sm">เสร็จสิ้น (${maxScoreAchieved})</span>`;
                     
                     if (maxAttempts > 0 && completedCount >= maxAttempts) {
-                        actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">เต็มโควต้าแล้ว</button>`;
+                        actionBtnHtml = `<button disabled class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">เต็มโควต้า</button>`;
                     } else {
-                        actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-redo"></i> ทำซ้ำอีกครั้ง</button>`;
+                        actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1">ทำซ้ำ</button>`;
                     }
                 } else if (isCountdown) {
-                    cardHighlightClass = 'border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20';
-                    statusBadge = `<span class="px-2.5 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold shadow-sm exam-countdown-timer" data-start-time="${startTimeMs}"><i class="fas fa-clock mr-1"></i> กำลังโหลดเวลา...</span>`;
-                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">กำลังจะเปิด</button>`;
+                    cardHighlightClass = 'border-l-4 border-l-amber-500 bg-amber-50/20';
+                    statusBadge = `<span class="px-2 py-0.5 bg-amber-500 text-white rounded-md text-[10px] font-bold shadow-sm exam-countdown-timer" data-start-time="${startTimeMs}">กำลังโหลด...</span>`;
+                    actionBtnHtml = `<button disabled class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">รอเปิด</button>`;
                 } else if (inProgressAttempt) {
-                    cardHighlightClass = 'border-l-4 border-l-sky-500 bg-sky-50/50';
-                    statusBadge = `<span class="px-2.5 py-1 bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-lg text-[10px] font-bold animate-pulse"><i class="fas fa-spinner fa-spin mr-1"></i> ทำค้างไว้</span>`;
-                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-play"></i> ทำต่อ</button>`;
+                    cardHighlightClass = 'border-l-4 border-l-sky-500 bg-sky-50/30';
+                    statusBadge = `<span class="px-2 py-0.5 bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-md text-[10px] font-bold animate-pulse">ค้างอยู่</span>`;
+                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'resume', '${inProgressAttempt.id}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold shadow-sm transition-all">ทำต่อ</button>`;
                 } else if (maxAttempts > 0 && completedCount >= maxAttempts) {
-                    cardHighlightClass = 'border-l-4 border-l-red-500 bg-red-50/40';
-                    statusBadge = `<span class="px-2.5 py-1 bg-red-500/20 text-red-600 rounded-lg text-[10px] font-bold"><i class="fas fa-ban mr-1"></i> เต็มโควต้า</span>`;
-                    actionBtnHtml = `<button disabled class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">ครบแล้ว</button>`;
+                    cardHighlightClass = 'border-l-4 border-l-red-500 bg-red-50/20';
+                    statusBadge = `<span class="px-2 py-0.5 bg-red-500/20 text-red-600 rounded-md text-[10px] font-bold">เต็มโควต้า</span>`;
+                    actionBtnHtml = `<button disabled class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-400 rounded-xl text-xs font-bold cursor-not-allowed">หมดสิทธิ์</button>`;
                 } else {
                     cardHighlightClass = 'border-l-4 border-l-sky-500 bg-white';
-                    statusBadge = `<span class="px-2.5 py-1 bg-sky-500/15 text-sky-700 dark:text-sky-300 rounded-lg text-[10px] font-extrabold"><i class="fas fa-check-circle mr-1"></i> ยังไม่ได้ทำ</span>`;
-                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"><i class="fas fa-arrow-right"></i> เริ่มสอบ</button>`;
+                    statusBadge = `<span class="px-2 py-0.5 bg-sky-500/10 text-sky-700 dark:text-sky-300 rounded-md text-[10px] font-extrabold">ยังไม่ทำ</span>`;
+                    actionBtnHtml = `<button onclick="handleExamClick('${exam.id}', 'start', null)" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-sm transition-all">เริ่มสอบ</button>`;
                 }
 
                 const starBtnHtml = `
-                    <button onclick="toggleStarExam('${exam.id}', event)" class="w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/15' : 'text-slate-400 hover:text-amber-400 bg-sky-100 dark:bg-slate-800'}">
-                        <i class="${isStarred ? 'fas' : 'far'} fa-star text-xs"></i>
+                    <button onclick="toggleStarExam('${exam.id}', event)" class="w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isStarred ? 'text-amber-500 bg-amber-500/15' : 'text-slate-400 hover:text-amber-400 bg-sky-50 dark:bg-slate-800'}">
+                        <i class="${isStarred ? 'fas' : 'far'} fa-star text-[11px]"></i>
                     </button>
                 `;
 
                 sectionHtml += `
-                    <div class="hitech-card exam-card-hover ${cardHighlightClass} p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-80 snap-start">
-                        <div class="space-y-2">
+                    <div class="hitech-card exam-card-hover ${cardHighlightClass} p-4 rounded-2xl flex flex-col justify-between space-y-3 shrink-0 w-72 snap-start">
+                        <div class="space-y-1.5">
                             <div class="flex justify-between items-center gap-2">
-                                <span class="text-[11px] text-slate-500 font-bold"><i class="fas fa-list-ol mr-1 text-sky-600"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-600"></i> ${durationMins} นาที</span>
+                                <span class="text-[10px] text-slate-500 font-bold">${questionCount} ข้อ | ${durationMins} นาที</span>
                                 <div class="flex items-center gap-1.5">
                                     ${statusBadge}
                                     ${starBtnHtml}
                                 </div>
                             </div>
-                            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white pt-1 leading-snug">${exam.title}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบายเพิ่มเติมสำหรับชุดข้อสอบชุดนี้'}</p>
+                            <h3 class="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-1">${exam.title}</h3>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 font-light">${exam.description || 'ไม่มีคำอธิบาย'}</p>
                         </div>
-                        <div class="flex justify-between items-center pt-3 border-t border-sky-100 dark:border-slate-800">
-                            <div class="text-[11px] text-slate-500 font-medium">สิทธิ์สอบ: <span class="text-slate-800 dark:text-slate-200 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts} ครั้ง</span></div>
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div class="text-[10px] text-slate-500">สิทธิ์: <span class="text-slate-800 dark:text-slate-200 font-bold">${completedCount}/${maxAttempts === 0 ? 'ไม่จำกัด' : maxAttempts}</span></div>
                             ${actionBtnHtml}
                         </div>
                     </div>
@@ -811,7 +800,7 @@
         async function handleExamClick(examId, mode, attemptId) {
             const exam = allExams.find(e => String(e.id) === String(examId));
             if (!exam) {
-                Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่พบข้อมูลชุดข้อสอบในระบบ' });
+                Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่พบข้อมูลชุดข้อสอบ' });
                 return;
             }
 
@@ -821,12 +810,7 @@
             }
 
             if (isCountdown) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'ยังไม่ถึงเวลาเปิดสอบ',
-                    text: 'ชุดข้อสอบนี้ยังอยู่ในสถานะกำหนดเวลาเปิด กรุณารอจนกว่าจะถึงกำหนดการ',
-                    confirmButtonColor: '#0284c7'
-                });
+                Swal.fire({ icon: 'warning', title: 'ยังไม่ถึงเวลาเปิดสอบ', text: 'กรุณารอจนกว่าจะถึงกำหนดการ', confirmButtonColor: '#0284c7' });
                 return;
             }
 
@@ -835,24 +819,19 @@
             const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
 
             if (maxAttempts > 0 && completedCount >= maxAttempts && mode !== 'resume') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'สิทธิ์การสอบเต็มแล้ว',
-                    text: `คุณได้ทำชุดข้อสอบนี้ครบตามโควต้า ${maxAttempts} ครั้งแล้ว`,
-                    confirmButtonColor: '#0284c7'
-                });
+                Swal.fire({ icon: 'error', title: 'สิทธิ์เต็มแล้ว', text: `ครบโควต้า ${maxAttempts} ครั้งแล้ว`, confirmButtonColor: '#0284c7' });
                 return;
             }
 
             const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || 'ตามกำหนด';
             const durationMins = exam.duration || exam.time_limit || 'ตามกำหนด';
-            const customInstructions = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่นระหว่างทำข้อสอบ\n2. ระบบจะทำการบันทึกอัตโนมัติเมื่อหมดเวลา\n3. ตั้งใจทำข้อสอบอย่างเต็มที่";
+            const customInstructions = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่น\n2. ระบบจะบันทึกอัตโนมัติเมื่อหมดเวลา";
 
             const instructionHtml = `
-                <div class="text-left text-xs bg-sky-50 dark:bg-darkinput p-4 rounded-2xl space-y-3 border-2 border-sky-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                <div class="text-left text-xs bg-sky-50 dark:bg-darkinput p-3.5 rounded-xl space-y-2.5 border border-sky-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
                     <div class="grid grid-cols-2 gap-2 pb-2 border-b border-sky-200 dark:border-slate-800">
-                        <div>จำนวนข้อสอบ: <span class="font-extrabold text-sky-600">${questionCount} ข้อ</span></div>
-                        <div>เวลาที่ใช้: <span class="font-extrabold text-purple-600">${durationMins} นาที</span></div>
+                        <div>จำนวน: <span class="font-extrabold text-sky-600">${questionCount} ข้อ</span></div>
+                        <div>เวลา: <span class="font-extrabold text-purple-600">${durationMins} นาที</span></div>
                     </div>
                     <div class="space-y-1 whitespace-pre-line">
                         <span class="font-bold text-slate-900 dark:text-white">ระเบียบปฏิบัติ:</span>
@@ -862,11 +841,11 @@
             `;
 
             const { isConfirmed } = await Swal.fire({
-                title: `<span class="text-base font-extrabold text-sky-700 dark:text-sky-400">📌 ข้อปฏิบัติก่อนเริ่มทำข้อสอบ</span>`,
+                title: `<span class="text-sm font-extrabold text-sky-700 dark:text-sky-400">📌 ข้อปฏิบัติก่อนเริ่มสอบ</span>`,
                 html: instructionHtml,
                 icon: 'info',
                 showCancelButton: true,
-                confirmButtonText: 'ยอมรับและเริ่มทำข้อสอบ',
+                confirmButtonText: 'เริ่มทำข้อสอบ',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#0284c7'
             });
@@ -891,7 +870,7 @@
             });
 
             if (filteredAttempts.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center">ไม่พบประวัติการทำข้อสอบที่ตรงกับการค้นหา</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-8 text-center">ไม่พบประวัติการทำข้อสอบ</div>`;
                 return;
             }
 
@@ -903,25 +882,23 @@
                     const isCompleted = a.status === 'completed' || a.submitted_at || a.submission_time;
 
                     return `
-                        <div class="p-4 bg-sky-50/50 dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div class="space-y-1">
+                        <div class="p-3.5 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div class="space-y-0.5">
                                 <h4 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">${exam ? exam.title : 'ชุดข้อสอบ'}</h4>
-                                <p class="text-[11px] text-slate-500">ส่งเมื่อ: ${timeStr} | สถานะ: <span class="font-bold ${isCompleted ? 'text-emerald-600' : 'text-amber-600'}">${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'กำลังทำค้างอยู่'}</span></p>
+                                <p class="text-[11px] text-slate-500">ส่งเมื่อ: ${timeStr} | สถานะ: <span class="font-bold ${isCompleted ? 'text-emerald-600' : 'text-amber-600'}">${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'ค้างอยู่'}</span></p>
                             </div>
                             ${isCompleted ? `
-                                <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0">
+                                <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5 shrink-0">
                                     <i class="fas fa-brain"></i> ดูผลสอบ & AI
                                 </button>
                             ` : `
-                                <button onclick="handleExamClick('${a.exam_id}', 'resume', '${a.id}')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white font-bold text-xs rounded-xl shadow-md shrink-0">
-                                    ทำต่อ
-                                </button>
+                                <button onclick="handleExamClick('${a.exam_id}', 'resume', '${a.id}')" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-white font-bold text-xs rounded-lg shrink-0">ทำต่อ</button>
                             `}
                         </div>
                     `;
                 }).join('');
             } else {
-                let gridHtml = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+                let gridHtml = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">';
                 gridHtml += filteredAttempts.map(a => {
                     const exam = allExams.find(e => e.id === a.exam_id);
                     const score = a.total_score !== undefined && a.total_score !== null ? a.total_score : (a.score || 0);
@@ -929,23 +906,21 @@
                     const isCompleted = a.status === 'completed' || a.submitted_at || a.submission_time;
 
                     return `
-                        <div class="hitech-card p-5 rounded-2xl flex flex-col justify-between space-y-4">
-                            <div class="space-y-2">
-                                <span class="px-2.5 py-1 ${isCompleted ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'} rounded-lg text-[10px] font-extrabold">
-                                    ${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'กำลังทำค้างอยู่'}
+                        <div class="hitech-card p-4 rounded-xl flex flex-col justify-between space-y-3">
+                            <div class="space-y-1.5">
+                                <span class="px-2 py-0.5 ${isCompleted ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'} rounded-md text-[10px] font-bold">
+                                    ${isCompleted ? `เสร็จสิ้น (${score} คะแนน)` : 'ค้างอยู่'}
                                 </span>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white line-clamp-2">${exam ? exam.title : 'ชุดข้อสอบ'}</h4>
-                                <p class="text-[11px] text-slate-400"><i class="fas fa-clock mr-1"></i> ส่งเมื่อ: ${timeStr}</p>
+                                <h4 class="font-extrabold text-xs text-slate-900 dark:text-white line-clamp-2">${exam ? exam.title : 'ชุดข้อสอบ'}</h4>
+                                <p class="text-[10px] text-slate-400">ส่ง: ${timeStr}</p>
                             </div>
-                            <div class="pt-3 border-t border-sky-100 dark:border-slate-800 flex justify-end">
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
                                 ${isCompleted ? `
-                                    <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5">
-                                        <i class="fas fa-brain"></i> ดูผลสอบ & AI
+                                    <button onclick="window.location.href='student_result.html?attempt_id=${a.id}&student_id=${currentStudentId}'" class="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center justify-center gap-1.5">
+                                        <i class="fas fa-brain"></i> ผลสอบ & AI
                                     </button>
                                 ` : `
-                                    <button onclick="handleExamClick('${a.exam_id}', 'resume', '${a.id}')" class="w-full px-4 py-2 bg-amber-500 hover:bg-amber-400 text-white font-bold text-xs rounded-xl shadow-md">
-                                        ทำต่อ
-                                    </button>
+                                    <button onclick="handleExamClick('${a.exam_id}', 'resume', '${a.id}')" class="w-full px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-white font-bold text-xs rounded-lg">ทำต่อ</button>
                                 `}
                             </div>
                         </div>
@@ -963,9 +938,9 @@
                 return;
             }
             container.innerHTML = allExams.map(exam => `
-                <label class="flex items-center gap-2 bg-sky-50 dark:bg-darkinput border-2 border-sky-200 dark:border-slate-800 px-3 py-2 rounded-xl cursor-pointer hover:border-sky-500 transition-all">
+                <label class="flex items-center gap-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 px-2.5 py-1.5 rounded-lg cursor-pointer hover:border-sky-500 transition-all">
                     <input type="checkbox" value="${exam.id}" class="exam-select-cb rounded text-sky-600 focus:ring-0" checked onchange="updateAnalyticsDashboard()">
-                    <span class="font-semibold text-slate-800 dark:text-slate-200 text-xs">${exam.title}</span>
+                    <span class="font-medium text-slate-800 dark:text-slate-200 text-xs truncate max-w-[200px]">${exam.title}</span>
                 </label>
             `).join('');
         }
@@ -1028,8 +1003,8 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'คะแนนของคุณ', data: userScores, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.15)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#0284c7' },
-                        { label: 'เฉลี่ยห้อง', data: classAvgScores, borderColor: '#64748b', borderDash: [5, 5], fill: false, tension: 0.35, borderWidth: 2, pointRadius: 3 }
+                        { label: 'คะแนนของคุณ', data: userScores, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.15)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#0284c7' },
+                        { label: 'เฉลี่ยห้อง', data: classAvgScores, borderColor: '#64748b', borderDash: [5, 5], fill: false, tension: 0.35, borderWidth: 2, pointRadius: 2 }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(2, 132, 199, 0.08)' } }, x: { grid: { display: false } } } }
@@ -1048,8 +1023,8 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'คะแนนของคุณ', data: userScores, backgroundColor: '#0284c7', borderRadius: 8 },
-                        { label: 'เฉลี่ยห้อง', data: classAvgScores, backgroundColor: 'rgba(100, 116, 139, 0.4)', borderRadius: 8 }
+                        { label: 'คะแนนของคุณ', data: userScores, backgroundColor: '#0284c7', borderRadius: 6 },
+                        { label: 'เฉลี่ยห้อง', data: classAvgScores, backgroundColor: 'rgba(100, 116, 139, 0.4)', borderRadius: 6 }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(2, 132, 199, 0.08)' } }, x: { grid: { display: false } } } }
