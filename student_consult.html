@@ -26,10 +26,6 @@
                 }
             }
             const studentId = localStorage.getItem('student_id') || localStorage.getItem('id');
-            const urlParams = new URLSearchParams(window.location.search);
-            const paramId = urlParams.get('student_id');
-
-            // ป้องกันการยิงลิงก์ตรงโดยไม่มี Session หรือพยายามปลอม URL parameter
             if (!hasSession && !studentId) {
                 window.location.replace('index.html');
             }
@@ -106,6 +102,24 @@
             </div>
         </div>
 
+        <!-- Course Filter Selector (เลือกคอร์สที่แอดมินเปิดรับ Consult) -->
+        <div class="glossy-card p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-sky-500/30">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 font-bold">คอร์สสำหรับการ Consult</span>
+                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">กรุณาเลือกรายวิชาที่ต้องการปรึกษา</h3>
+                </div>
+            </div>
+            <div class="w-full sm:w-72">
+                <select id="consultCourseSelector" onchange="onConsultCourseChanged()" class="w-full px-3 py-2.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
+                    <option value="">-- กำลังโหลดคอร์สที่เปิดรับ --</option>
+                </select>
+            </div>
+        </div>
+
         <!-- My Current Booking Card -->
         <div id="myBookingSection" class="hidden glossy-card p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-4">
             <div>
@@ -171,6 +185,8 @@
         let allAvailableSlots = [];
         let systemSettings = null;
         let myCurrentBooking = null;
+        let allowedCourses = [];
+        let selectedCourseId = null;
 
         let displayedYear = new Date().getFullYear();
         let displayedMonth = new Date().getMonth();
@@ -202,10 +218,6 @@
                 }
             }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const paramId = urlParams.get('student_id');
-
-            // ตรวจสอบความปลอดภัย: หากพยายามส่งลิงก์ตรงโดยไม่มีข้อมูลล็อกอินในระบบ หรือ ID ไม่ตรง
             if (!userId) {
                 await Swal.fire({ icon: 'error', title: 'Session Expired', text: 'กรุณาเข้าสู่ระบบผ่านหน้าหลักก่อนใช้งาน', confirmButtonColor: '#0284c7' });
                 window.location.replace('index.html');
@@ -213,8 +225,6 @@
             }
 
             currentStudentId = userId;
-
-            // ดึงข้อมูลโปรไฟล์นักเรียนจริงจากตาราง profiles
             const { data, error } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
             if (error || !data) {
                 await Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'ไม่พบข้อมูลบัญชีนักเรียนในระบบ', confirmButtonColor: '#0284c7' });
@@ -230,6 +240,7 @@
         async function initStudentConsult() {
             if (!await authenticateStudent()) return;
             await loadSystemStatus();
+            await loadAllowedCourses();
             await loadMyBooking();
             await loadAvailableSlots();
             setupStudentConsultRealtime();
@@ -291,7 +302,7 @@
             }
         }
 
-        function startCountdown(targetTime) {
+        async function startCountdown(targetTime) {
             if (countdownInterval) clearInterval(countdownInterval);
             function updateTimer() {
                 const now = new Date().getTime();
@@ -309,6 +320,57 @@
             }
             updateTimer();
             countdownInterval = setInterval(updateTimer, 1000);
+        }
+
+        async function loadAllowedCourses() {
+            try {
+                // ดึงรายชื่อคอร์สที่แอดมินเปิดรับ Consult จริง (ตรวจสอบจากตาราง slots หรือ consult_courses ตามโครงสร้าง)
+                const { data: slotsData } = await mySupabase.from('consult_slots').select('course_id').not('course_id', 'is', null);
+                const activeCourseIds = [...new Set((slotsData || []).map(s => String(s.course_id)))];
+
+                const { data: coursesData } = await mySupabase.from('courses').select('id, title, course_code');
+                let allCourses = coursesData || [];
+
+                // กรองเฉพาะคอร์สที่แอดมินเปิดรับ (มี Slot รองรับ) หรือถ้าไม่มี slot ผูกคอร์ส ให้แสดงคอร์สที่นักเรียนลงทะเบียนจริง
+                let filtered = allCourses.filter(c => activeCourseIds.includes(String(c.id)));
+                
+                if (filtered.length === 0) {
+                    // Fallback: ดึงคอร์สที่นักเรียนลงทะเบียนจริงในระบบ
+                    const { data: en1 } = await mySupabase.from('course_enrollments').select('course_id').eq('student_id', currentStudentId);
+                    const { data: en2 } = await mySupabase.from('course_enrollments').select('course_id').eq('user_id', currentStudentId);
+                    const myEnrolledIds = [...new Set([...(en1 || []), ...(en2 || [])].map(e => String(e.course_id || '')))];
+                    
+                    filtered = allCourses.filter(c => myEnrolledIds.includes(String(c.id)));
+                }
+
+                if (filtered.length === 0) {
+                    filtered = allCourses; // หากไม่พบเงื่อนไข ให้แสดงทั้งหมดเป็นค่าสำรอง
+                }
+
+                allowedCourses = filtered;
+                const selector = document.getElementById('consultCourseSelector');
+                
+                if (allowedCourses.length === 0) {
+                    selector.innerHTML = '<option value="">-- ไม่พบคอร์สที่เปิดรับ Consult --</option>';
+                    return;
+                }
+
+                selector.innerHTML = allowedCourses.map(c => `
+                    <option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>
+                `).join('');
+
+                selectedCourseId = allowedCourses[0].id;
+                selector.value = selectedCourseId;
+
+            } catch (err) {
+                console.error("Error loading allowed courses:", err);
+            }
+        }
+
+        function onConsultCourseChanged() {
+            const selector = document.getElementById('consultCourseSelector');
+            selectedCourseId = selector.value;
+            loadAvailableSlots();
         }
 
         async function loadMyBooking() {
@@ -341,12 +403,17 @@
             const pruneHours = systemSettings?.prune_hours || 24;
             const pruneThreshold = new Date(now.getTime() + (pruneHours * 3600000)).toISOString();
 
-            const { data } = await mySupabase
+            let query = mySupabase
                 .from('consult_slots')
                 .select('*')
                 .eq('status', 'available')
-                .gt('start_time', pruneThreshold)
-                .order('start_time', { ascending: true });
+                .gt('start_time', pruneThreshold);
+
+            if (selectedCourseId) {
+                query = query.eq('course_id', selectedCourseId);
+            }
+
+            const { data } = await query.order('start_time', { ascending: true });
 
             allAvailableSlots = data || [];
             renderCalendar();
@@ -432,7 +499,7 @@
             document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในวันที่เลือก หรือช่วงเวลาใกล้ถึงกำหนดถูกตัดออกอัตโนมัติ</div>`;
+                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในคอร์สนี้สำหรับวันที่เลือก</div>`;
                 return;
             }
 
