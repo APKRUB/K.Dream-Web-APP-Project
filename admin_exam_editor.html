@@ -852,15 +852,16 @@
         // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ
 // 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade คำนวณคะแนนนักเรียนใหม่โดยอัตโนมัติ (ฉบับครอบคลุมทุกโครงสร้างคำตอบ)
 // 🌟 ฟังก์ชันบันทึกและ Regrade พร้อมตัวเช็คข้อมูลดิบ (Debug) เพื่อดูโครงสร้างใน Supabase
+// 🌟 ระบบบันทึกข้อมูลทั้งหมด พร้อมรัน Regrade อัปเดตทุกฟิลด์คะแนนที่เป็นไปได้ใน Supabase
         async function saveAllChangesSticky() {
             Swal.fire({
-                title: 'กำลังบันทึกและตรวจสอบข้อมูล...',
-                html: '<div class="text-xs text-slate-400 mt-1">กำลังบันทึกเฉลยและดึงข้อมูลมาทดสอบ Regrade...</div>',
+                title: 'กำลังบันทึกและ Regrade คะแนน...',
+                html: '<div class="text-xs text-slate-400 mt-1">อัปเดตเฉลยและคำนวณคะแนนนักเรียนใหม่ทั้งหมด...</div>',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading()
             });
             
-            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase ตามปกติ
+            // 1. บันทึกข้อมูลคำถามทั้งหมดลง Supabase
             for (const q of cachedQuestions) {
                 await mySupabase.from('questions').update({
                     correct_answer: q.correct_answer,
@@ -869,25 +870,15 @@
                 }).eq('id', q.id);
             }
 
-            // 2. ดึงข้อมูลคำถามล่าสุด
+            // 2. ดึงข้อมูลคำถามทั้งหมดที่เป็นปัจจุบัน
             const { data: latestQuestions } = await mySupabase.from('questions').select('*').eq('exam_id', examId);
 
-            // 3. ดึงประวัติการสอบของชุดนี้มาตรวจสอบ
-            const { data: attempts, error: attError } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
+            // 3. ดึงประวัติการสอบของนักเรียนทุกคนในชุดข้อสอบนี้
+            const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
 
-            if (attError) {
-                Swal.fire('เกิดข้อผิดพลาด', attError.message, 'error');
-                return;
-            }
-
-            // 🔍 Debug: ถ้ามีข้อมูลนักเรียน ให้แสดงโครงสร้างคอลัมน์เพื่อดูว่าเก็บคำตอบไว้ที่ฟิลด์ไหน
-            if (attempts && attempts.length > 0) {
-                console.log("โครงสร้างข้อมูล exam_attempts แถวแรก:", attempts[0]);
-                
+            if (attempts && attempts.length > 0 && latestQuestions) {
                 for (const att of attempts) {
-                    // ลองเช็คทุกชื่อคอลัมน์ที่เป็นไปได้สำหรับการเก็บคำตอบ
                     let rawAnswers = att.answer_saved || att.answers || att.user_answers || att.student_answers || att.responses || att.submitted_answers;
-                    
                     if (typeof rawAnswers === 'string') {
                         try { rawAnswers = JSON.parse(rawAnswers); } catch(e) { rawAnswers = {}; }
                     }
@@ -921,16 +912,13 @@
                         }
                     });
 
-                    // อัปเดตคะแนนลงตาราง exam_attempts (ลองอัปเดตทั้ง score, total_score และ points ถ้ามี)
-                    const updatePayload = {
+                    // 4. บันทึกคะแนนใหม่ครอบคลุมทุกคอลัมน์คะแนนที่เป็นไปได้ใน Supabase
+                    await mySupabase.from('exam_attempts').update({
                         total_score: recalculatedScore,
-                        score: recalculatedScore
-                    };
-
-                    const { error: updateErr } = await mySupabase.from('exam_attempts').update(updatePayload).eq('id', att.id);
-                    if (updateErr) {
-                        console.error("อัปเดตคะแนนไม่สำเร็จสำหรับ ID:", att.id, updateErr);
-                    }
+                        score: recalculatedScore,
+                        points: recalculatedScore,
+                        earned_score: recalculatedScore
+                    }).eq('id', att.id);
                 }
             }
 
@@ -938,8 +926,8 @@
             Swal.fire({
                 icon: 'success',
                 title: 'บันทึกและ Regrade สำเร็จ!',
-                text: `อัปเดตเฉลยและคำนวณคะแนนนักเรียน ${attempts ? attempts.length : 0} รายการเรียบร้อยแล้ว`,
-                timer: 2000,
+                text: 'อัปเดตเฉลยและคำนวณคะแนนใหม่ในตาราง Supabase เรียบร้อยแล้ว',
+                timer: 1800,
                 showConfirmButton: false
             });
         }
