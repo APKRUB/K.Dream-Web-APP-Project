@@ -194,11 +194,9 @@
             Swal.fire({ title: 'กำลังโหลดข้อมูลวิดีโอ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 1. โหลดข้อมูลคอร์สทั้งหมด
                 const courseRes = await mySupabase.from('courses').select('id, title, course_code');
                 allCourses = courseRes.data || [];
 
-                // เติมข้อมูลลงใน Dropdown สลับคอร์ส
                 const filterSelect = document.getElementById('globalCourseFilter');
                 if (filterSelect) {
                     filterSelect.innerHTML = '<option value="all">-- ทุกคอร์สทั้งหมด --</option>' + 
@@ -209,8 +207,6 @@
                     }
                 }
 
-                // 2. โหลดข้อมูลวิดีโอจากตาราง course_lessons (หรือคอลัมน์วิดีโอที่มี)
-                // ตรวจสอบทั้ง course_lessons และ videos ถ้ามี
                 let fetchedVideos = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
                 if (lessonRes.data) {
@@ -227,9 +223,9 @@
                 allVideos = fetchedVideos.map(v => ({
                     id: v.id,
                     title: v.title || v.name || 'ไม่มีชื่อวิดีโอ',
-                    course_id: v.course_id || v.courseId || getCourseIdFromModule(v.module_id),
+                    course_id: v.course_id || v.courseId || selectedCourseId,
                     video_url: v.video_url || v.video || v.url || '',
-                    views: Number(v.views || v.view_count || Math.floor(Math.random() * 50) + 5), // จำลองหรือดึงยอดวิว
+                    views: Number(v.views || v.view_count || Math.floor(Math.random() * 50) + 5),
                     created_at: v.created_at || new Date().toISOString()
                 }));
 
@@ -243,14 +239,10 @@
             renderVideoList();
         }
 
-        function getCourseIdFromModule(modId) {
-            // ถ้าตาราง lessons มีแค่ module_id ให้ค้นหาเชื่อมโยงกับ course_modules (จำลองไว้ก่อน)
-            return null;
-        }
-
         function onCourseFilterChanged() {
             const select = document.getElementById('globalCourseFilter');
             selectedCourseId = select.value;
+            updateDashboardStats();
             renderVideoList();
         }
 
@@ -382,15 +374,12 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                // บันทึกลงตาราง course_lessons (หรือ videos ตามโครงสร้าง)
                 const { error } = await mySupabase.from('course_lessons').insert([{
                     title: formValues.title,
-                    video_url: formValues.video_url,
-                    module_id: null // หรือผูกตามคอร์ส
+                    video_url: formValues.video_url
                 }]);
 
                 if (error) {
-                    // หากตาราง course_lessons ติดปัญหา ลองบันทึกลงตาราง videos สำรอง
                     await mySupabase.from('videos').insert([formValues]);
                 }
 
