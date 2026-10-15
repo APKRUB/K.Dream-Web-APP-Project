@@ -41,6 +41,12 @@
             box-shadow: 0 20px 40px -10px rgba(2, 132, 199, 0.12);
             border-color: rgba(2, 132, 199, 0.4);
         }
+        /* Custom Scrollbar for Horizontal Quick Container */
+        .hide-scrollbar::-webkit-scrollbar { height: 6px; }
+        .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.3); border-radius: 9999px; }
+        .hide-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(2, 132, 199, 0.6); }
+
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
@@ -110,16 +116,17 @@
         <!-- ================= FEATURE 1: EXAM PORTAL (หน้าทำข้อสอบ) ================= -->
         <div id="sectionExam" class="space-y-6">
             
-            <!-- ⚡ Quick Pending Exams Widget (กล่องด่วนรวมข้อสอบที่ยังไม่ได้ทำไว้ด้านบนสุด) -->
+            <!-- ⚡ Quick Pending Exams Widget (กล่องด่วนรวมข้อสอบที่ยังไม่ได้ทำ ปัดขวาแนวนอน) -->
             <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-2 border-sky-500/30 bg-gradient-to-br from-sky-500/5 via-transparent to-indigo-500/5 space-y-4">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center px-1">
                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
                     </h3>
-                    <span class="text-[11px] text-slate-400">เลือกทำจากด้านล่างนี้ได้ทันที</span>
+                    <span class="text-[11px] text-slate-400"><i class="fas fa-arrows-alt-h mr-1"></i> ปัดขวาเพื่อดูเพิ่มเติม</span>
                 </div>
-                <div id="quickPendingContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- โหลดข้อสอบที่ยังไม่ทำมาแสดงที่นี่อัตโนมัติด้วยดีไซน์เดียวกับการ์ดปกติ -->
+                <!-- Container แบบเรียงแนวนอน ปัดขวาได้ -->
+                <div id="quickPendingContainer" class="flex overflow-x-auto gap-5 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">
+                    <!-- โหลดการ์ดข้อสอบที่ยังไม่ทำมาแสดงเรียงแนวนอนที่นี่ -->
                 </div>
             </div>
 
@@ -502,14 +509,13 @@
             document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
             document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
 
-            // กรองชุดข้อสอบที่ยังไม่ได้ทำสำหรับแสดงในกล่องด่วนด้านบนสุด
+            // กรองชุดข้อสอบที่ยังไม่ได้ทำสำหรับแสดงในกล่องด่วนด้านบนสุด (แนวนอน)
             const pendingExamsList = activeExams.filter(exam => {
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
                 const isExhausted = maxAttempts > 0 && completedCount >= maxAttempts;
                 
-                // ตรวจสอบสถานะ Countdown จากฟิลด์ start_time
                 let isCountdown = false;
                 if (exam.status === 'countdown' || (exam.start_time && new Date(exam.start_time).getTime() > Date.now())) {
                     isCountdown = true;
@@ -540,7 +546,7 @@
                     `;
 
                     return `
-                        <div class="hitech-card exam-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 relative">
+                        <div class="hitech-card exam-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-80 snap-start">
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center gap-2">
                                     <span class="text-[11px] text-slate-400 font-bold"><i class="fas fa-list-ol mr-1 text-sky-500"></i> ${questionCount} ข้อ | <i class="fas fa-clock mr-1 text-purple-500"></i> ${durationMins} นาที</span>
@@ -630,7 +636,6 @@
                 let statusBadge = '';
                 let cardHighlightClass = '';
 
-                // ตรวจสอบเวลาเริ่มต้น (start_time) สำหรับ Countdown
                 let isCountdown = status === 'countdown';
                 if (exam.start_time) {
                     const startTimeMs = new Date(exam.start_time).getTime();
