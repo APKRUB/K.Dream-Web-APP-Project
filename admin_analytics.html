@@ -107,11 +107,11 @@
             </div>
         </div>
 
-        <!-- SECTION 2: 5 Advanced Analytics Charts Layout -->
+        <!-- SECTION 2: 4 Advanced Analytics Charts Layout -->
         <div class="space-y-6">
             <div class="flex items-center gap-2">
                 <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-chart-line text-sky-500"></i> แผงควบคุมกราฟวิเคราะห์เชิงลึกระดับคลาส (5 มิติหลัก)
+                    <i class="fas fa-chart-line text-sky-500"></i> แผงควบคุมกราฟวิเคราะห์เชิงลึกระดับคลาส (4 มิติหลัก)
                 </h2>
             </div>
 
@@ -149,7 +149,7 @@
                         <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-chart-pie text-emerald-500"></i> 3. สัดส่วนช่วงคะแนนภาพรวม (Grade Distribution)
                         </h3>
-                        <span class="text-xs text-slate-400">แบ่งตามเปอร์เซ็นต์คะแนน</span>
+                        <span class="text-xs text-slate-400">แบ่งตามช่วงคะแนน</span>
                     </div>
                     <div class="relative h-64 w-full flex items-center justify-center">
                         <canvas id="gradeDistributionChart"></canvas>
@@ -157,10 +157,10 @@
                 </div>
 
                 <!-- Chart 4: แนวโน้มพัฒนาการคะแนนตามลำดับเวลาชุดข้อสอบ (Difficulty Trend Line) -->
-                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
+                <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-chart-area text-purple-500"></i> 4. เส้นแนวโน้มพัฒนาการคะแนน (Progress Trend)
+                        <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fas fa-chart-area text-purple-500"></i> 4. เส้นแนวโน้มพัฒนาการคะแนนภาพรวม (Progress Trend)
                         </h3>
                         <span class="text-xs text-slate-400">เรียงตามลำดับชุดข้อสอบ</span>
                     </div>
@@ -169,23 +169,41 @@
                     </div>
                 </div>
 
-                <!-- Chart 5: สถิติความถี่ในการทำซ้ำ/สอบแก้ตัว (Attempt Frequency) -->
-                <div class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-redo text-amber-500"></i> 5. สถิติจำนวนรอบการทำข้อสอบ (Attempt Frequency)
-                        </h3>
-                        <span class="text-xs text-slate-400">รอบที่ 1, 2, 3+</span>
-                    </div>
-                    <div class="relative h-64 w-full">
-                        <canvas id="attemptFrequencyChart"></canvas>
-                    </div>
-                </div>
-
             </div>
         </div>
 
-        <!-- SECTION 3: Exam Catalog Grid (Detailed Cards) -->
+        <!-- SECTION 3: Insights & Alerts (Top Performers & At-Risk Students) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Widget A: Top Performers Leaderboard -->
+            <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-amber-500">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-trophy text-amber-500"></i> 🏆 อันดับนักเรียนยอดเยี่ยม (Top Performers)
+                    </h3>
+                    <span class="text-[11px] text-slate-400 font-bold">คะแนนสะสมสูงสุด</span>
+                </div>
+                <div id="topPerformersContainer" class="space-y-2.5">
+                    <div class="text-center py-6 text-slate-400 text-xs">กำลังประมวลผลอันดับ...</div>
+                </div>
+            </div>
+
+            <!-- Widget B: At-Risk Students Alert -->
+            <div class="hitech-card p-6 rounded-3xl space-y-4 border-l-4 border-l-rose-500">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-extrabold text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                        <i class="fas fa-triangle-exclamation text-rose-500"></i> ⚠️ แจ้งเตือนนักเรียนกลุ่มเสี่ยง (At-Risk Students)
+                    </h3>
+                    <span class="text-[11px] text-rose-500 font-bold">คะแนนเฉลี่ย < 50%</span>
+                </div>
+                <div id="atRiskStudentsContainer" class="space-y-2.5">
+                    <div class="text-center py-6 text-slate-400 text-xs">กำลังตรวจสอบข้อมูลกลุ่มเสี่ยง...</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SECTION 4: Exam Catalog Grid (Detailed Cards) -->
         <div class="space-y-4 pt-2">
             <div class="flex justify-between items-center">
                 <h2 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -211,9 +229,10 @@
         let allExams = [];
         let categoriesMap = {};
         let allAttempts = [];
-        let totalRegisteredStudents = 30; // ค่าตั้งต้นสมมติ หรือดึงจากตาราง students
+        let allProfiles = {};
+        let totalRegisteredStudents = 30;
 
-        let chart1 = null, chart2 = null, chart3 = null, chart4 = null, chart5 = null;
+        let chart1 = null, chart2 = null, chart3 = null, chart4 = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -231,10 +250,16 @@
         async function initDashboard() {
             Swal.fire({ title: 'กำลังโหลดข้อมูลสถิติภาพรวม...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. โหลดจำนวนนักเรียนทั้งหมดในระบบเพื่อใช้คำนวณอัตราการส่งงาน
-            const { count: studentCount } = await mySupabase.from('profiles').select('*', { count: 'exact', head: true });
-            if (studentCount && studentCount > 0) {
-                totalRegisteredStudents = studentCount;
+            // 1. โหลดข้อมูลโปรไฟล์นักเรียนทั้งหมดเพื่อทำ Leaderboard และ At-Risk
+            const { data: profiles } = await mySupabase.from('profiles').select('id, full_name, name, student_id');
+            if (profiles) {
+                totalRegisteredStudents = profiles.length || 30;
+                profiles.forEach(p => {
+                    allProfiles[p.id] = {
+                        name: p.full_name || p.name || 'นักเรียนทั่วไป',
+                        studentId: p.student_id || '-'
+                    };
+                });
             }
 
             // 2. โหลดหมวดหมู่
@@ -258,6 +283,7 @@
 
             calculateGlobalKPIs();
             renderAllCharts(activeExams);
+            renderLeaderboardAndAtRisk();
             renderExamsCatalogByCategories(activeExams);
         }
 
@@ -281,7 +307,6 @@
         function renderAllCharts(activeExams) {
             const labels = activeExams.map(e => e.title);
 
-            // คำนวณข้อมูลสำหรับแต่ละกราฟ
             const avgScores = activeExams.map(e => {
                 const matched = allAttempts.filter(a => String(a.exam_id) === String(e.id));
                 if (matched.length === 0) return 0;
@@ -318,11 +343,10 @@
             });
 
             // --- Chart 3: Grade Distribution Doughnut Chart ---
-            let gradeRanges = [0, 0, 0, 0]; // <50%, 50-69%, 70-84%, 85-100%
+            let gradeRanges = [0, 0, 0, 0]; 
             allAttempts.forEach(a => {
                 const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
-                // สมมติฐานคะแนนเต็ม 10 หรือคิดเป็นสัดส่วน %
-                const pct = (score / 10) * 100; // ปรับตามจริงหรือค่าเฉลี่ย
+                const pct = (score / 10) * 100;
                 if (pct < 50) gradeRanges[0]++;
                 else if (pct < 70) gradeRanges[1]++;
                 else if (pct < 85) gradeRanges[2]++;
@@ -351,18 +375,67 @@
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
             });
+        }
 
-            // --- Chart 5: Attempt Frequency Bar Chart ---
-            const ctx5 = document.getElementById('attemptFrequencyChart').getContext('2d');
-            if (chart5) chart5.destroy();
-            chart5 = new Chart(ctx5, {
-                type: 'bar',
-                data: {
-                    labels: ['รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3+'],
-                    datasets: [{ label: 'จำนวนครั้ง', data: [allAttempts.length, Math.round(allAttempts.length * 0.3), Math.round(allAttempts.length * 0.1)], backgroundColor: '#f59e0b', borderRadius: 8 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        function renderLeaderboardAndAtRisk() {
+            // ประมวลผลคะแนนรายบุคคลจาก allAttempts
+            let studentStats = {};
+            allAttempts.forEach(a => {
+                if (!a.student_id) return;
+                if (!studentStats[a.student_id]) {
+                    studentStats[a.student_id] = { totalScore: 0, count: 0 };
+                }
+                const score = a.total_score !== undefined ? a.total_score : (a.score || 0);
+                studentStats[a.student_id].totalScore += score;
+                studentStats[a.student_id].count += 1;
             });
+
+            let studentList = Object.keys(studentStats).map(id => {
+                const info = allProfiles[id] || { name: 'นักเรียนทั่วไป', studentId: '-' };
+                const avg = studentStats[id].totalScore / studentStats[id].count;
+                return { id, name: info.name, studentId: info.studentId, total: studentStats[id].totalScore, avg: avg.toFixed(1), count: studentStats[id].count };
+            });
+
+            // 1. Top Performers (เรียงตามคะแนนรวมหรือคะแนนเฉลี่ยสูงสุด)
+            let topList = [...studentList].sort((a, b) => b.total - a.total).slice(0, 5);
+            const topContainer = document.getElementById('topPerformersContainer');
+            if (topList.length === 0) {
+                topContainer.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีข้อมูลผลการสอบ</div>`;
+            } else {
+                topContainer.innerHTML = topList.map((s, idx) => `
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex justify-between items-center text-xs border border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-600 font-bold flex items-center justify-center text-[11px]">${idx + 1}</span>
+                            <div>
+                                <div class="font-bold text-slate-900 dark:text-white">${s.name}</div>
+                                <div class="text-[10px] text-slate-400">ID: ${s.studentId} | สอบ ${s.count} ชุด</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400">
+                            ${s.total} คะแนน
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 2. At-Risk Students (นักเรียนที่คะแนนเฉลี่ย < 5 หรือต่ำกว่า 50%)
+            let atRiskList = studentList.filter(s => Number(s.avg) < 5);
+            const riskContainer = document.getElementById('atRiskStudentsContainer');
+            if (atRiskList.length === 0) {
+                riskContainer.innerHTML = `<div class="p-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 rounded-xl text-xs font-bold text-center">🎉 ยอดเยี่ยม! ไม่มีนักเรียนอยู่ในกลุ่มเสี่ยง</div>`;
+            } else {
+                riskContainer.innerHTML = atRiskList.map(s => `
+                    <div class="p-3 bg-rose-50 dark:bg-rose-950/20 rounded-xl flex justify-between items-center text-xs border border-rose-200 dark:border-rose-900/40">
+                        <div>
+                            <div class="font-bold text-slate-900 dark:text-white">${s.name}</div>
+                            <div class="text-[10px] text-slate-400">ID: ${s.studentId} | ทำข้อสอบแล้ว ${s.count} ชุด</div>
+                        </div>
+                        <div class="px-2.5 py-1 bg-rose-100 dark:bg-rose-900 text-rose-600 dark:text-rose-300 font-bold rounded-lg text-[11px]">
+                            เฉลี่ย ${s.avg} คะแนน
+                        </div>
+                    </div>
+                `).join('');
+            }
         }
 
         function renderExamsCatalogByCategories(activeExams) {
