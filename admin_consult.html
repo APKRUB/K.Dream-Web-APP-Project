@@ -58,9 +58,11 @@
             border: 1px solid rgba(30, 41, 59, 1);
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
         }
+        .calendar-day { transition: all 0.2s ease; }
+        .calendar-day:hover { transform: translateY(-2px); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-900 dark:text-slate-100">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-900 dark:text-slate-100 pb-20">
 
     <nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,7 +74,7 @@
                             <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-check"></i></span>
                             ระบบจัดการเวลา Consult
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">ควบคุมเปิด-ปิด, ตารางคิวรายวัน และตั้งค่าระบบอัตโนมัติ (Realtime)</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">ควบคุมเปิด-ปิด, ปฏิทินคิวรายวัน และตั้งค่าระบบอัตโนมัติ</p>
                     </div>
                 </div>
                 <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
@@ -80,7 +82,7 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 space-y-8">
         
         <!-- Status Banner -->
         <div class="glossy-card p-8 rounded-3xl border-l-4 border-l-sky-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -96,21 +98,52 @@
             </div>
         </div>
 
-        <!-- 📅 มุมมองคิว Consult รายวัน (Daily Agenda View) -->
-        <div class="glossy-card p-8 rounded-3xl space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-calendar-day text-sky-600"></i> ตารางคิว Consult รายวัน</h3>
+        <!-- 📅 Interactive Monthly Calendar for Admin (ปฏิทินภาพรวมรายเดือน) -->
+        <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-6">
+            <div class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
-                    <input type="date" id="dailyAgendaDate" onchange="loadDailyAgenda()" class="px-4 py-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none cursor-pointer">
-                    <button onclick="loadDailyAgenda()" class="text-xs text-sky-600 font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
+                    <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-calendar-alt text-sky-600"></i> ปฏิทินภาพรวมและจัดการคิวรายวัน</h3>
+                    <button onclick="goToCurrentMonth()" class="px-3 py-1 bg-slate-100 dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700">เดือนนี้</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:bg-sky-500 hover:text-white transition-all border border-slate-200 dark:border-slate-700"><i class="fas fa-chevron-left text-xs"></i></button>
+                    <span id="currentMonthLabel" class="font-extrabold text-sm text-slate-900 dark:text-white w-36 text-center">เดือน...</span>
+                    <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:bg-sky-500 hover:text-white transition-all border border-slate-200 dark:border-slate-700"><i class="fas fa-chevron-right text-xs"></i></button>
                 </div>
             </div>
-            <div id="dailyAgendaContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-1">
-                <div class="col-span-full text-center py-6 text-slate-400 text-sm">กำลังโหลดตารางคิวรายวัน...</div>
+
+            <!-- Color Status Legend -->
+            <div class="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> มีคิวจองแล้ว</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Slot ว่าง</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span> ไม่มี Slot</span>
+            </div>
+
+            <!-- Calendar Grid Header -->
+            <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400">
+                <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
+            </div>
+
+            <!-- Calendar Days Container -->
+            <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                <!-- โหลดวันในปฏิทิน -->
             </div>
         </div>
 
-        <!-- ตารางรายชื่อนักเรียนจอง Consult ทั้งหมด -->
+        <!-- รายละเอียด Slot / คิวในวันที่เลือกจากปฏิทิน -->
+        <div class="glossy-card p-8 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-clock text-sky-600"></i> รายการ Slot & คิววันที่: <span id="selectedDateText" class="text-sky-600">-</span>
+                </h3>
+                <span class="text-xs text-slate-400" id="slotCountBadge">0 ช่วงเวลา</span>
+            </div>
+            <div id="dailySlotsContainer" class="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
+                <div class="text-center py-8 text-slate-400 text-sm">กรุณาเลือกวันที่ต้องการจากปฏิทินด้านบน</div>
+            </div>
+        </div>
+
+        <!-- ตารางรายชื่อนักเรียนจอง Consult ทั้งหมด (ภาพรวม) -->
         <div class="glossy-card p-8 rounded-3xl space-y-4">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-users text-sky-600"></i> รายชื่อนักเรียนที่จอง Consult ทั้งหมด</h3>
@@ -175,16 +208,6 @@
             </div>
         </div>
 
-        <div class="glossy-card p-8 rounded-3xl space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-list text-sky-600"></i> รายการ Slot ทั้งหมด</h3>
-                <button onclick="loadSlots()" class="text-xs text-sky-600 font-bold hover:underline"><i class="fas fa-sync-alt mr-1"></i> รีเฟรช</button>
-            </div>
-            <div id="slotsList" class="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto">
-                <div class="text-center py-8 text-slate-400 text-sm">กำลังโหลดข้อมูล...</div>
-            </div>
-        </div>
-
         <!-- ปุ่มเปิดดูประวัติการแก้ไข -->
         <div class="text-center pt-6">
             <button onclick="openHistoryModal()" class="px-6 py-3.5 bg-slate-200 hover:bg-slate-300 dark:bg-darkinput dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-sm transition-all shadow-sm border border-slate-300 dark:border-slate-700">
@@ -197,7 +220,12 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
         let currentSetting = null;
+        let allSlots = [];
+        let displayedYear = new Date().getFullYear();
+        let displayedMonth = new Date().getMonth();
+        let selectedDateStr = new Date().toISOString().split('T')[0];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -220,13 +248,9 @@
         
         async function initPage() {
             if (!checkAdminAuth()) return;
-            const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById('dailyAgendaDate').value = todayStr;
-
             await loadSettings();
-            await loadSlots();
+            await loadAllSlots();
             await loadBookedStudents();
-            await loadDailyAgenda();
             setupConsultRealtime();
         }
 
@@ -234,9 +258,8 @@
             mySupabase
                 .channel('consult_manager_realtime')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_slots' }, () => {
-                    loadSlots();
+                    loadAllSlots();
                     loadBookedStudents();
-                    loadDailyAgenda();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_settings' }, () => {
                     loadSettings();
@@ -255,12 +278,8 @@
             const now = new Date();
             let isOpen = currentSetting.is_open;
 
-            if (currentSetting?.open_at && new Date(currentSetting.open_at) > now) {
-                isOpen = false;
-            }
-            if (currentSetting?.close_at && new Date(currentSetting.close_at) <= now) {
-                isOpen = false;
-            }
+            if (currentSetting?.open_at && new Date(currentSetting.open_at) > now) { isOpen = false; }
+            if (currentSetting?.close_at && new Date(currentSetting.close_at) <= now) { isOpen = false; }
 
             if (isOpen !== currentSetting.is_open) {
                 await mySupabase.from('consult_settings').update({ is_open: isOpen }).eq('id', 1);
@@ -285,7 +304,7 @@
                 if (currentSetting?.prune_hours !== undefined) {
                     document.getElementById('pruneHoursInput').value = currentSetting.prune_hours;
                 }
-                countdownInfo.textContent = 'ระบบปิดรับจองในขณะนี้ (หรือยังไม่ถึงกำหนดการเปิด)';
+                countdownInfo.textContent = 'ระบบปิดรับจองในขณะนี้';
             }
         }
 
@@ -313,38 +332,116 @@
             loadSettings();
         }
 
-        async function loadDailyAgenda() {
-            const dateVal = document.getElementById('dailyAgendaDate').value;
-            const container = document.getElementById('dailyAgendaContainer');
-            if (!dateVal) return;
-
-            const startOfDay = new Date(dateVal + 'T00:00:00+07:00').toISOString();
-            const endOfDay = new Date(dateVal + 'T23:59:59+07:00').toISOString();
-
-            const { data: slots } = await mySupabase
+        async function loadAllSlots() {
+            const nowIso = new Date().toISOString();
+            const { data } = await mySupabase
                 .from('consult_slots')
                 .select('*, profiles(full_name)')
-                .gte('start_time', startOfDay)
-                .lte('start_time', endOfDay)
+                .gt('end_time', nowIso)
                 .order('start_time', { ascending: true });
 
-            if (!slots || slots.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs">ไม่มีคิว Consult ในวันที่เลือก</div>`;
+            allSlots = data || [];
+            renderCalendar();
+            renderSlotsForSelectedDate();
+        }
+
+        function changeMonth(direction) {
+            displayedMonth += direction;
+            if (displayedMonth > 11) { displayedMonth = 0; displayedYear++; }
+            else if (displayedMonth < 0) { displayedMonth = 11; displayedYear--; }
+            renderCalendar();
+        }
+
+        function goToCurrentMonth() {
+            const now = new Date();
+            displayedYear = now.getFullYear();
+            displayedMonth = now.getMonth();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            document.getElementById('currentMonthLabel').textContent = `${monthNames[displayedMonth]} ${displayedYear + 543}`;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            const firstDayIndex = new Date(displayedYear, displayedMonth, 1).getDay();
+            const totalDays = new Date(displayedYear, displayedMonth + 1, 0).getDate();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < firstDayIndex; i++) { grid.innerHTML += `<div></div>`; }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const monthStr = String(displayedMonth + 1).padStart(2, '0');
+                const dayStr = String(day).padStart(2, '0');
+                const dateKey = `${displayedYear}-${monthStr}-${dayStr}`;
+
+                const slotsOnThisDay = allSlots.filter(s => s.start_time.startsWith(dateKey));
+                const bookedCount = slotsOnThisDay.filter(s => s.status === 'booked').length;
+                const availableCount = slotsOnThisDay.filter(s => s.status === 'available').length;
+
+                let badgeColor = 'bg-slate-100 dark:bg-darkinput text-slate-400 border border-slate-200 dark:border-slate-800';
+                let dotHtml = `<span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 inline-block"></span>`;
+
+                if (bookedCount > 0) {
+                    badgeColor = 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold';
+                    dotHtml = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+                } else if (availableCount > 0) {
+                    badgeColor = 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold';
+                    dotHtml = `<span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>`;
+                }
+
+                const isSelected = selectedDateStr === dateKey;
+                const selectedRing = isSelected ? 'ring-2 ring-sky-500 shadow-md' : '';
+                const isToday = todayStr === dateKey ? 'border-sky-500/80 font-extrabold' : '';
+
+                grid.innerHTML += `
+                    <div onclick="selectDate('${dateKey}')" class="calendar-day p-2.5 rounded-2xl ${badgeColor} ${selectedRing} ${isToday} flex flex-col items-center justify-between min-h-[65px] cursor-pointer">
+                        <span class="text-xs">${day}</span>
+                        <div class="flex items-center gap-1 mt-1">
+                            ${dotHtml}
+                            <span class="text-[10px]">${slotsOnThisDay.length > 0 ? slotsOnThisDay.length : ''}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function selectDate(dateStr) {
+            selectedDateStr = dateStr;
+            renderCalendar();
+            renderSlotsForSelectedDate();
+        }
+
+        function renderSlotsForSelectedDate() {
+            const container = document.getElementById('dailySlotsContainer');
+            const dateFormatted = new Date(selectedDateStr).toLocaleDateString('th-TH', { dateStyle: 'long' });
+            document.getElementById('selectedDateText').textContent = dateFormatted;
+
+            const filtered = allSlots.filter(s => s.start_time.startsWith(selectedDateStr));
+            document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลา`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">ไม่มี Slot หรือคิว Consult ในวันที่เลือก</div>`;
                 return;
             }
 
-            container.innerHTML = slots.map(s => {
+            container.innerHTML = filtered.map(s => {
                 const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 const isBooked = s.status === 'booked';
 
                 return `
-                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-darkinput border ${isBooked ? 'border-emerald-500/50 bg-emerald-50/20 dark:bg-emerald-950/10' : 'border-slate-200 dark:border-slate-700'} flex justify-between items-center">
+                    <div class="py-3 flex justify-between items-center text-sm">
                         <div>
-                            <div class="font-extrabold text-sm text-slate-900 dark:text-white"><i class="far fa-clock text-sky-600 mr-1.5"></i> ${startStr} - ${endStr} น.</div>
-                            <div class="text-xs mt-1">สถานะ: ${isBooked ? `<span class="text-emerald-600 font-bold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-slate-400">ว่าง</span>'}</div>
+                            <span class="font-bold text-slate-900 dark:text-white"><i class="far fa-clock mr-1 text-sky-600"></i> ${startStr} - ${endStr} น.</span>
+                            <div class="text-xs text-slate-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-emerald-500 font-bold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-sky-500 font-semibold">ว่าง</span>'}</div>
                         </div>
-                        ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3 py-1 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>` : ''}
+                        <div class="flex gap-2">
+                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>` : ''}
+                            <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 rounded-xl text-xs font-bold hover:bg-red-100">ลบ</button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -469,36 +566,6 @@
                 await logHistory(`ย้ายเวลา Consult ของนักเรียนไป Slot ใหม่`);
                 Swal.fire({ icon: 'success', title: 'ย้ายเวลาสำเร็จ!', timer: 1200, showConfirmButton: false });
             }
-        }
-
-        async function loadSlots() {
-            const nowIso = new Date().toISOString();
-            const { data: slots } = await mySupabase.from('consult_slots').select('*, profiles(full_name)').gt('end_time', nowIso).order('start_time', { ascending: true });
-            const list = document.getElementById('slotsList');
-
-            if (!slots || slots.length === 0) {
-                list.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">ไม่มี Slot เวลา Consult ในระบบ</div>`;
-                return;
-            }
-
-            list.innerHTML = slots.map(s => {
-                const startStr = new Date(s.start_time).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-                const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-                const isBooked = s.status === 'booked';
-
-                return `
-                    <div class="py-3 flex justify-between items-center text-sm">
-                        <div>
-                            <span class="font-bold text-slate-900 dark:text-white"><i class="far fa-clock mr-1 text-sky-600"></i> ${startStr} - ${endStr} น.</span>
-                            <div class="text-xs text-slate-400 mt-0.5">สถานะ: ${isBooked ? `<span class="text-red-500 font-semibold">จองแล้วโดย: ${s.profiles?.full_name || 'นักเรียน'}</span>` : '<span class="text-emerald-500 font-semibold">ว่าง</span>'}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            ${isBooked ? `<button onclick="cancelStudentBooking('${s.id}', '${s.student_id}', '${s.profiles?.full_name}')" class="px-3.5 py-1.5 bg-amber-50 text-amber-600 dark:bg-amber-950/40 rounded-xl text-xs font-bold hover:bg-amber-100">ยกเลิก</button>` : ''}
-                            <button onclick="deleteSlot('${s.id}')" class="px-3.5 py-1.5 bg-red-50 text-red-600 dark:bg-red-950/40 rounded-xl text-xs font-bold hover:bg-red-100">ลบ</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         async function cancelStudentBooking(slotId, studentId, studentName) {
