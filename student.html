@@ -111,7 +111,7 @@
             <!-- Overall Progress Bar Widget -->
             <div class="pt-4 border-t border-white/15 relative z-10 max-w-xl space-y-1.5">
                 <div class="flex justify-between text-xs font-bold text-sky-100">
-                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบรวมในระบบ</span>
+                    <span><i class="fas fa-chart-pie mr-1"></i> ความคืบหน้าการทำข้อสอบในคอร์สของคุณ</span>
                     <span id="overallProgressText">0/0 ชุด (0%)</span>
                 </div>
                 <div class="w-full bg-black/25 rounded-full h-2 overflow-hidden backdrop-blur-sm border border-white/20">
@@ -130,7 +130,7 @@
                     <div>
                         <span class="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Video Vault</span>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
-                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา</p>
+                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังตามคอร์สที่ลงทะเบียน</p>
                     </div>
                 </div>
                 <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
@@ -162,7 +162,7 @@
             <div id="quickPendingSection" class="hidden hitech-card p-5 sm:p-6 rounded-3xl border-sky-400/50 bg-gradient-to-br from-sky-500/5 via-transparent to-blue-500/5 space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบที่ยังไม่ได้ทำ / ต้องเร่งดำเนินการ (<span id="quickPendingCountText">0</span>)
+                        <i class="fas fa-fire text-amber-500 animate-bounce"></i> ชุดข้อสอบในคอร์สที่ยังไม่ได้ทำ (<span id="quickPendingCountText">0</span>)
                     </h3>
                     <span class="text-[11px] text-sky-600 dark:text-sky-400 font-bold"><i class="fas fa-arrows-alt-h mr-1"></i> เลื่อนขวาเพื่อดูเพิ่มเติม</span>
                 </div>
@@ -204,7 +204,7 @@
             <!-- Exam Catalog Container -->
             <div class="space-y-6">
                 <div id="examCategoriesGroupContainer" class="space-y-5">
-                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบ...</div>
+                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบตามคอร์สเรียน...</div>
                 </div>
             </div>
         </div>
@@ -343,12 +343,13 @@
         let currentStudentId = null;
         let currentStudentName = 'นักเรียน';
         let allExams = [];
+        let enrolledCourseIds = [];
         let categoriesMap = {};
         let userAttempts = [];
         let examQuestionCounts = {};
         let starredExams = JSON.parse(localStorage.getItem('student_starred_exams') || '[]');
         let currentStatusFilter = 'all';
-        let examViewMode = 'grid'; // 'grid' (เลื่อนขวา) หรือ 'list' (เรียงลงมา)
+        let examViewMode = 'grid';
         let historyViewMode = 'list';
         let collapsedCategories = {};
         let quickPendingCount = 0;
@@ -382,7 +383,12 @@
         }
 
         function goToVideosPage() {
-            window.location.href = 'videos.html';
+            const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
+            if (studentId) {
+                window.location.href = `videos.html?student_id=${studentId}`;
+            } else {
+                window.location.href = 'videos.html';
+            }
         }
 
         async function authenticateStudent() {
@@ -413,7 +419,7 @@
                 .from('profiles')
                 .select('full_name, name')
                 .eq('id', currentStudentId)
-                .single();
+                .maybeSingle();
 
             if (profileData && (profileData.full_name || profileData.name)) {
                 studentFullName = profileData.full_name || profileData.name;
@@ -422,7 +428,7 @@
                     .from('students')
                     .select('full_name, fullname, name, username')
                     .eq('id', currentStudentId)
-                    .single();
+                    .maybeSingle();
                 if (studentData) {
                     studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
                 }
@@ -520,6 +526,14 @@
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
+            // 🎓 ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียนไว้
+            const { data: enrollments } = await mySupabase
+                .from('course_enrollments')
+                .select('course_id')
+                .or(`student_id.eq.${currentStudentId},user_id.eq.${currentStudentId}`);
+
+            enrolledCourseIds = (enrollments || []).map(e => String(e.course_id));
+
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
                 cats.forEach(c => categoriesMap[c.id] = c.name);
@@ -592,8 +606,17 @@
             const quickPendingSection = document.getElementById('quickPendingSection');
             const keyword = document.getElementById('searchExamInput').value.toLowerCase();
 
+            // 🎓 กรองข้อสอบตามคอร์สเรียนที่นักเรียนได้รับสิทธิ์ (ถ้า exam มี course_id กำหนดไว้)
             const availableExams = allExams.filter(exam => {
                 if (exam.status === 'draft') return false;
+
+                // เงื่อนไขคอร์สเรียน: ถ้าข้อสอบมีการผูก course_id ไว้ นักเรียนต้องลงทะเบียนในคอร์สนั้น
+                if (exam.course_id) {
+                    let examCourses = Array.isArray(exam.course_id) ? exam.course_id.map(String) : [String(exam.course_id)];
+                    const hasAccess = examCourses.some(cId => enrolledCourseIds.includes(cId));
+                    if (!hasAccess) return false;
+                }
+
                 const matchKeyword = exam.title.toLowerCase().includes(keyword) || (exam.description && exam.description.toLowerCase().includes(keyword));
                 if (!matchKeyword) return false;
 
@@ -610,15 +633,24 @@
 
             document.getElementById('examCountBadge').textContent = `${availableExams.length} ชุดข้อสอบ`;
 
-            const activeExams = allExams.filter(e => e.status !== 'draft');
+            // คำนวณความคืบหน้าเฉพาะข้อสอบในคอร์สของนักเรียน
+            const studentActiveExams = allExams.filter(e => {
+                if (e.status === 'draft') return false;
+                if (e.course_id) {
+                    let eCourses = Array.isArray(e.course_id) ? e.course_id.map(String) : [String(e.course_id)];
+                    return eCourses.some(cId => enrolledCourseIds.includes(cId));
+                }
+                return true;
+            });
+
             const completedExamIds = new Set(userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).map(a => a.exam_id));
-            const completedCountTotal = activeExams.filter(e => completedExamIds.has(e.id)).length;
-            const progressPercent = activeExams.length > 0 ? Math.round((completedCountTotal / activeExams.length) * 100) : 0;
+            const completedCountTotal = studentActiveExams.filter(e => completedExamIds.has(e.id)).length;
+            const progressPercent = studentActiveExams.length > 0 ? Math.round((completedCountTotal / studentActiveExams.length) * 100) : 0;
             
-            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${activeExams.length} ชุด (${progressPercent}%)`;
+            document.getElementById('overallProgressText').textContent = `${completedCountTotal}/${studentActiveExams.length} ชุด (${progressPercent}%)`;
             document.getElementById('overallProgressBar').style.width = `${progressPercent}%`;
 
-            const pendingExamsList = activeExams.filter(exam => {
+            const pendingExamsList = studentActiveExams.filter(exam => {
                 const myAttemptsForExam = userAttempts.filter(a => a.exam_id === exam.id);
                 const completedCount = myAttemptsForExam.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time).length;
                 const maxAttempts = exam.max_attempts || exam.attempts_allowed || 0;
@@ -678,7 +710,7 @@
             }
 
             if (availableExams.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในเงื่อนไขนี้</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สของคุณตามเงื่อนไขนี้</div>`;
                 return;
             }
 
@@ -724,7 +756,6 @@
             `;
 
             if (examViewMode === 'grid') {
-                // เปลี่ยนเป็นรูปแบบเลื่อนขวา (Horizontal Scroll) ตามที่คุณต้องการ
                 sectionHtml += `<div class="flex overflow-x-auto gap-4 pb-3 pt-1 hide-scrollbar snap-x snap-mandatory">`;
             } else {
                 sectionHtml += `<div class="space-y-3">`;
@@ -794,7 +825,6 @@
                 `;
 
                 if (examViewMode === 'grid') {
-                    // การ์ดสำหรับเลื่อนขวา
                     sectionHtml += `
                         <div class="hitech-card exam-card-hover ${cardHighlightClass} p-5 rounded-2xl flex flex-col justify-between space-y-4 shrink-0 w-72 snap-start">
                             <div class="space-y-2">
@@ -815,7 +845,6 @@
                         </div>
                     `;
                 } else {
-                    // มุมมองแบบรายการลงมา (List View)
                     sectionHtml += `
                         <div class="hitech-card exam-card-hover ${cardHighlightClass} p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div class="space-y-1.5 flex-1">
@@ -872,7 +901,6 @@
                 return;
             }
 
-            // ดึงจำนวนข้อสอบและเวลามาแสดงใน Pop-up ก่อนเริ่มสอบให้ชัดเจน
             const questionCount = examQuestionCounts[exam.id] || exam.question_count || exam.total_questions || 'ตามกำหนด';
             const durationMins = exam.duration || exam.time_limit || 'ตามกำหนด';
             const customInstructions = exam.instructions ? exam.instructions : "1. ห้ามสลับหน้าจอหรือเปิดแท็บอื่น\n2. ระบบจะบันทึกอัตโนมัติเมื่อหมดเวลา";
