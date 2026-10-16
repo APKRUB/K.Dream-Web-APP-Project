@@ -42,8 +42,6 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
-        .glow-badge-sky { background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
-        .dark .glow-badge-sky { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
@@ -309,44 +307,44 @@
             }
         }
 
-        // --- ระบบจัดการนักเรียนที่ลงทะเบียนในคอร์สแบบง่ายที่สุด ---
+        // --- ระบบจัดการนักเรียนที่ลงทะเบียนในคอร์ส (ลิงก์ตรงกับตาราง enrollments และ student.html) ---
         async function openManageStudentsModal() {
             Swal.fire({ title: 'กำลังดึงรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 1. ดึงข้อมูลการลงทะเบียนในคอร์สนี้
+                // ดึงข้อมูลจากตาราง enrollments ของคอร์สนี้
                 const { data: enrolls } = await mySupabase.from('enrollments').select('*').eq('course_id', courseId);
                 const enrolledList = enrolls || [];
 
-                // 2. ดึงข้อมูลโปรไฟล์นักเรียนทั้งหมด
-                const { data: profs } = await mySupabase.from('profiles').select('*');
-                let profiles = profs || [];
-                if (profiles.length === 0) {
-                    const { data: stds } = await mySupabase.from('students').select('*');
-                    profiles = stds || [];
-                }
+                // ดึงข้อมูลโปรไฟล์นักเรียนจากทุกตารางที่เป็นไปได้
+                let allStudents = [];
+                const { data: pData } = await mySupabase.from('profiles').select('*');
+                if (pData) allStudents = [...pData];
+                
+                const { data: sData } = await mySupabase.from('students').select('*');
+                if (sData) allStudents = [...allStudents, ...sData];
 
                 let studentMap = {};
-                profiles.forEach(p => {
-                    const idStr = String(p.id || p.user_id || p.student_id);
-                    studentMap[idStr] = p;
+                allStudents.forEach(s => {
+                    const idKey = String(s.id || s.user_id || s.student_id);
+                    studentMap[idKey] = s;
                 });
 
                 enrolledStudentsCache = enrolledList.map(en => {
+                    // รองรับฟิลด์ student_id หรือ user_id ในตาราง enrollments
                     const sId = String(en.student_id || en.user_id);
                     const profile = studentMap[sId] || {};
-                    const fullName = `${profile.first_name || '-'} ${profile.last_name || ''}`.trim() || profile.full_name || profile.name || 'ไม่ระบุชื่อ';
-                    const studentCode = profile.student_id || '-';
+                    const fullName = `${profile.first_name || profile.name || '-'} ${profile.last_name || ''}`.trim() || profile.full_name || profile.username || 'ไม่ระบุชื่อ';
+                    const studentCode = profile.student_id || profile.code || '-';
                     return {
                         enrollId: en.id,
                         studentId: sId,
                         fullName: fullName,
-                        studentCode: studentCode,
-                        enrolledAt: en.created_at || en.enrolled_at || '-'
+                        studentCode: studentCode
                     };
                 });
 
-                renderEnrolledStudentsModalContent(profiles, studentMap);
+                renderEnrolledStudentsModalContent(allStudents, studentMap);
 
             } catch (err) {
                 console.error("Manage Students Error:", err);
@@ -354,7 +352,7 @@
             }
         }
 
-        function renderEnrolledStudentsModalContent(allProfiles, studentMap) {
+        function renderEnrolledStudentsModalContent(allStudents, studentMap) {
             const rowsHtml = enrolledStudentsCache.length === 0 
                 ? `<tr><td colspan="4" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนลงทะเบียนในคอร์สนี้</td></tr>`
                 : enrolledStudentsCache.map((item, idx) => `
@@ -411,12 +409,11 @@
         async function openAddStudentPickerModal() {
             Swal.fire({ title: 'กำลังโหลดรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data: profs } = await mySupabase.from('profiles').select('*');
-            let profiles = profs || [];
-            if (profiles.length === 0) {
-                const { data: stds } = await mySupabase.from('students').select('*');
-                profiles = stds || [];
-            }
+            let profiles = [];
+            const { data: pData } = await mySupabase.from('profiles').select('*');
+            if (pData) profiles = [...pData];
+            const { data: sData } = await mySupabase.from('students').select('*');
+            if (sData) profiles = [...profiles, ...sData];
 
             const enrolledStudentIds = enrolledStudentsCache.map(e => String(e.studentId));
             const availableStudents = profiles.filter(p => !enrolledStudentIds.includes(String(p.id || p.user_id || p.student_id)));
@@ -428,7 +425,7 @@
 
             const optionsHtml = availableStudents.map(p => {
                 const sId = p.id || p.user_id || p.student_id;
-                const name = `${p.first_name || '-'} ${p.last_name || ''}`.trim() || p.full_name || p.name || 'ไม่ระบุชื่อ';
+                const name = `${p.first_name || p.name || '-'} ${p.last_name || ''}`.trim() || p.full_name || p.username || 'ไม่ระบุชื่อ';
                 const code = p.student_id ? ` [รหัส: ${p.student_id}]` : '';
                 return `<option value="${sId}">${name}${code}</option>`;
             }).join('');
