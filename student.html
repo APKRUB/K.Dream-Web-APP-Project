@@ -664,7 +664,7 @@
             }
         }
 
-       async function openChangePasswordModal() {
+        async function openChangePasswordModal() {
             const isDark = document.documentElement.classList.contains('dark');
             const { value: passValues } = await Swal.fire({
                 title: '🔑 เปลี่ยนรหัสผ่าน',
@@ -706,7 +706,6 @@
                 Swal.fire({ title: 'กำลังตรวจสอบและอัปเดต...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
                 try {
-                    // 1. ตรวจสอบรหัสผ่านเดิมโดยการทดลอง Sign In ด้วยอีเมลเดิมและรหัสผ่านเดิม
                     const studentEmail = currentStudentData.email;
                     const { error: signInError } = await mySupabase.auth.signInWithPassword({
                         email: studentEmail,
@@ -718,7 +717,6 @@
                         return;
                     }
 
-                    // 2. ถ้าถูกต้อง ทำการอัปเดตรหัสผ่านใหม่
                     const { error: updateError } = await mySupabase.auth.updateUser({ password: passValues.newPass });
                     if (!updateError) {
                         Swal.fire({ icon: 'success', title: 'เปลี่ยนรหัสผ่านสำเร็จ!', text: 'กรุณาใช้รหัสผ่านใหม่ในการเข้าสู่ระบบครั้งถัดไป', confirmButtonColor: '#0284c7' });
@@ -727,6 +725,32 @@
                     }
                 } catch (err) {
                     Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+                }
+            }
+        }
+
+        function switchTab(tab) {
+            const isExam = tab === 'exam';
+            const sectionExam = document.getElementById('sectionExam');
+            const sectionAnalytics = document.getElementById('sectionAnalytics');
+            
+            if (sectionExam) sectionExam.classList.toggle('hidden', !isExam);
+            if (sectionAnalytics) sectionAnalytics.classList.toggle('hidden', isExam);
+
+            const btnExam = document.getElementById('tabBtnExam');
+            const btnAnalytics = document.getElementById('tabBtnAnalytics');
+
+            if (isExam) {
+                if (btnExam) btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
+                if (btnAnalytics) btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
+            } else {
+                if (btnExam) btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
+                if (btnAnalytics) btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
+                
+                try {
+                    updateAnalyticsDashboard();
+                } catch (err) {
+                    console.warn("Analytics update warning:", err);
                 }
             }
         }
@@ -1361,37 +1385,45 @@
         }
 
         async function updateAnalyticsDashboard() {
-            const selectedExamIds = Array.from(document.querySelectorAll('.exam-select-cb:checked')).map(cb => cb.value);
-            if (selectedExamIds.length === 0) {
-                document.getElementById('growthRateMetric').textContent = '--%';
-                document.getElementById('avgPersonalMetric').textContent = '-- คะแนน';
-                return;
-            }
-
-            const { data: classAttempts } = await mySupabase.from('exam_attempts').select('exam_id, total_score, score').in('exam_id', selectedExamIds);
-
-            let classAvgMap = {};
-            selectedExamIds.forEach(eId => {
-                const matched = (classAttempts || []).filter(a => a.exam_id === eId);
-                if (matched.length > 0) {
-                    const sum = matched.reduce((acc, curr) => acc + (curr.total_score || curr.score || 0), 0);
-                    classAvgMap[eId] = (sum / matched.length).toFixed(1);
-                } else {
-                    classAvgMap[eId] = 0;
+            try {
+                const checkboxes = document.querySelectorAll('.exam-select-cb:checked');
+                const selectedExamIds = Array.from(checkboxes).map(cb => cb.value);
+                
+                if (selectedExamIds.length === 0) {
+                    document.getElementById('growthRateMetric').textContent = '0%';
+                    document.getElementById('avgPersonalMetric').textContent = '0 คะแนน';
+                    return;
                 }
-            });
 
-            const filteredUserAttempts = userAttempts.filter(a => selectedExamIds.includes(a.exam_id) && (a.status === 'completed' || a.submission_time));
-            const userScores = filteredUserAttempts.map(a => a.total_score || a.score || 0);
-            const avgPersonal = userScores.length > 0 ? Math.round(userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
-            const growthRate = userScores.length > 1 ? (userScores[userScores.length - 1] - userScores[0]) : 0;
+                const { data: classAttempts } = await mySupabase.from('exam_attempts').select('exam_id, total_score, score').in('exam_id', selectedExamIds);
 
-            document.getElementById('growthRateMetric').textContent = `${growthRate >= 0 ? '+' : ''}${growthRate}`;
-            document.getElementById('avgPersonalMetric').textContent = `${avgPersonal} คะแนน`;
+                let classAvgMap = {};
+                selectedExamIds.forEach(eId => {
+                    const matched = (classAttempts || []).filter(a => a.exam_id === eId);
+                    if (matched.length > 0) {
+                        const sum = matched.reduce((acc, curr) => acc + (curr.total_score || curr.score || 0), 0);
+                        classAvgMap[eId] = (sum / matched.length).toFixed(1);
+                    } else {
+                        classAvgMap[eId] = 0;
+                    }
+                });
 
-            renderProgressTrendChart(filteredUserAttempts, classAvgMap);
-            renderMultiExamBarChart(filteredUserAttempts, classAvgMap);
-            await renderCategoryRadarChart(selectedExamIds);
+                const filteredUserAttempts = userAttempts.filter(a => selectedExamIds.includes(a.exam_id) && (a.status === 'completed' || a.submission_time));
+                const userScores = filteredUserAttempts.map(a => a.total_score || a.score || 0);
+                const avgPersonal = userScores.length > 0 ? Math.round(userScores.reduce((a, b) => a + b, 0) / userScores.length) : 0;
+                const growthRate = userScores.length > 1 ? (userScores[userScores.length - 1] - userScores[0]) : 0;
+
+                const growthEl = document.getElementById('growthRateMetric');
+                const avgEl = document.getElementById('avgPersonalMetric');
+                if (growthEl) growthEl.textContent = `${growthRate >= 0 ? '+' : ''}${growthRate}`;
+                if (avgEl) avgEl.textContent = `${avgPersonal} คะแนน`;
+
+                renderProgressTrendChart(filteredUserAttempts, classAvgMap);
+                renderMultiExamBarChart(filteredUserAttempts, classAvgMap);
+                await renderCategoryRadarChart(selectedExamIds);
+            } catch (err) {
+                console.error("Error updating analytics dashboard:", err);
+            }
         }
 
         function renderProgressTrendChart(attempts, classAvgMap) {
