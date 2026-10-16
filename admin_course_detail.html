@@ -320,16 +320,13 @@
                 const sRes = await mySupabase.from('students').select('*');
                 if (sRes.data) profiles = [...profiles, ...sRes.data];
 
-                // คัดกรองเฉพาะบัญชีที่เป็นนักเรียน (ซ่อน Admin หรือบัญชีที่มีสถานะเป็น admin ออก)
                 profiles = profiles.filter(p => {
                     const role = String(p.role || p.user_role || '').toLowerCase();
                     const isAdm = role === 'admin' || p.is_admin === true;
-                    // ถ้าฟิลด์ student_id เป็น "-" หรือไม่มี และไม่มีรหัสประจำตัวนักเรียน ให้ถือว่าเป็นแอดมินหรือระบบ ซ่อนออก
                     const sCode = String(p.student_id || p.code || '').trim();
                     const isDashOrEmpty = sCode === '' || sCode === '-';
                     
-                    if (isAdm) return false; // ตัดแอดมินออก
-                    // หากไม่มีรหัสประจำตัว หรือเป็น - แต่ชื่อชัดเจนว่าเป็นแอดมิน ให้กรองออกด้วย
+                    if (isAdm) return false;
                     if (isDashOrEmpty && (p.username === 'admin' || (p.full_name && p.full_name.toLowerCase().includes('admin')))) return false;
 
                     return true;
@@ -380,7 +377,7 @@
 
             const rowsHtml = filtered.length === 0
                 ? `<tr><td colspan="4" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียน</td></tr>`
-                : filtered.map((item, idx) => `
+                : filtered.map((item) => `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors border-b dark:border-slate-800">
                         <td class="p-3 font-mono text-purple-600 font-bold">${item.studentCode}</td>
                         <td class="p-3 font-bold">${item.fullName}</td>
@@ -440,39 +437,63 @@
             });
         }
 
+        // ฟังก์ชันจัดการเพิ่ม/ลบนักเรียน รองรับทั้ง student_id และ user_id พร้อมเช็ค Fallback หลายตาราง
         async function toggleEnrollStudent(studentId, isCurrentlyEnrolled, enrollId) {
-            if (isCurrentlyEnrolled && enrollId) {
-                let { error } = await mySupabase.from('enrollments').delete().eq('id', enrollId);
-                if (error) {
-                    await mySupabase.from('course_enrollments').delete().eq('id', enrollId);
-                }
-                const target = window.globalAllStudents.find(s => s.studentId === studentId);
-                if (target) { target.isEnrolled = false; target.enrollId = null; }
-            } else {
-                let { data, error } = await mySupabase.from('enrollments').insert([{
-                    course_id: courseId,
-                    student_id: studentId,
-                    created_at: new Date().toISOString()
-                }]).select();
+            try {
+                if (isCurrentlyEnrolled) {
+                    // พยายามลบจากตาราง enrollments ก่อน
+                    let delRes = await mySupabase.from('enrollments').delete().eq('id', enrollId);
+                    if (delRes.error) {
+                        // หากลบด้วย ID ไม่สำเร็จ ลองลบด้วย course_id และ student_id
+                        await mySupabase.from('enrollments').delete().eq('course_id', courseId).eq('student_id', studentId);
+                        await mySupabase.from('enrollments').delete().eq('course_id', courseId).eq('user_id', studentId);
+                        await mySupabase.from('course_enrollments').delete().eq('course_id', courseId).eq('student_id', studentId);
+                    }
 
-                if (error) {
-                    let altIns = await mySupabase.from('course_enrollments').insert([{
+                    const target = window.globalAllStudents.find(s => s.studentId === studentId);
+                    if (target) { target.isEnrolled = false; target.enrollId = null; }
+                } else {
+                    // ลองบันทึกลงตาราง enrollments ด้วยฟิลด์ student_id
+                    let insRes = await mySupabase.from('enrollments').insert([{
                         course_id: courseId,
                         student_id: studentId,
                         created_at: new Date().toISOString()
                     }]).select();
-                    if (altIns.data && altIns.data[0]) {
-                        const target = window.globalAllStudents.find(s => s.studentId === studentId);
-                        if (target) { target.isEnrolled = true; target.enrollId = altIns.data[0].id; }
-                    }
-                } else if (data && data[0]) {
-                    const target = window.globalAllStudents.find(s => s.studentId === studentId);
-                    if (target) { target.isEnrolled = true; target.enrollId = data[0].id; }
-                }
-            }
 
-            const searchVal = document.getElementById('studentSearchBox')?.value || '';
-            renderStudentListModalUI(searchVal);
+                    // หากตาราง enrollments ใช้ฟิลด์ user_id แทน student_id
+                    if (insRes.error) {
+                        insRes = await mySupabase.from('enrollments').insert([{
+                            course_id: courseId,
+                            user_id: studentId,
+                            created_at: new Date().toISOString()
+                        }]).select();
+                    }
+
+                    // หากตารางชื่อ course_enrollments
+                    if (insRes.error) {
+                        insRes = await mySupabase.from('course_enrollments').insert([{
+                            course_id: courseId,
+                            student_id: studentId,
+                            created_at: new Date().toISOString()
+                        }]).select();
+                    }
+
+                    if (insRes.error) {
+                        throw new Error(insRes.error.message);
+                    }
+
+                    const newId = insRes.data && insRes.data[0] ? insRes.data[0].id : 'temp_id';
+                    const target = window.globalAllStudents.find(s => s.studentId === studentId);
+                    if (target) { target.isEnrolled = true; target.enrollId = newId; }
+                }
+
+                const searchVal = document.getElementById('studentSearchBox')?.value || '';
+                renderStudentListModalUI(searchVal);
+
+            } catch (err) {
+                console.error("Toggle Enroll Error:", err);
+                Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถบันทึกข้อมูลได้: ${err.message}`, 'error');
+            }
         }
 
         initCourseDetail();
