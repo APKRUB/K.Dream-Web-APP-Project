@@ -259,6 +259,16 @@
             const { data: exams, error } = await mySupabase.from('exams').select('*, exam_categories(id, name)').order('created_at', { ascending: false });
             
             let allExams = exams || [];
+            const now = new Date();
+
+            // ⚡ ตรวจสอบและอัปเดตอัตโนมัติ: ถ้าตั้งเวลา (countdown) แล้วถึงเวลาแล้ว ให้เปลี่ยนเป็น public ทันที
+            for (let e of allExams) {
+                if (e.status === 'countdown' && e.start_time && new Date(e.start_time) <= now) {
+                    e.status = 'public';
+                    // อัปเดตในฐานข้อมูลแบบเบื้องหลัง (Background Update)
+                    mySupabase.from('exams').update({ status: 'public' }).eq('id', e.id).then(() => {});
+                }
+            }
 
             if (filterCourseId) {
                 allExams = allExams.filter(e => {
@@ -278,7 +288,6 @@
                 return;
             }
 
-            const now = new Date();
             const in48Hours = new Date(now.getTime() + 48 * 60 * 60 * 1000);
             const upcomingExams = currentExamsData.filter(e => e.status === 'countdown' && e.start_time && new Date(e.start_time) > now && new Date(e.start_time) <= in48Hours);
 
@@ -374,7 +383,7 @@
         }
 
         function renderExamCard(e, hasEssay) {
-            const statusBadge = getStatusBadge(e.status);
+            const statusBadge = getStatusBadge(e);
             const deliveryBadge = getDeliveryBadge(e.delivery_type || e.exam_type);
             const avgScore = getExamAverageScore(e.id);
             const choiceLabel = getChoiceFormatLabel(e.choice_format);
@@ -434,7 +443,7 @@
         }
 
         function renderExamListRow(e, hasEssay) {
-            const statusBadge = getStatusBadge(e.status);
+            const statusBadge = getStatusBadge(e);
             const deliveryBadge = getDeliveryBadge(e.delivery_type || e.exam_type);
             const avgScore = getExamAverageScore(e.id);
             const choiceLabel = getChoiceFormatLabel(e.choice_format);
@@ -588,9 +597,14 @@
             }
         }
 
-        function getStatusBadge(st) {
-            if (st === 'public') return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">เปิดบริการ</span>';
-            if (st === 'countdown') return '<span class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>';
+        function getStatusBadge(e) {
+            // ถ้าเลยเวลา start_time แล้ว ให้มองเป็นเปิดบริการ (Public) ทันที
+            if (e.status === 'public' || (e.status === 'countdown' && e.start_time && new Date(e.start_time) <= new Date())) {
+                return '<span class="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">เปิดบริการ</span>';
+            }
+            if (e.status === 'countdown') {
+                return '<span class="px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">ตั้งเวลา</span>';
+            }
             return '<span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold text-[10px]">ซ่อน</span>';
         }
 
@@ -750,7 +764,6 @@
 
                     if (!title) { Swal.showValidationMessage('กรุณากรอกชื่อชุดข้อสอบ'); return false; }
 
-                    // แปลง course_id ให้เป็นอาเรย์ [selectedCourseId] เพื่อให้รองรับคอลัมน์ type[] ใน Supabase
                     const courseIdPayload = selectedCourseId ? [selectedCourseId] : null;
 
                     return {
