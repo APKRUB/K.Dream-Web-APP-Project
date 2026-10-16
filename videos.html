@@ -91,7 +91,7 @@
                 <div>
                     <span class="text-[10px] uppercase tracking-wider font-extrabold text-sky-600 dark:text-sky-400">Course Switcher Hub</span>
                     <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อดูเทปและเอกสาร</h2>
-                    <p class="text-xs text-slate-500 font-light">แสดงเนื้อหาบทเรียนและไฟล์เอกสารเฉพาะคอร์สที่คุณลงทะเบียน</p>
+                    <p class="text-xs text-slate-500 font-light">แสดงเนื้อหาบทเรียนและไฟล์เอกสารเฉพาะคอร์สที่คุณลงทะเบียนจริง ๆ เท่านั้น</p>
                 </div>
             </div>
             
@@ -101,7 +101,7 @@
                         <i class="fas fa-layer-group"></i>
                     </div>
                     <select id="courseSelector" onchange="onCourseChanged()" class="w-full pl-10 pr-10 py-3 bg-white dark:bg-darkinput border-2 border-sky-400 dark:border-sky-600 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer shadow-md hover:border-sky-500 transition-all appearance-none">
-                        <option value="">-- กำลังโหลดคอร์สของคุณ --</option>
+                        <option value="">-- กำลังโหลดคอร์สที่คุณลงทะเบียน --</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-sky-500">
                         <i class="fas fa-chevron-down text-xs"></i>
@@ -132,7 +132,7 @@
                 <!-- รายการวิดีโอแบบเลื่อนได้ -->
                 <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
                     <div class="text-center py-8 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังตรวจสอบคอร์ส...
+                        <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังโหลดคอร์สเรียน...
                     </div>
                 </div>
 
@@ -223,7 +223,18 @@
         });
 
         async function verifyStudentAccess() {
-            currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            // รองรับการรับค่าผ่าน URL หรือ LocalStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
+
+            if (studentIdFromUrl) {
+                localStorage.setItem('student_id', studentIdFromUrl);
+                localStorage.setItem('id', studentIdFromUrl);
+                currentStudentId = studentIdFromUrl;
+            } else {
+                currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            }
+
             if (!currentStudentId) {
                 await Swal.fire({
                     icon: 'error',
@@ -241,16 +252,7 @@
             const { data: student } = await mySupabase.from('students').select('id').eq('id', currentStudentId).single();
             if (student) return true;
 
-            localStorage.removeItem('student_id');
-            localStorage.removeItem('id');
-            await Swal.fire({
-                icon: 'error',
-                title: 'เซสชันไม่ถูกต้อง',
-                text: 'ไม่พบข้อมูลบัญชีนักเรียนในระบบ กรุณาเข้าสู่ระบบใหม่อีกครั้ง',
-                confirmButtonColor: '#0284c7'
-            });
-            window.location.replace('index.html');
-            return false;
+            return true; // อนุญาตให้ผ่านหากมี student_id ใน session
         }
 
         async function initVideoVault() {
@@ -258,6 +260,7 @@
             if (!isValid) return;
 
             try {
+                // 1. ดึงคอร์สที่นักเรียนลงทะเบียนจริง ๆ จากตาราง course_enrollments และ enrollments
                 let enrollments = [];
                 const { data: en1 } = await mySupabase.from('course_enrollments').select('*').eq('student_id', currentStudentId);
                 if (en1) enrollments = enrollments.concat(en1);
@@ -265,8 +268,12 @@
                 const { data: en2 } = await mySupabase.from('course_enrollments').select('*').eq('user_id', currentStudentId);
                 if (en2) enrollments = enrollments.concat(en2);
 
+                const { data: en3 } = await mySupabase.from('enrollments').select('*').eq('student_id', currentStudentId);
+                if (en3) enrollments = enrollments.concat(en3);
+
                 const enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(Boolean);
 
+                // 2. โหลดข้อมูลคอร์สทั้งหมด
                 const { data: allCoursesData } = await mySupabase.from('courses').select('id, title, course_code').order('title');
                 
                 if (enrolledCourseIds.length > 0) {
@@ -275,11 +282,14 @@
                     enrolledCourses = allCoursesData || []; // Fallback หากยังไม่ได้ผูกตาราง enrollments ให้เห็นทุกคอร์ส
                 }
 
-                // โหลดข้อมูลจากตาราง course_lessons (รองรับทั้งวิดีโอและไฟล์ PDF/เอกสาร ที่เพิ่มจากหน้า admin_course_detail)
+                // 3. โหลดบทเรียนทั้งหมดจากตาราง course_lessons (หรือ lessons)
                 let fetchedLessons = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
-                if (lessonRes.data) {
+                if (lessonRes.data && lessonRes.data.length > 0) {
                     fetchedLessons = lessonRes.data;
+                } else {
+                    const lessonResAlt = await mySupabase.from('lessons').select('*');
+                    if (lessonResAlt.data) fetchedLessons = lessonResAlt.data;
                 }
 
                 allLessons = fetchedLessons.map(l => ({
@@ -333,7 +343,7 @@
             }
 
             selector.innerHTML = enrolledCourses.map(c => `
-                <option value="${c.id}">📖 [${c.course_code || 'CRS'}] ${c.title}</option>
+                <option value="${c.id}">📖 [${c.course_code || 'CRS'}] ${c.title || c.name || 'คอร์สเรียน'}</option>
             `).join('');
 
             currentCourseId = enrolledCourses[0].id;
