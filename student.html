@@ -664,12 +664,16 @@
             }
         }
 
-        async function openChangePasswordModal() {
+       async function openChangePasswordModal() {
             const isDark = document.documentElement.classList.contains('dark');
             const { value: passValues } = await Swal.fire({
-                title: '🔑 เปลี่ยนรหัสผ่านใหม่',
+                title: '🔑 เปลี่ยนรหัสผ่าน',
                 html: `
                     <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">รหัสผ่านเดิม</label>
+                            <input type="password" id="swalOldPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="••••••••">
+                        </div>
                         <div>
                             <label class="block font-bold mb-1">รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
                             <input type="password" id="swalNewPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="••••••••">
@@ -682,45 +686,48 @@
                 `,
                 showCancelButton: true,
                 confirmButtonText: 'ยืนยันเปลี่ยนรหัสผ่าน',
-                cancelButtonText: 'ย้อนกลับ',
+                cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#d97706',
                 background: isDark ? '#090d16' : '#ffffff',
                 color: isDark ? '#f1f5f9' : '#1e293b',
                 preConfirm: () => {
+                    const oldPass = document.getElementById('swalOldPassword').value;
                     const p1 = document.getElementById('swalNewPassword').value;
                     const p2 = document.getElementById('swalConfirmPassword').value;
-                    if (!p1 || p1.length < 6) { Swal.showValidationMessage('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return false; }
-                    if (p1 !== p2) { Swal.showValidationMessage('รหัสผ่านทั้งสองช่องไม่ตรงกัน'); return false; }
-                    return p1;
+
+                    if (!oldPass) { Swal.showValidationMessage('กรุณากรอกรหัสผ่านเดิม'); return false; }
+                    if (!p1 || p1.length < 6) { Swal.showValidationMessage('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'); return false; }
+                    if (p1 !== p2) { Swal.showValidationMessage('รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน'); return false; }
+                    return { oldPass, newPass: p1 };
                 }
             });
 
             if (passValues) {
-                Swal.fire({ title: 'กำลังอัปเดตรหัสผ่าน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const { error } = await mySupabase.auth.updateUser({ password: passValues });
-                if (!error) {
-                    Swal.fire({ icon: 'success', title: 'เปลี่ยนรหัสผ่านสำเร็จ!', text: 'กรุณาใช้รหัสผ่านใหม่ในการเข้าสู่ระบบครั้งถัดไป', confirmButtonColor: '#0284c7' });
-                } else {
-                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                Swal.fire({ title: 'กำลังตรวจสอบและอัปเดต...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                try {
+                    // 1. ตรวจสอบรหัสผ่านเดิมโดยการทดลอง Sign In ด้วยอีเมลเดิมและรหัสผ่านเดิม
+                    const studentEmail = currentStudentData.email;
+                    const { error: signInError } = await mySupabase.auth.signInWithPassword({
+                        email: studentEmail,
+                        password: passValues.oldPass
+                    });
+
+                    if (signInError) {
+                        Swal.fire('รหัสผ่านเดิมไม่ถูกต้อง', 'กรุณาตรวจสอบรหัสผ่านเดิมอีกครั้ง', 'error');
+                        return;
+                    }
+
+                    // 2. ถ้าถูกต้อง ทำการอัปเดตรหัสผ่านใหม่
+                    const { error: updateError } = await mySupabase.auth.updateUser({ password: passValues.newPass });
+                    if (!updateError) {
+                        Swal.fire({ icon: 'success', title: 'เปลี่ยนรหัสผ่านสำเร็จ!', text: 'กรุณาใช้รหัสผ่านใหม่ในการเข้าสู่ระบบครั้งถัดไป', confirmButtonColor: '#0284c7' });
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด', updateError.message, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
                 }
-            }
-        }
-
-        function switchTab(tab) {
-            const isExam = tab === 'exam';
-            document.getElementById('sectionExam').classList.toggle('hidden', !isExam);
-            document.getElementById('sectionAnalytics').classList.toggle('hidden', isExam);
-
-            const btnExam = document.getElementById('tabBtnExam');
-            const btnAnalytics = document.getElementById('tabBtnAnalytics');
-
-            if (isExam) {
-                btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
-                btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
-            } else {
-                btnExam.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-bold text-xs transition-all text-white/90 hover:text-white hover:bg-white/10 flex items-center justify-center gap-2';
-                btnAnalytics.className = 'flex-1 md:flex-none px-4 py-2 rounded-xl font-extrabold text-xs transition-all bg-white text-blue-900 shadow-md flex items-center justify-center gap-2';
-                updateAnalyticsDashboard();
             }
         }
 
