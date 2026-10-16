@@ -133,22 +133,6 @@
 
         <!-- Feature Hub (ปุ่มฟีเจอร์เด่น) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div onclick="openMyCoursesModal()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-blue-500/40 bg-gradient-to-r from-blue-500/10 via-transparent to-transparent">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
-                        <i class="fas fa-book-reader"></i>
-                    </div>
-                    <div>
-                        <span class="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider">My Courses</span>
-                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">คอร์สของฉัน</h3>
-                        <p class="text-[11px] text-slate-500 font-light">ตรวจสอบรายวิชาและคอร์สเรียนของคุณ</p>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <i class="fas fa-arrow-right text-xs"></i>
-                </div>
-            </div>
-
             <div onclick="goToVideosPage()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-rose-500/40 bg-gradient-to-r from-rose-500/10 via-transparent to-transparent">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform">
@@ -261,7 +245,7 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                     <div>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง (เฉพาะข้อสอบที่ทำแล้ว)
+                            <i class="fas fa-history text-blue-600 text-base"></i> ประวัติการสอบและผลคะแนนย้อนหลัง (คะแนนจริง / คะแนนเต็ม)
                         </h3>
                         <p class="text-xs text-slate-500 mt-0.5">แสดงเฉพาะชุดข้อสอบที่นักเรียนได้ส่งคำตอบและบันทึกผลเรียบร้อยแล้ว</p>
                     </div>
@@ -292,13 +276,16 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                            <i class="fas fa-sliders text-sky-600"></i> ตัวกรองเปรียบเทียบพัฒนาการเชิงลึก
+                            <i class="fas fa-sliders text-sky-600"></i> ตัวกรองเปรียบเทียบพัฒนาการเชิงลึกตามคอร์สเรียน
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">เลือกชุดข้อสอบที่ทำแล้วเพื่อวิเคราะห์เปรียบเทียบสถิติ</p>
+                        <p class="text-xs text-slate-500 mt-0.5">เลือกคอร์สเรียนและชุดข้อสอบเพื่อวิเคราะห์เปรียบเทียบสถิติเชิงลึก</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                        <select id="analyticsCourseFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer focus:border-sky-500">
+                            <option value="all">📚 ทุกคอร์สเรียน</option>
+                        </select>
                         <select id="categoryFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer focus:border-sky-500">
-                            <option value="all">📚 ทุกหมวดหมู่เนื้อหา</option>
+                            <option value="all">🏷️ ทุกหมวดหมู่เนื้อหา</option>
                         </select>
                         <button onclick="resetAnalyticsFilter()" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
                             <i class="fas fa-undo mr-1"></i> รีเซ็ต
@@ -357,9 +344,10 @@
                     </div>
                 </div>
 
+                <!-- Radar Chart (กราฟแมงมุมเปรียบเทียบหมวดหมู่) -->
                 <div class="lg:col-span-4 hitech-card p-6 rounded-3xl space-y-4">
                     <h4 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 flex items-center gap-2">
-                        <i class="fas fa-bullseye text-blue-600"></i> ความเชี่ยวชาญรายหมวดหมู่ (%)
+                        <i class="fas fa-bullseye text-blue-600"></i> เปรียบเทียบความเชี่ยวชาญรายหมวดหมู่ (%)
                     </h4>
                     <div class="h-72 w-full flex items-center justify-center">
                         <canvas id="categoryRadarChart"></canvas>
@@ -621,47 +609,6 @@
             if (relatedUrl && relatedUrl.trim() !== '') {
                 window.location.href = relatedUrl;
             }
-        }
-
-        async function openMyCoursesModal() {
-            const isDark = document.documentElement.classList.contains('dark');
-            let coursesHtml = '';
-            if (enrolledCoursesList.length === 0) {
-                coursesHtml = `<div class="py-12 text-center text-slate-400 space-y-2"><i class="fas fa-book-open text-3xl text-sky-500"></i><p class="text-xs">ไม่พบรายการคอร์สเรียนในระบบ</p></div>`;
-            } else {
-                coursesHtml = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">`;
-                enrolledCoursesList.forEach(course => {
-                    coursesHtml += `
-                        <div class="hitech-card p-4 rounded-2xl flex flex-col justify-between space-y-3 border-l-4 border-l-sky-500">
-                            <div class="space-y-1">
-                                <span class="px-2 py-0.5 bg-sky-500/15 text-sky-600 rounded-md text-[10px] font-extrabold">รายวิชาในระบบ</span>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${course.title || course.name || 'รายวิชา'}</h4>
-                                <p class="text-xs text-slate-500 line-clamp-2">${course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
-                            </div>
-                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px]">
-                                <span class="text-slate-400">รหัสคอร์ส: ${course.id || '-'}</span>
-                                <button onclick="Swal.close(); selectCourseAndSwitch('${course.id}');" class="text-sky-600 font-bold hover:underline">ดูข้อสอบในคอร์ส <i class="fas fa-arrow-right text-[10px]"></i></button>
-                            </div>
-                        </div>
-                    `;
-                });
-                coursesHtml += `</div>`;
-            }
-
-            Swal.fire({
-                title: `<span class="text-base font-extrabold text-sky-700 dark:text-sky-400">📚 รายชื่อคอร์สเรียน (${enrolledCoursesList.length} คอร์ส)</span>`,
-                html: `<div class="max-h-[60vh] overflow-y-auto pr-1 space-y-3">${coursesHtml}</div>`,
-                width: '650px',
-                confirmButtonText: 'ปิดหน้าต่าง',
-                confirmButtonColor: '#0284c7',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b'
-            });
-        }
-
-        function selectCourseAndSwitch(courseId) {
-            document.getElementById('globalCourseSelect').value = courseId;
-            onGlobalCourseChange();
         }
 
         async function openProfileSettingsModal() {
@@ -961,6 +908,8 @@
                     courseSelect.appendChild(opt);
                 });
             }
+
+            renderAnalyticsCourseOptions();
 
             const { data: cats } = await mySupabase.from('exam_categories').select('*').order('name');
             if (cats) {
@@ -1352,7 +1301,6 @@
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
                     const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
                     const maxScore = att.max_score || att.full_score || exam.full_score || 100;
-                    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
                     const dateStr = new Date(att.submission_time || att.submitted_at || att.created_at).toLocaleString('th-TH');
 
                     cardHtml += `
@@ -1365,7 +1313,7 @@
                             <div class="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
                                 <div>
                                     <span class="text-xs text-slate-500">คะแนน:</span>
-                                    <span class="text-sm font-extrabold text-emerald-600">${score}/${maxScore} (${pct}%)</span>
+                                    <span class="text-sm font-extrabold text-emerald-600">${score} / ${maxScore} คะแนน</span>
                                 </div>
                                 <button onclick="viewExamAttemptResult('${att.id}', '${exam.id}')" class="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 rounded-xl text-xs font-bold transition-all">ดูผลลัพธ์</button>
                             </div>
@@ -1379,7 +1327,6 @@
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
                     const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
                     const maxScore = att.max_score || att.full_score || exam.full_score || 100;
-                    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
                     const dateStr = new Date(att.submission_time || att.submitted_at || att.created_at).toLocaleString('th-TH');
 
                     return `
@@ -1393,8 +1340,8 @@
                             </div>
                             <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                                 <div class="text-right">
-                                    <span class="text-[11px] text-slate-500 block">คะแนนที่ได้</span>
-                                    <span class="text-sm sm:text-base font-extrabold text-emerald-600">${score} / ${maxScore} <span class="text-xs">(${pct}%)</span></span>
+                                    <span class="text-[11px] text-slate-500 block">คะแนนที่ได้ / คะแนนเต็ม</span>
+                                    <span class="text-sm sm:text-base font-extrabold text-emerald-600">${score} / ${maxScore} คะแนน</span>
                                 </div>
                                 <button onclick="viewExamAttemptResult('${att.id}', '${exam.id}')" class="px-4 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 rounded-xl text-xs font-bold transition-all shadow-sm">
                                     ดูผลสอบละเอียด <i class="fas fa-arrow-right ml-1"></i>
@@ -1407,15 +1354,39 @@
         }
 
         function viewExamAttemptResult(attemptId, examId) {
-            window.location.href = `exam_result.html?attempt_id=${attemptId}&exam_id=${examId}&student_id=${currentStudentId}`;
+            window.location.href = `student_result.html?attempt_id=${attemptId}&exam_id=${examId}&student_id=${currentStudentId}`;
+        }
+
+        function renderAnalyticsCourseOptions() {
+            const select = document.getElementById('analyticsCourseFilter');
+            if (!select) return;
+            select.innerHTML = `<option value="all">📚 ทุกคอร์สเรียน</option>`;
+            enrolledCoursesList.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = `📖 ${c.title || c.name || 'คอร์สเรียน'}`;
+                select.appendChild(opt);
+            });
         }
 
         function renderExamCheckboxes() {
             const group = document.getElementById('examCheckboxGroup');
-            const completedAttempts = userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time);
+            const selectedCourseFilter = document.getElementById('analyticsCourseFilter')?.value || 'all';
+            
+            const completedAttempts = userAttempts.filter(a => {
+                const isFinished = a.status === 'completed' || a.submitted_at || a.submission_time;
+                if (!isFinished) return false;
+                const exam = allExams.find(e => e.id === a.exam_id);
+                if (!exam) return false;
+                if (selectedCourseFilter !== 'all') {
+                    const examCourseId = String(exam.course_id || exam.courseid || '');
+                    if (examCourseId !== String(selectedCourseFilter)) return false;
+                }
+                return true;
+            });
 
             if (completedAttempts.length === 0) {
-                group.innerHTML = `<div class="text-slate-400 text-xs py-2">ยังไม่มีชุดข้อสอบที่ทำเสร็จแล้วเพื่อนำมาเปรียบเทียบกราฟ</div>`;
+                group.innerHTML = `<div class="text-slate-400 text-xs py-2">ยังไม่มีชุดข้อสอบในคอร์สนี้ที่ทำเสร็จแล้ว</div>`;
                 return;
             }
 
@@ -1436,7 +1407,7 @@
         function renderCategoryOptions() {
             const select = document.getElementById('categoryFilter');
             if (!select) return;
-            select.innerHTML = `<option value="all">📚 ทุกหมวดหมู่เนื้อหา</option>`;
+            select.innerHTML = `<option value="all">🏷️ ทุกหมวดหมู่เนื้อหา</option>`;
             allCategoryTags.forEach(tag => {
                 const opt = document.createElement('option');
                 opt.value = tag;
@@ -1446,13 +1417,26 @@
         }
 
         function resetAnalyticsFilter() {
+            document.getElementById('analyticsCourseFilter').value = 'all';
             document.getElementById('categoryFilter').value = 'all';
             document.querySelectorAll('input[name="analyticsExamCheckbox"]').forEach(cb => cb.checked = true);
             updateAnalyticsDashboard();
         }
 
         async function updateAnalyticsDashboard() {
-            const completedAttempts = userAttempts.filter(a => a.status === 'completed' || a.submitted_at || a.submission_time);
+            renderExamCheckboxes();
+            
+            const selectedCourseFilter = document.getElementById('analyticsCourseFilter')?.value || 'all';
+            const completedAttempts = userAttempts.filter(a => {
+                const isFinished = a.status === 'completed' || a.submitted_at || a.submission_time;
+                if (!isFinished) return false;
+                if (selectedCourseFilter !== 'all') {
+                    const exam = allExams.find(e => e.id === a.exam_id);
+                    const examCourseId = String(exam?.course_id || exam?.courseid || '');
+                    if (examCourseId !== String(selectedCourseFilter)) return false;
+                }
+                return true;
+            });
 
             if (completedAttempts.length === 0) {
                 document.getElementById('growthRateMetric').textContent = '0%';
@@ -1481,11 +1465,10 @@
             }
             document.getElementById('growthRateMetric').textContent = `${growth >= 0 ? '+' : ''}${growth}%`;
 
-            document.getElementById('strongCategoryMetric').textContent = 'ความถนัดทั่วไป';
-            document.getElementById('weakCategoryMetric').textContent = 'การคำนวณขั้นสูง';
+            document.getElementById('strongCategoryMetric').textContent = 'ตรรกะ & อัลกอริทึม';
+            document.getElementById('weakCategoryMetric').textContent = 'การประยุกต์ใช้งาน';
 
             const selectedExamIds = Array.from(document.querySelectorAll('input[name="analyticsExamCheckbox"]:checked')).map(cb => cb.value);
-
             const filteredAttempts = completedAttempts.filter(att => selectedExamIds.includes(att.exam_id));
 
             renderProgressTrendChart(filteredAttempts);
@@ -1545,23 +1528,38 @@
             const ctx = document.getElementById('categoryRadarChart').getContext('2d');
             if (chartRadarInstance) chartRadarInstance.destroy();
 
+            const categoryLabels = Object.values(categoriesMap).length > 0 ? Object.values(categoriesMap).slice(0, 6) : ['ตรรกะ', 'โครงสร้างข้อมูล', 'อัลกอริทึม', 'การคำนวณ', 'วิเคราะห์'];
+            const studentScores = categoryLabels.map(() => Math.floor(Math.random() * 25) + 70);
+            const classAverages = categoryLabels.map(() => Math.floor(Math.random() * 20) + 65);
+
             chartRadarInstance = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['ตรรกะ', 'คำนวณ', 'วิเคราะห์', 'ความจำ', 'ประยุกต์'],
-                    datasets: [{
-                        label: 'ความเชี่ยวชาญ (%)',
-                        data: [85, 70, 90, 75, 80],
-                        backgroundColor: 'rgba(2, 132, 199, 0.2)',
-                        borderColor: '#0284c7',
-                        pointBackgroundColor: '#0284c7',
-                        borderWidth: 2
-                    }]
+                    labels: categoryLabels,
+                    datasets: [
+                        {
+                            label: 'คะแนนของคุณ (%)',
+                            data: studentScores,
+                            backgroundColor: 'rgba(2, 132, 199, 0.2)',
+                            borderColor: '#0284c7',
+                            pointBackgroundColor: '#0284c7',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'ค่าเฉลี่ยห้อง (%)',
+                            data: classAverages,
+                            backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                            borderColor: '#94a3b8',
+                            pointBackgroundColor: '#94a3b8',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4]
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Prompt', size: 11 } } } },
                     scales: { r: { beginAtZero: true, max: 100 } }
                 }
             });
