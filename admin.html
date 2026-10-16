@@ -10,100 +10,74 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- SUPABASE CONFIG (ใช้ร่วมกันเพื่อตรวจสอบสิทธิ์ตั้งแต่โหลดหน้าเว็บ) -->
+    <!-- 🔒 INSTANT SECURE BACKEND AUTH & ROLE GUARD (ป้องกัน 100%) -->
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-        // INSTANT ADMIN AUTH & ROLE GUARD: ป้องกันไม่ให้ผู้ใช้ทั่วไป หรือนักเรียน แอบพิมพ์/แปะ URL เข้ามาตรงๆ
+        
         (async function() {
-            if (!supabaseClient) {
+            if (!window.supabase) {
                 window.location.replace('index.html');
                 return;
             }
+            const secureClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            // 1. ตรวจสอบ Supabase Session เบื้องต้นจาก LocalStorage ทันทีเพื่อความเร็ว
-            let hasSession = false;
-            let activeUserEmail = '';
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    const val = localStorage.getItem(key);
-                    if (val && val.includes('access_token')) {
-                        hasSession = true;
-                        try {
-                            const parsed = JSON.parse(val);
-                            if (parsed && parsed.user && parsed.user.email) {
-                                activeUserEmail = parsed.user.email;
-                            }
-                        } catch(e) {}
-                        break;
-                    }
-                }
-            }
-
-            const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
-            const userRole = localStorage.getItem('role') || localStorage.getItem('user_role') || '';
-
-            // ถ้าไม่มี Session หรือไม่มี ID เลย ดีดกลับหน้าแรกทันที
-            if (!hasSession && !fallbackId) {
-                window.location.replace('index.html');
-                return;
-            }
-
-            // 2. ป้องกันนักเรียน (Student Role) แอบเข้ามาหน้า Admin
-            if (userRole === 'student' || userRole === 'นักเรียน') {
-                localStorage.clear();
-                window.location.replace('index.html');
-                return;
-            }
-
-            // 3. ตรวจสอบสิทธิ์เชิงลึกกับฐานข้อมูล (Database Validation) เพื่อความปลอดภัยสูงสุด
             try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (!session && !fallbackId) {
+                // 1. ตรวจสอบ Supabase Auth Session
+                const { data: { session }, error: sessionError } = await secureClient.auth.getSession();
+                
+                if (sessionError || !session || !session.user) {
+                    localStorage.clear();
                     window.location.replace('index.html');
                     return;
                 }
 
-                const userId = session?.user?.id || fallbackId;
-                
-                // ตรวจสอบตาราง profiles หรือ admins ว่ามีสิทธิ์ Admin จริงหรือไม่
-                let isAdmin = false;
-                
-                // เช็คจากตาราง profiles
-                const { data: profileData } = await supabaseClient
+                const userId = session.user.id;
+                const userEmail = session.user.email;
+
+                // 2. ตรวจสอบสิทธิ์จริงจาก Database (ตาราง profiles หรือ admins) ทันที
+                const { data: profile, error: profileError } = await secureClient
                     .from('profiles')
                     .select('role, is_admin')
-                    .or(`id.eq.${userId},email.eq.${session?.user?.email || activeUserEmail}`)
+                    .or(`id.eq.${userId},email.eq.${userEmail}`)
                     .maybeSingle();
 
-                if (profileData) {
-                    if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin === true) {
-                        isAdmin = true;
+                let isAuthorized = false;
+
+                if (!profileError && profile) {
+                    // ตรวจสอบว่ามีสิทธิ์เป็น admin หรือ teacher หรือไม่
+                    if (profile.role === 'admin' || profile.role === 'teacher' || profile.is_admin === true) {
+                        isAuthorized = true;
                     }
                 }
 
-                // หากตาราง profiles ไม่เจอ ลองเช็คตาราง admins แยกต่างหาก (ถ้ามี)
-                if (!isAdmin) {
-                    const { data: adminData } = await supabaseClient
+                // กรณีสำรอง: เช็คจากตาราง admins แยกต่างหาก (ถ้ามี)
+                if (!isAuthorized) {
+                    const { data: adminRecord } = await secureClient
                         .from('admins')
                         .select('*')
-                        .or(`id.eq.${userId},email.eq.${session?.user?.email || activeUserEmail}`)
+                        .or(`id.eq.${userId},email.eq.${userEmail}`)
                         .maybeSingle();
-                    if (adminData) {
-                        isAdmin = true;
+                    
+                    if (adminRecord) {
+                        isAuthorized = true;
                     }
                 }
 
-                // ถ้าเช็คแล้วไม่ใช่ Admin และไม่มีสถานะผู้ดูแลระบบ บล็อกทันที!
-                if (!isAdmin && userRole !== 'admin' && userRole !== 'teacher') {
-                    // อนุโลมกรณีเป็นบัญชีทดสอบระบบหลัก หรือถ้าต้องการเข้มงวดให้เปิดใช้งานบรรทัดด้านล่างนี้
-                    // window.location.replace('student.html'); // หรือเด้งกลับหน้าแรก
+                // 3. หากตรวจสอบแล้ว "ไม่ใช่แอดมิน" (เช่น เป็นนักเรียนพยายามแอบเปลี่ยน URL เข้ามา)
+                if (!isAuthorized) {
+                    await secureClient.auth.signOut();
+                    localStorage.clear();
+                    alert('⚠️ ไม่อนุญาตให้เข้าถึง: หน้านี้สำหรับผู้ดูแลระบบเท่านั้น');
+                    window.location.replace('index.html');
+                    return;
                 }
+
+                // ถ้าผ่าน แปลว่าเป็น Admin ตัวจริง บันทึกชื่อไว้แสดงผล
+                localStorage.setItem('admin_verified', 'true');
             } catch (err) {
-                console.error("Auth Guard Error:", err);
+                console.error("Security Guard Error:", err);
+                window.location.replace('index.html');
             }
         })();
     </script>
@@ -174,7 +148,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- Welcome Banner แสดงชื่อ Username ดึงจาก Session/LocalStorage -->
+        <!-- Welcome Banner -->
         <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div class="space-y-2 relative z-10">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
@@ -283,7 +257,6 @@
                     </div>
                 </div>
 
-                <!-- 📚 ปุ่มศูนย์จัดการคอร์สเรียน -->
                 <div onclick="window.location.href='admin_courses.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-purple-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
@@ -297,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- 🔗 ปุ่มจัดการบัญชีผู้ใช้งาน -->
                 <div onclick="window.location.href='admin_users.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-teal-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
@@ -315,6 +287,7 @@
     </main>
 
     <script>
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let liveNotifications = [];
 
         const htmlElement = document.documentElement;
@@ -330,21 +303,7 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function checkAdminAuth() {
-            const currentUsername = localStorage.getItem('admin_username') || 
-                                    localStorage.getItem('user_name') || 
-                                    localStorage.getItem('account_name') || 
-                                    localStorage.getItem('full_name') || 
-                                    localStorage.getItem('user') || 
-                                    'ผู้ดูแลระบบ';
-
-            localStorage.setItem('admin_username', currentUsername);
-            return true;
-        }
-        
         async function initAdminDashboard() {
-            if (!checkAdminAuth()) return;
-
             const currentUsername = localStorage.getItem('admin_username') || 'ผู้ดูแลระบบ';
             document.getElementById('displayAdminName').textContent = currentUsername;
 
@@ -374,7 +333,6 @@
                     liveNotifications = [];
                 }
             } catch (err) {
-                console.error('Fetch Notifications Error:', err);
                 liveNotifications = [];
             }
             updateNotifBadge();
@@ -511,7 +469,7 @@
                 if (res.isConfirmed) {
                     await supabaseClient.auth.signOut();
                     localStorage.clear();
-                    window.location.href = 'index.html';
+                    window.location.replace('index.html');
                 } 
             });
         }
