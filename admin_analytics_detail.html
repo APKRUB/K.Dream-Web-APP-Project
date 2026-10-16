@@ -119,7 +119,7 @@
             </div>
         </div>
 
-        <!-- Charts Layout (Difficulty & Score Spread / Distribution with SD Marker) -->
+        <!-- Charts Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <!-- Difficulty Chart -->
             <div class="lg:col-span-12 hitech-card p-6 rounded-3xl space-y-4">
@@ -127,7 +127,7 @@
                 <div class="relative h-64 w-full"><canvas id="questionDifficultyChart"></canvas></div>
             </div>
 
-            <!-- Score Spread / Distribution Chart (คล้าย SD / ระฆังควาย) -->
+            <!-- Score Spread / Distribution Chart -->
             <div class="lg:col-span-8 hitech-card p-6 rounded-3xl space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-chart-area text-purple-500"></i> กราฟกระจายตัวของคะแนน (Score Frequency Distribution & Median Marker)</h3>
@@ -208,6 +208,26 @@
             } else {
                 window.location.href = 'admin_analytics.html';
             }
+        }
+
+        // ฟังก์ชันแปลงค่าตัวเลือกให้เป็น Index (0, 1, 2, 3) รองรับทั้งตัวเลข, ตัวอักษรไทย (ก ข ค ง) และอังกฤษ (A B C D)
+        function parseChoiceIndex(val) {
+            if (val === null || val === undefined || val === '') return null;
+            if (typeof val === 'number') return val;
+            if (!isNaN(val)) return parseInt(val);
+            
+            const str = String(val).trim().toUpperCase();
+            if (str === 'ก' || str === 'A' || str === '0') return 0;
+            if (str === 'ข' || str === 'B' || str === '1') return 1;
+            if (str === 'ค' || str === 'C' || str === '2') return 2;
+            if (str === 'ง' || str === 'D' || str === '3') return 3;
+            
+            const thaiOpts = ['ก', 'ข', 'ค', 'ง'];
+            const engOpts = ['A', 'B', 'C', 'D'];
+            if (thaiOpts.includes(str)) return thaiOpts.indexOf(str);
+            if (engOpts.includes(str)) return engOpts.indexOf(str);
+            
+            return null;
         }
 
         async function initAnalytics() {
@@ -293,7 +313,10 @@
                     if (rawAns && typeof rawAns === 'object') {
                         let uAns = rawAns[q.id] || rawAns[String(q.id)] || rawAns[q.question_number];
                         let cAns = q.correct_answer || q.answer || q.solution;
-                        if (uAns && cAns && String(uAns).trim().toLowerCase() === String(cAns).trim().toLowerCase()) {
+                        
+                        const uIdx = parseChoiceIndex(uAns);
+                        const cIdx = parseChoiceIndex(cAns);
+                        if (uIdx !== null && uIdx !== undefined && !isNaN(uIdx) && uIdx === cIdx) {
                             correctCount++;
                         }
                     }
@@ -322,7 +345,6 @@
             });
         }
 
-        // กราฟกระจายตัวคะแนน พร้อมทำ Mark ค่ากลาง 50% คล้ายกราฟ SD
         function renderScoreSpreadChart(scores, maxScore) {
             const ctx = document.getElementById('scoreSpreadChart').getContext('2d');
 
@@ -359,9 +381,9 @@
             let backgroundColors = labels.map((lbl, idx) => {
                 let scoreNum = idx;
                 if (Math.abs(scoreNum - medianVal) <= 0.5) {
-                    return '#f59e0b'; // สีส้มทอง สำหรับค่ากลางห้อง
+                    return '#f59e0b';
                 }
-                return '#8b5cf6'; // สีม่วงสำหรับช่วงอื่นๆ
+                return '#8b5cf6';
             });
 
             if (spreadChartInstance) spreadChartInstance.destroy();
@@ -403,7 +425,7 @@
         function renderScoreDistributionChart(scores, maxScore) {
             const ctx = document.getElementById('scoreDistChart').getContext('2d');
             
-            let ranges = [0, 0, 0, 0]; // <50%, 50-69%, 70-84%, 85-100%
+            let ranges = [0, 0, 0, 0];
             scores.forEach(s => {
                 let pct = maxScore > 0 ? (s / maxScore) * 100 : 0;
                 if (pct < 50) ranges[0]++;
@@ -485,6 +507,71 @@
             renderSubmissionsTable();
         }
 
+        // ฟังก์ชันสั่งพิมพ์ / ดาวน์โหลดรายงานสรุปผลการสอบรายบุคคล พร้อมวิเคราะห์แยกหมวดหมู่และเกณฑ์
+        function downloadStudentReport(studentName, studentIdCode, score, maxScore, categoryStats) {
+            let categoryRows = Object.entries(categoryStats).map(([cat, stat]) => {
+                let pct = stat.total > 0 ? ((stat.correct / stat.total) * 100).toFixed(1) : '0.0';
+                let evalLevel = pct >= 80 ? 'ดีเยี่ยม (Excellent)' : (pct >= 50 ? 'ปานกลาง (Moderate)' : 'ต้องปรับปรุง (Needs Improvement)');
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+                        <td style="padding: 8px;"><b>${cat}</b></td>
+                        <td style="padding: 8px; text-align: center;">${stat.correct} / ${stat.total}</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold; color: #0284c7;">${pct}%</td>
+                        <td style="padding: 8px; text-align: center;">${evalLevel}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            let totalPct = maxScore > 0 ? ((score / maxScore) * 100).toFixed(1) : '0.0';
+            let overallEval = totalPct >= 80 ? 'ผ่านเกณฑ์ระดับดีเยี่ยม' : (totalPct >= 50 ? 'ผ่านเกณฑ์ระดับปานกลาง' : 'ไม่ผ่านเกณฑ์การประเมิน');
+
+            const reportWin = window.open('', '_blank');
+            reportWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="th">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>รายงานผลการสอบ - ${studentName}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Prompt', sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
+                        h2 { color: #0284c7; margin-bottom: 5px; }
+                        .header-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        th { background: #0284c7; color: white; padding: 10px; font-size: 12px; text-align: left; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-box">
+                        <h2>ใบรายงานผลและวิเคราะห์ผลการสอบรายบุคคล</h2>
+                        <p><b>ชื่อชุดข้อสอบ:</b> ${currentExam ? currentExam.title : '-'}</p>
+                        <p><b>รหัสนักเรียน:</b> ${studentIdCode} | <b>ชื่อ-นามสกุล:</b> ${studentName}</p>
+                        <p><b>คะแนนรวมที่ได้:</b> <span style="color: #10b981; font-size: 16px; font-weight: bold;">${score} / ${maxScore}</span> คะแนน (${totalPct}%)</p>
+                        <p><b>ผลการประเมินภาพรวม:</b> <span style="color: #0284c7; font-weight: bold;">${overallEval}</span></p>
+                    </div>
+                    <h3>คะแนนและเกณฑ์การประเมินแยกตามหมวดหมู่เนื้อหา</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>หมวดหมู่ / หัวข้อเนื้อหา</th>
+                                <th style="text-align: center;">คะแนน (ถูก/ทั้งหมด)</th>
+                                <th style="text-align: center;">ร้อยละ (%)</th>
+                                <th style="text-align: center;">ระดับการประเมิน</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${categoryRows}
+                        </tbody>
+                    </table>
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            reportWin.document.close();
+        }
+
         async function viewAttemptDetail(attemptId) {
             const att = allAttempts.find(a => String(a.id) === String(attemptId));
             if (!att) return;
@@ -492,10 +579,14 @@
             const sId = att.student_id || att.user_id;
             const profile = allStudentsMap[String(sId)] || {};
             const name = `${profile.first_name || '-'} ${profile.last_name || ''}`.trim() || 'นักเรียน';
+            const studentIdCode = profile.student_id || '-';
             const score = att.total_score !== undefined && att.total_score !== null ? Number(att.total_score) : (Number(att.score) || 0);
+            const maxScore = allQuestions.length || 10;
 
             let rawAns = att.answer_saved || att.answers || att.user_answers;
             if (typeof rawAns === 'string') { try { rawAns = JSON.parse(rawAns); } catch(e){} }
+
+            let categoryStats = {};
 
             let questionsHtml = allQuestions.map((q) => {
                 let userAns = '-';
@@ -503,39 +594,74 @@
                     userAns = rawAns[q.id] || rawAns[String(q.id)] || rawAns[q.question_number] || '-';
                 }
                 const correctAns = q.correct_answer || q.answer || q.solution || '-';
-                const isCorrect = String(userAns).trim().toLowerCase() === String(correctAns).trim().toLowerCase();
+                
+                const studentIdx = parseChoiceIndex(userAns);
+                const correctIdx = parseChoiceIndex(correctAns);
+                const isCorrect = (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx);
+
+                // แปลงตัวเลือกให้แสดงเป็น ก ข ค ง หรือตัวอักษรที่เข้าใจง่าย
+                const displayUserAns = studentIdx !== null && studentIdx !== undefined ? ['ก (A)', 'ข (B)', 'ค (C)', 'ง (D)'][studentIdx] || userAns : userAns;
+                const displayCorrectAns = correctIdx !== null && correctIdx !== undefined ? ['ก (A)', 'ข (B)', 'ค (C)', 'ง (D)'][correctIdx] || correctAns : correctAns;
+
+                const catTag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
+                if (!categoryStats[catTag]) categoryStats[catTag] = { total: 0, correct: 0 };
+                categoryStats[catTag].total++;
+                if (isCorrect) categoryStats[catTag].correct++;
 
                 return `
                     <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-900 border ${isCorrect ? 'border-emerald-500/40' : 'border-rose-500/40'} space-y-1.5 text-xs text-left">
                         <div class="flex justify-between font-extrabold">
-                            <span class="text-slate-800 dark:text-slate-100">ข้อที่ ${q.question_number}: ${q.question_text || q.content || 'โจทย์คำถาม'}</span>
+                            <span class="text-slate-800 dark:text-slate-100">ข้อที่ ${q.question_number} [${catTag}]: ${q.question_text || q.content || 'โจทย์คำถาม'}</span>
                             <span class="${isCorrect ? 'text-emerald-500' : 'text-rose-500'}">${isCorrect ? '✅ ถูกต้อง' : '❌ ตอบผิด'}</span>
                         </div>
                         <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${userAns}</span> | เฉลย: <span class="font-bold text-emerald-600">${correctAns}</span>
+                            นักเรียนตอบ: <span class="font-bold text-slate-800 dark:text-slate-200">${displayUserAns}</span> | เฉลย: <span class="font-bold text-emerald-600">${displayCorrectAns}</span>
                         </div>
+                    </div>
+                `;
+            }).join('');
+
+            // สร้าง HTML สำหรับแสดงสรุปคะแนนแต่ละหมวดในหน้าต่าง Modal
+            let categorySummaryHtml = Object.entries(categoryStats).map(([cat, stat]) => {
+                let pct = stat.total > 0 ? ((stat.correct / stat.total) * 100).toFixed(1) : '0.0';
+                return `
+                    <div class="p-2.5 bg-sky-500/5 border border-sky-500/20 rounded-xl flex justify-between items-center text-[11px]">
+                        <div><b>หมวด:</b> ${cat}</div>
+                        <div>คะแนน: <b>${stat.correct}/${stat.total}</b> (<span class="text-sky-600 font-bold">${pct}%</span>)</div>
                     </div>
                 `;
             }).join('');
 
             const isDark = document.documentElement.classList.contains('dark');
             Swal.fire({
-                title: '📋 ตรวจสอบผลการตอบรายข้อ',
+                title: '📋 ตรวจสอบผลการตอบรายข้อและวิเคราะห์รายหมวด',
                 html: `
                     <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
                         <div class="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/30 flex justify-between items-center">
                             <div>
                                 <div class="font-extrabold text-sky-600 dark:text-sky-400">${currentExam.title}</div>
-                                <div class="text-slate-500">นักเรียน: <strong>${name}</strong></div>
+                                <div class="text-slate-500">นักเรียน: <strong>${name} (${studentIdCode})</strong></div>
                             </div>
                             <div class="text-right font-extrabold text-indigo-600 dark:text-indigo-400 text-sm">
-                                ${score} / ${allQuestions.length} คะแนน
+                                ${score} / ${maxScore} คะแนน
                             </div>
                         </div>
-                        <div class="space-y-2">${questionsHtml}</div>
+                        
+                        <div class="space-y-2">
+                            <div class="font-bold text-slate-700 dark:text-slate-300">📊 สรุปผลคะแนนแยกตามหมวดหมู่:</div>
+                            <div class="grid grid-cols-1 gap-2">${categorySummaryHtml}</div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button onclick='downloadStudentReport(${JSON.stringify(name)}, ${JSON.stringify(studentIdCode)}, ${score}, ${maxScore}, ${JSON.stringify(categoryStats)})' class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-md text-xs flex items-center justify-center gap-2">
+                                <i class="fas fa-file-pdf"></i> ดาวน์โหลด / พิมพ์รายงานสรุปผลการสอบรายบุคคล (PDF)
+                            </button>
+                        </div>
+
+                        <div class="space-y-2 pt-2">${questionsHtml}</div>
                     </div>
                 `,
-                width: '700px',
+                width: '750px',
                 confirmButtonText: 'ปิดหน้าต่าง',
                 confirmButtonColor: '#0284c7',
                 background: isDark ? '#090d16' : '#ffffff',
