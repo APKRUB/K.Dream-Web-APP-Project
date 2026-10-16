@@ -86,7 +86,7 @@
                     <span class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="scoreDisplay">--</span>
                 </div>
                 <div class="text-center px-2">
-                    <span class="text-[11px] text-slate-400 block font-semibold">เต็มทั้งหมด</span>
+                    <span class="text-[11px] text-slate-400 block font-semibold">คะแนนเต็ม</span>
                     <span class="text-2xl font-extrabold text-slate-700 dark:text-slate-200" id="totalScoreDisplay">--</span>
                 </div>
             </div>
@@ -128,7 +128,7 @@
         <div class="hitech-card p-5 rounded-3xl space-y-3">
             <div class="flex justify-between items-center">
                 <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-sky-500"></i> แผนภูมิการกระจายตัวของคะแนน (แยกตามคะแนนจริงรายข้อ)
+                    <i class="fas fa-chart-bar text-sky-500"></i> แผนภูมิการกระจายตัวของคะแนนรวมในชั้นเรียน
                 </h3>
                 <span class="text-[11px] text-slate-400 font-semibold" id="totalStudentsText">ผู้เข้าสอบทั้งหมด: -- คน</span>
             </div>
@@ -287,7 +287,13 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
-            const { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+            // ดึงคำถามจากตาราง exam_questions ก่อน ถ้าไม่มีค่อยดึงตาราง questions
+            let { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+            if (!questions || questions.length === 0) {
+                const { data: qAlt } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+                questions = qAlt;
+            }
+
             const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', currentAttemptId);
 
             globalQuestions = questions || [];
@@ -313,21 +319,26 @@
                 } catch(e) {}
             }
 
-            const totalQ = globalQuestions.length;
-            let earnedScore = attempt.total_score !== undefined && attempt.total_score !== null ? attempt.total_score : (attempt.score || 0);
+            // คำนวณคะแนนเต็มจากผลรวม points ของแต่ละข้ออย่างแม่นยำ
+            let calculatedTotalScore = 0;
+            globalQuestions.forEach(q => {
+                calculatedTotalScore += Number(q.points) || 1;
+            });
+
+            let earnedScore = attempt.total_score !== undefined && attempt.total_score !== null ? Number(attempt.total_score) : Number(attempt.score || 0);
 
             cachedScore = earnedScore;
-            cachedTotal = totalQ;
+            cachedTotal = calculatedTotalScore > 0 ? calculatedTotalScore : globalQuestions.length;
 
-            document.getElementById('scoreDisplay').textContent = earnedScore;
-            document.getElementById('totalScoreDisplay').textContent = totalQ;
+            document.getElementById('scoreDisplay').textContent = cachedScore;
+            document.getElementById('totalScoreDisplay').textContent = cachedTotal;
 
             updateCountsAndRender();
-            await loadClassAnalytics(attempt.exam_id, earnedScore, totalQ);
-            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, cachedExamTitle, exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
+            await loadClassAnalytics(attempt.exam_id, earnedScore, cachedTotal);
+            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, cachedTotal, cachedExamTitle, exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
         }
 
-        async function loadClassAnalytics(examId, studentScore, totalQuestions) {
+        async function loadClassAnalytics(examId, studentScore, totalScoreFull) {
             let { data: attempts, error } = await mySupabase
                 .from('exam_attempts')
                 .select('*')
@@ -342,11 +353,11 @@
 
             if (!attempts || attempts.length === 0) {
                 document.getElementById('rankDisplay').textContent = `#1 / 1`;
-                document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
-                document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalQuestions}`;
+                document.getElementById('avgScoreDisplay').textContent = `${studentScore} / ${totalScoreFull}`;
+                document.getElementById('maxScoreDisplay').textContent = `${studentScore} / ${totalScoreFull}`;
                 document.getElementById('percentileDisplay').textContent = `Top 100%`;
                 document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: 1 คน`;
-                renderDetailedScoreChart([studentScore], totalQuestions, studentScore);
+                renderDetailedScoreChart(attempts, totalScoreFull, studentScore);
                 return;
             }
 
@@ -364,22 +375,20 @@
             const topPercentile = Math.max(1, Math.round((rank / totalStudents) * 100));
 
             document.getElementById('rankDisplay').textContent = `#${rank > 0 ? rank : 1} / ${totalStudents}`;
-            document.getElementById('avgScoreDisplay').textContent = `${avgScore} / ${totalQuestions}`;
-            document.getElementById('maxScoreDisplay').textContent = `${maxScore} / ${totalQuestions}`;
+            document.getElementById('avgScoreDisplay').textContent = `${avgScore} / ${totalScoreFull}`;
+            document.getElementById('maxScoreDisplay').textContent = `${maxScore} / ${totalScoreFull}`;
             document.getElementById('percentileDisplay').textContent = `Top ${topPercentile}%`;
             document.getElementById('totalStudentsText').textContent = `ผู้เข้าสอบทั้งหมด: ${totalStudents} คน`;
 
-            renderDetailedScoreChart(scores, totalQuestions, studentScore);
+            renderDetailedScoreChart(scores, totalScoreFull, studentScore);
         }
 
-        function renderDetailedScoreChart(scores, totalQuestions, studentScore) {
-            // สร้าง Labels ตั้งแต่ 0 ถึงคะแนนเต็ม (totalQuestions)
+        function renderDetailedScoreChart(scores, totalScoreFull, studentScore) {
             const labels = [];
             const dataCounts = [];
 
-            for (let i = 0; i <= totalQuestions; i++) {
+            for (let i = 0; i <= totalScoreFull; i++) {
                 labels.push(`${i} คะแนน`);
-                // นับจำนวนนักเรียนที่ได้คะแนนเท่ากับ i
                 const count = scores.filter(s => s === i).length;
                 dataCounts.push(count);
             }
@@ -466,13 +475,14 @@
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
                 const studentChoiceChar = studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ';
                 const correctChoiceChar = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-';
+                const pt = Number(q.points) || 1;
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
                         <td style="padding: 8px; text-align: center;">ข้อ ${qNum}</td>
                         <td style="padding: 8px;">${q.category_tag || 'ทั่วไป'}</td>
                         <td style="padding: 8px; text-align: center; font-weight: bold; color: ${isCorrect ? '#10b981' : '#ef4444'};">
-                            ${isCorrect ? 'ถูก (+1)' : 'ผิด (0)'}
+                            ${isCorrect ? `ถูก (+${pt})` : 'ผิด (0)'}
                         </td>
                         <td style="padding: 8px; text-align: center;"><b>${studentChoiceChar}</b></td>
                         <td style="padding: 8px; text-align: center;"><b>${correctChoiceChar}</b></td>
@@ -596,6 +606,7 @@
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
                 const studentAnsRecord = globalAnswerMap[q.id] || {};
+                const pt = Number(q.points) || 1;
                 
                 const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
                 const correctChoiceIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
@@ -605,7 +616,7 @@
                     return `
                         <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-2">
                             <div class="flex justify-between items-center">
-                                <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 font-bold text-xs rounded-full">ข้อที่ ${qNum} (อัตนัย)</span>
+                                <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 font-bold text-xs rounded-full">ข้อที่ ${qNum} (${pt} คะแนน - อัตนัย)</span>
                                 <span class="text-[11px] font-bold text-amber-500">รอตรวจ</span>
                             </div>
                             <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || ''}</div>
@@ -647,9 +658,9 @@
                     return `
                         <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border space-y-3">
                             <div class="flex justify-between items-center">
-                                <span class="px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-xs rounded-full">ข้อที่ ${qNum} (${q.category_tag || 'ทั่วไป'})</span>
+                                <span class="px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-xs rounded-full">ข้อที่ ${qNum} (${pt} คะแนน - ${q.category_tag || 'ทั่วไป'})</span>
                                 <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold ${isCorrect ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}">
-                                    ${isCorrect ? '<i class="fas fa-check-circle mr-1"></i> ถูก (+1)' : '<i class="fas fa-times-circle mr-1"></i> ผิด (0)'}
+                                    ${isCorrect ? `<i class="fas fa-check-circle mr-1"></i> ถูก (+${pt})` : '<i class="fas fa-times-circle mr-1"></i> ผิด (0)'}
                                 </span>
                             </div>
 
@@ -691,18 +702,6 @@
                 }
             }
 
-            let summaryData = questions.map((q, idx) => {
-                const ans = answerMap[q.id] || {};
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = q.correct_answer !== undefined ? parseInt(q.correct_answer) : null;
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-                return {
-                    ข้อที่: q.question_number || (idx + 1),
-                    หมวดหมู่: q.category_tag || 'ทั่วไป',
-                    สถานะ: isCorrect ? 'ถูก' : 'ผิด'
-                };
-            });
-
             const prompt = `
 คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียน
 ข้อมูลประกอบการวิเคราะห์:
@@ -741,10 +740,11 @@
             const container = document.getElementById('aiAnalysisContainer');
             let categoryStats = {};
 
-            questions.forEach((q, idx) => {
+            questions.forEach((q) => {
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
-                if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
-                categoryStats[tag].total++;
+                const pt = Number(q.points) || 1;
+                if (!categoryStats[tag]) categoryStats[tag] = { totalPoints: 0, earnedPoints: 0 };
+                categoryStats[tag].totalPoints += pt;
 
                 const ans = answerMap[q.id] || {};
                 const studentIdx = ans.selected_option_index;
@@ -752,7 +752,7 @@
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
 
                 if (isCorrect) {
-                    categoryStats[tag].correct++;
+                    categoryStats[tag].earnedPoints += pt;
                 }
             });
 
@@ -760,10 +760,10 @@
             let performanceSummary = percentage >= 80 ? "ยอดเยี่ยมมาก! มีความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม" : (percentage >= 50 ? "ทำผลงานได้ปานกลาง มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ต้องเก็บตก" : "ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ");
 
             let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
-                const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                const p = stat.totalPoints > 0 ? Math.round((stat.earnedPoints / stat.totalPoints) * 100) : 0;
                 return `<li class="flex items-center justify-between text-xs py-1.5 border-b border-slate-200/50 dark:border-slate-800/50">
                     <span>🏷️ <b>${tag}</b></span>
-                    <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
+                    <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.earnedPoints}/${stat.totalPoints} คะแนน (${p}%)</span>
                 </li>`;
             }).join('');
 
