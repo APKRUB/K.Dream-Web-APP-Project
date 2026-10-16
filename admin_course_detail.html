@@ -238,24 +238,6 @@
             `).join('');
         }
 
-        // ฟังก์ชันดึงหรือสร้างโมดูลเริ่มต้นให้อัตโนมัติ เพื่อแก้ปัญหา Foreign Key Constraint
-        async function getOrCreateDefaultModule(cId) {
-            const { data: mods } = await mySupabase.from('modules').select('id').eq('course_id', cId).limit(1);
-            if (mods && mods.length > 0) {
-                return mods[0].id;
-            }
-            const { data: newMod, error } = await mySupabase.from('modules').insert([{
-                course_id: cId,
-                title: 'บทเรียนทั่วไป',
-                created_at: new Date().toISOString()
-            }]).select().single();
-
-            if (error || !newMod) {
-                throw new Error('ไม่สามารถสร้างโมดูลเริ่มต้นได้: ' + (error ? error.message : 'Unknown error'));
-            }
-            return newMod.id;
-        }
-
         async function openAddLessonModal(type) {
             const isVideo = type === 'video';
             const { value: formValues } = await Swal.fire({
@@ -289,29 +271,22 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                try {
-                    // ดึงหรือสร้าง module_id อัตโนมัติ
-                    const moduleId = await getOrCreateDefaultModule(courseId);
+                // บันทึกเฉพาะ course_id, title และลิงก์วิดีโอ/ไฟล์โดยตรง
+                const payload = {
+                    course_id: courseId,
+                    title: formValues.title,
+                    video_url: isVideo ? formValues.url : null,
+                    pdf_url: !isVideo ? formValues.url : null,
+                    created_at: new Date().toISOString()
+                };
 
-                    const payload = {
-                        course_id: courseId,
-                        module_id: moduleId,
-                        title: formValues.title,
-                        video_url: isVideo ? formValues.url : null,
-                        pdf_url: !isVideo ? formValues.url : null,
-                        created_at: new Date().toISOString()
-                    };
+                const { error } = await mySupabase.from('course_lessons').insert([payload]);
 
-                    const { error } = await mySupabase.from('course_lessons').insert([payload]);
-
-                    if (!error) {
-                        Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1200, showConfirmButton: false });
-                        loadLessons();
-                    } else {
-                        Swal.fire('บันทึกล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block">${error.message}</code>`, 'error');
-                    }
-                } catch (err) {
-                    Swal.fire('เกิดข้อผิดพลาด', err.message, 'error');
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    loadLessons();
+                } else {
+                    Swal.fire('บันทึกล้มเหลว', `เกิดข้อผิดพลาดจาก Supabase:<br><code class="text-xs text-red-400 font-mono mt-2 block">${error.message}</code>`, 'error');
                 }
             }
         }
