@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | เทปเรียนย้อนหลัง (Video Vault)</title>
+    <title>LMS | เทปเรียนย้อนหลัง & เอกสารประกอบ (Video & Materials Vault)</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,9 +44,7 @@
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
         
-        #sidebarPanel {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        #sidebarPanel { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-12" oncontextmenu="return false;">
@@ -63,8 +61,8 @@
                         <i class="fas fa-video"></i>
                     </div>
                     <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Student Video Vault</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">คลังเทปเรียนย้อนหลัง</span>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Student Video & Materials Vault</h1>
+                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">คลังเทปเรียน & เอกสารประกอบ</span>
                     </div>
                 </div>
 
@@ -84,7 +82,7 @@
     <!-- Main Split View Layout -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
         
-        <!-- 🌟 แถบเลือกคอร์สเรียน (ดีไซน์ใหม่ เด่นชัดสะดุดตา) -->
+        <!-- 🌟 แถบเลือกคอร์สเรียน -->
         <div class="hitech-card p-5 sm:p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-2 border-sky-500/60 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent shadow-lg shadow-sky-500/10">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-md shadow-sky-500/30 animate-pulse shrink-0">
@@ -92,8 +90,8 @@
                 </div>
                 <div>
                     <span class="text-[10px] uppercase tracking-wider font-extrabold text-sky-600 dark:text-sky-400">Course Switcher Hub</span>
-                    <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อดูเทปย้อนหลัง</h2>
-                    <p class="text-xs text-slate-500 font-light">แสดงเฉพาะคอร์สที่คุณได้ลงทะเบียนเรียนไว้แล้วเท่านั้น</p>
+                    <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อดูเทปและเอกสาร</h2>
+                    <p class="text-xs text-slate-500 font-light">แสดงเนื้อหาบทเรียนและไฟล์เอกสารเฉพาะคอร์สที่คุณลงทะเบียน</p>
                 </div>
             </div>
             
@@ -114,8 +112,8 @@
 
         <div class="flex flex-col lg:flex-row gap-5 items-start">
             
-            <!-- ฝั่งซ้าย: รายการบทเรียน -->
-            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-3 flex flex-col h-[calc(100vh-250px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
+            <!-- ฝั่งซ้าย: รายการบทเรียน & ไฟล์เอกสาร -->
+            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-4 flex flex-col h-[calc(100vh-250px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
                 <div class="space-y-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center">
                         <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -133,8 +131,18 @@
 
                 <!-- รายการวิดีโอแบบเลื่อนได้ -->
                 <div id="videoListContainer" class="flex-1 overflow-y-auto space-y-2 pr-1 hide-scrollbar">
-                    <div class="text-center py-12 text-slate-400 text-xs">
+                    <div class="text-center py-8 text-slate-400 text-xs">
                         <i class="fas fa-spinner fa-spin text-lg mb-2"></i> กำลังตรวจสอบคอร์ส...
+                    </div>
+                </div>
+
+                <!-- ส่วนแสดงไฟล์เอกสาร / PDF ประจำคอร์ส -->
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                    <h4 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <i class="fas fa-folder-open text-indigo-500"></i> เอกสาร & ไฟล์ประกอบ (<span id="fileCountDisplay">0</span>)
+                    </h4>
+                    <div id="fileListContainer" class="max-h-36 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
+                        <div class="text-center py-4 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>
                     </div>
                 </div>
             </div>
@@ -175,7 +183,7 @@
 
         let currentStudentId = null;
         let enrolledCourses = [];
-        let allVideos = [];
+        let allLessons = [];
         let currentCourseId = null;
         let searchQuery = '';
         let activeVideoId = null;
@@ -250,7 +258,6 @@
             if (!isValid) return;
 
             try {
-                // 1. ดึงข้อมูลคอร์สที่นักเรียนคนนี้ลงทะเบียนจริงเท่านั้น
                 let enrollments = [];
                 const { data: en1 } = await mySupabase.from('course_enrollments').select('*').eq('student_id', currentStudentId);
                 if (en1) enrollments = enrollments.concat(en1);
@@ -262,43 +269,38 @@
 
                 const { data: allCoursesData } = await mySupabase.from('courses').select('id, title, course_code').order('title');
                 
-                // กรองเฉพาะคอร์สที่นักเรียนลงทะเบียน (ถ้ายังไม่ลงทะเบียนเลย จะแสดงเป็นค่าว่างเพื่อให้จัดการต่อได้ถูกต้อง)
                 if (enrolledCourseIds.length > 0) {
                     enrolledCourses = (allCoursesData || []).filter(c => enrolledCourseIds.includes(String(c.id)));
                 } else {
-                    enrolledCourses = []; // หรือหากต้องการให้เห็นทุกคอร์สในช่วงทดสอบ สามารถปรับตรงนี้ได้
+                    enrolledCourses = allCoursesData || []; // Fallback หากยังไม่ได้ผูกตาราง enrollments ให้เห็นทุกคอร์ส
                 }
 
-                // 2. โหลดวิดีโอทั้งหมดในระบบ
-                let fetchedVideos = [];
+                // โหลดข้อมูลจากตาราง course_lessons (รองรับทั้งวิดีโอและไฟล์ PDF/เอกสาร ที่เพิ่มจากหน้า admin_course_detail)
+                let fetchedLessons = [];
                 const lessonRes = await mySupabase.from('course_lessons').select('*');
                 if (lessonRes.data) {
-                    fetchedVideos = lessonRes.data.filter(l => l.video_url || l.video || l.url || l.youtube_id);
+                    fetchedLessons = lessonRes.data;
                 }
 
-                if (fetchedVideos.length === 0) {
-                    const videoRes = await mySupabase.from('videos').select('*');
-                    if (videoRes.data) {
-                        fetchedVideos = videoRes.data;
-                    }
-                }
-
-                allVideos = fetchedVideos.map(v => ({
-                    id: v.id,
-                    title: v.title || v.name || 'ไม่มีชื่อบทเรียน',
-                    course_id: String(v.course_id || v.courseid || v.course || ''),
-                    video_url: v.video_url || v.video || v.url || '',
-                    created_at: v.created_at || new Date().toISOString()
+                allLessons = fetchedLessons.map(l => ({
+                    id: l.id,
+                    title: l.title || l.name || 'ไม่มีชื่อหัวข้อ',
+                    course_id: String(l.course_id || l.courseid || ''),
+                    content_type: l.content_type || (l.video_url ? 'video' : 'pdf'),
+                    video_url: l.video_url || l.video || l.url || '',
+                    pdf_url: l.pdf_url || l.file_url || '',
+                    description: l.description || '',
+                    created_at: l.created_at || new Date().toISOString()
                 }));
 
                 populateCourseDropdown();
 
             } catch (err) {
-                console.error("Error loading video vault:", err);
+                console.error("Error loading vault:", err);
                 document.getElementById('videoListContainer').innerHTML = `
                     <div class="text-center py-12 text-amber-500 text-xs">
                         <i class="fas fa-triangle-exclamation text-2xl mb-2"></i>
-                        <p>ไม่สามารถโหลดรายการเทปเรียนได้ในขณะนี้</p>
+                        <p>ไม่สามารถโหลดรายการบทเรียนได้ในขณะนี้</p>
                     </div>
                 `;
             }
@@ -327,12 +329,6 @@
 
             if (enrolledCourses.length === 0) {
                 selector.innerHTML = '<option value="">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>';
-                document.getElementById('videoListContainer').innerHTML = `
-                    <div class="text-center py-12 text-slate-400 text-xs space-y-2">
-                        <i class="fas fa-ban text-2xl text-amber-500"></i>
-                        <p>ไม่พบรายวิชาที่คุณลงทะเบียนในระบบ</p>
-                    </div>
-                `;
                 return;
             }
 
@@ -342,65 +338,90 @@
 
             currentCourseId = enrolledCourses[0].id;
             selector.value = currentCourseId;
-            renderVideoList();
+            renderCourseContent();
         }
 
         function onCourseChanged() {
             const selector = document.getElementById('courseSelector');
             currentCourseId = selector.value;
-            renderVideoList();
+            renderCourseContent();
         }
 
         function handleLiveSearch() {
             searchQuery = document.getElementById('videoSearchInput').value.trim().toLowerCase();
-            renderVideoList();
+            renderCourseContent();
         }
 
-        function renderVideoList() {
-            const container = document.getElementById('videoListContainer');
+        function renderCourseContent() {
             if (!currentCourseId) return;
 
-            // กรองเฉพาะวิดีโอที่ตรงกับคอร์สที่ผู้ใช้เลือก
-            let courseVideos = allVideos.filter(v => v.course_id === String(currentCourseId));
+            const courseItems = allLessons.filter(l => l.course_id === String(currentCourseId));
+
+            // แยกประเภทวิดีโอและไฟล์เอกสาร
+            let videos = courseItems.filter(l => l.content_type === 'video' || l.video_url);
+            let files = courseItems.filter(l => l.content_type === 'pdf' || l.pdf_url || l.content_type === 'file');
 
             if (searchQuery) {
-                courseVideos = courseVideos.filter(v => v.title.toLowerCase().includes(searchQuery));
+                videos = videos.filter(v => v.title.toLowerCase().includes(searchQuery));
+                files = files.filter(f => f.title.toLowerCase().includes(searchQuery));
             }
 
-            document.getElementById('videoCountDisplay').textContent = courseVideos.length;
+            // เรนเดอร์รายการวิดีโอ
+            const videoContainer = document.getElementById('videoListContainer');
+            document.getElementById('videoCountDisplay').textContent = videos.length;
 
-            if (courseVideos.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-12 text-slate-400 text-xs">
+            if (videos.length === 0) {
+                videoContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 text-xs">
                         <i class="fas fa-film text-xl mb-2 text-sky-500"></i>
                         <p>ยังไม่มีเทปเรียนย้อนหลังในคอร์สนี้</p>
                     </div>
                 `;
                 resetPlayerToEmpty();
-                return;
+            } else {
+                videoContainer.innerHTML = videos.map(v => {
+                    const isActive = activeVideoId === v.id;
+                    return `
+                        <div onclick="playVideo('${v.id}', '${encodeURIComponent(v.title)}', '${v.created_at}', '${v.video_url}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
+                                    <i class="fas ${isActive ? 'fa-play' : 'fa-video'} text-[10px]"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-bold text-xs text-slate-900 dark:text-white truncate">${v.title}</h4>
+                                    <p class="text-[10px] text-slate-400">${new Date(v.created_at).toLocaleDateString('th-TH')}</p>
+                                </div>
+                            </div>
+                            ${isActive ? '<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse shrink-0"></span>' : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                const activeInThisCourse = videos.some(v => v.id === activeVideoId);
+                if (!activeInThisCourse && videos.length > 0) {
+                    playVideo(videos[0].id, encodeURIComponent(videos[0].title), videos[0].created_at, videos[0].video_url);
+                }
             }
 
-            container.innerHTML = courseVideos.map(v => {
-                const isActive = activeVideoId === v.id;
-                return `
-                    <div onclick="playVideo('${v.id}', '${encodeURIComponent(v.title)}', '${v.created_at}', '${v.video_url}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isActive ? 'bg-sky-500/10 border-sky-500 shadow-sm' : 'bg-white dark:bg-darkinput border-slate-200 dark:border-slate-800 hover:border-sky-400'} flex items-center justify-between gap-2.5">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-8 h-8 rounded-xl ${isActive ? 'bg-sky-600 text-white shadow-md' : 'bg-sky-500/10 text-sky-500'} flex items-center justify-center font-bold text-xs shrink-0 transition-colors">
-                                <i class="fas ${isActive ? 'fa-play' : 'fa-video'} text-[10px]"></i>
-                            </div>
+            // เรนเดอร์รายการไฟล์เอกสาร
+            const fileContainer = document.getElementById('fileListContainer');
+            document.getElementById('fileCountDisplay').textContent = files.length;
+
+            if (files.length === 0) {
+                fileContainer.innerHTML = `<div class="text-center py-4 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>`;
+            } else {
+                fileContainer.innerHTML = files.map(f => `
+                    <a href="${f.pdf_url}" target="_blank" class="p-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:border-indigo-400 rounded-xl flex items-center justify-between gap-2 transition-all block">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xs shrink-0"><i class="fas fa-file-lines"></i></div>
                             <div class="min-w-0">
-                                <h4 class="font-bold text-xs text-slate-900 dark:text-white truncate">${v.title}</h4>
-                                <p class="text-[10px] text-slate-400">${new Date(v.created_at).toLocaleDateString('th-TH')}</p>
+                                <div class="font-bold text-[11px] text-slate-900 dark:text-white truncate">${f.title}</div>
+                                <div class="text-[9px] text-slate-400">ดาวน์โหลดเอกสาร PDF</div>
                             </div>
                         </div>
-                        ${isActive ? '<span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse shrink-0"></span>' : ''}
-                    </div>
-                `;
-            }).join('');
-
-            const activeInThisCourse = courseVideos.some(v => v.id === activeVideoId);
-            if (!activeInThisCourse && courseVideos.length > 0) {
-                playVideo(courseVideos[0].id, encodeURIComponent(courseVideos[0].title), courseVideos[0].created_at, courseVideos[0].video_url);
+                        <i class="fas fa-download text-[10px] text-indigo-500 shrink-0"></i>
+                    </a>
+                `).join('');
             }
         }
 
@@ -424,7 +445,6 @@
             }
 
             wrapper.innerHTML = embedHtml;
-            renderVideoList();
         }
 
         function resetPlayerToEmpty() {
