@@ -203,7 +203,7 @@
                         <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold shrink-0"><i class="fas fa-play"></i></div>
                         <div>
                             <h4 class="font-bold text-xs text-slate-900 dark:text-white">${v.title}</h4>
-                            <p class="text-[10px] text-slate-400">${v.description || 'วิดีโอบทเรียน'}</p>
+                            <p class="text-[10px] text-slate-400">เพิ่มเมื่อ: ${new Date(v.created_at).toLocaleDateString('th-TH')}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
@@ -227,7 +227,7 @@
                         <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold shrink-0"><i class="fas fa-file-lines"></i></div>
                         <div>
                             <h4 class="font-bold text-xs text-slate-900 dark:text-white">${f.title}</h4>
-                            <p class="text-[10px] text-slate-400">${f.description || 'เอกสารประกอบการเรียน'}</p>
+                            <p class="text-[10px] text-slate-400">อัปโหลดเมื่อ: ${new Date(f.created_at).toLocaleDateString('th-TH')}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
@@ -252,10 +252,6 @@
                             <label class="block font-bold mb-1">ลิงก์${isVideo ? 'วิดีโอ (YouTube / URL)' : 'ดาวน์โหลดไฟล์ (Google Drive / URL)'} <span class="text-red-500">*</span></label>
                             <input id="swalLessonUrl" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="${isVideo ? 'https://youtube.com/...' : 'https://drive.google.com/...'}">
                         </div>
-                        <div>
-                            <label class="block font-bold mb-1">คำอธิบายเพิ่มเติม (ไม่บังคับ)</label>
-                            <input id="swalLessonDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="รายละเอียดเพิ่มเติมสั้นๆ...">
-                        </div>
                     </div>
                 `,
                 showCancelButton: true,
@@ -264,25 +260,23 @@
                 preConfirm: () => {
                     const title = document.getElementById('swalLessonTitle').value.trim();
                     const url = document.getElementById('swalLessonUrl').value.trim();
-                    const description = document.getElementById('swalLessonDesc').value.trim();
                     if (!title || !url) {
                         Swal.showValidationMessage('กรุณากรอกชื่อและลิงก์ให้ครบถ้วน');
                         return false;
                     }
-                    return { title, url, description };
+                    return { title, url };
                 }
             });
 
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                // ส่งเฉพาะฟิลด์พื้นฐานที่ตาราง course_lessons รองรับจริง
+                // ส่งเฉพาะฟิลด์ที่มีจริงในตาราง course_lessons
                 const payload = {
                     course_id: courseId,
                     title: formValues.title,
                     video_url: isVideo ? formValues.url : null,
                     pdf_url: !isVideo ? formValues.url : null,
-                    description: formValues.description || '',
                     created_at: new Date().toISOString()
                 };
 
