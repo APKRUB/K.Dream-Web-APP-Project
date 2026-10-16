@@ -102,24 +102,6 @@
             </div>
         </div>
 
-        <!-- Course Filter Selector (เลือกคอร์สที่แอดมินเปิดรับ Consult) -->
-        <div class="glossy-card p-5 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-sky-500/30">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
-                    <i class="fas fa-book"></i>
-                </div>
-                <div>
-                    <span class="text-xs text-slate-400 font-bold">คอร์สสำหรับการ Consult</span>
-                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">กรุณาเลือกรายวิชาที่ต้องการปรึกษา</h3>
-                </div>
-            </div>
-            <div class="w-full sm:w-72">
-                <select id="consultCourseSelector" onchange="onConsultCourseChanged()" class="w-full px-3 py-2.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
-                    <option value="">-- กำลังโหลดคอร์สที่เปิดรับ --</option>
-                </select>
-            </div>
-        </div>
-
         <!-- My Current Booking Card -->
         <div id="myBookingSection" class="hidden glossy-card p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-4">
             <div>
@@ -127,6 +109,17 @@
                 <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mt-2" id="mySlotTimeText">-</h3>
             </div>
             <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">⚠️ หมายเหตุ: เมื่อยืนยันการจองแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนแปลงเวลา กรุณาติดต่ออาจารย์ผู้สอนโดยตรง</p>
+        </div>
+
+        <!-- 🚫 Access Denied Card (กรณีไม่มีสิทธิ์ / ไม่ได้ลงทะเบียนคอร์สที่อาจารย์กำหนด) -->
+        <div id="accessDeniedSection" class="hidden glossy-card p-10 rounded-3xl border-2 border-rose-500/30 bg-rose-50/20 dark:bg-rose-950/10 text-center space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-2xl mx-auto">
+                <i class="fas fa-ban"></i>
+            </div>
+            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">คอร์สของท่านไม่มีการจองคิว Consult ขออภัยในความไม่สะดวก</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                ระบบตรวจสอบพบว่าบัญชีของคุณยังไม่ได้ลงทะเบียนในรายวิชาที่เปิดให้มีการจอง Consult ในรอบนี้ หากมีข้อสงสัยกรุณาติดต่ออาจารย์ผู้สอน
+            </p>
         </div>
 
         <!-- Booking Interface -->
@@ -185,8 +178,7 @@
         let allAvailableSlots = [];
         let systemSettings = null;
         let myCurrentBooking = null;
-        let allowedCourses = [];
-        let selectedCourseId = null;
+        let hasValidCourseAccess = false;
 
         let displayedYear = new Date().getFullYear();
         let displayedMonth = new Date().getMonth();
@@ -240,7 +232,16 @@
         async function initStudentConsult() {
             if (!await authenticateStudent()) return;
             await loadSystemStatus();
-            await loadAllowedCourses();
+            await checkStudentCourseAccess();
+
+            if (!hasValidCourseAccess) {
+                // หากนักเรียนไม่ได้ลงทะเบียนในคอร์สที่อาจารย์กำหนด ซ่อนช่องจองและแสดงการแจ้งเตือน
+                document.getElementById('bookingInterface').classList.add('hidden');
+                document.getElementById('accessDeniedSection').classList.remove('hidden');
+                document.getElementById('systemStatusBanner').classList.add('hidden');
+                return;
+            }
+
             await loadMyBooking();
             await loadAvailableSlots();
             setupStudentConsultRealtime();
@@ -261,7 +262,7 @@
 
         async function loadSystemStatus() {
             const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            systemSettings = data || { is_open: false, prune_hours: 24 };
+            systemSettings = data || { is_open: false, prune_hours: 24, allowed_courses: [] };
 
             const banner = document.getElementById('systemStatusBanner');
             const bannerTitle = document.getElementById('bannerTitle');
@@ -283,7 +284,7 @@
                 banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
                 bannerTitle.textContent = 'ระบบเปิดรับจอง Consult แล้ว';
                 bannerDesc.textContent = systemSettings.close_at ? `⏳ ปิดรับจองอัตโนมัติใน: ${new Date(systemSettings.close_at).toLocaleString('th-TH')}` : 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลย';
-                bookingInterface.classList.remove('hidden');
+                if (hasValidCourseAccess) bookingInterface.classList.remove('hidden');
                 countdownBox.classList.add('hidden');
                 if (countdownInterval) clearInterval(countdownInterval);
             } else {
@@ -299,6 +300,36 @@
                     countdownBox.classList.add('hidden');
                 }
                 bookingInterface.classList.add('hidden');
+            }
+        }
+
+        async function checkStudentCourseAccess() {
+            try {
+                // ดึงรายชื่อคอร์สที่อาจารย์ตั้งค่าอนุญาตในระบบ
+                const allowedCoursesSetting = systemSettings?.allowed_courses || [];
+                
+                // หากอาจารย์ไม่ได้ติ๊กเลือกคอร์สใดเลย อนุญาตให้ทุกคนจองได้ตามปกติ (หรือปรับเปลี่ยนตามต้องการ)
+                if (allowedCoursesSetting.length === 0) {
+                    hasValidCourseAccess = true;
+                    return;
+                }
+
+                // ดึงคอร์สที่นักเรียนคนนี้ลงทะเบียนเรียนจริงในระบบ
+                let enrolledCourseIds = [];
+                const { data: en1 } = await mySupabase.from('course_enrollments').select('course_id').eq('student_id', currentStudentId);
+                if (en1) enrolledCourseIds = enrolledCourseIds.concat(en1.map(e => String(e.course_id)));
+
+                const { data: en2 } = await mySupabase.from('course_enrollments').select('course_id').eq('user_id', currentStudentId);
+                if (en2) enrolledCourseIds = enrolledCourseIds.concat(en2.map(e => String(e.course_id)));
+
+                enrolledCourseIds = [...new Set(enrolledCourseIds)];
+
+                // ตรวจสอบว่ามีคอร์สใดที่ตรงกันอย่างน้อย 1 คอร์สหรือไม่
+                hasValidCourseAccess = enrolledCourseIds.some(courseId => allowedCoursesSetting.includes(courseId));
+
+            } catch (err) {
+                console.error("Error checking course access:", err);
+                hasValidCourseAccess = false;
             }
         }
 
@@ -320,57 +351,6 @@
             }
             updateTimer();
             countdownInterval = setInterval(updateTimer, 1000);
-        }
-
-        async function loadAllowedCourses() {
-            try {
-                // ดึงรายชื่อคอร์สที่แอดมินเปิดรับ Consult จริง (ตรวจสอบจากตาราง slots หรือ consult_courses ตามโครงสร้าง)
-                const { data: slotsData } = await mySupabase.from('consult_slots').select('course_id').not('course_id', 'is', null);
-                const activeCourseIds = [...new Set((slotsData || []).map(s => String(s.course_id)))];
-
-                const { data: coursesData } = await mySupabase.from('courses').select('id, title, course_code');
-                let allCourses = coursesData || [];
-
-                // กรองเฉพาะคอร์สที่แอดมินเปิดรับ (มี Slot รองรับ) หรือถ้าไม่มี slot ผูกคอร์ส ให้แสดงคอร์สที่นักเรียนลงทะเบียนจริง
-                let filtered = allCourses.filter(c => activeCourseIds.includes(String(c.id)));
-                
-                if (filtered.length === 0) {
-                    // Fallback: ดึงคอร์สที่นักเรียนลงทะเบียนจริงในระบบ
-                    const { data: en1 } = await mySupabase.from('course_enrollments').select('course_id').eq('student_id', currentStudentId);
-                    const { data: en2 } = await mySupabase.from('course_enrollments').select('course_id').eq('user_id', currentStudentId);
-                    const myEnrolledIds = [...new Set([...(en1 || []), ...(en2 || [])].map(e => String(e.course_id || '')))];
-                    
-                    filtered = allCourses.filter(c => myEnrolledIds.includes(String(c.id)));
-                }
-
-                if (filtered.length === 0) {
-                    filtered = allCourses; // หากไม่พบเงื่อนไข ให้แสดงทั้งหมดเป็นค่าสำรอง
-                }
-
-                allowedCourses = filtered;
-                const selector = document.getElementById('consultCourseSelector');
-                
-                if (allowedCourses.length === 0) {
-                    selector.innerHTML = '<option value="">-- ไม่พบคอร์สที่เปิดรับ Consult --</option>';
-                    return;
-                }
-
-                selector.innerHTML = allowedCourses.map(c => `
-                    <option value="${c.id}">[${c.course_code || 'CRS'}] ${c.title}</option>
-                `).join('');
-
-                selectedCourseId = allowedCourses[0].id;
-                selector.value = selectedCourseId;
-
-            } catch (err) {
-                console.error("Error loading allowed courses:", err);
-            }
-        }
-
-        function onConsultCourseChanged() {
-            const selector = document.getElementById('consultCourseSelector');
-            selectedCourseId = selector.value;
-            loadAvailableSlots();
         }
 
         async function loadMyBooking() {
@@ -403,17 +383,12 @@
             const pruneHours = systemSettings?.prune_hours || 24;
             const pruneThreshold = new Date(now.getTime() + (pruneHours * 3600000)).toISOString();
 
-            let query = mySupabase
+            const { data } = await mySupabase
                 .from('consult_slots')
                 .select('*')
                 .eq('status', 'available')
-                .gt('start_time', pruneThreshold);
-
-            if (selectedCourseId) {
-                query = query.eq('course_id', selectedCourseId);
-            }
-
-            const { data } = await query.order('start_time', { ascending: true });
+                .gt('start_time', pruneThreshold)
+                .order('start_time', { ascending: true });
 
             allAvailableSlots = data || [];
             renderCalendar();
@@ -499,7 +474,7 @@
             document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างในคอร์สนี้สำหรับวันที่เลือก</div>`;
+                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างสำหรับวันที่เลือก</div>`;
                 return;
             }
 
@@ -526,7 +501,7 @@
 
             const res = await Swal.fire({
                 title: 'ยืนยันการจองเวลานี้?',
-                text: 'เมื่อยืนยันแล้วจะไม่สามารถยกเลิกเองได้ หากต้องการเปลี่ยนเวลาต้องติดต่ออาจารย์',
+                text: 'เมื่อยืนยันแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนเวลาต้องติดต่ออาจารย์',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#0284c7',
