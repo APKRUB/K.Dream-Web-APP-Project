@@ -266,7 +266,7 @@
 
             document.getElementById('examTitleHeader').textContent = cachedExamTitle;
             document.getElementById('resultTitleNav').textContent = cachedExamTitle;
-            document.getElementById('submissionTimeText').textContent = `เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.created_at).toLocaleString('th-TH')}`;
+            document.getElementById('submissionTimeText').textContent = `เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.created_at || Date.now()).toLocaleString('th-TH')}`;
             document.getElementById('studentNameDisplay').textContent = `ผู้สอบ: ${studentNameStr}`;
 
             if (exam && exam.pdf_url) {
@@ -278,51 +278,73 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
+            // โหลดรายการคำถามรองรับทั้งสองตาราง
             let { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
             if (!questions || questions.length === 0) {
                 const { data: qAlt } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
                 questions = qAlt;
             }
-
-            const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', currentAttemptId);
-
             globalQuestions = questions || [];
+
+            // โหลดคำตอบจากตาราง exam_answers หรือคำตอบที่บันทึกไว้ใน attempt
+            const { data: answers } = await mySupabase.from('exam_answers').select('*').eq('attempt_id', currentAttemptId);
             globalAnswerMap = {};
 
-            (answers || []).forEach(ans => {
-                globalAnswerMap[ans.question_id] = {
-                    selected_option_index: ans.selected_option_index !== undefined && ans.selected_option_index !== null ? parseInt(ans.selected_option_index) : (ans.selected_answer !== undefined && ans.selected_answer !== '' ? parseInt(ans.selected_answer) : null),
-                    subjective_answer: ans.subjective_answer
-                };
-            });
+            if (answers && answers.length > 0) {
+                answers.forEach(ans => {
+                    const qId = ans.question_id || ans.qid;
+                    const choiceIdx = ans.selected_option_index !== undefined && ans.selected_option_index !== null ? ans.selected_option_index :
+                                      ans.selected_choice !== undefined && ans.selected_choice !== null ? ans.selected_choice :
+                                      ans.selected_answer !== undefined && ans.selected_answer !== '' ? parseInt(ans.selected_answer) : null;
+                    
+                    globalAnswerMap[qId] = {
+                        selected_option_index: choiceIdx !== null && !isNaN(choiceIdx) ? parseInt(choiceIdx) : null,
+                        subjective_answer: ans.subjective_answer || ans.answer_text
+                    };
+                });
+            }
 
-            if (Object.keys(globalAnswerMap).length === 0 && attempt.answer_saved) {
+            // รองรับกรณีที่คำตอบถูกบันทึกเป็น JSON ในฟิลด์ของ exam_attempts (เช่น answer_saved หรือ answers)
+            const rawSavedAnswers = attempt.answer_saved || attempt.answers || attempt.user_answers;
+            if (Object.keys(globalAnswerMap).length === 0 && rawSavedAnswers) {
                 try {
-                    const savedObj = typeof attempt.answer_saved === 'string' ? JSON.parse(attempt.answer_saved) : attempt.answer_saved;
+                    const savedObj = typeof rawSavedAnswers === 'string' ? JSON.parse(rawSavedAnswers) : rawSavedAnswers;
                     Object.keys(savedObj).forEach(qId => {
                         const val = savedObj[qId];
+                        let parsedVal = null;
+                        if (typeof val === 'object' && val !== null) {
+                            parsedVal = val.selected_option_index !== undefined ? val.selected_option_index : val.choice;
+                        } else {
+                            parsedVal = val;
+                        }
                         globalAnswerMap[qId] = {
-                            selected_option_index: val !== null && val !== '' && !isNaN(val) ? parseInt(val) : null,
-                            subjective_answer: isNaN(val) ? val : null
+                            selected_option_index: parsedVal !== null && parsedVal !== '' && !isNaN(parsedVal) ? parseInt(parsedVal) : null,
+                            subjective_answer: isNaN(parsedVal) ? parsedVal : null
                         };
                     });
-                } catch(e) {}
+                } catch(e) {
+                    console.warn("Error parsing saved answers:", e);
+                }
             }
 
             // คำนวณคะแนนจากการนับจำนวนข้อที่ตอบถูก (ข้อละ 1 คะแนน)
             let calculatedScore = 0;
             globalQuestions.forEach(q => {
-                const ans = globalAnswerMap[q.id] || {};
+                const ans = globalAnswerMap[q.id] || globalAnswerMap[String(q.question_number)] || {};
                 const studentIdx = ans.selected_option_index;
                 const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
-                if (studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx) {
+                if (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx) {
                     calculatedScore++;
                 }
             });
 
             const totalQ = globalQuestions.length;
-            // ใช้คะแนนจากการนับข้อเป็นหลัก (หรือใช้ attempt.total_score ถ้าตรงกัน แต่การนับข้อชัวร์ที่สุด)
             let earnedScore = calculatedScore;
+            
+            // ถ้าคำนวณจากข้อไม่ได้แต่ในฐานข้อมูลมีบันทึก score ไว้ ให้ดึงมาใช้สำรอง
+            if (earnedScore === 0 && (attempt.total_score !== undefined || attempt.score !== undefined)) {
+                earnedScore = Number(attempt.total_score !== undefined ? attempt.total_score : attempt.score);
+            }
 
             cachedScore = earnedScore;
             cachedTotal = totalQ;
@@ -466,7 +488,7 @@
         function downloadSummaryReport() {
             let detailedRowsHtml = globalQuestions.map((q, idx) => {
                 const qNum = q.question_number || (idx + 1);
-                const ans = globalAnswerMap[q.id] || {};
+                const ans = globalAnswerMap[q.id] || globalAnswerMap[String(qNum)] || {};
                 const studentIdx = ans.selected_option_index;
                 const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
@@ -550,8 +572,9 @@
             let correctCount = 0;
             let wrongCount = 0;
 
-            globalQuestions.forEach(q => {
-                const ans = globalAnswerMap[q.id] || {};
+            globalQuestions.forEach((q, idx) => {
+                const qNum = q.question_number || (idx + 1);
+                const ans = globalAnswerMap[q.id] || globalAnswerMap[String(qNum)] || {};
                 const isEssay = q.question_type === 'essay';
                 if (!isEssay) {
                     const studentIdx = ans.selected_option_index;
@@ -578,8 +601,9 @@
                 return;
             }
 
-            const filtered = globalQuestions.filter((q) => {
-                const ans = globalAnswerMap[q.id] || {};
+            const filtered = globalQuestions.filter((q, idx) => {
+                const qNum = q.question_number || (idx + 1);
+                const ans = globalAnswerMap[q.id] || globalAnswerMap[String(qNum)] || {};
                 const isEssay = q.question_type === 'essay';
                 if (isEssay) return currentFilter === 'all';
 
@@ -601,7 +625,7 @@
                 const qNum = q.question_number || (globalQuestions.indexOf(q) + 1);
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
-                const studentAnsRecord = globalAnswerMap[q.id] || {};
+                const studentAnsRecord = globalAnswerMap[q.id] || globalAnswerMap[String(qNum)] || {};
                 
                 const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
                 const correctChoiceIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
@@ -735,12 +759,13 @@
             const container = document.getElementById('aiAnalysisContainer');
             let categoryStats = {};
 
-            questions.forEach((q) => {
+            questions.forEach((q, idx) => {
+                const qNum = q.question_number || (idx + 1);
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
                 if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
                 categoryStats[tag].total++;
 
-                const ans = answerMap[q.id] || {};
+                const ans = answerMap[q.id] || answerMap[String(qNum)] || {};
                 const studentIdx = ans.selected_option_index;
                 const correctIdx = q.correct_answer !== undefined && q.correct_answer !== null ? parseInt(q.correct_answer) : null;
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
