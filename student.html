@@ -476,7 +476,7 @@
 
             if (profileData) {
                 currentStudentData = profileData;
-                studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
+                studentFullName = profileData.full_name || profileData.username || 'นักเรียน';
             } else {
                 try {
                     const { data: studentData } = await mySupabase
@@ -486,7 +486,7 @@
                         .maybeSingle();
                     if (studentData) {
                         currentStudentData = studentData;
-                        studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                        studentFullName = studentData.full_name || studentData.fullname || studentData.username || 'นักเรียน';
                     }
                 } catch (err) {
                     console.warn("Table students not found or skipped:", err);
@@ -691,7 +691,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block font-bold mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
-                                <input id="swalFullName" value="${currentStudentData.full_name || currentStudentData.name || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none font-bold">
+                                <input id="swalFullName" value="${currentStudentData.full_name || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none font-bold">
                             </div>
                             <div>
                                 <label class="block font-bold mb-1">ชื่อเล่น</label>
@@ -746,7 +746,6 @@
                     if (!fullName) { Swal.showValidationMessage('กรุณากรอกชื่อ-นามสกุล'); return false; }
                     return {
                         full_name: fullName,
-                        name: fullName,
                         nickname: document.getElementById('swalNickname').value.trim(),
                         grade_level: document.getElementById('swalGradeLevel').value.trim(),
                         school: document.getElementById('swalSchool').value.trim(),
@@ -1552,53 +1551,3 @@
                         { label: 'คะแนนของคุณ', data: userScores, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.15)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#0284c7' },
                         { label: 'เฉลี่ยห้อง', data: classAvgScores, borderColor: '#64748b', borderDash: [5, 5], fill: false, tension: 0.35, borderWidth: 2, pointRadius: 3 }
                     ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(2, 132, 199, 0.08)' } }, x: { grid: { display: false } } } }
-            });
-        }
-
-        function renderMultiExamBarChart(attempts, classAvgMap) {
-            const ctx = document.getElementById('multiExamBarChart').getContext('2d');
-            if (chartBarInstance) chartBarInstance.destroy();
-            const labels = attempts.map(a => { const exam = allExams.find(e => e.id === a.exam_id); return exam ? exam.title : 'ข้อสอบ'; });
-            const userScores = attempts.map(a => a.total_score || a.score || 0);
-            const classAvgScores = attempts.map(a => classAvgMap[a.exam_id] === undefined ? 0 : classAvgMap[a.exam_id]);
-
-            chartBarInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'คะแนนของคุณ', data: userScores, backgroundColor: '#0284c7', borderRadius: 8 },
-                        { label: 'เฉลี่ยห้อง', data: classAvgScores, backgroundColor: 'rgba(100, 116, 139, 0.4)', borderRadius: 8 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: 'rgba(2, 132, 199, 0.08)' } }, x: { grid: { display: false } } } }
-            });
-        }
-
-        async function renderCategoryRadarChart(selectedExamIds) {
-            const ctx = document.getElementById('categoryRadarChart').getContext('2d');
-            if (chartRadarInstance) chartRadarInstance.destroy();
-            const labels = Array.from(allCategoryTags);
-            const radarData = labels.map(() => Math.floor(Math.random() * 30) + 70);
-
-            chartRadarInstance = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: labels.length > 0 ? labels : ['ทั่วไป'],
-                    datasets: [{ label: 'ความเข้าใจ (%)', data: radarData, backgroundColor: 'rgba(2, 132, 199, 0.2)', borderColor: '#0284c7', borderWidth: 2, pointBackgroundColor: '#0284c7' }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(2, 132, 199, 0.15)' } } } }
-            });
-
-            if (labels.length > 0) {
-                document.getElementById('strongCategoryMetric').textContent = labels[0] || 'ทั่วไป';
-                document.getElementById('weakCategoryMetric').textContent = labels[labels.length - 1] || 'ทั่วไป';
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', initStudentPortal);
-    </script>
-</body>
-</html>
