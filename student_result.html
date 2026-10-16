@@ -195,7 +195,8 @@
         const attemptId = urlParams.get('attempt_id') || urlParams.get('id');
 
         let globalQuestions = [];
-        let globalAnswerMap = {};
+        let globalAttempt = null;
+        let globalRawAnswers = {};
         let currentFilter = 'all';
         let scoreDistributionChartInstance = null;
         let cachedExamTitle = '';
@@ -225,7 +226,7 @@
             if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
         });
 
-        // ฟังก์ชันแปลงค่าตัวเลือก รองรับทั้งตัวเลข, ก ข ค ง, A B C D
+        // ฟังก์ชันแปลงค่าตัวเลือกให้เป็น Index (0, 1, 2, 3) รองรับทั้งตัวเลข, ตัวอักษรไทย (ก ข ค ง) และอังกฤษ (A B C D)
         function parseChoiceIndex(val) {
             if (val === null || val === undefined || val === '') return null;
             if (typeof val === 'number') return val;
@@ -266,18 +267,19 @@
                 return;
             }
 
+            globalAttempt = attempt;
             const { data: exam } = await mySupabase.from('exams').select('*').eq('id', attempt.exam_id).single();
 
             cachedExamTitle = exam ? exam.title : 'ชุดข้อสอบออนไลน์';
             let studentNameStr = 'นักเรียน';
             if (attempt.student_id) {
-                const { data: profileData } = await mySupabase.from('profiles').select('full_name, name').eq('id', attempt.student_id).single();
-                if (profileData && (profileData.full_name || profileData.name)) {
-                    studentNameStr = profileData.full_name || profileData.name;
+                const { data: profileData } = await mySupabase.from('profiles').select('full_name, name, first_name, last_name').eq('id', attempt.student_id).single();
+                if (profileData) {
+                    studentNameStr = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || profileData.full_name || profileData.name || 'นักเรียน';
                 } else {
-                    const { data: studentData } = await mySupabase.from('students').select('full_name, fullname, name, username').eq('id', attempt.student_id).single();
+                    const { data: studentData } = await mySupabase.from('students').select('full_name, fullname, name, username, first_name, last_name').eq('id', attempt.student_id).single();
                     if (studentData) {
-                        studentNameStr = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                        studentNameStr = `${studentData.first_name || ''} ${studentData.last_name || ''}`.trim() || studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
                     }
                 }
             }
@@ -285,7 +287,7 @@
 
             document.getElementById('examTitleHeader').textContent = cachedExamTitle;
             document.getElementById('resultTitleNav').textContent = cachedExamTitle;
-            document.getElementById('submissionTimeText').textContent = `เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.created_at || Date.now()).toLocaleString('th-TH')}`;
+            document.getElementById('submissionTimeText').textContent = `เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.submitted_at || attempt.created_at || Date.now()).toLocaleString('th-TH')}`;
             document.getElementById('studentNameDisplay').textContent = `ผู้สอบ: ${studentNameStr}`;
 
             if (exam && exam.pdf_url) {
@@ -297,92 +299,33 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
-            // 1. โหลดรายการคำถามจากฐานข้อมูล
-            let { data: questions } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+            // 1. โหลดรายการคำถาม
+            let { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
             if (!questions || questions.length === 0) {
-                const { data: qAlt } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
+                const { data: qAlt } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
                 questions = qAlt;
             }
             globalQuestions = questions || [];
 
-            // 2. แกะคำตอบจากฟิลด์ answer_saved (JSONB) ในตาราง exam_attempts อย่างละเอียด
-            globalAnswerMap = {};
-            const rawSavedAnswers = attempt.answer_saved || attempt.answers || attempt.user_answers;
-            
-            if (rawSavedAnswers) {
-                try {
-                    const savedObj = typeof rawSavedAnswers === 'string' ? JSON.parse(rawSavedAnswers) : rawSavedAnswers;
-                    
-                    if (Array.isArray(savedObj)) {
-                        savedObj.forEach((item, index) => {
-                            if (!item) return;
-                            const qId = item.question_id || item.qid;
-                            const rawVal = item.selected_option_index !== undefined ? item.selected_option_index : 
-                                          (item.choice !== undefined ? item.choice : 
-                                          (item.selected_choice !== undefined ? item.selected_choice : item.answer));
-                            const parsedIdx = parseChoiceIndex(rawVal);
-                            
-                            const record = { selected_option_index: parsedIdx };
-                            if (qId) globalAnswerMap[qId] = record;
-                            globalAnswerMap[index + 1] = record;
-                            globalAnswerMap[String(index + 1)] = record;
-                        });
-                    } else if (typeof savedObj === 'object' && savedObj !== null) {
-                        Object.keys(savedObj).forEach(key => {
-                            const val = savedObj[key];
-                            let rawVal = null;
-                            if (typeof val === 'object' && val !== null) {
-                                rawVal = val.selected_option_index !== undefined ? val.selected_option_index : 
-                                          (val.choice !== undefined ? val.choice : 
-                                          (val.selected_choice !== undefined ? val.selected_choice : 
-                                          (val.answer !== undefined ? val.answer : null)));
-                            } else {
-                                rawVal = val;
-                            }
-                            const parsedIdx = parseChoiceIndex(rawVal);
-                            const record = {
-                                selected_option_index: parsedIdx,
-                                subjective_answer: typeof rawVal === 'string' && parsedIdx === null ? rawVal : null
-                            };
-                            globalAnswerMap[key] = record;
-                            if (!isNaN(key)) {
-                                globalAnswerMap[Number(key)] = record;
-                            }
-                        });
-                    }
-                } catch(e) {
-                    console.warn("Error parsing answer_saved JSONB:", e);
-                }
+            // 2. ดึงข้อมูลคำตอบจากฟิลด์ answer_saved (หรือ answers / user_answers) แบบเดียวกับหน้าแอดมินเจาะลึก
+            let rawAns = attempt.answer_saved || attempt.answers || attempt.user_answers;
+            if (typeof rawAns === 'string') {
+                try { rawAns = JSON.parse(rawAns); } catch(e) {}
             }
+            globalRawAnswers = rawAns || {};
 
-            // 3. ฟังก์ชันช่วยค้นหาคำตอบของข้อสอบแต่ละข้อ
-            window.findStudentAnswerForQuestion = function(q, idx) {
-                const qNum = q.question_number || (idx + 1);
-                // ลองค้นหาทุกรูปแบบคีย์ที่เป็นไปได้
-                let ans = globalAnswerMap[q.id] || 
-                          globalAnswerMap[qNum] || 
-                          globalAnswerMap[String(qNum)] || 
-                          globalAnswerMap[idx] || 
-                          globalAnswerMap[String(idx)] || {};
-
-                if (ans.selected_option_index === undefined || ans.selected_option_index === null) {
-                    for (const [k, v] of Object.entries(globalAnswerMap)) {
-                        if (String(k) === String(q.id) || String(k) === String(qNum) || String(k) === String(idx) || String(k) === String(idx + 1)) {
-                            ans = v;
-                            break;
-                        }
-                    }
-                }
-                return ans;
-            };
-
-            // 4. คำนวณคะแนนและตรวจสอบคำตอบรายข้อ
+            // 3. คำนวณคะแนนและตรวจสอบคำตอบรายข้อ
             let calculatedScore = 0;
-            globalQuestions.forEach((q, idx) => {
-                const ans = findStudentAnswerForQuestion(q, idx);
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = parseChoiceIndex(q.correct_answer);
+            globalQuestions.forEach((q) => {
+                let userAnsVal = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAnsVal = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAnsVal = q.correct_answer || q.answer || q.solution;
                 
+                const studentIdx = parseChoiceIndex(userAnsVal);
+                const correctIdx = parseChoiceIndex(correctAnsVal);
+
                 if (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx) {
                     calculatedScore++;
                 }
@@ -403,7 +346,7 @@
 
             updateCountsAndRender();
             await loadClassAnalytics(attempt.exam_id, earnedScore, totalQ);
-            await fetchGeminiAIAnalysis(globalQuestions, globalAnswerMap, earnedScore, totalQ, cachedExamTitle, exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
+            await fetchGeminiAIAnalysis(globalQuestions, globalRawAnswers, earnedScore, totalQ, cachedExamTitle, exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
         }
 
         async function loadClassAnalytics(examId, studentScore, totalQuestions) {
@@ -537,12 +480,16 @@
         function downloadSummaryReport() {
             let detailedRowsHtml = globalQuestions.map((q, idx) => {
                 const qNum = q.question_number || (idx + 1);
-                const ans = window.findStudentAnswerForQuestion(q, idx);
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = parseChoiceIndex(q.correct_answer);
+                let userAns = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution || '-';
+                const studentIdx = parseChoiceIndex(userAns);
+                const correctIdx = parseChoiceIndex(correctAns);
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-                const studentChoiceChar = studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : 'ไม่ได้ตอบ';
-                const correctChoiceChar = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : '-';
+                const studentChoiceChar = studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : userAns;
+                const correctChoiceChar = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : correctAns;
 
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
@@ -621,12 +568,17 @@
             let correctCount = 0;
             let wrongCount = 0;
 
-            globalQuestions.forEach((q, idx) => {
-                const ans = window.findStudentAnswerForQuestion(q, idx);
+            globalQuestions.forEach((q) => {
+                let userAns = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution;
                 const isEssay = q.question_type === 'essay';
+                
                 if (!isEssay) {
-                    const studentIdx = ans.selected_option_index;
-                    const correctIdx = parseChoiceIndex(q.correct_answer);
+                    const studentIdx = parseChoiceIndex(userAns);
+                    const correctIdx = parseChoiceIndex(correctAns);
                     if (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx) {
                         correctCount++;
                     } else {
@@ -649,13 +601,17 @@
                 return;
             }
 
-            const filtered = globalQuestions.filter((q, idx) => {
-                const ans = window.findStudentAnswerForQuestion(q, idx);
+            const filtered = globalQuestions.filter((q) => {
+                let userAns = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution;
                 const isEssay = q.question_type === 'essay';
                 if (isEssay) return currentFilter === 'all';
 
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = parseChoiceIndex(q.correct_answer);
+                const studentIdx = parseChoiceIndex(userAns);
+                const correctIdx = parseChoiceIndex(correctAns);
                 const isCorrect = (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx);
 
                 if (currentFilter === 'correct') return isCorrect;
@@ -668,14 +624,19 @@
                 return;
             }
 
-            container.innerHTML = filtered.map((q, idx) => {
+            container.innerHTML = filtered.map((q) => {
                 const qNum = q.question_number || (globalQuestions.indexOf(q) + 1);
                 const isEssay = q.question_type === 'essay';
                 const opts = q.options || ['ก', 'ข', 'ค', 'ง'];
                 
-                const studentAnsRecord = window.findStudentAnswerForQuestion(q, globalQuestions.indexOf(q));
-                const studentChoiceIdx = studentAnsRecord.selected_option_index !== undefined && studentAnsRecord.selected_option_index !== null ? parseInt(studentAnsRecord.selected_option_index) : null;
-                const correctChoiceIdx = parseChoiceIndex(q.correct_answer);
+                let userAns = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution;
+
+                const studentChoiceIdx = parseChoiceIndex(userAns);
+                const correctChoiceIdx = parseChoiceIndex(correctAns);
                 const isCorrect = !isEssay && studentChoiceIdx !== null && !isNaN(studentChoiceIdx) && studentChoiceIdx === correctChoiceIdx;
 
                 if (isEssay) {
@@ -688,7 +649,7 @@
                             <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || ''}</div>
                             <div class="p-2.5 bg-white dark:bg-slate-800 rounded-xl border text-xs">
                                 <span class="text-[10px] font-bold text-slate-400 block">คำตอบของคุณ:</span>
-                                <p class="text-slate-700 dark:text-slate-300">${studentAnsRecord.subjective_answer || '- ไม่ได้ตอบ -'}</p>
+                                <p class="text-slate-700 dark:text-slate-300">${userAns !== '-' ? userAns : '- ไม่ได้ตอบ -'}</p>
                             </div>
                         </div>
                     `;
@@ -806,14 +767,19 @@
             const container = document.getElementById('aiAnalysisContainer');
             let categoryStats = {};
 
-            questions.forEach((q, idx) => {
+            questions.forEach((q) => {
                 const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
                 if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
                 categoryStats[tag].total++;
 
-                const ans = window.findStudentAnswerForQuestion(q, idx);
-                const studentIdx = ans.selected_option_index;
-                const correctIdx = parseChoiceIndex(q.correct_answer);
+                let userAns = '-';
+                if (answerMap && typeof answerMap === 'object') {
+                    userAns = answerMap[q.id] || answerMap[String(q.id)] || answerMap[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution;
+
+                const studentIdx = parseChoiceIndex(userAns);
+                const correctIdx = parseChoiceIndex(correctAns);
                 const isCorrect = studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx;
 
                 if (isCorrect) {
