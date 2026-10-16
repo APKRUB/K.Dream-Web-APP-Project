@@ -180,8 +180,8 @@
             const { data, error } = await mySupabase.from('course_lessons').select('*').eq('course_id', courseId).order('created_at', { ascending: false });
             courseLessons = data || [];
             
-            const videos = courseLessons.filter(l => l.content_type === 'video' || l.video_url);
-            const files = courseLessons.filter(l => l.content_type === 'pdf' || l.pdf_url || l.content_type === 'file');
+            const videos = courseLessons.filter(l => l.video_url || l.video || l.url || (!l.pdf_url && !l.file_url));
+            const files = courseLessons.filter(l => l.pdf_url || l.file_url);
 
             document.getElementById('videoCount').textContent = videos.length;
             document.getElementById('fileCount').textContent = files.length;
@@ -207,7 +207,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
-                        <a href="${v.video_url || '#st'}" target="_blank" class="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 rounded-xl font-bold text-[11px] transition-all"><i class="fas fa-external-link-alt mr-1"></i> ดูวิดีโอ</a>
+                        <a href="${v.video_url || v.video || v.url || '#'}" target="_blank" class="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 rounded-xl font-bold text-[11px] transition-all"><i class="fas fa-external-link-alt mr-1"></i> ดูวิดีโอ</a>
                         <button onclick="deleteLesson('${v.id}')" class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"><i class="fas fa-trash-can text-xs"></i></button>
                     </div>
                 </div>
@@ -231,7 +231,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
-                        <a href="${f.pdf_url || '#dl'}" target="_blank" class="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500 hover:text-white text-indigo-600 rounded-xl font-bold text-[11px] transition-all"><i class="fas fa-download mr-1"></i> ดาวน์โหลด</a>
+                        <a href="${f.pdf_url || f.file_url || '#'}" target="_blank" class="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500 hover:text-white text-indigo-600 rounded-xl font-bold text-[11px] transition-all"><i class="fas fa-download mr-1"></i> ดาวน์โหลด</a>
                         <button onclick="deleteLesson('${f.id}')" class="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"><i class="fas fa-trash-can text-xs"></i></button>
                     </div>
                 </div>
@@ -276,10 +276,10 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
+                // ส่งเฉพาะฟิลด์พื้นฐานที่ตาราง course_lessons รองรับจริง
                 const payload = {
                     course_id: courseId,
                     title: formValues.title,
-                    content_type: isVideo ? 'video' : 'pdf',
                     video_url: isVideo ? formValues.url : null,
                     pdf_url: !isVideo ? formValues.url : null,
                     description: formValues.description || '',
