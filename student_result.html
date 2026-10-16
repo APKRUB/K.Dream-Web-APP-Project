@@ -152,6 +152,34 @@
             </div>
         </div>
 
+        <!-- 🌟 ตารางเปรียบเทียบ % คะแนนแต่ละหมวดหมู่กับเกณฑ์ (เพิ่มไว้บนหน้าจอ) -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-table-cells text-sky-500"></i> ตารางเปรียบเทียบเปอร์เซ็นต์คะแนนแต่ละหมวดหมู่กับเกณฑ์มาตรฐาน
+                </h3>
+                <span class="text-[11px] text-slate-400">เกณฑ์ผ่าน: $\ge 70\%$ (ดีเยี่ยม/ผ่าน), $50-69\%$ (ปานกลาง), $<50\%$ (ควรปรับปรุง)</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300">
+                            <th class="p-3 border-b border-slate-200 dark:border-slate-800">หมวดหมู่ข้อสอบ (Category)</th>
+                            <th class="p-3 border-b border-slate-200 dark:border-slate-800 text-center">ทำได้ / ทั้งหมด</th>
+                            <th class="p-3 border-b border-slate-200 dark:border-slate-800 text-center">% คะแนนที่ได้</th>
+                            <th class="p-3 border-b border-slate-200 dark:border-slate-800 text-center">เกณฑ์มาตรฐาน</th>
+                            <th class="p-3 border-b border-slate-200 dark:border-slate-800 text-center">ผลการประเมิน</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoryComparisonTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center py-6 text-slate-400">กำลังประมวลผลข้อมูลหมวดหมู่...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-4 rounded-3xl space-y-3 sticky top-24">
                 <div class="flex justify-between items-center">
@@ -203,6 +231,7 @@
         let cachedStudentName = '';
         let cachedScore = 0;
         let cachedTotal = 0;
+        let cachedCategoryStats = {};
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -226,7 +255,6 @@
             if (e.key === 'F12' || e.key === 'PrintScreen') e.preventDefault();
         });
 
-        // ฟังก์ชันแปลงค่าตัวเลือกให้เป็น Index (0, 1, 2, 3) รองรับทั้งตัวเลข, ตัวอักษรไทย (ก ข ค ง) และอังกฤษ (A B C D)
         function parseChoiceIndex(val) {
             if (val === null || val === undefined || val === '') return null;
             if (typeof val === 'number') return val;
@@ -299,7 +327,6 @@
                 document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-5 rounded-3xl space-y-4';
             }
 
-            // 1. โหลดรายการคำถาม
             let { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
             if (!questions || questions.length === 0) {
                 const { data: qAlt } = await mySupabase.from('exam_questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
@@ -307,14 +334,12 @@
             }
             globalQuestions = questions || [];
 
-            // 2. ดึงข้อมูลคำตอบจากฟิลด์ answer_saved (หรือ answers / user_answers) แบบเดียวกับหน้าแอดมินเจาะลึก
             let rawAns = attempt.answer_saved || attempt.answers || attempt.user_answers;
             if (typeof rawAns === 'string') {
                 try { rawAns = JSON.parse(rawAns); } catch(e) {}
             }
             globalRawAnswers = rawAns || {};
 
-            // 3. คำนวณคะแนนและตรวจสอบคำตอบรายข้อ
             let calculatedScore = 0;
             globalQuestions.forEach((q) => {
                 let userAnsVal = '-';
@@ -344,9 +369,67 @@
             document.getElementById('scoreDisplay').textContent = earnedScore;
             document.getElementById('totalScoreDisplay').textContent = totalQ;
 
+            computeCategoryStats();
+            renderCategoryComparisonTable();
             updateCountsAndRender();
             await loadClassAnalytics(attempt.exam_id, earnedScore, totalQ);
             await fetchGeminiAIAnalysis(globalQuestions, globalRawAnswers, earnedScore, totalQ, cachedExamTitle, exam ? exam.learning_objectives : '', exam ? exam.pdf_url : '');
+        }
+
+        function computeCategoryStats() {
+            cachedCategoryStats = {};
+            globalQuestions.forEach((q) => {
+                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
+                if (!cachedCategoryStats[tag]) cachedCategoryStats[tag] = { total: 0, correct: 0 };
+                cachedCategoryStats[tag].total++;
+
+                let userAns = '-';
+                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
+                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
+                }
+                const correctAns = q.correct_answer || q.answer || q.solution;
+                const studentIdx = parseChoiceIndex(userAns);
+                const correctIdx = parseChoiceIndex(correctAns);
+                if (studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx) {
+                    cachedCategoryStats[tag].correct++;
+                }
+            });
+        }
+
+        function renderCategoryComparisonTable() {
+            const tbody = document.getElementById('categoryComparisonTableBody');
+            if (!tbody) return;
+
+            const entries = Object.entries(cachedCategoryStats);
+            if (entries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">ไม่พบข้อมูลหมวดหมู่ข้อสอบ</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = entries.map(([tag, stat]) => {
+                const pct = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                let badgeColor = 'bg-red-500/10 text-red-600 border-red-500/20';
+                let evalText = 'ควรปรับปรุง (< 50%)';
+                if (pct >= 70) {
+                    badgeColor = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+                    evalText = 'ดีเยี่ยม (≥ 70%)';
+                } else if (pct >= 50) {
+                    badgeColor = 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+                    evalText = 'ปานกลาง (50-69%)';
+                }
+
+                return `
+                    <tr class="border-b border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/55 transition-all">
+                        <td class="p-3 font-bold text-slate-800 dark:text-slate-200">🏷️ ${tag}</td>
+                        <td class="p-3 text-center">${stat.correct} / ${stat.total} ข้อ</td>
+                        <td class="p-3 text-center font-extrabold text-sky-600 dark:text-sky-400">${pct}%</td>
+                        <td class="p-3 text-center text-slate-500">เกณฑ์มาตรฐาน 70%</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold border ${badgeColor}">${evalText}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         async function loadClassAnalytics(examId, studentScore, totalQuestions) {
@@ -478,6 +561,22 @@
         }
 
         function downloadSummaryReport() {
+            // สร้าง HTML สำหรับตารางเปรียบเทียบหมวดหมู่ที่จะใส่ใน PDF
+            let categoryTableRowsHtml = Object.entries(cachedCategoryStats).map(([tag, stat]) => {
+                const pct = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                let evalText = pct >= 70 ? 'ดีเยี่ยม (ผ่านเกณฑ์)' : (pct >= 50 ? 'ปานกลาง' : 'ควรปรับปรุง');
+                let colorHex = pct >= 70 ? '#10b981' : (pct >= 50 ? '#f59e0b' : '#ef4444');
+                return `
+                    <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
+                        <td style="padding: 8px;"><b>${tag}</b></td>
+                        <td style="padding: 8px; text-align: center;">${stat.correct} / ${stat.total} ข้อ</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold; color: ${colorHex};">${pct}%</td>
+                        <td style="padding: 8px; text-align: center;">เกณฑ์มาตรฐาน 70%</td>
+                        <td style="padding: 8px; text-align: center; color: ${colorHex}; font-weight: bold;">${evalText}</td>
+                    </tr>
+                `;
+            }).join('');
+
             let detailedRowsHtml = globalQuestions.map((q, idx) => {
                 const qNum = q.question_number || (idx + 1);
                 let userAns = '-';
@@ -515,8 +614,9 @@
                     <style>
                         body { font-family: 'Prompt', sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
                         h2 { color: #0284c7; margin-bottom: 5px; }
+                        h3 { margin-top: 25px; color: #0f172a; border-bottom: 2px solid #0284c7; padding-bottom: 5px; }
                         .header-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                         th { background: #0284c7; color: white; padding: 10px; font-size: 12px; text-align: left; }
                     </style>
                 </head>
@@ -527,6 +627,23 @@
                         <p><b>ผู้เข้าสอบ:</b> ${cachedStudentName}</p>
                         <p><b>คะแนนที่ทำได้:</b> <span style="color: #10b981; font-size: 18px; font-weight: bold;">${cachedScore} / ${cachedTotal}</span> คะแนน (นับข้อ)</p>
                     </div>
+
+                    <h3>ตารางเปรียบเทียบ % คะแนนแต่ละหมวดหมู่กับเกณฑ์มาตรฐาน</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>หมวดหมู่ข้อสอบ</th>
+                                <th style="text-align: center;">ทำได้ / ทั้งหมด</th>
+                                <th style="text-align: center;">% ที่ได้</th>
+                                <th style="text-align: center;">เกณฑ์มาตรฐาน</th>
+                                <th style="text-align: center;">ผลการประเมิน</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${categoryTableRowsHtml}
+                        </tbody>
+                    </table>
+
                     <h3>รายละเอียดคำตอบรายข้อ</h3>
                     <table>
                         <thead>
@@ -765,32 +882,10 @@
 
         function renderLocalAIAnalysis(questions, answerMap, score, total) {
             const container = document.getElementById('aiAnalysisContainer');
-            let categoryStats = {};
-
-            questions.forEach((q) => {
-                const tag = q.category_tag && q.category_tag.trim() !== '' ? q.category_tag : 'ทั่วไป';
-                if (!categoryStats[tag]) categoryStats[tag] = { total: 0, correct: 0 };
-                categoryStats[tag].total++;
-
-                let userAns = '-';
-                if (answerMap && typeof answerMap === 'object') {
-                    userAns = answerMap[q.id] || answerMap[String(q.id)] || answerMap[q.question_number] || '-';
-                }
-                const correctAns = q.correct_answer || q.answer || q.solution;
-
-                const studentIdx = parseChoiceIndex(userAns);
-                const correctIdx = parseChoiceIndex(correctAns);
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && !isNaN(studentIdx) && studentIdx === correctIdx;
-
-                if (isCorrect) {
-                    categoryStats[tag].correct++;
-                }
-            });
-
             const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
             let performanceSummary = percentage >= 80 ? "ยอดเยี่ยมมาก! มีความเข้าใจเนื้อหาในชุดข้อสอบนี้เป็นอย่างดีเยี่ยม" : (percentage >= 50 ? "ทำผลงานได้ปานกลาง มีพื้นฐานในระดับน่าพอใจ แต่ยังมีบางจุดที่ต้องเก็บตก" : "ควรเน้นทบทวนเนื้อหาภาพรวมและฝึกทำโจทย์ซ้ำอีกรอบ");
 
-            let breakdownHtml = Object.entries(categoryStats).map(([tag, stat]) => {
+            let breakdownHtml = Object.entries(cachedCategoryStats).map(([tag, stat]) => {
                 const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
                 return `<li class="flex items-center justify-between text-xs py-1.5 border-b border-slate-200/50 dark:border-slate-800/50">
                     <span>🏷️ <b>${tag}</b></span>
