@@ -353,6 +353,7 @@
         let categoriesMap = {};
         let userAttempts = [];
         let examQuestionCounts = {};
+        let examTotalScores = {}; // เพิ่มตัวแปรเก็บผลรวมคะแนนเต็มจาก exam_questions
         let starredExams = JSON.parse(localStorage.getItem('student_starred_exams') || '[]');
         let currentStatusFilter = 'all';
         let selectedGlobalCourseId = 'all';
@@ -685,11 +686,28 @@
             const { data: exams } = await mySupabase.from('exams').select('*').order('created_at', { ascending: false });
             allExams = exams || [];
 
-            const { data: questionsData } = await mySupabase.from('questions').select('exam_id');
-            if (questionsData) {
+            // ปรับปรุงดึงข้อมูลคะแนนจาก exam_questions / questions และบวก points สะสม
+            const { data: questionsData } = await mySupabase.from('exam_questions').select('exam_id, points');
+            if (questionsData && questionsData.length > 0) {
                 questionsData.forEach(q => {
-                    if (q.exam_id) examQuestionCounts[q.exam_id] = (examQuestionCounts[q.exam_id] || 0) + 1;
+                    if (q.exam_id) {
+                        examQuestionCounts[q.exam_id] = (examQuestionCounts[q.exam_id] || 0) + 1;
+                        const pts = Number(q.points) || 1;
+                        examTotalScores[q.exam_id] = (examTotalScores[q.exam_id] || 0) + pts;
+                    }
                 });
+            } else {
+                // Fallback เผื่อใช้ตาราง questions
+                const { data: qDataAlt } = await mySupabase.from('questions').select('exam_id, points');
+                if (qDataAlt) {
+                    qDataAlt.forEach(q => {
+                        if (q.exam_id) {
+                            examQuestionCounts[q.exam_id] = (examQuestionCounts[q.exam_id] || 0) + 1;
+                            const pts = Number(q.points) || 1;
+                            examTotalScores[q.exam_id] = (examTotalScores[q.exam_id] || 0) + pts;
+                        }
+                    });
+                }
             }
 
             const { data: attempts } = await mySupabase.from('exam_attempts').select('*').eq('student_id', currentStudentId).order('submission_time', { ascending: false });
@@ -943,8 +961,8 @@
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
                     const score = Number(att.total_score !== undefined ? att.total_score : (att.score || 0));
                     
-                    // ปรับแก้ตรงนี้: ดึงคะแนนเต็มจากฐานข้อมูลและแปลงเป็นตัวเลขตรงๆ ไม่คูณ 10
-                    let rawMaxScore = exam.full_score || exam.max_score || att.full_score || att.max_score || 100;
+                    // ดึงคะแนนเต็มจาก examTotalScores ที่รวม points ของแต่ละข้อมาถูกต้อง
+                    let rawMaxScore = examTotalScores[exam.id] || att.max_score || att.full_score || exam.full_score || exam.max_score || (examQuestionCounts[exam.id] ? examQuestionCounts[exam.id] : 10);
                     const maxScore = Number(rawMaxScore);
                     
                     const dateStr = new Date(att.submission_time || att.submitted_at || att.created_at).toLocaleString('th-TH');
@@ -973,8 +991,8 @@
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
                     const score = Number(att.total_score !== undefined ? att.total_score : (att.score || 0));
                     
-                    // ปรับแก้ตรงนี้เช่นเดียวกันสำหรับมุมมองรายชื่อ (List)
-                    let rawMaxScore = exam.full_score || exam.max_score || att.full_score || att.max_score || 100;
+                    // ดึงคะแนนเต็มจาก examTotalScores ที่รวม points ของแต่ละข้อมาถูกต้อง
+                    let rawMaxScore = examTotalScores[exam.id] || att.max_score || att.full_score || exam.full_score || exam.max_score || (examQuestionCounts[exam.id] ? examQuestionCounts[exam.id] : 10);
                     const maxScore = Number(rawMaxScore);
                     
                     const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
@@ -1082,7 +1100,7 @@
 
             let percentages = completedAttempts.map(att => {
                 const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
-                const max = att.max_score || att.full_score || 100;
+                const max = examTotalScores[att.exam_id] || att.max_score || att.full_score || 100;
                 return max > 0 ? (score / max) * 100 : 0;
             });
 
@@ -1106,7 +1124,7 @@
             const labels = sorted.map((att, i) => `ครั้งที่ ${i + 1}`);
             const dataScores = sorted.map(att => {
                 const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
-                const max = att.max_score || att.full_score || 100;
+                const max = examTotalScores[att.exam_id] || att.max_score || att.full_score || 100;
                 return max > 0 ? Math.round((score / max) * 100) : 0;
             });
 
