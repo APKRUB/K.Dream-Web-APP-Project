@@ -42,6 +42,8 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
@@ -74,7 +76,7 @@
                 <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-book-bookmark text-purple-500"></i> จัดการคอร์สเรียนสเกลใหญ่
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">คลิกเข้าสู่ "จัดการภายในคอร์ส" เพื่อควบคุมข้อสอบ, วิดีโอ, และประกาศเฉพาะคอร์สนั้นๆ</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">คลิกเข้าสู่ "เจาะลึกจัดการภายในคอร์ส" เพื่อควบคุมข้อสอบ, วิดีโอ และจัดการรายชื่อนักเรียนในคอร์สนั้นๆ</p>
             </div>
             <button onclick="openCourseModal()" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-2">
                 <i class="fas fa-plus-circle"></i> สร้างคอร์สเรียนใหม่
@@ -112,14 +114,30 @@
         });
 
         async function initPage() {
-            const [coursesRes, enrollRes] = await Promise.all([
-                mySupabase.from('courses').select('*').order('created_at', { ascending: false }),
-                mySupabase.from('course_enrollments').select('*')
-            ]);
+            try {
+                const [coursesRes, enrollRes, altEnrollRes] = await Promise.all([
+                    mySupabase.from('courses').select('*').order('created_at', { ascending: false }),
+                    mySupabase.from('course_enrollments').select('*'),
+                    mySupabase.from('enrollments').select('*')
+                ]);
 
-            coursesList = coursesRes.data || [];
-            enrollmentsList = enrollRes.data || [];
-            renderCoursesGrid();
+                coursesList = coursesRes.data || [];
+                // รวมข้อมูลจากทั้ง course_enrollments และ enrollments เพื่อความแม่นยำสูงสุด
+                const primaryEnrolls = enrollRes.data || [];
+                const secondaryEnrolls = altEnrollRes.data || [];
+                
+                // รวมและกรองไม่ให้ซ้ำกัน (ถ้ามี)
+                enrollmentsList = [...primaryEnrolls];
+                secondaryEnrolls.forEach(se => {
+                    if (!enrollmentsList.some(pe => String(pe.id) === String(se.id) || (String(pe.course_id) === String(se.course_id) && String(pe.student_id || pe.user_id) === String(se.student_id || se.user_id)))) {
+                        enrollmentsList.push(se);
+                    }
+                });
+
+                renderCoursesGrid();
+            } catch (err) {
+                console.error("Init Page Error:", err);
+            }
         }
 
         function renderCoursesGrid() {
@@ -150,8 +168,10 @@
                             <div class="p-5 space-y-2">
                                 <h3 class="font-extrabold text-base text-slate-900 dark:text-white line-clamp-1">${c.title}</h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">${c.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
-                                <div class="pt-2 flex items-center justify-between text-xs text-slate-400 font-bold">
-                                    <span><i class="fas fa-users mr-1 text-purple-500"></i> นักเรียนลงทะเบียน ${enrolledCount} คน</span>
+                                <div class="pt-2 flex items-center justify-between text-xs font-bold">
+                                    <a href="admin_course_detail.html?id=${c.id}" class="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5">
+                                        <i class="fas fa-users"></i> นักเรียนลงทะเบียน ${enrolledCount} คน <i class="fas fa-arrow-right text-[10px]"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>
