@@ -42,8 +42,6 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
-        .glow-badge-sky { background: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.3); }
-        .dark .glow-badge-sky { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
@@ -136,7 +134,6 @@
 
         let currentCourse = null;
         let courseLessons = [];
-        let enrolledStudentsCache = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -196,7 +193,6 @@
         }
 
         async function loadEnrolledCount() {
-            // รองรับทั้งตาราง enrollments และ course_enrollments
             let countRes = await mySupabase.from('enrollments').select('*', { count: 'exact', head: true }).eq('course_id', courseId);
             if (!countRes.count) {
                 countRes = await mySupabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('course_id', courseId);
@@ -313,12 +309,19 @@
             }
         }
 
-        // --- ระบบจัดการนักเรียนที่ลงทะเบียนในคอร์สแบบเชื่อมโยงหลายตาราง ---
+        // --- ระบบจัดการนักเรียนแบบคลิกเดียว (Toggle Enroll) ง่ายที่สุด ---
         async function openManageStudentsModal() {
-            Swal.fire({ title: 'กำลังดึงรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'กำลังโหลดรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 1. ดึงข้อมูลการลงทะเบียนจากตาราง enrollments (หรือ course_enrollments สำรอง)
+                // 1. ดึงรายชื่อนักเรียนทั้งหมดจากตาราง profiles หรือ students
+                let profiles = [];
+                const pRes = await mySupabase.from('profiles').select('*');
+                if (pRes.data) profiles = [...profiles, ...pRes.data];
+                const sRes = await mySupabase.from('students').select('*');
+                if (sRes.data) profiles = [...profiles, ...sRes.data];
+
+                // 2. ดึงข้อมูลการลงทะเบียนในคอร์สนี้
                 let enrollsRes = await mySupabase.from('enrollments').select('*').eq('course_id', courseId);
                 let enrolledList = enrollsRes.data || [];
                 if (enrolledList.length === 0) {
@@ -326,38 +329,28 @@
                     enrolledList = altEnrolls.data || [];
                 }
 
-                // 2. ดึงข้อมูลโปรไฟล์/นักเรียนจากทุกตารางที่เป็นไปได้
-                let allProfiles = [];
-                const pRes = await mySupabase.from('profiles').select('*');
-                if (pRes.data) allProfiles = [...allProfiles, ...pRes.data];
-
-                const sRes = await mySupabase.from('students').select('*');
-                if (sRes.data) allProfiles = [...allProfiles, ...sRes.data];
-
-                const uRes = await mySupabase.from('users').select('*');
-                if (uRes.data) allProfiles = [...allProfiles, ...uRes.data];
-
-                let studentMap = {};
-                allProfiles.forEach(p => {
-                    const idStr = String(p.id || p.user_id || p.student_id);
-                    studentMap[idStr] = p;
+                // ทำ Map เก็บ student_id ที่ลงทะเบียนแล้ว เพื่อเช็คสถานะติ๊กถูก
+                let enrolledMap = {};
+                enrolledList.forEach(en => {
+                    const sId = String(en.student_id || en.user_id || en.id);
+                    enrolledMap[sId] = en.id; // เก็บ enrollment id ไว้ใช้ตอนลบออก
                 });
 
-                enrolledStudentsCache = enrolledList.map(en => {
-                    const sId = String(en.student_id || en.user_id || en.id);
-                    const profile = studentMap[sId] || {};
-                    const fullName = `${profile.first_name || profile.name || '-'} ${profile.last_name || ''}`.trim() || profile.full_name || profile.username || 'ไม่ระบุชื่อ';
-                    const studentCode = profile.student_id || profile.code || '-';
+                window.globalAllStudents = profiles.map(p => {
+                    const sId = String(p.id || p.user_id || p.student_id);
+                    const fullName = `${p.first_name || p.name || '-'} ${p.last_name || ''}`.trim() || p.full_name || p.username || 'ไม่ระบุชื่อ';
+                    const studentCode = p.student_id || p.code || '-';
+                    const isEnrolled = !!enrolledMap[sId];
                     return {
-                        enrollId: en.id,
                         studentId: sId,
                         fullName: fullName,
                         studentCode: studentCode,
-                        enrolledAt: en.created_at || en.enrolled_at || '-'
+                        isEnrolled: isEnrolled,
+                        enrollId: enrolledMap[sId] || null
                     };
                 });
 
-                renderEnrolledStudentsModalContent(allProfiles, studentMap);
+                renderStudentListModalUI('');
 
             } catch (err) {
                 console.error("Manage Students Error:", err);
@@ -365,52 +358,69 @@
             }
         }
 
-        function renderEnrolledStudentsModalContent(allProfiles, studentMap) {
-            const rowsHtml = enrolledStudentsCache.length === 0 
-                ? `<tr><td colspan="4" class="text-center py-8 text-slate-400">ยังไม่มีนักเรียนลงทะเบียนในคอร์สนี้</td></tr>`
-                : enrolledStudentsCache.map((item, idx) => `
+        function renderStudentListModalUI(searchKeyword) {
+            const list = window.globalAllStudents || [];
+            const keyword = (searchKeyword || '').trim().toLowerCase();
+
+            const filtered = list.filter(item => {
+                return item.fullName.toLowerCase().includes(keyword) || item.studentCode.toLowerCase().includes(keyword);
+            });
+
+            const rowsHtml = filtered.length === 0
+                ? `<tr><td colspan="4" class="text-center py-8 text-slate-400">ไม่พบรายชื่อนักเรียน</td></tr>`
+                : filtered.map((item, idx) => `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors border-b dark:border-slate-800">
-                        <td class="p-3 font-mono font-bold">${idx + 1}</td>
-                        <td class="p-3 font-mono text-purple-600">${item.studentCode}</td>
+                        <td class="p-3 font-mono text-purple-600 font-bold">${item.studentCode}</td>
                         <td class="p-3 font-bold">${item.fullName}</td>
                         <td class="p-3 text-center">
-                            <button onclick="removeStudentFromCourse('${item.enrollId}')" class="px-2.5 py-1 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg font-bold text-[11px] transition-all">
-                                <i class="fas fa-user-minus mr-1"></i> เอาออก
-                            </button>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${item.isEnrolled ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500'}">
+                                ${item.isEnrolled ? 'ลงทะเบียนแล้ว' : 'ยังไม่ได้ลงทะเบียน'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-center">
+                            ${item.isEnrolled 
+                                ? `<button onclick="toggleEnrollStudent('${item.studentId}', true, '${item.enrollId}')" class="px-3 py-1 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl font-bold text-[11px] transition-all"><i class="fas fa-user-minus mr-1"></i> เอาออก</button>`
+                                : `<button onclick="toggleEnrollStudent('${item.studentId}', false, null)" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-[11px] transition-all shadow-sm"><i class="fas fa-user-plus mr-1"></i> เพิ่มเข้าคอร์ส</button>`
+                            }
                         </td>
                     </tr>
                 `).join('');
 
             const isDark = document.documentElement.classList.contains('dark');
+            
+            // ถ้า Modal เปิดอยู่แล้วให้อัปเดตเฉพาะเนื้อหาตารางเพื่อความลื่นไหล
+            if (Swal.isVisible() && document.getElementById('studentSearchBox')) {
+                document.getElementById('studentTableBody').innerHTML = rowsHtml;
+                return;
+            }
+
             Swal.fire({
-                title: '👥 จัดการนักเรียนที่ลงทะเบียนในคอร์ส',
+                title: '👥 จัดการนักเรียนในคอร์ส (คลิกเดียวจบ)',
                 html: `
-                    <div class="space-y-4 text-xs text-left">
-                        <div class="flex justify-between items-center gap-2">
-                            <span class="text-slate-500">จำนวนนักเรียนทั้งหมด: <b>${enrolledStudentsCache.length}</b> คน</span>
-                            <button onclick="openAddStudentPickerModal()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center gap-1">
-                                <i class="fas fa-user-plus"></i> เพิ่มนักเรียนเข้าคอร์ส
-                            </button>
+                    <div class="space-y-3 text-xs text-left">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" id="studentSearchBox" oninput="renderStudentListModalUI(this.value)" placeholder="พิมพ์ค้นหาชื่อ หรือรหัสนักเรียน..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl outline-none">
                         </div>
                         <div class="max-h-[50vh] overflow-y-auto border rounded-2xl">
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-slate-100 dark:bg-slate-800/80 font-bold border-b dark:border-slate-700">
-                                        <th class="p-3">ลำดับ</th>
                                         <th class="p-3">รหัสนักเรียน</th>
                                         <th class="p-3">ชื่อ-นามสกุล</th>
+                                        <th class="p-3 text-center">สถานะ</th>
                                         <th class="p-3 text-center">จัดการ</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="studentTableBody">
                                     ${rowsHtml}
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 `,
-                width: '650px',
-                confirmButtonText: 'ปิดหน้าต่าง',
+                width: '700px',
+                confirmButtonText: 'เสร็จสิ้น',
                 confirmButtonColor: '#0284c7',
                 background: isDark ? '#090d16' : '#ffffff',
                 color: isDark ? '#f1f5f9' : '#1e293b'
@@ -419,93 +429,43 @@
             });
         }
 
-        async function openAddStudentPickerModal() {
-            Swal.fire({ title: 'กำลังโหลดรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            let profiles = [];
-            const pRes = await mySupabase.from('profiles').select('*');
-            if (pRes.data) profiles = [...profiles, ...pRes.data];
-            const sRes = await mySupabase.from('students').select('*');
-            if (sRes.data) profiles = [...profiles, ...sRes.data];
-
-            const enrolledStudentIds = enrolledStudentsCache.map(e => String(e.studentId));
-            const availableStudents = profiles.filter(p => !enrolledStudentIds.includes(String(p.id || p.user_id || p.student_id)));
-
-            if (availableStudents.length === 0) {
-                Swal.fire('แจ้งเตือน', 'นักเรียนทุกคนลงทะเบียนคอร์สนี้ครบแล้ว', 'info');
-                return;
-            }
-
-            const optionsHtml = availableStudents.map(p => {
-                const sId = p.id || p.user_id || p.student_id;
-                const name = `${p.first_name || p.name || '-'} ${p.last_name || ''}`.trim() || p.full_name || p.username || 'ไม่ระบุชื่อ';
-                const code = p.student_id ? ` [รหัส: ${p.student_id}]` : '';
-                return `<option value="${sId}">${name}${code}</option>`;
-            }).join('');
-
-            const isDark = document.documentElement.classList.contains('dark');
-            Swal.fire({
-                title: '➕ เลือกนักเรียนเพื่อเพิ่มเข้าคอร์ส',
-                html: `
-                    <div class="space-y-3 text-left text-xs">
-                        <label class="block font-bold">เลือกรายชื่อนักเรียน:</label>
-                        <select id="swalTargetStudentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
-                            ${optionsHtml}
-                        </select>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันเพิ่มเข้าคอร์ส',
-                cancelButtonText: 'ย้อนกลับ',
-                confirmButtonColor: '#7c3aed',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b',
-                preConfirm: () => {
-                    return document.getElementById('swalTargetStudentId').value;
-                }
-            }).then(async (result) => {
-                if (result.isConfirmed && result.value) {
-                    const studentIdToEnroll = result.value;
-                    Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                    
-                    // บันทึกลงตาราง enrollments โดยรองรับฟิลด์ student_id
-                    const { error } = await mySupabase.from('enrollments').insert([{
-                        course_id: courseId,
-                        student_id: studentIdToEnroll,
-                        created_at: new Date().toISOString()
-                    }]);
-
-                    if (!error) {
-                        Swal.fire({ icon: 'success', title: 'เพิ่มนักเรียนสำเร็จ!', timer: 1000, showConfirmButton: false });
-                        openManageStudentsModal();
-                    } else {
-                        // ลองสำรองบันทึกลงตาราง course_enrollments หากตาราง enrollments เกิดข้อผิดพลาด
-                        const altInsert = await mySupabase.from('course_enrollments').insert([{
-                            course_id: courseId,
-                            student_id: studentIdToEnroll,
-                            created_at: new Date().toISOString()
-                        }]);
-                        if (!altInsert.error) {
-                            Swal.fire({ icon: 'success', title: 'เพิ่มนักเรียนสำเร็จ!', timer: 1000, showConfirmButton: false });
-                            openManageStudentsModal();
-                        } else {
-                            Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
-                        }
-                    }
-                }
-            });
-        }
-
-        async function removeStudentFromCourse(enrollId) {
-            const res = await Swal.fire({ title: 'ยืนยันนำนักเรียนออกจากคอร์ส?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' });
-            if (res.isConfirmed) {
+        async function toggleEnrollStudent(studentId, isCurrentlyEnrolled, enrollId) {
+            if (isCurrentlyEnrolled && enrollId) {
+                // ลบออกจากการลงทะเบียน
                 let { error } = await mySupabase.from('enrollments').delete().eq('id', enrollId);
                 if (error) {
                     await mySupabase.from('course_enrollments').delete().eq('id', enrollId);
                 }
-                Swal.fire({ icon: 'success', title: 'นำออกสำเร็จ', timer: 1000, showConfirmButton: false });
-                openManageStudentsModal();
+                // อัปเดต Cache ในหน่วยความจำ
+                const target = window.globalAllStudents.find(s => s.studentId === studentId);
+                if (target) { target.isEnrolled = false; target.enrollId = null; }
+            } else {
+                // เพิ่มเข้าคอร์ส
+                let { data, error } = await mySupabase.from('enrollments').insert([{
+                    course_id: courseId,
+                    student_id: studentId,
+                    created_at: new Date().toISOString()
+                }]).select();
+
+                if (error) {
+                    let altIns = await mySupabase.from('course_enrollments').insert([{
+                        course_id: courseId,
+                        student_id: studentId,
+                        created_at: new Date().toISOString()
+                    }]).select();
+                    if (altIns.data && altIns.data[0]) {
+                        const target = window.globalAllStudents.find(s => s.studentId === studentId);
+                        if (target) { target.isEnrolled = true; target.enrollId = altIns.data[0].id; }
+                    }
+                } else if (data && data[0]) {
+                    const target = window.globalAllStudents.find(s => s.studentId === studentId);
+                    if (target) { target.isEnrolled = true; target.enrollId = data[0].id; }
+                }
             }
+
+            // เรนเดอร์อัปเดตตารางทันทีโดยคงข้อความค้นหาเดิมไว้
+            const searchVal = document.getElementById('studentSearchBox')?.value || '';
+            renderStudentListModalUI(searchVal);
         }
 
         initCourseDetail();
