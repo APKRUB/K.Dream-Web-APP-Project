@@ -271,9 +271,10 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                // ส่งเฉพาะฟิลด์ที่มีจริงในตาราง course_lessons
+                // เพิ่ม module_id เป็นค่าเริ่มต้น '0' เพื่อป้องกัน Not-Null Constraint Error
                 const payload = {
                     course_id: courseId,
+                    module_id: '0',
                     title: formValues.title,
                     video_url: isVideo ? formValues.url : null,
                     pdf_url: !isVideo ? formValues.url : null,
