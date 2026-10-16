@@ -941,10 +941,11 @@
                 let cardHtml = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">`;
                 completedAttempts.forEach(att => {
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
-                    const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
+                    const score = Number(att.total_score !== undefined ? att.total_score : (att.score || 0));
                     
-                    // ปรับแก้ตรงนี้: ดึงคะแนนเต็มจากฐานข้อมูลให้ครอบคลุมทุกฟิลด์ที่เป็นไปได้ (เช่น full_score, max_score, total_points หรือคำนวณจากจำนวนข้อ)
-                    const maxScore = att.max_score || att.full_score || exam.full_score || exam.max_score || (examQuestionCounts[exam.id] ? examQuestionCounts[exam.id] * 10 : 100);
+                    // ปรับแก้ตรงนี้: ดึงคะแนนเต็มจากฐานข้อมูลและแปลงเป็นตัวเลขตรงๆ ไม่คูณ 10
+                    let rawMaxScore = exam.full_score || exam.max_score || att.full_score || att.max_score || 100;
+                    const maxScore = Number(rawMaxScore);
                     
                     const dateStr = new Date(att.submission_time || att.submitted_at || att.created_at).toLocaleString('th-TH');
 
@@ -970,10 +971,11 @@
             } else {
                 container.innerHTML = completedAttempts.map(att => {
                     const exam = allExams.find(e => e.id === att.exam_id) || {};
-                    const score = att.total_score !== undefined ? att.total_score : (att.score || 0);
+                    const score = Number(att.total_score !== undefined ? att.total_score : (att.score || 0));
                     
-                    // ปรับแก้ตรงนี้เช่นเดียวกันสำหรับมุมมองแบบรายชื่อ (List)
-                    const maxScore = att.max_score || att.full_score || exam.full_score || exam.max_score || (examQuestionCounts[exam.id] ? examQuestionCounts[exam.id] * 10 : 100);
+                    // ปรับแก้ตรงนี้เช่นเดียวกันสำหรับมุมมองรายชื่อ (List)
+                    let rawMaxScore = exam.full_score || exam.max_score || att.full_score || att.max_score || 100;
+                    const maxScore = Number(rawMaxScore);
                     
                     const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
                     const dateStr = new Date(att.submission_time || att.submitted_at || att.created_at).toLocaleString('th-TH');
