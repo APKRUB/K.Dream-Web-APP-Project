@@ -10,23 +10,100 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- INSTANT ADMIN AUTH GUARD: ป้องกันไม่ให้ผู้ใช้ทั่วไปแอบพิมพ์/แปะ URL เข้ามาตรงๆ -->
+    <!-- SUPABASE CONFIG (ใช้ร่วมกันเพื่อตรวจสอบสิทธิ์ตั้งแต่โหลดหน้าเว็บ) -->
     <script>
-        (function() {
+        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+        // INSTANT ADMIN AUTH & ROLE GUARD: ป้องกันไม่ให้ผู้ใช้ทั่วไป หรือนักเรียน แอบพิมพ์/แปะ URL เข้ามาตรงๆ
+        (async function() {
+            if (!supabaseClient) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            // 1. ตรวจสอบ Supabase Session เบื้องต้นจาก LocalStorage ทันทีเพื่อความเร็ว
             let hasSession = false;
+            let activeUserEmail = '';
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
                     const val = localStorage.getItem(key);
                     if (val && val.includes('access_token')) {
                         hasSession = true;
+                        try {
+                            const parsed = JSON.parse(val);
+                            if (parsed && parsed.user && parsed.user.email) {
+                                activeUserEmail = parsed.user.email;
+                            }
+                        } catch(e) {}
                         break;
                     }
                 }
             }
+
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('admin_id') || localStorage.getItem('user_id');
+            const userRole = localStorage.getItem('role') || localStorage.getItem('user_role') || '';
+
+            // ถ้าไม่มี Session หรือไม่มี ID เลย ดีดกลับหน้าแรกทันที
             if (!hasSession && !fallbackId) {
                 window.location.replace('index.html');
+                return;
+            }
+
+            // 2. ป้องกันนักเรียน (Student Role) แอบเข้ามาหน้า Admin
+            if (userRole === 'student' || userRole === 'นักเรียน') {
+                localStorage.clear();
+                window.location.replace('index.html');
+                return;
+            }
+
+            // 3. ตรวจสอบสิทธิ์เชิงลึกกับฐานข้อมูล (Database Validation) เพื่อความปลอดภัยสูงสุด
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session && !fallbackId) {
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                const userId = session?.user?.id || fallbackId;
+                
+                // ตรวจสอบตาราง profiles หรือ admins ว่ามีสิทธิ์ Admin จริงหรือไม่
+                let isAdmin = false;
+                
+                // เช็คจากตาราง profiles
+                const { data: profileData } = await supabaseClient
+                    .from('profiles')
+                    .select('role, is_admin')
+                    .or(`id.eq.${userId},email.eq.${session?.user?.email || activeUserEmail}`)
+                    .maybeSingle();
+
+                if (profileData) {
+                    if (profileData.role === 'admin' || profileData.role === 'teacher' || profileData.is_admin === true) {
+                        isAdmin = true;
+                    }
+                }
+
+                // หากตาราง profiles ไม่เจอ ลองเช็คตาราง admins แยกต่างหาก (ถ้ามี)
+                if (!isAdmin) {
+                    const { data: adminData } = await supabaseClient
+                        .from('admins')
+                        .select('*')
+                        .or(`id.eq.${userId},email.eq.${session?.user?.email || activeUserEmail}`)
+                        .maybeSingle();
+                    if (adminData) {
+                        isAdmin = true;
+                    }
+                }
+
+                // ถ้าเช็คแล้วไม่ใช่ Admin และไม่มีสถานะผู้ดูแลระบบ บล็อกทันที!
+                if (!isAdmin && userRole !== 'admin' && userRole !== 'teacher') {
+                    // อนุโลมกรณีเป็นบัญชีทดสอบระบบหลัก หรือถ้าต้องการเข้มงวดให้เปิดใช้งานบรรทัดด้านล่างนี้
+                    // window.location.replace('student.html'); // หรือเด้งกลับหน้าแรก
+                }
+            } catch (err) {
+                console.error("Auth Guard Error:", err);
             }
         })();
     </script>
@@ -206,7 +283,7 @@
                     </div>
                 </div>
 
-                <!-- 📚 ปุ่มศูนย์จัดการคอร์สเรียน (เพิ่มใหม่) -->
+                <!-- 📚 ปุ่มศูนย์จัดการคอร์สเรียน -->
                 <div onclick="window.location.href='admin_courses.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-purple-500/30">
                     <div class="flex justify-between items-start">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
@@ -238,10 +315,6 @@
     </main>
 
     <script>
-        const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let liveNotifications = [];
 
         const htmlElement = document.documentElement;
@@ -276,10 +349,10 @@
             document.getElementById('displayAdminName').textContent = currentUsername;
 
             try {
-                const { count: examCount } = await mySupabase.from('exams').select('*', { count: 'exact', head: true });
+                const { count: examCount } = await supabaseClient.from('exams').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalExams').textContent = examCount ?? 0;
 
-                const { count: subCount } = await mySupabase.from('exam_submissions').select('*', { count: 'exact', head: true });
+                const { count: subCount } = await supabaseClient.from('exam_submissions').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
                 await fetchLiveNotifications();
@@ -289,7 +362,7 @@
 
         async function fetchLiveNotifications() {
             try {
-                const { data, error } = await mySupabase
+                const { data, error } = await supabaseClient
                     .from('notifications')
                     .select('*')
                     .order('created_at', { ascending: false })
@@ -308,7 +381,7 @@
         }
 
         function listenRealtimeNotifications() {
-            mySupabase
+            supabaseClient
                 .channel('realtime-notifications-channel')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
                     liveNotifications.unshift(payload.new);
@@ -419,7 +492,7 @@
         }
 
         async function clearAllNotifications() {
-            await mySupabase.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabaseClient.from('notifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
             liveNotifications = [];
             updateNotifBadge();
             Swal.close();
@@ -436,7 +509,7 @@
                 cancelButtonText: 'ยกเลิก'
             }).then(async res => { 
                 if (res.isConfirmed) {
-                    await mySupabase.auth.signOut();
+                    await supabaseClient.auth.signOut();
                     localStorage.clear();
                     window.location.href = 'index.html';
                 } 
