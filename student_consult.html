@@ -75,7 +75,6 @@
         .calendar-day { transition: all 0.2s ease; }
         .calendar-day:hover { transform: translateY(-2px); }
         
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
@@ -108,7 +107,7 @@
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 space-y-6">
         
-        <!-- Status & Countdown Banner -->
+        <!-- Status & Countdown Banner (รองรับทั้งนับถอยหลังเปิด และนับถอยหลังปิดระบบ) -->
         <div id="systemStatusBanner" class="glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl shrink-0 shadow-inner"><i class="fas fa-clock"></i></div>
@@ -118,7 +117,7 @@
                 </div>
             </div>
             <div id="countdownTimerBox" class="hidden text-right bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 rounded-2xl border border-amber-500/20">
-                <span class="text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
+                <span id="countdownLabel" class="text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
                 <span id="countdownDisplay" class="font-black text-amber-700 dark:text-amber-300 text-sm tracking-wide">--:--:--:--</span>
             </div>
         </div>
@@ -142,7 +141,7 @@
             </div>
         </div>
 
-        <!-- 🚫 Access Denied Card (กรณีไม่มีสิทธิ์ / ไม่ได้ลงทะเบียนคอร์สที่อาจารย์กำหนด) -->
+        <!-- 🚫 Access Denied Card -->
         <div id="accessDeniedSection" class="hidden glossy-card p-10 sm:p-14 rounded-3xl border-2 border-rose-500/30 bg-gradient-to-br from-rose-50/60 to-orange-50/30 dark:from-rose-950/20 dark:to-orange-950/10 text-center space-y-4">
             <div class="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-2xl mx-auto shadow-inner">
                 <i class="fas fa-ban"></i>
@@ -310,6 +309,7 @@
             const bannerDesc = document.getElementById('bannerDesc');
             const bookingInterface = document.getElementById('bookingInterface');
             const countdownBox = document.getElementById('countdownTimerBox');
+            const countdownLabel = document.getElementById('countdownLabel');
 
             const now = new Date();
             let isOpen = systemSettings.is_open;
@@ -321,13 +321,23 @@
                 isOpen = false;
             }
 
+            if (countdownInterval) clearInterval(countdownInterval);
+
             if (isOpen) {
                 banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
                 bannerTitle.textContent = 'ระบบเปิดรับจอง Consult แล้ว';
-                bannerDesc.textContent = systemSettings.close_at ? `⏳ ปิดรับจองอัตโนมัติใน: ${new Date(systemSettings.close_at).toLocaleString('th-TH')}` : 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลยครับ';
+                
+                if (systemSettings.close_at && new Date(systemSettings.close_at) > now) {
+                    bannerDesc.textContent = 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลยครับ';
+                    countdownBox.classList.remove('hidden');
+                    countdownLabel.textContent = 'ระบบจะปิดรับในอีก';
+                    startCountdown(new Date(systemSettings.close_at).getTime(), () => loadSystemStatus());
+                } else {
+                    bannerDesc.textContent = 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลยครับ';
+                    countdownBox.classList.add('hidden');
+                }
+
                 if (hasValidCourseAccess) bookingInterface.classList.remove('hidden');
-                countdownBox.classList.add('hidden');
-                if (countdownInterval) clearInterval(countdownInterval);
             } else {
                 banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
                 bannerTitle.textContent = 'ระบบปิดรับจอง Consult ในขณะนี้';
@@ -335,13 +345,37 @@
                 if (systemSettings.open_at && new Date(systemSettings.open_at) > now) {
                     bannerDesc.textContent = `⏰ กำหนดการเปิดรับจอง: ${new Date(systemSettings.open_at).toLocaleString('th-TH')}`;
                     countdownBox.classList.remove('hidden');
-                    startCountdown(new Date(systemSettings.open_at).getTime());
+                    countdownLabel.textContent = 'ระบบจะเปิดในอีก';
+                    startCountdown(new Date(systemSettings.open_at).getTime(), () => loadSystemStatus());
                 } else {
                     bannerDesc.textContent = 'ยังไม่ถึงเวลาเปิดรับจอง หรืออาจารย์ปิดระบบชั่วคราว';
                     countdownBox.classList.add('hidden');
                 }
                 bookingInterface.classList.add('hidden');
             }
+        }
+
+        function startCountdown(targetTime, onComplete) {
+            function updateTimer() {
+                const now = new Date().getTime();
+                const distance = targetTime - now;
+                if (distance <= 0) {
+                    clearInterval(countdownInterval);
+                    if (onComplete) onComplete();
+                    return;
+                }
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                let timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                if (days > 0) timeStr = `${days} วัน ${timeStr}`;
+                
+                document.getElementById('countdownDisplay').textContent = timeStr;
+            }
+            updateTimer();
+            countdownInterval = setInterval(updateTimer, 1000);
         }
 
         async function checkStudentCourseAccess() {
@@ -365,26 +399,6 @@
                 console.error("Error checking course access:", err);
                 hasValidCourseAccess = false;
             }
-        }
-
-        async function startCountdown(targetTime) {
-            if (countdownInterval) clearInterval(countdownInterval);
-            function updateTimer() {
-                const now = new Date().getTime();
-                const distance = targetTime - now;
-                if (distance < 0) {
-                    clearInterval(countdownInterval);
-                    loadSystemStatus();
-                    return;
-                }
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                document.getElementById('countdownDisplay').textContent = `${days}วัน ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            }
-            updateTimer();
-            countdownInterval = setInterval(updateTimer, 1000);
         }
 
         async function loadMyBooking() {
