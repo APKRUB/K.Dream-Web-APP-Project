@@ -309,19 +309,32 @@
             }
         }
 
-        // --- ระบบจัดการนักเรียนแบบคลิกเดียว (Toggle Enroll) ง่ายที่สุด ---
+        // --- ระบบจัดการนักเรียนพร้อมคัดกรองซ่อน Admin ออก ---
         async function openManageStudentsModal() {
             Swal.fire({ title: 'กำลังโหลดรายชื่อนักเรียน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             try {
-                // 1. ดึงรายชื่อนักเรียนทั้งหมดจากตาราง profiles หรือ students
                 let profiles = [];
                 const pRes = await mySupabase.from('profiles').select('*');
                 if (pRes.data) profiles = [...profiles, ...pRes.data];
                 const sRes = await mySupabase.from('students').select('*');
                 if (sRes.data) profiles = [...profiles, ...sRes.data];
 
-                // 2. ดึงข้อมูลการลงทะเบียนในคอร์สนี้
+                // คัดกรองเฉพาะบัญชีที่เป็นนักเรียน (ซ่อน Admin หรือบัญชีที่มีสถานะเป็น admin ออก)
+                profiles = profiles.filter(p => {
+                    const role = String(p.role || p.user_role || '').toLowerCase();
+                    const isAdm = role === 'admin' || p.is_admin === true;
+                    // ถ้าฟิลด์ student_id เป็น "-" หรือไม่มี และไม่มีรหัสประจำตัวนักเรียน ให้ถือว่าเป็นแอดมินหรือระบบ ซ่อนออก
+                    const sCode = String(p.student_id || p.code || '').trim();
+                    const isDashOrEmpty = sCode === '' || sCode === '-';
+                    
+                    if (isAdm) return false; // ตัดแอดมินออก
+                    // หากไม่มีรหัสประจำตัว หรือเป็น - แต่ชื่อชัดเจนว่าเป็นแอดมิน ให้กรองออกด้วย
+                    if (isDashOrEmpty && (p.username === 'admin' || (p.full_name && p.full_name.toLowerCase().includes('admin')))) return false;
+
+                    return true;
+                });
+
                 let enrollsRes = await mySupabase.from('enrollments').select('*').eq('course_id', courseId);
                 let enrolledList = enrollsRes.data || [];
                 if (enrolledList.length === 0) {
@@ -329,11 +342,10 @@
                     enrolledList = altEnrolls.data || [];
                 }
 
-                // ทำ Map เก็บ student_id ที่ลงทะเบียนแล้ว เพื่อเช็คสถานะติ๊กถูก
                 let enrolledMap = {};
                 enrolledList.forEach(en => {
                     const sId = String(en.student_id || en.user_id || en.id);
-                    enrolledMap[sId] = en.id; // เก็บ enrollment id ไว้ใช้ตอนลบออก
+                    enrolledMap[sId] = en.id;
                 });
 
                 window.globalAllStudents = profiles.map(p => {
@@ -388,7 +400,6 @@
 
             const isDark = document.documentElement.classList.contains('dark');
             
-            // ถ้า Modal เปิดอยู่แล้วให้อัปเดตเฉพาะเนื้อหาตารางเพื่อความลื่นไหล
             if (Swal.isVisible() && document.getElementById('studentSearchBox')) {
                 document.getElementById('studentTableBody').innerHTML = rowsHtml;
                 return;
@@ -431,16 +442,13 @@
 
         async function toggleEnrollStudent(studentId, isCurrentlyEnrolled, enrollId) {
             if (isCurrentlyEnrolled && enrollId) {
-                // ลบออกจากการลงทะเบียน
                 let { error } = await mySupabase.from('enrollments').delete().eq('id', enrollId);
                 if (error) {
                     await mySupabase.from('course_enrollments').delete().eq('id', enrollId);
                 }
-                // อัปเดต Cache ในหน่วยความจำ
                 const target = window.globalAllStudents.find(s => s.studentId === studentId);
                 if (target) { target.isEnrolled = false; target.enrollId = null; }
             } else {
-                // เพิ่มเข้าคอร์ส
                 let { data, error } = await mySupabase.from('enrollments').insert([{
                     course_id: courseId,
                     student_id: studentId,
@@ -463,7 +471,6 @@
                 }
             }
 
-            // เรนเดอร์อัปเดตตารางทันทีโดยคงข้อความค้นหาเดิมไว้
             const searchVal = document.getElementById('studentSearchBox')?.value || '';
             renderStudentListModalUI(searchVal);
         }
