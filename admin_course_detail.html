@@ -271,10 +271,10 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                // เพิ่ม module_id เป็นค่าเริ่มต้น '0' เพื่อป้องกัน Not-Null Constraint Error
+                // ใช้ค่า UUID มาตรฐานที่เป็นศูนย์ (00000000-0000-0000-0000-000000000000) สำหรับ module_id เพื่อผ่านประเภทข้อมูล UUID
                 const payload = {
                     course_id: courseId,
-                    module_id: '0',
+                    module_id: '00000000-0000-0000-0000-000000000000',
                     title: formValues.title,
                     video_url: isVideo ? formValues.url : null,
                     pdf_url: !isVideo ? formValues.url : null,
