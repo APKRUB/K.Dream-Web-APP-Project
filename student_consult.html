@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LMS | จองเวลา Consult กับอาจารย์</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -38,87 +38,118 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Prompt', 'sans-serif'] }, 
-                    colors: { primary: '#0284c7', navy: '#0f172a', darkbg: '#090d16', darkbox: '#0f172a', darkinput: '#1e293b' } 
+                    colors: { primary: '#0ea5e9', navy: '#0f172a', darkbg: '#070b14', darkbox: '#0f172a', darkinput: '#1e293b' } 
                 } 
             }
         }
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
-        .dark .glass-nav { background: rgba(9, 13, 22, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(30, 41, 59, 0.8); }
+        .glass-nav { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6); 
+        }
+        .dark .glass-nav { 
+            background: rgba(7, 11, 20, 0.85); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(30, 41, 59, 0.6); 
+        }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .glossy-card {
-            background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 1);
-            box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.08);
-            transition: all 0.2s ease;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 20px 40px -15px rgba(14, 165, 233, 0.07), 0 1px 3px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .dark .glossy-card {
-            background: #0f172a;
-            border: 1px solid rgba(30, 41, 59, 1);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.65) 100%);
+            border: 1px solid rgba(30, 41, 59, 0.8);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
         }
-        .slot-card { transition: all 0.2s ease; }
-        .slot-card:hover { transform: translateY(-2px); }
+        .slot-card { transition: all 0.25s ease; }
+        .slot-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px -10px rgba(14, 165, 233, 0.2); }
         .calendar-day { transition: all 0.2s ease; }
         .calendar-day:hover { transform: translateY(-2px); }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-900 dark:text-slate-100 pb-20">
+<body class="bg-slate-100/70 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-800 dark:text-slate-100 pb-24">
 
+    <!-- Top Navigation -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-4">
-                    <button onclick="window.location.href='student.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-primary hover:text-white transition-all shadow-sm"><i class="fas fa-arrow-left text-lg"></i></button>
+                <div class="flex items-center gap-3.5">
+                    <button onclick="window.location.href='student.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 hover:bg-sky-500 hover:text-white transition-all shadow-sm group">
+                        <i class="fas fa-arrow-left text-base group-hover:-translate-x-0.5 transition-transform"></i>
+                    </button>
                     <div>
-                        <h1 class="font-extrabold text-xl text-slate-900 dark:text-white flex items-center gap-2">
-                            <span class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center text-sm shadow-md"><i class="fas fa-calendar-alt"></i></span>
+                        <h1 class="font-bold text-lg sm:text-xl text-slate-900 dark:text-white flex items-center gap-2">
                             จองเวลา Consult กับอาจารย์
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400" id="studentWelcomeText">กำลังตรวจสอบข้อมูลผู้ใช้งาน...</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="studentWelcomeText">กำลังตรวจสอบข้อมูลผู้ใช้งาน...</p>
                     </div>
                 </div>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"><i class="fas fa-moon text-lg" id="themeIcon"></i></button>
+                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:border-sky-500 transition-all">
+                    <i class="fas fa-moon text-base" id="themeIcon"></i>
+                </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 space-y-8">
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 space-y-6">
         
         <!-- Status & Countdown Banner -->
         <div id="systemStatusBanner" class="glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-4">
-                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg shrink-0"><i class="fas fa-info-circle"></i></div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl shrink-0 shadow-inner"><i class="fas fa-clock"></i></div>
                 <div>
-                    <h2 class="font-bold text-sm text-slate-900 dark:text-white" id="bannerTitle">กำลังตรวจสอบสถานะระบบ...</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="bannerDesc">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูล</p>
+                    <h2 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white" id="bannerTitle">กำลังตรวจสอบสถานะระบบ...</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal" id="bannerDesc">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูล</p>
                 </div>
             </div>
-            <div id="countdownTimerBox" class="hidden text-right">
-                <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
-                <span id="countdownDisplay" class="font-extrabold text-sky-600 dark:text-sky-400 text-sm">--:--:--:--</span>
+            <div id="countdownTimerBox" class="hidden text-right bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 rounded-2xl border border-amber-500/20">
+                <span class="text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
+                <span id="countdownDisplay" class="font-black text-amber-700 dark:text-amber-300 text-sm tracking-wide">--:--:--:--</span>
             </div>
         </div>
 
         <!-- My Current Booking Card -->
-        <div id="myBookingSection" class="hidden glossy-card p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-4">
-            <div>
-                <span class="px-3 py-1 bg-emerald-500 text-white rounded-xl text-[10px] font-extrabold uppercase tracking-wide"><i class="fas fa-check-circle mr-1"></i> จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
-                <h3 class="font-extrabold text-lg text-slate-900 dark:text-white mt-2" id="mySlotTimeText">-</h3>
+        <div id="myBookingSection" class="hidden glossy-card p-8 rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 space-y-5 shadow-xl shadow-emerald-500/5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-500/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full">จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
+                        <h3 class="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white mt-1" id="mySlotTimeText">-</h3>
+                    </div>
+                </div>
             </div>
-            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">⚠️ หมายเหตุ: เมื่อยืนยันการจองแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนแปลงเวลา กรุณาติดต่ออาจารย์ผู้สอนโดยตรง</p>
+            <div class="flex items-start gap-3 bg-amber-500/10 dark:bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-medium">
+                <i class="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                <span><strong>หมายเหตุ:</strong> เมื่อยืนยันการจองแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนแปลงเวลาหรือมีเหตุฉุกเฉิน กรุณาติดต่ออาจารย์ผู้สอนโดยตรง</span>
+            </div>
         </div>
 
         <!-- 🚫 Access Denied Card (กรณีไม่มีสิทธิ์ / ไม่ได้ลงทะเบียนคอร์สที่อาจารย์กำหนด) -->
-        <div id="accessDeniedSection" class="hidden glossy-card p-10 rounded-3xl border-2 border-rose-500/30 bg-rose-50/20 dark:bg-rose-950/10 text-center space-y-3">
-            <div class="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-2xl mx-auto">
+        <div id="accessDeniedSection" class="hidden glossy-card p-10 sm:p-14 rounded-3xl border-2 border-rose-500/30 bg-gradient-to-br from-rose-50/60 to-orange-50/30 dark:from-rose-950/20 dark:to-orange-950/10 text-center space-y-4">
+            <div class="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-2xl mx-auto shadow-inner">
                 <i class="fas fa-ban"></i>
             </div>
-            <h3 class="font-extrabold text-lg text-slate-900 dark:text-white">คอร์สของท่านไม่มีการจองคิว Consult ขออภัยในความไม่สะดวก</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                ระบบตรวจสอบพบว่าบัญชีของคุณยังไม่ได้ลงทะเบียนในรายวิชาที่เปิดให้มีการจอง Consult ในรอบนี้ หากมีข้อสงสัยกรุณาติดต่ออาจารย์ผู้สอน
+            <h3 class="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white">คอร์สของท่านไม่มีการจองคิว Consult ขออภัยในความไม่สะดวก</h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                ระบบตรวจสอบพบว่าบัญชีของคุณยังไม่ได้ลงทะเบียนในรายวิชาที่เปิดให้มีการจอง Consult ในรอบนี้ หากมีข้อสงสัยหรือต้องการความช่วยเหลือกรุณาติดต่ออาจารย์ผู้สอน
             </p>
         </div>
 
@@ -127,26 +158,29 @@
             
             <!-- Interactive Monthly Calendar View -->
             <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-6">
-                <div class="flex justify-between items-center">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div class="flex items-center gap-3">
-                        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-calendar-alt text-sky-600"></i> เลือกวันจากปฏิทิน</h3>
-                        <button onclick="goToCurrentMonth()" class="px-3 py-1 bg-slate-100 dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700">เดือนนี้</button>
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-base"><i class="fas fa-calendar-alt"></i></div>
+                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">เลือกวันจากปฏิทิน</h3>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:bg-sky-500 hover:text-white transition-all border border-slate-200 dark:border-slate-700"><i class="fas fa-chevron-left text-xs"></i></button>
-                        <span id="currentMonthLabel" class="font-extrabold text-sm text-slate-900 dark:text-white w-36 text-center">เดือน...</span>
-                        <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:bg-sky-500 hover:text-white transition-all border border-slate-200 dark:border-slate-700"><i class="fas fa-chevron-right text-xs"></i></button>
+                    <div class="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
+                        <button onclick="goToCurrentMonth()" class="px-3.5 py-2 bg-white dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm">เดือนนี้</button>
+                        <div class="flex items-center gap-1 bg-white dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all"><i class="fas fa-chevron-left text-xs"></i></button>
+                            <span id="currentMonthLabel" class="font-extrabold text-xs text-slate-900 dark:text-white w-32 text-center">เดือน...</span>
+                            <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all"><i class="fas fa-chevron-right text-xs"></i></button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> ว่าง (&gt; 2 ช่วง)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> ใกล้เต็ม (&le; 2 ช่วง)</span>
-                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span> เต็ม / ไม่มีคิว</span>
+                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-200/60 dark:border-slate-800">
+                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> ว่าง (&gt; 2 ช่วง)</span>
+                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span> ใกล้เต็ม (&le; 2 ช่วง)</span>
+                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></span> เต็ม / ไม่มีคิว</span>
                 </div>
 
-                <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400">
-                    <div>อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div>ส.</div>
+                <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 pt-2">
+                    <div class="text-rose-500">อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div class="text-sky-500">ส.</div>
                 </div>
 
                 <div id="calendarGrid" class="grid grid-cols-7 gap-2">
@@ -155,13 +189,21 @@
             </div>
 
             <!-- Available Slots List for Selected Date -->
-            <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-4">
-                <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-clock text-sky-600"></i> ช่วงเวลาว่างวันที่: <span id="selectedDateText" class="text-sky-600">-</span></h3>
-                    <span class="text-xs text-slate-400" id="slotCountBadge">0 ช่วงเวลาว่าง</span>
+            <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-200/60 dark:border-slate-800">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Time Slots</span>
+                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+                            ช่วงเวลาว่างวันที่: <span id="selectedDateText" class="text-sky-600 dark:text-sky-400 font-black">-</span>
+                        </h3>
+                    </div>
+                    <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20" id="slotCountBadge">0 ช่วงเวลาว่าง</span>
                 </div>
                 <div id="availableSlotsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div class="col-span-2 text-center py-10 text-slate-400 text-xs">กรุณาเลือกวันที่ต้องการจากปฏิทินด้านบน</div>
+                    <div class="col-span-2 text-center py-12 text-slate-400 text-xs">
+                        <i class="far fa-calendar-days text-3xl mb-2 block opacity-40"></i>
+                        กรุณาเลือกวันที่ต้องการจากปฏิทินด้านบน
+                    </div>
                 </div>
             </div>
 
@@ -211,7 +253,7 @@
             }
 
             if (!userId) {
-                await Swal.fire({ icon: 'error', title: 'Session Expired', text: 'กรุณาเข้าสู่ระบบผ่านหน้าหลักก่อนใช้งาน', confirmButtonColor: '#0284c7' });
+                await Swal.fire({ icon: 'error', title: 'Session Expired', text: 'กรุณาเข้าสู่ระบบผ่านหน้าหลักก่อนใช้งาน', confirmButtonColor: '#0ea5e9' });
                 window.location.replace('index.html');
                 return false;
             }
@@ -219,13 +261,13 @@
             currentStudentId = userId;
             const { data, error } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
             if (error || !data) {
-                await Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'ไม่พบข้อมูลบัญชีนักเรียนในระบบ', confirmButtonColor: '#0284c7' });
+                await Swal.fire({ icon: 'error', title: 'Unauthorized', text: 'ไม่พบข้อมูลบัญชีนักเรียนในระบบ', confirmButtonColor: '#0ea5e9' });
                 window.location.replace('index.html');
                 return false;
             }
 
             studentProfile = data;
-            document.getElementById('studentWelcomeText').textContent = `ยินดีต้อนรับ, ${studentProfile.full_name || 'นักเรียน'}`;
+            document.getElementById('studentWelcomeText').textContent = `ยินดีต้อนรับคุณ, ${studentProfile.full_name || 'นักเรียน'}`;
             return true;
         }
 
@@ -235,7 +277,6 @@
             await checkStudentCourseAccess();
 
             if (!hasValidCourseAccess) {
-                // หากนักเรียนไม่ได้ลงทะเบียนในคอร์สที่อาจารย์กำหนด ซ่อนช่องจองและแสดงการแจ้งเตือน
                 document.getElementById('bookingInterface').classList.add('hidden');
                 document.getElementById('accessDeniedSection').classList.remove('hidden');
                 document.getElementById('systemStatusBanner').classList.add('hidden');
@@ -283,7 +324,7 @@
             if (isOpen) {
                 banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
                 bannerTitle.textContent = 'ระบบเปิดรับจอง Consult แล้ว';
-                bannerDesc.textContent = systemSettings.close_at ? `⏳ ปิดรับจองอัตโนมัติใน: ${new Date(systemSettings.close_at).toLocaleString('th-TH')}` : 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลย';
+                bannerDesc.textContent = systemSettings.close_at ? `⏳ ปิดรับจองอัตโนมัติใน: ${new Date(systemSettings.close_at).toLocaleString('th-TH')}` : 'สามารถเลือกวันจากปฏิทินด้านล่างเพื่อทำการจองได้เลยครับ';
                 if (hasValidCourseAccess) bookingInterface.classList.remove('hidden');
                 countdownBox.classList.add('hidden');
                 if (countdownInterval) clearInterval(countdownInterval);
@@ -305,16 +346,12 @@
 
         async function checkStudentCourseAccess() {
             try {
-                // ดึงรายชื่อคอร์สที่อาจารย์ตั้งค่าอนุญาตในระบบ
                 const allowedCoursesSetting = systemSettings?.allowed_courses || [];
-                
-                // หากอาจารย์ไม่ได้ติ๊กเลือกคอร์สใดเลย อนุญาตให้ทุกคนจองได้ตามปกติ (หรือปรับเปลี่ยนตามต้องการ)
                 if (allowedCoursesSetting.length === 0) {
                     hasValidCourseAccess = true;
                     return;
                 }
 
-                // ดึงคอร์สที่นักเรียนคนนี้ลงทะเบียนเรียนจริงในระบบ
                 let enrolledCourseIds = [];
                 const { data: en1 } = await mySupabase.from('course_enrollments').select('course_id').eq('student_id', currentStudentId);
                 if (en1) enrolledCourseIds = enrolledCourseIds.concat(en1.map(e => String(e.course_id)));
@@ -323,10 +360,7 @@
                 if (en2) enrolledCourseIds = enrolledCourseIds.concat(en2.map(e => String(e.course_id)));
 
                 enrolledCourseIds = [...new Set(enrolledCourseIds)];
-
-                // ตรวจสอบว่ามีคอร์สใดที่ตรงกันอย่างน้อย 1 คอร์สหรือไม่
                 hasValidCourseAccess = enrolledCourseIds.some(courseId => allowedCoursesSetting.includes(courseId));
-
             } catch (err) {
                 console.error("Error checking course access:", err);
                 hasValidCourseAccess = false;
@@ -430,26 +464,26 @@
                 const slotsOnThisDay = allAvailableSlots.filter(s => s.start_time.startsWith(dateKey));
                 const count = slotsOnThisDay.length;
 
-                let badgeColor = 'bg-slate-100 dark:bg-darkinput text-slate-400 border border-slate-200 dark:border-slate-800';
+                let badgeColor = 'bg-white/80 dark:bg-darkinput text-slate-400 border border-slate-200/80 dark:border-slate-800';
                 let dotHtml = '';
 
                 if (count > 2) {
-                    badgeColor = 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold';
-                    dotHtml = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+                    badgeColor = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-bold shadow-sm';
+                    dotHtml = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>`;
                 } else if (count > 0) {
-                    badgeColor = 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold';
+                    badgeColor = 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-bold shadow-sm';
                     dotHtml = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>`;
                 } else {
                     dotHtml = `<span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 inline-block"></span>`;
                 }
 
                 const isSelected = selectedDateStr === dateKey;
-                const selectedRing = isSelected ? 'ring-2 ring-sky-500 shadow-md' : '';
-                const isToday = todayStr === dateKey ? 'border-sky-500/80 font-extrabold' : '';
+                const selectedRing = isSelected ? 'ring-2 ring-sky-500 ring-offset-2 dark:ring-offset-darkbox shadow-md font-extrabold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-500' : '';
+                const isToday = todayStr === dateKey && !isSelected ? 'border-sky-400 font-extrabold' : '';
 
                 grid.innerHTML += `
-                    <div onclick="selectDate('${dateKey}')" class="calendar-day p-2.5 rounded-2xl ${badgeColor} ${selectedRing} ${isToday} flex flex-col items-center justify-between min-h-[65px] cursor-pointer">
-                        <span class="text-xs">${day}</span>
+                    <div onclick="selectDate('${dateKey}')" class="calendar-day p-2.5 rounded-2xl ${badgeColor} ${selectedRing} ${isToday} flex flex-col items-center justify-between min-h-[70px] cursor-pointer">
+                        <span class="text-xs font-semibold">${day}</span>
                         <div class="flex items-center gap-1 mt-1">
                             ${dotHtml}
                             <span class="text-[10px]">${count > 0 ? count : ''}</span>
@@ -474,7 +508,7 @@
             document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-2xl mb-2 block"></i> ไม่มีช่วงเวลาว่างสำหรับวันที่เลือก</div>`;
+                container.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-400 text-xs"><i class="far fa-calendar-times text-3xl mb-2 block opacity-40"></i> ไม่มีช่วงเวลาว่างสำหรับวันที่เลือก</div>`;
                 return;
             }
 
@@ -482,12 +516,15 @@
                 const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 return `
-                    <div class="slot-card p-4 rounded-2xl bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div>
-                            <div class="font-extrabold text-sm text-slate-900 dark:text-white"><i class="far fa-clock text-sky-600 mr-1.5"></i> ${startStr} - ${endStr} น.</div>
-                            <div class="text-[11px] text-slate-400 mt-0.5">สถานะ: <span class="text-emerald-500 font-bold">ว่าง</span></div>
+                    <div class="slot-card p-4.5 rounded-2xl bg-white/70 dark:bg-darkinput/80 border border-slate-200/80 dark:border-slate-700/80 flex justify-between items-center shadow-sm">
+                        <div class="space-y-0.5">
+                            <div class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>
+                                ${startStr} - ${endStr} น.
+                            </div>
+                            <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold pl-4">● สถานะ: ว่าง</div>
                         </div>
-                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-md transition-all">จองเวลานี้</button>
+                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-500/25 transition-all active:scale-95">จองเวลานี้</button>
                     </div>
                 `;
             }).join('');
@@ -504,7 +541,8 @@
                 text: 'เมื่อยืนยันแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนเวลาต้องติดต่ออาจารย์',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#0284c7',
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#94a3b8',
                 confirmButtonText: 'ยืนยันจอง',
                 cancelButtonText: 'ยกเลิก'
             });
@@ -531,8 +569,8 @@
             }
         }
 
-        async function logStudentAction(actionText) {
-            try { await mySupabase.from('consult_logs').insert([{ action: actionText }]); } catch (err) {}
+        async function logStudentAction(actionTest) {
+            try { await mySupabase.from('consult_logs').insert([{ action: actionTest }]); } catch (err) {}
         }
 
         document.addEventListener('DOMContentLoaded', initStudentConsult);
