@@ -322,21 +322,21 @@
                     </div>
                 </div>
                 <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-blue-600">
-                    <div class="w-11 h-11 rounded-2xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-base shrink-0">🎯</div>
+                    <div class="w-11 h-11 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-base shrink-0">🎯</div>
                     <div>
                         <span class="text-[10px] text-slate-500 block font-semibold">คะแนนเฉลี่ยส่วนตัว</span>
                         <span class="text-base font-extrabold text-slate-900 dark:text-white" id="avgPersonalMetric">--%</span>
                     </div>
                 </div>
                 <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-emerald-500">
-                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">🌟</div>
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-base shrink-0">🌟</div>
                     <div>
                         <span class="text-[10px] text-slate-500 block font-semibold">หมวดหมู่จุดแข็ง</span>
                         <span class="text-xs font-extrabold text-emerald-600 truncate max-w-[110px] block mt-0.5" id="strongCategoryMetric">--</span>
                     </div>
                 </div>
                 <div class="hitech-card p-4 rounded-2xl flex items-center gap-3.5 border-l-4 border-l-amber-500">
-                    <div class="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-base shrink-0">⚠️</div>
+                    <div class="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-base shrink-0">⚠️</div>
                     <div>
                         <span class="text-[10px] text-slate-500 block font-semibold">จุดที่ต้องทบทวน</span>
                         <span class="text-xs font-extrabold text-amber-600 truncate max-w-[110px] block mt-0.5" id="weakCategoryMetric">--</span>
@@ -438,63 +438,63 @@
             }
         }
 
-async function authenticateStudent() {
-    const urlParams = new URLSearchParams(window.location.search);
-    let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
+        async function authenticateStudent() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let studentIdFromUrl = urlParams.get('student_id') || urlParams.get('id');
 
-    if (studentIdFromUrl) {
-        localStorage.setItem('student_id', studentIdFromUrl);
-        localStorage.setItem('id', studentIdFromUrl);
-        currentStudentId = studentIdFromUrl;
-    } else {
-        currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
-    }
+            if (studentIdFromUrl) {
+                localStorage.setItem('student_id', studentIdFromUrl);
+                localStorage.setItem('id', studentIdFromUrl);
+                currentStudentId = studentIdFromUrl;
+            } else {
+                currentStudentId = localStorage.getItem('student_id') || localStorage.getItem('id');
+            }
 
-    if (!currentStudentId) {
-        await Swal.fire({
-            icon: 'error',
-            title: 'Access Denied',
-            text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
-            confirmButtonColor: '#0284c7'
-        });
-        window.location.href = 'index.html';
-        return false;
-    }
+            if (!currentStudentId) {
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Access Denied',
+                    text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนให้ถูกต้อง',
+                    confirmButtonColor: '#0284c7'
+                });
+                window.location.href = 'index.html';
+                return false;
+            }
 
-    let studentFullName = 'นักเรียน';
-    const { data: profileData } = await mySupabase
-        .from('profiles')
-        .select('id, full_name, name, nickname, grade_level, school, email, line_id, line')
-        .eq('id', currentStudentId)
-        .maybeSingle();
-
-    if (profileData) {
-        currentStudentData = profileData;
-        studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
-    } else {
-        try {
-            const { data: studentData } = await mySupabase
-                .from('students')
+            let studentFullName = 'นักเรียน';
+            const { data: profileData } = await mySupabase
+                .from('profiles')
                 .select('*')
                 .eq('id', currentStudentId)
                 .maybeSingle();
-            if (studentData) {
-                currentStudentData = studentData;
-                studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+
+            if (profileData) {
+                currentStudentData = profileData;
+                studentFullName = profileData.full_name || profileData.name || 'นักเรียน';
+            } else {
+                try {
+                    const { data: studentData } = await mySupabase
+                        .from('students')
+                        .select('*')
+                        .eq('id', currentStudentId)
+                        .maybeSingle();
+                    if (studentData) {
+                        currentStudentData = studentData;
+                        studentFullName = studentData.full_name || studentData.fullname || studentData.name || studentData.username || 'นักเรียน';
+                    }
+                } catch (err) {
+                    console.warn("Table students not found or skipped:", err);
+                }
             }
-        } catch (err) {
-            console.warn("Table students not found or skipped:", err);
+
+            currentStudentName = studentFullName;
+            document.getElementById('studentNavName').textContent = currentStudentName;
+            document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+
+            updateNavAvatar(currentStudentData?.avatar_url);
+
+            return true;
         }
-    }
-
-    currentStudentName = studentFullName;
-    document.getElementById('studentNavName').textContent = currentStudentName;
-    document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
-
-    updateNavAvatar(currentStudentData?.avatar_url);
-
-    return true;
-}
 
         function updateNavAvatar(avatarUrl) {
             const imgEl = document.getElementById('navAvatarImg');
@@ -598,19 +598,28 @@ async function authenticateStudent() {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t dark:border-slate-800">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="block font-bold mb-1 text-slate-400">อีเมล (ล็อกโดย Admin)</label>
-                                <input disabled value="${currentStudentData.email || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                                <label class="block font-bold mb-1">เบอร์โทรศัพท์</label>
+                                <input id="swalPhone" value="${currentStudentData.phone || currentStudentData.phone_number || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="08xxxxxxxx">
                             </div>
                             <div>
-                                <label class="block font-bold mb-1 text-slate-400">LINE ID (ล็อกโดย Admin)</label>
-                                <input disabled value="${currentStudentData.line_id || currentStudentData.line || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                                <label class="block font-bold mb-1">LINE ID</label>
+                                <input id="swalLineId" value="${currentStudentData.line_id || currentStudentData.line || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="Line ID ของคุณ">
                             </div>
                         </div>
-                        <div>
-                            <label class="block font-bold mb-1 text-slate-400">เลขประจำตัวนักเรียน (ล็อกโดย Admin)</label>
-                            <input disabled value="${currentStudentData.student_id || currentStudentData.id || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+
+                        <div class="grid grid-cols-1 gap-3 pt-2 border-t dark:border-slate-800">
+                            <div>
+                                <label class="block font-bold mb-1 text-slate-400">อีเมล (ล็อกโดยระบบ - ใช้อันเดียวกับที่ลงทะเบียน)</label>
+                                <input disabled value="${currentStudentData.email || '-'}" class="w-full px-3 py-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none text-slate-400 cursor-not-allowed">
+                            </div>
+                        </div>
+
+                        <div class="pt-3">
+                            <button type="button" onclick="openChangePasswordModal()" class="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 border border-amber-500/30 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                                <i class="fas fa-key"></i> เปลี่ยนรหัสผ่านเข้าสู่ระบบ
+                            </button>
                         </div>
                     </div>
                 `,
@@ -629,6 +638,9 @@ async function authenticateStudent() {
                         nickname: document.getElementById('swalNickname').value.trim(),
                         grade_level: document.getElementById('swalGradeLevel').value.trim(),
                         school: document.getElementById('swalSchool').value.trim(),
+                        phone: document.getElementById('swalPhone').value.trim(),
+                        line_id: document.getElementById('swalLineId').value.trim(),
+                        line: document.getElementById('swalLineId').value.trim(),
                         avatar_url: document.getElementById('swalAvatarInput').value.trim()
                     };
                 }
@@ -646,6 +658,48 @@ async function authenticateStudent() {
                     updateNavAvatar(formValues.avatar_url);
 
                     Swal.fire({ icon: 'success', title: 'บันทึกโปรไฟล์สำเร็จ!', timer: 1200, showConfirmButton: false });
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                }
+            }
+        }
+
+        async function openChangePasswordModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const { value: passValues } = await Swal.fire({
+                title: '🔑 เปลี่ยนรหัสผ่านใหม่',
+                html: `
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                            <input type="password" id="swalNewPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="••••••••">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ยืนยันรหัสผ่านใหม่</label>
+                            <input type="password" id="swalConfirmPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-darkinput border rounded-xl outline-none" placeholder="••••••••">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันเปลี่ยนรหัสผ่าน',
+                cancelButtonText: 'ย้อนกลับ',
+                confirmButtonColor: '#d97706',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const p1 = document.getElementById('swalNewPassword').value;
+                    const p2 = document.getElementById('swalConfirmPassword').value;
+                    if (!p1 || p1.length < 6) { Swal.showValidationMessage('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return false; }
+                    if (p1 !== p2) { Swal.showValidationMessage('รหัสผ่านทั้งสองช่องไม่ตรงกัน'); return false; }
+                    return p1;
+                }
+            });
+
+            if (passValues) {
+                Swal.fire({ title: 'กำลังอัปเดตรหัสผ่าน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const { error } = await mySupabase.auth.updateUser({ password: passValues });
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'เปลี่ยนรหัสผ่านสำเร็จ!', text: 'กรุณาใช้รหัสผ่านใหม่ในการเข้าสู่ระบบครั้งถัดไป', confirmButtonColor: '#0284c7' });
                 } else {
                     Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
                 }
@@ -735,38 +789,29 @@ async function authenticateStudent() {
             updateAnalyticsDashboard();
         }
 
-async function initStudentPortal() {
+        async function initStudentPortal() {
             const isAuthValid = await authenticateStudent();
             if (!isAuthValid) return;
 
-            // 1. ดึงข้อมูลคอร์สเรียนทั้งหมด
             const { data: coursesData } = await mySupabase.from('courses').select('*');
             allCourses = coursesData || [];
 
-            // 2. ดึงข้อมูลการลงทะเบียนจากตาราง course_enrollments (แยก query เพื่อความชัวร์ 100%)
             let enrollments = [];
-            
-            // ลองดึงด้วย student_id
             const { data: en1 } = await mySupabase
                 .from('course_enrollments')
                 .select('*')
                 .eq('student_id', currentStudentId);
             if (en1 && en1.length > 0) enrollments = enrollments.concat(en1);
 
-            // ลองดึงด้วย user_id (เผื่อตารางใช้ชื่อนี้)
             const { data: en2 } = await mySupabase
                 .from('course_enrollments')
                 .select('*')
                 .eq('user_id', currentStudentId);
             if (en2 && en2.length > 0) enrollments = enrollments.concat(en2);
 
-            // กรองไอดีคอร์สที่ลงทะเบียนแล้ว (แปลงเป็น String เพื่อป้องกันปัญหาประเภทข้อมูลไม่ตรงกัน)
             enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(id => id !== '');
-            
-            // ตัดคอร์สที่ไม่ลงทะเบียนออก 100% (หากไม่มีการลงทะเบียน coursesList จะเป็นค่าว่าง ไม่ดึงมั่ว)
             enrolledCoursesList = allCourses.filter(c => enrolledCourseIds.includes(String(c.id)));
 
-            // Populate Global Course Dropdown
             const courseSelect = document.getElementById('globalCourseSelect');
             if (enrolledCoursesList.length === 0) {
                 courseSelect.innerHTML = `<option value="none">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>`;
