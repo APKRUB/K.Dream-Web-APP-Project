@@ -166,15 +166,15 @@
                 return;
             }
 
-            // โหลด Token นักเรียน
-            const { data: prof } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).maybeSingle();
+            // โหลด Token นักเรียน (รองรับทุกชื่อคอลัมน์ที่เป็นไปได้)
+            const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).maybeSingle();
             if (prof) {
-                studentTokenBalance = prof.tokens ?? prof.point ?? prof.coin ?? 0;
+                studentTokenBalance = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
             } else {
-                const { data: stud } = await mySupabase.from('students').select('tokens, point, coin').eq('id', currentStudentId).maybeSingle();
-                if (stud) studentTokenBalance = stud.tokens ?? stud.point ?? stud.coin ?? 0;
+                const { data: stud } = await mySupabase.from('students').select('*').eq('id', currentStudentId).maybeSingle();
+                if (stud) studentTokenBalance = stud.tokens ?? stud.point ?? stud.points ?? stud.coin ?? stud.coins ?? 0;
             }
-            document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
+            document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
             // โหลดสินค้าในร้าน
             const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
@@ -235,7 +235,7 @@
                         <div class="space-y-2">
                             <div class="flex justify-between items-center">
                                 <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[10px]">${catText}</span>
-                                <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1"><i class="fas fa-coins"></i> ${item.token_price.toLocaleString()} Token</span>
+                                <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1"><i class="fas fa-coins"></i> ${Number(item.token_price).toLocaleString()} Token</span>
                             </div>
                             <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${item.title}</h3>
                             <p class="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-3">${item.description || 'ไม่มีรายละเอียดสินค้าเพิ่มเติม'}</p>
@@ -264,8 +264,9 @@
 
             Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data: prof } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).single();
-            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.coin ?? 0;
+            // ดึงยอด Token ล่าสุด
+            const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
+            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.points ?? prof?.coin ?? prof?.coins ?? 0;
 
             if (currentTokens < itemPrice) {
                 Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
@@ -273,13 +274,20 @@
             }
 
             const newTokens = currentTokens - itemPrice;
-            await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
 
+            // บันทึกอัปเดต Token (รองรับทั้ง tokens และ point)
+            let updateResult = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
+            if (updateResult.error) {
+                await mySupabase.from('profiles').update({ point: newTokens }).eq('id', currentStudentId);
+            }
+
+            // ตัดสต็อกสินค้า
             const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
             if (prodData) {
                 await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
             }
 
+            // บันทึกประวัติการแลก
             await mySupabase.from('redemption_logs').insert([{
                 student_id: currentStudentId,
                 item_id: itemId,
@@ -288,7 +296,7 @@
             }]);
 
             studentTokenBalance = newTokens;
-            document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
+            document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
             // รีเฟรชข้อมูลในหน้า
             const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
@@ -327,7 +335,7 @@
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2">${statusBadge}<span class="text-[10px] text-slate-400">${dateStr}</span></div>
                                 <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${item.title}</h4>
-                                <p class="text-xs text-amber-500 font-bold"><i class="fas fa-coins mr-1"></i> ใช้ไป ${r.token_spent.toLocaleString()} Token</p>
+                                <p class="text-xs text-amber-500 font-bold"><i class="fas fa-coins mr-1"></i> ใช้ไป ${Number(r.token_spent).toLocaleString()} Token</p>
                             </div>
                         </div>
                     `;
