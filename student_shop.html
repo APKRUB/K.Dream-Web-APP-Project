@@ -137,6 +137,7 @@
         let allShopItems = [];
         let myRedemptions = [];
         let currentCategoryFilter = 'all';
+        let countdownTimerInterval = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -168,10 +169,13 @@
 
             await loadStudentDataAndShop();
             setupStudentRealtime();
+
+            // เริ่มรันระบบนับถอยหลังทุก ๆ 1 วินาที
+            if (countdownTimerInterval) clearInterval(countdownTimerInterval);
+            countdownTimerInterval = setInterval(updateCountdowns, 1000);
         }
 
         async function loadStudentDataAndShop() {
-            // 1. โหลด Token นักเรียนล่าสุด
             const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).maybeSingle();
             if (prof) {
                 studentTokenBalance = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
@@ -181,13 +185,10 @@
             }
             document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
-            // 2. โหลดสินค้าในร้าน
             const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
             allShopItems = items || [];
 
-            // 3. โหลดประวัติการแลกของนักเรียนคนนี้
             await fetchMyRedemptions();
-
             renderShopItems();
         }
 
@@ -258,8 +259,8 @@
 
                 let actionButtonHtml = '';
                 if (isNotStartedYet) {
-                    const formatStart = startsAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                    actionButtonHtml = `<span class="text-amber-500 font-bold text-[11px]" title="เริ่มเปิดขายวันที่ ${formatStart}">⏳ ยังไม่เปิดจำหน่าย</span>`;
+                    const timeDiff = startsAt.getTime() - now.getTime();
+                    actionButtonHtml = `<div class="text-amber-600 dark:text-amber-400 font-extrabold text-[11px] bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20" data-countdown="${startsAt.toISOString()}"><i class="fas fa-clock animate-spin mr-1"></i> กำลังเปิดใน: <span class="countdown-text">คำนวณ...</span></div>`;
                 } else if (isExpired) {
                     actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">⏰ หมดเขตแลกแล้ว</span>`;
                 } else if (isOutOfStock) {
@@ -294,6 +295,42 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // ⏱️ ฟังก์ชันอัปเดตตัวเลขนับถอยหลังทุก ๆ วินาทีแบบเรียลไทม์
+        function updateCountdowns() {
+            const countdownElements = document.querySelectorAll('[data-countdown]');
+            if (countdownElements.length === 0) return;
+
+            const now = new Date().getTime();
+            let shouldRefresh = false;
+
+            countdownElements.forEach(el => {
+                const targetTime = new Date(el.getAttribute('data-countdown')).getTime();
+                const distance = targetTime - now;
+
+                const textSpan = el.querySelector('.countdown-text');
+                if (!textSpan) return;
+
+                if (distance < 0) {
+                    textSpan.textContent = 'เปิดแล้ว!';
+                    shouldRefresh = true; // เมื่อถึงเวลา ให้รีเฟรชหน้าร้านทันทีเพื่อให้ปุ่มกดแลกโผล่ขึ้นมา
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    let timeStr = '';
+                    if (days > 0) timeStr += `${days}วัน `;
+                    timeStr += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    textSpan.textContent = timeStr;
+                }
+            });
+
+            if (shouldRefresh) {
+                loadStudentDataAndShop(); // โหลดข้อมูลใหม่เมื่อเวลาหมดลง
+            }
         }
 
         async function confirmRedeemItem(itemId, itemTitle, itemPrice) {
