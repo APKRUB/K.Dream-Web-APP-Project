@@ -219,7 +219,7 @@
             }).join('');
         }
 
-        // 🎲 ฟังก์ชันสุ่มรหัสผ่านตัวเลขล้วน 6 หลัก
+        // 🎲 ฟังก์ชันสุ่มรหัสผ่านตัวเลขล้วน 6 หลักสำหรับตอนสร้างใหม่
         function generateRandomPassword() {
             let password = '';
             for (let i = 0; i < 6; i++) {
@@ -239,8 +239,8 @@
             if (pwdInput) pwdInput.value = password;
         }
 
-        // 🔑 ฟังก์ชันรีเซ็ตรหัสผ่านใหม่ (เรียกใช้จากข้างใน Modal แก้ไข)
-        async function triggerResetPassword(username) {
+        // 🔑 ฟังก์ชันรีเซ็ตรหัสผ่านใหม่แบบบันทึกจริงผ่าน Supabase Auth (ผ่าน SQL Function หรืออัปเดตผ่านระบบ)
+        async function triggerResetPassword(studentId, username) {
             let newPwd = '';
             for (let i = 0; i < 6; i++) {
                 newPwd += Math.floor(Math.random() * 10);
@@ -275,16 +275,38 @@
             });
 
             if (confirmedPwd) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'รีเซ็ตรหัสผ่านสำเร็จ!',
-                    html: `รหัสผ่านใหม่ของ <b>${username}</b> คือ:<br><div class="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-xl font-mono font-bold text-sky-600 my-2">${confirmedPwd}</div><span class="text-xs text-slate-400">กรุณาจดรหัสนี้เพื่อแจ้งให้นักเรียนทราบ</span>`,
-                    confirmButtonColor: '#0284c7'
+                Swal.fire({ title: 'กำลังเปลี่ยนรหัสผ่าน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // อัปเดตรหัสผ่านผ่าน Supabase RPC function สำหรับเปลี่ยนรหัสผ่านผู้ใช้อื่น (หรือใช้การอัปเดตผ่านตาราง Auth หากตั้งค่าไว้)
+                // หากต้องการวิธีที่ง่ายที่สุดในฝั่ง Client สามารถใช้การเรียกฟังก์ชัน RPC หรืออัปเดตผ่านอีเมลจำลองได้
+                // ในที่นี้เราจะเรียกใช้ Supabase Admin ผ่านฟังก์ชันอัปเดต ถ้ามีฟังก์ชัน หรือใช้วิธีอัปเดตผ่านตาราง profiles เก็บ raw password ชั่วคราว (ถ้าโครงสร้างโปรเจกต์เก็บบน profiles)
+                // หรือหากใช้ Supabase Auth แนะนำให้สร้างฟังก์ชัน SQL สำหรับรีเซ็ตพาสเวิร์ดด้านล่างนี้ใน Supabase ครับ:
+                
+                const { error } = await mySupabase.rpc('admin_update_user_password', { 
+                    target_user_id: studentId, 
+                    new_password: confirmedPwd 
                 });
+
+                if (!error) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'รีเซ็ตรหัสผ่านสำเร็จ!',
+                        html: `รหัสผ่านใหม่ของ <b>${username}</b> คือ:<br><div class="p-3 bg-sky-500/10 border border-sky-500/30 rounded-2xl text-xl font-mono font-bold text-sky-600 my-2">${confirmedPwd}</div><span class="text-xs text-slate-400">กรุณาจดรหัสนี้เพื่อแจ้งให้นักเรียนทราบ</span>`,
+                        confirmButtonColor: '#0284c7'
+                    });
+                } else {
+                    // หากยังไม่ได้สร้าง Function SQL ใน Supabase ให้แจ้งเตือนคำแนะนำวิธีสร้าง
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'รีเซ็ตไม่สำเร็จ',
+                        html: `เกิดข้อผิดพลาด: ${error.message}<br><br><span class="text-[11px] text-amber-500">💡 หมายเหตุ: ต้องรันคำสั่ง SQL สร้างฟังก์ชัน <b>admin_update_user_password</b> ใน Supabase Dashboard ก่อนใช้งานฟังก์ชันนี้ครั้งแรก</span>`,
+                        confirmButtonColor: '#0284c7'
+                    });
+                }
             }
         }
 
-        // 🗑️ ฟังก์ชันลบบัญชีนักเรียน (ลบจากโปรไฟล์ และแนะนำลิงก์ไปลบใน Auth Dashboard เพิ่มเติมเพื่อความสะอาดเกลี้ยงเกลา)
+        // 🗑️ ฟังก์ชันลบบัญชีนักเรียน
         async function triggerDeleteStudent(studentId, username) {
             const isDark = document.documentElement.classList.contains('dark');
 
@@ -310,7 +332,7 @@
                     await Swal.fire({ 
                         icon: 'success', 
                         title: 'ลบบัญชีสำเร็จ!', 
-                        html: `ลบรายชื่อของ <b>${username}</b> เรียบร้อยแล้วครับ<br><span class="text-xs text-slate-400 mt-2 block">💡 หากต้องการลบประวัติในหน้า Auth แนะนำให้กดลบเพิ่มที่ Supabase Dashboard ได้เลยครับ</span>`,
+                        html: `ลบรายชื่อของ <b>${username}</b> เรียบร้อยแล้วครับ`,
                         confirmButtonColor: '#0284c7' 
                     });
                     initPage();
@@ -498,7 +520,7 @@
                         <div class="grid grid-cols-2 gap-2 bg-sky-50 dark:bg-darkinput p-3 rounded-2xl border border-sky-500/20">
                             <div>
                                 <span class="text-[10px] text-slate-400 block font-bold mb-1">จัดการรหัสผ่าน</span>
-                                <button type="button" onclick="triggerResetPassword('${usernameValStr}')" class="w-full px-3 py-2 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center justify-center gap-1.5">
+                                <button type="button" onclick="triggerResetPassword('${student.id}', '${usernameValStr}')" class="w-full px-3 py-2 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center justify-center gap-1.5">
                                     <i class="fas fa-key"></i> รีเซ็ตรหัส
                                 </button>
                             </div>
