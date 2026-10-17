@@ -9,51 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- 🔄 Auto-Login Check: ป้องกัน Loop และเช็คสถานะการล็อกอิน -->
-    <script>
-        const SUPABASE_URL_INIT = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY_INIT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        
-        (async function() {
-            try {
-                // ถ้าเพิ่งกด Logout มา จะมีแฟล็กบอกไว้ ไม่ให้ Auto-Login ซ้ำซ้อน
-                if (sessionStorage.getItem('just_logged_out') === 'true') {
-                    return;
-                }
-
-                const tempClient = window.supabase.createClient(SUPABASE_URL_INIT, SUPABASE_KEY_INIT);
-                const { data: { session } } = await tempClient.auth.getSession();
-
-                if (session && session.user) {
-                    const userId = session.user.id;
-                    
-                    let { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
-
-                    if (!profile) {
-                        const { data: studentData } = await tempClient.from('students').select('*').eq('id', userId).maybeSingle();
-                        profile = studentData || { role: 'student' };
-                    }
-
-                    const userRole = String(profile.role || profile.user_role || 'student').toLowerCase();
-                    
-                    localStorage.setItem('id', userId);
-                    localStorage.setItem('student_id', userId);
-                    localStorage.setItem('user_id', userId);
-
-                    if (userRole === 'teacher' || userRole === 'instructor') {
-                        window.location.replace('teacher.html');
-                    } else if (userRole === 'admin' || userRole === 'exam_creator') {
-                        window.location.replace('admin.html');
-                    } else {
-                        window.location.replace('student.html');
-                    }
-                }
-            } catch (e) {
-                console.log('Auto-login check skipped:', e);
-            }
-        })();
-    </script>
 
     <script>
         tailwind.config = {
@@ -108,13 +63,6 @@
             </button>
         </form>
 
-        <!-- 🧹 ปุ่มเคลียร์แคชกรณีติดลูป -->
-        <div class="mt-4 text-center">
-            <button onclick="clearLocalStorageAndReset()" class="text-xs text-rose-500 hover:underline font-semibold">
-                <i class="fas fa-sync-alt mr-1"></i> ล้างค่าเซสชัน & เริ่มใหม่ (แก้ลูป)
-            </button>
-        </div>
-
         <div class="mt-6 text-center text-xs text-gray-400">
             ระบบบริหารจัดการการเรียนการสอนออนไลน์ &copy; 2026
         </div>
@@ -141,16 +89,6 @@
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        async function clearLocalStorageAndReset() {
-            try {
-                await mySupabase.auth.signOut();
-            } catch (err) {}
-            localStorage.clear();
-            sessionStorage.clear();
-            Swal.fire({ icon: 'success', title: 'ล้างข้อมูลสำเร็จ', text: 'กำลังรีเฟรชหน้าจอ...', timer: 1500, showConfirmButton: false })
-              .then(() => window.location.reload());
-        }
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -181,9 +119,6 @@
 
             const userName = profile?.username || profile?.full_name || userInput;
             
-            // เคลียร์ธง Logout ออกก่อนเข้าสู่ระบบใหม่
-            sessionStorage.removeItem('just_logged_out');
-
             localStorage.setItem('id', userId);
             localStorage.setItem('student_id', userId);
             localStorage.setItem('user_id', userId);
