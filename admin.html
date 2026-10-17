@@ -360,50 +360,44 @@
         }
 
         // 🌟 ตรวจสอบคิวล่วงหน้า 24 ชั่วโมงเพื่อแสดง Time Bar (ถ้าไม่มีคิวจะซ่อน)
-        function checkConsultTimeBar() {
-            const now = new Date();
-            const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+async function checkConsultTimeBar() {
+    const now = new Date();
+    const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-            // กรองคิวที่อยู่ในช่วง 24 ชม. ข้างหน้า
-            const upcomingWithin24h = allConsultBookings.filter(b => {
-                const bDateStr = b.date || b.booking_date || '';
-                const timeSlot = b.time_slot || b.time || b.slot || '00:00 - 00:30';
-                const startTimeStr = timeSlot.split('-')[0].trim();
-                const bookingTime = new Date(`${bDateStr}T${startTimeStr}:00`);
-                return bookingTime >= now && bookingTime <= twentyFourHoursLater;
-            }).sort((a, b) => {
-                const timeA = new Date((a.date || a.booking_date) + 'T' + (a.time_slot || a.time || '00:00').split('-')[0].trim() + ':00');
-                const timeB = new Date((b.date || b.booking_date) + 'T' + (b.time_slot || b.time || '00:00').split('-')[0].trim() + ':00');
-                return timeA - timeB;
-            });
+    const { data: upcomingSlots } = await mySupabase
+        .from('consult_slots')
+        .select('*, profiles(full_name)')
+        .eq('status', 'booked')
+        .gte('start_time', now.toISOString())
+        .lte('start_time', twentyFourHoursLater.toISOString())
+        .order('start_time', { ascending: true });
 
-            const timeBar = document.getElementById('consultTimeBar');
-            const mainText = document.getElementById('timeBarMainText');
+    const timeBar = document.getElementById('consultTimeBar');
+    const mainText = document.getElementById('timeBarMainText');
 
-            if (upcomingWithin24h.length === 0) {
-                timeBar.style.display = 'none';
-                return;
-            }
+    if (!timeBar || !mainText) return;
 
-            timeBar.style.display = 'flex';
-            const currentQueue = upcomingWithin24h[0];
-            const currStudent = profilesMap[currentQueue.student_id || currentQueue.user_id] || 'นักเรียน';
-            const currTime = currentQueue.time_slot || currentQueue.time || currentQueue.slot || '00:00 - 00:30';
-            const currDate = currentQueue.date || currentQueue.booking_date;
+    if (!upcomingSlots || upcomingSlots.length === 0) {
+        timeBar.style.display = 'none';
+        return;
+    }
 
-            let text = `คิวปัจจุบัน/ใกล้ถึงที่สุด: <span class="text-amber-300 font-black">${currStudent}</span> (${currDate} เวลา ${currTime} น.)`;
+    timeBar.style.display = 'flex';
+    const curr = upcomingSlots[0];
+    const currName = curr.profiles?.full_name || 'นักเรียน';
+    const currTime = new Date(curr.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+    
+    let text = `คิวใกล้ถึงที่สุด: <span class="text-amber-300 font-black">${currName}</span> (เวลา ${currTime} น.)`;
 
-            if (upcomingWithin24h.length > 1) {
-                const nextQueue = upcomingWithin24h[1];
-                const nextStudent = profilesMap[nextQueue.student_id || nextQueue.user_id] || 'นักเรียน';
-                const nextTime = nextQueue.time_slot || nextQueue.time || nextQueue.slot || '00:00 - 00:30';
-                text += ` | ➔ คิวต่อไป: <span class="text-cyan-200 font-bold">${nextStudent}</span> (${nextTime} น.)`;
-            } else {
-                text += ` | (ยังไม่มีคิวถัดไปใน 24 ชม. นี้)`;
-            }
+    if (upcomingSlots.length > 1) {
+        const next = upcomingSlots[1];
+        const nextName = next.profiles?.full_name || 'นักเรียน';
+        const nextTime = new Date(next.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+        text += ` | ➔ คิวถัดไป: <span class="text-cyan-200 font-bold">${nextName}</span> (${nextTime} น.)`;
+    }
 
-            mainText.innerHTML = text;
-        }
+    mainText.innerHTML = text;
+}
 
         // อัปเดต Time Bar ทุกๆ 30 วินาที
         setInterval(checkConsultTimeBar, 30000);
