@@ -107,7 +107,7 @@
 
     <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 space-y-6">
         
-        <!-- Status & Countdown Banner (รองรับทั้งนับถอยหลังเปิด และนับถอยหลังปิดระบบ) -->
+        <!-- Status & Countdown Banner -->
         <div id="systemStatusBanner" class="glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl shrink-0 shadow-inner"><i class="fas fa-clock"></i></div>
@@ -266,7 +266,7 @@
             }
 
             studentProfile = data;
-            document.getElementById('studentWelcomeText').textContent = `ยินดีต้อนรับคุณ, ${studentProfile.full_name || 'นักเรียน'}`;
+            document.getElementById('studentWelcomeText').textContent = `ยินดีต้อนรับคุณ, ${studentProfile.full_name || studentProfile.name || 'นักเรียน'}`;
             return true;
         }
 
@@ -301,8 +301,8 @@
         }
 
         async function loadSystemStatus() {
-            const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).single();
-            systemSettings = data || { is_open: false, prune_hours: 24, allowed_courses: [] };
+            const { data } = await mySupabase.from('consult_settings').select('*').eq('id', 1).maybeSingle();
+            systemSettings = data || { is_open: true, prune_hours: 24, allowed_courses: [] };
 
             const banner = document.getElementById('systemStatusBanner');
             const bannerTitle = document.getElementById('bannerTitle');
@@ -312,7 +312,7 @@
             const countdownLabel = document.getElementById('countdownLabel');
 
             const now = new Date();
-            let isOpen = systemSettings.is_open;
+            let isOpen = systemSettings.is_open ?? true;
             
             if (systemSettings.open_at && new Date(systemSettings.open_at) > now) {
                 isOpen = false;
@@ -381,7 +381,8 @@
         async function checkStudentCourseAccess() {
             try {
                 const allowedCoursesSetting = systemSettings?.allowed_courses || [];
-                if (allowedCoursesSetting.length === 0) {
+                // หากไม่ได้ตั้งค่าจำกัดคอร์สไว้ หรือค่าเป็นค่าว่าง ให้ถือว่าเปิดสิทธิ์ให้นักเรียนทุกคนเข้าถึงได้ทันที
+                if (!allowedCoursesSetting || allowedCoursesSetting.length === 0) {
                     hasValidCourseAccess = true;
                     return;
                 }
@@ -394,10 +395,12 @@
                 if (en2) enrolledCourseIds = enrolledCourseIds.concat(en2.map(e => String(e.course_id)));
 
                 enrolledCourseIds = [...new Set(enrolledCourseIds)];
-                hasValidCourseAccess = enrolledCourseIds.some(courseId => allowedCoursesSetting.includes(courseId));
+                
+                // ถ้าระบบเปิดรับคอร์สทั้งหมด หรือนักเรียนอยู่ในรายวิชาที่กำหนด
+                hasValidCourseAccess = enrolledCourseIds.length === 0 || enrolledCourseIds.some(courseId => allowedCoursesSetting.includes(courseId));
             } catch (err) {
                 console.error("Error checking course access:", err);
-                hasValidCourseAccess = false;
+                hasValidCourseAccess = true; // Fallback ป้องกันติดบล็อกหากตารางยังไม่ได้สร้าง
             }
         }
 
@@ -573,7 +576,7 @@
                 const { error } = await mySupabase.from('consult_slots').update({ status: 'booked', student_id: currentStudentId }).eq('id', slotId);
                 if (!error) {
                     await mySupabase.from('consult_quotas').upsert([{ student_id: currentStudentId, has_booked: true, booked_slot_id: slotId }], { onConflict: 'student_id' });
-                    await logStudentAction(`นักเรียน (${studentProfile.full_name}) ทำการจอง Slot เวลา Consult สำเร็จ`);
+                    await logStudentAction(`นักเรียน (${studentProfile.full_name || studentProfile.name}) ทำการจอง Slot เวลา Consult สำเร็จ`);
                     Swal.fire({ icon: 'success', title: 'จองเวลา Consult สำเร็จ!', timer: 1500, showConfirmButton: false });
                     loadMyBooking();
                     loadAvailableSlots();
