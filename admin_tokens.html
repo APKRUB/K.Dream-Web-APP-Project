@@ -62,26 +62,26 @@
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าหลัก">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+            <div class="flex justify-between h-16 items-center gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าหลัก">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Token Management Hub</h1>
-                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการหน่วยเงินรางวัล & Audit Trail</span>
+                    <div class="min-w-0">
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Token Management</h1>
+                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการหน่วยเงิน & Audit</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 flex-shrink-0">
                     <!-- ปุ่มทางลัดเข้าหน้าร้านค้า (admin_shop.html) -->
-                    <button onclick="window.location.href='admin_shop.html'" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 font-bold text-xs rounded-xl hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all flex items-center gap-1.5" title="จัดการร้านค้าของรางวัล">
-                        <i class="fas fa-store"></i> <span class="hidden sm:inline">จัดการร้านค้า (Shop)</span>
+                    <button onclick="window.location.href='admin_shop.html'" class="px-2.5 sm:px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 font-bold text-xs rounded-xl hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all flex items-center gap-1.5" title="จัดการร้านค้าของรางวัล">
+                        <i class="fas fa-store"></i> <span class="hidden md:inline">จัดการร้านค้า (Shop)</span>
                     </button>
 
-                    <button onclick="loadStudents(); loadTokenHistory();" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all flex items-center gap-1.5">
-                        <i class="fas fa-rotate"></i> <span class="hidden sm:inline">รีเฟรช</span>
+                    <button onclick="loadStudents(); loadTokenHistory();" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all flex items-center gap-1.5" title="รีเฟรช">
+                        <i class="fas fa-rotate"></i> <span class="hidden md:inline">รีเฟรช</span>
                     </button>
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
@@ -91,15 +91,15 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
         
         <!-- Header Banner -->
-        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
                     <i class="fas fa-coins"></i> Secure Token Ledger & Shop Ready
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการ Token นักเรียน</h2>
+                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการ Token นักเรียน</h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เพิ่มคะแนนสะสม (Adjust) หรือหักลด Token (Deduct) สำหรับนักเรียนแต่ละบุคคล พร้อมระบบบันทึกประวัติการทำรายการตรวจสอบย้อนหลัง</p>
             </div>
             <div class="w-full md:w-72">
@@ -111,16 +111,16 @@
         </div>
 
         <!-- Student Tokens Table Grid -->
-        <div class="hitech-card rounded-2xl overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
+        <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                     <thead>
                         <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                            <th class="p-4">นักเรียน (Student Name & Nickname)</th>
-                            <th class="p-4">ระดับชั้น (Grade Level)</th>
-                            <th class="p-4 text-center">Token ปัจจุบัน</th>
-                            <th class="p-4 text-center">สถานะ Shop / แลกของรางวัล</th>
-                            <th class="p-4 text-right">จัดการ (Adjust / Deduct)</th>
+                            <th class="py-3 px-3 sm:p-4">นักเรียน (Student Name & Nickname)</th>
+                            <th class="py-3 px-3 sm:p-4">ระดับชั้น (Grade Level)</th>
+                            <th class="py-3 px-3 sm:p-4 text-center">Token ปัจจุบัน</th>
+                            <th class="py-3 px-3 sm:p-4 text-center">สถานะ Shop / แลกของรางวัล</th>
+                            <th class="py-3 px-3 sm:p-4 text-right">จัดการ (Adjust / Deduct)</th>
                         </tr>
                     </thead>
                     <tbody id="studentTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -133,29 +133,29 @@
         </div>
 
         <!-- 📜 Token Audit Trail (ประวัติการปรับยอดโทเค็นย้อนหลัง) -->
-        <div class="hitech-card p-6 rounded-2xl space-y-4">
-            <div class="flex justify-between items-center pb-3 border-b border-amber-500/20">
+        <div class="hitech-card p-4 sm:p-6 rounded-2xl space-y-4 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-amber-500/20">
                 <div>
                     <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
                         <i class="fas fa-history text-amber-500"></i> ประวัติการปรับลด/เติมโทเค็น (Token Audit Trail)
                     </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">บันทึกประวัติการเพิ่มและหักโทเค็นของผู้ใช้งานทั้งหมดในระบบเพื่อการตรวจสอบย้อนหลัง</p>
+                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">บันทึกประวัติการเพิ่มและหักโทเค็นของผู้ใช้งานทั้งหมดในระบบเพื่อการตรวจสอบย้อนหลัง</p>
                 </div>
-                <button onclick="loadTokenHistory()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs hover:bg-amber-100 transition-all flex items-center gap-1.5">
+                <button onclick="loadTokenHistory()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs hover:bg-amber-100 transition-all flex items-center gap-1.5 self-end sm:self-auto">
                     <i class="fas fa-sync-alt"></i> รีเฟรชประวัติ
                 </button>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
+            <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                     <thead>
                         <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                            <th class="py-3 px-4">เวลา</th>
-                            <th class="py-3 px-4">เป้าหมาย (นักเรียน)</th>
-                            <th class="py-3 px-4">ประเภท / จำนวน</th>
-                            <th class="py-3 px-4">ยอดก่อน ➡️ หลัง</th>
-                            <th class="py-3 px-4">เหตุผล / หมายเหตุ</th>
-                            <th class="py-3 px-4">ผู้ดำเนินการ (Admin/Staff)</th>
+                            <th class="py-3 px-3 sm:px-4">เวลา</th>
+                            <th class="py-3 px-3 sm:px-4">เป้าหมาย (นักเรียน)</th>
+                            <th class="py-3 px-3 sm:px-4">ประเภท / จำนวน</th>
+                            <th class="py-3 px-3 sm:px-4">ยอดก่อน ➡️ หลัง</th>
+                            <th class="py-3 px-3 sm:px-4">เหตุผล / หมายเหตุ</th>
+                            <th class="py-3 px-3 sm:px-4">ผู้ดำเนินการ (Admin/Staff)</th>
                         </tr>
                     </thead>
                     <tbody id="tokenHistoryContainer" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -231,29 +231,29 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
-                        <td class="p-4">
-                            <div class="font-bold text-slate-900 dark:text-white text-sm">${nameDisplay}</div>
-                            <div class="text-[11px] text-slate-400 font-mono">${username}</div>
+                        <td class="py-3 px-3 sm:p-4">
+                            <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">${nameDisplay}</div>
+                            <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono">${username}</div>
                         </td>
-                        <td class="p-4">
+                        <td class="py-3 px-3 sm:p-4">
                             <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">${gradeLevel}</span>
                         </td>
-                        <td class="p-4 text-center">
-                            <span class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-sm border border-amber-500/25">
+                        <td class="py-3 px-3 sm:p-4 text-center">
+                            <span class="px-2.5 sm:px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs sm:text-sm border border-amber-500/25">
                                 <i class="fas fa-coins mr-1"></i> ${tokens.toLocaleString()}
                             </span>
                         </td>
-                        <td class="p-4 text-center">
-                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20" title="เตรียมพร้อมสำหรับระบบ Shop แลกของรางวัล">
-                                <i class="fas fa-store mr-1"></i> พร้อมแลกสินค้า
+                        <td class="py-3 px-3 sm:p-4 text-center">
+                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20" title="พร้อมแลกสินค้า">
+                                <i class="fas fa-store mr-1"></i> พร้อมแลก
                             </span>
                         </td>
-                        <td class="p-4 text-right space-x-1">
-                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'add')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-all" title="เพิ่ม Token">
-                                <i class="fas fa-plus"></i> ปรับเพิ่ม
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">
+                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'add')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-all" title="เพิ่ม Token">
+                                <i class="fas fa-plus"></i> <span class="hidden sm:inline">เพิ่ม</span>
                             </button>
-                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'deduct')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all" title="หัก Token">
-                                <i class="fas fa-minus"></i> หักออก
+                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'deduct')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all" title="หัก Token">
+                                <i class="fas fa-minus"></i> <span class="hidden sm:inline">หัก</span>
                             </button>
                         </td>
                     </tr>
@@ -386,16 +386,16 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
-                        <td class="py-3.5 px-4 font-mono text-slate-500">${dateStr}</td>
-                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">${item.target_user_name || 'ผู้ใช้'}</td>
-                        <td class="py-3.5 px-4">
-                            <span class="px-2.5 py-1 rounded-lg border font-extrabold uppercase ${badgeColor}">
+                        <td class="py-3 px-3 sm:px-4 font-mono text-slate-500">${dateStr}</td>
+                        <td class="py-3 px-3 sm:px-4 font-bold text-slate-900 dark:text-white">${item.target_user_name || 'ผู้ใช้'}</td>
+                        <td class="py-3 px-3 sm:px-4">
+                            <span class="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border font-extrabold uppercase ${badgeColor}">
                                 ${actionLabel} (${sign}${item.amount})
                             </span>
                         </td>
-                        <td class="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-300 font-bold">${item.previous_balance} ➡️ ${item.new_balance}</td>
-                        <td class="py-3.5 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate" title="${item.reason || ''}">${item.reason || '-'}</td>
-                        <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">${item.admin_name || 'Admin'}</td>
+                        <td class="py-3 px-3 sm:px-4 font-mono text-slate-600 dark:text-slate-300 font-bold">${item.previous_balance} ➡️ ${item.new_balance}</td>
+                        <td class="py-3 px-3 sm:px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate" title="${item.reason || ''}">${item.reason || '-'}</td>
+                        <td class="py-3 px-3 sm:px-4 font-semibold text-slate-700 dark:text-slate-300">${item.admin_name || 'Admin'}</td>
                     </tr>
                 `;
             }).join('');
