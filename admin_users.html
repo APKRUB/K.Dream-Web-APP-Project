@@ -85,7 +85,7 @@
                 </button>
                 <div class="relative flex-1 md:w-64">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหา Username, ชื่อ, โรงเรียน..." class="w-full pl-9 pr-3 py-2.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
+                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหา Username, ชื่อ..." class="w-full pl-9 pr-3 py-2.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
                 </div>
             </div>
         </div>
@@ -105,7 +105,7 @@
                             <th class="p-3">Username / รหัสนักเรียน</th>
                             <th class="p-3">ชื่อ - นามสกุล</th>
                             <th class="p-3">ชื่อเล่น</th>
-                            <th class="p-3">ระดับชั้น / โรงเรียน</th>
+                            <th class="p-3">ระดับชั้น</th>
                             <th class="p-3">LINE ID</th>
                             <th class="p-3 text-center">จัดการข้อมูล</th>
                         </tr>
@@ -177,8 +177,8 @@
                 const fullName = (s.full_name || s.first_name || '').toLowerCase();
                 const nickname = (s.nickname || '').toLowerCase();
                 const studentId = String(s.student_id || '').toLowerCase();
-                const school = (s.school || '').toLowerCase();
-                return username.includes(keyword) || fullName.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword) || school.includes(keyword);
+                const grade = String(s.grade_level || s.grade || '').toLowerCase();
+                return username.includes(keyword) || fullName.includes(keyword) || nickname.includes(keyword) || studentId.includes(keyword) || grade.includes(keyword);
             });
 
             document.getElementById('studentCountLabel').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${studentsList.length} คน)`;
@@ -194,7 +194,6 @@
                 const fullName = s.full_name || (s.first_name ? `${s.first_name} ${s.last_name || ''}` : '-');
                 const nickname = s.nickname || '-';
                 const gradeLevel = s.grade_level || s.grade || '-';
-                const school = s.school || '-';
                 const lineId = s.line_id || '-';
 
                 return `
@@ -203,13 +202,8 @@
                         <td class="p-3 font-mono font-bold text-sky-600 dark:text-sky-400">${username}</td>
                         <td class="p-3 font-bold text-slate-900 dark:text-white">${fullName}</td>
                         <td class="p-3 font-semibold text-slate-600 dark:text-slate-300">${nickname}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-indigo-600 dark:text-indigo-400">${gradeLevel}</div>
-                            <div class="text-[10px] text-slate-400">${school}</div>
-                        </td>
-                        <td class="p-3">
-                            <div class="font-mono text-slate-700 dark:text-slate-300">LINE: ${lineId}</div>
-                        </td>
+                        <td class="p-3 font-bold text-indigo-600 dark:text-indigo-400">${gradeLevel}</td>
+                        <td class="p-3 font-mono text-slate-700 dark:text-slate-300">${lineId}</td>
                         <td class="p-3 text-center">
                             <button onclick="openEditStudentModal('${sId}')" class="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center gap-1 mx-auto">
                                 <i class="fas fa-user-pen"></i> แก้ไขข้อมูล
@@ -220,16 +214,15 @@
             }).join('');
         }
 
-        // 🎲 ฟังก์ชันสุ่มรหัสผ่าน 6 หลัก (ตัวเลขและตัวอักษร)
-// 🎲 ฟังก์ชันสุ่มรหัสผ่านตัวเลข 6 หลัก (ตัวเลขล้วน)
-function generateRandomPassword() {
-    let password = '';
-    for (let i = 0; i < 6; i++) {
-        password += Math.floor(Math.random() * 10);
-    }
-    const pwdInput = document.getElementById('swalPassword');
-    if (pwdInput) pwdInput.value = password;
-}
+        // 🎲 ฟังก์ชันสุ่มรหัสผ่านตัวเลขล้วน 6 หลัก
+        function generateRandomPassword() {
+            let password = '';
+            for (let i = 0; i < 6; i++) {
+                password += Math.floor(Math.random() * 10);
+            }
+            const pwdInput = document.getElementById('swalPassword');
+            if (pwdInput) pwdInput.value = password;
+        }
 
         // ➕ ฟังก์ชันเปิด Modal สร้างบัญชีนักเรียนใหม่
         async function openCreateStudentModal() {
@@ -256,27 +249,21 @@ function generateRandomPassword() {
                         </div>
                         <div>
                             <label class="block font-bold mb-1">ชื่อ - นามสกุล <span class="text-red-500">*</span></label>
-                            <input id="swalFullName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น สมชาย ใจดี">
+                            <input id="swalFullName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น นายสมชาย ใจดี">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold mb-1">ชื่อเล่น <span class="text-red-500">*</span></label>
-                                <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="ชื่อเล่น">
+                                <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น ดรีม">
                             </div>
                             <div>
                                 <label class="block font-bold mb-1">ระดับชั้น <span class="text-red-500">*</span></label>
-                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น ม.304">
+                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น ม.3/1 หรือ ม.304">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">โรงเรียน <span class="text-red-500">*</span></label>
-                                <input id="swalSchool" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="สวนกุหลาบวิทยาลัย" placeholder="สวนกุหลาบวิทยาลัย">
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
-                                <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น @line_id">
-                            </div>
+                        <div>
+                            <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
+                            <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น @line_id">
                         </div>
                     </div>
                 `,
@@ -292,12 +279,11 @@ function generateRandomPassword() {
                     const fullName = document.getElementById('swalFullName').value.trim();
                     const nickname = document.getElementById('swalNickname').value.trim();
                     const gradeLevel = document.getElementById('swalGradeLevel').value.trim();
-                    const school = document.getElementById('swalSchool').value.trim();
                     const lineId = document.getElementById('swalLineId').value.trim();
 
                     const errorBox = document.getElementById('swalErrorMsg');
 
-                    if (!usernameVal || !passwordVal || !fullName || !nickname || !gradeLevel || !school || !lineId) {
+                    if (!usernameVal || !passwordVal || !fullName || !nickname || !gradeLevel || !lineId) {
                         errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
                         errorBox.classList.remove('hidden');
                         return false;
@@ -316,7 +302,7 @@ function generateRandomPassword() {
                         full_name: fullName,
                         nickname: nickname,
                         grade_level: gradeLevel,
-                        school: school,
+                        school: '',
                         line_id: lineId,
                         email: `${usernameVal.toLowerCase()}@lms.local`,
                         role: 'student'
@@ -352,7 +338,7 @@ function generateRandomPassword() {
                     full_name: formValues.full_name,
                     nickname: formValues.nickname,
                     grade_level: formValues.grade_level,
-                    school: formValues.school,
+                    school: '',
                     line_id: formValues.line_id,
                     email: formValues.email,
                     role: 'student'
@@ -393,7 +379,7 @@ function generateRandomPassword() {
                         </div>
                         <div>
                             <label class="block font-bold mb-1">ชื่อ - นามสกุล <span class="text-red-500">*</span></label>
-                            <input id="swalFullName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.full_name || (student.first_name ? `${student.first_name}${student.last_name || ''}` : '')}" placeholder="เช่น สมชาย ใจดี">
+                            <input id="swalFullName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.full_name || (student.first_name ? `${student.first_name}${student.last_name || ''}` : '')}" placeholder="เช่น นายสมชาย ใจดี">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -402,18 +388,12 @@ function generateRandomPassword() {
                             </div>
                             <div>
                                 <label class="block font-bold mb-1">ระดับชั้น <span class="text-red-500">*</span></label>
-                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.grade_level || student.grade || ''}" placeholder="เช่น ม.304">
+                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.grade_level || student.grade || ''}" placeholder="เช่น ม.3/1">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">โรงเรียน <span class="text-red-500">*</span></label>
-                                <input id="swalSchool" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.school || ''}" placeholder="สวนกุหลาบวิทยาลัย">
-                            </div>
-                            <div>
-                                <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
-                                <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.line_id || ''}" placeholder="เช่น @line_id">
-                            </div>
+                        <div>
+                            <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
+                            <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${student.line_id || ''}" placeholder="เช่น @line_id">
                         </div>
                     </div>
                 `,
@@ -428,12 +408,11 @@ function generateRandomPassword() {
                     const fullName = document.getElementById('swalFullName').value.trim();
                     const nickname = document.getElementById('swalNickname').value.trim();
                     const gradeLevel = document.getElementById('swalGradeLevel').value.trim();
-                    const school = document.getElementById('swalSchool').value.trim();
                     const lineId = document.getElementById('swalLineId').value.trim();
 
                     const errorBox = document.getElementById('swalErrorMsg');
 
-                    if (!usernameVal || !fullName || !nickname || !gradeLevel || !school || !lineId) {
+                    if (!usernameVal || !fullName || !nickname || !gradeLevel || !lineId) {
                         errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
                         errorBox.classList.remove('hidden');
                         return false;
@@ -442,7 +421,10 @@ function generateRandomPassword() {
                     return {
                         username: usernameVal,
                         student_id: usernameVal,
-                        full_name: fullName
+                        full_name: fullName,
+                        nickname: nickname,
+                        grade_level: gradeLevel,
+                        line_id: lineId
                     };
                 }
             });
