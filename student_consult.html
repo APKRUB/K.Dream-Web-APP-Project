@@ -44,162 +44,161 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; }
+        body { font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         .glass-nav { 
-            background: rgba(255, 255, 255, 0.85); 
+            background: rgba(255, 255, 255, 0.88); 
             backdrop-filter: blur(16px); 
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.6); 
         }
         .dark .glass-nav { 
-            background: rgba(7, 11, 20, 0.85); 
+            background: rgba(7, 11, 20, 0.88); 
             backdrop-filter: blur(16px); 
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(30, 41, 59, 0.6); 
         }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .glossy-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 20px 40px -15px rgba(14, 165, 233, 0.07), 0 1px 3px rgba(0,0,0,0.02);
+            box-shadow: 0 15px 35px -10px rgba(14, 165, 233, 0.06), 0 1px 3px rgba(0,0,0,0.02);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .dark .glossy-card {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.65) 100%);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
             border: 1px solid rgba(30, 41, 59, 0.8);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.4);
         }
-        .slot-card { transition: all 0.25s ease; }
-        .slot-card:hover { transform: translateY(-3px); box-shadow: 0 12px 25px -10px rgba(14, 165, 233, 0.2); }
-        .calendar-day { transition: all 0.2s ease; }
-        .calendar-day:hover { transform: translateY(-2px); }
+        .slot-card { transition: all 0.2s ease; }
+        .slot-card:active { transform: scale(0.98); }
+        .calendar-day { transition: all 0.2s ease; user-select: none; }
+        .calendar-day:active { transform: scale(0.95); }
         
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
     </style>
 </head>
 <body class="bg-slate-100/70 dark:bg-darkbg min-h-screen transition-colors duration-300 text-slate-800 dark:text-slate-100 pb-24">
 
-    <!-- Top Navigation -->
+    <!-- Top Navigation (Optimized for Mobile) -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-3.5">
-                    <button onclick="window.location.href='student.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 hover:bg-sky-500 hover:text-white transition-all shadow-sm group">
-                        <i class="fas fa-arrow-left text-base group-hover:-translate-x-0.5 transition-transform"></i>
+        <div class="max-w-4xl mx-auto px-3 sm:px-6">
+            <div class="flex justify-between h-16 sm:h-20 items-center gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <button onclick="window.location.href='student.html'" class="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 hover:bg-sky-500 hover:text-white transition-all shadow-sm">
+                        <i class="fas fa-arrow-left text-sm sm:text-base"></i>
                     </button>
-                    <div>
-                        <h1 class="font-bold text-lg sm:text-xl text-slate-900 dark:text-white flex items-center gap-2">
+                    <div class="min-w-0">
+                        <h1 class="font-bold text-sm sm:text-lg text-slate-900 dark:text-white truncate">
                             จองเวลา Consult กับอาจารย์
                         </h1>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="studentWelcomeText">กำลังตรวจสอบข้อมูลผู้ใช้งาน...</p>
+                        <p class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate" id="studentWelcomeText">กำลังตรวจสอบข้อมูล...</p>
                     </div>
                 </div>
-                <button id="themeToggle" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:border-sky-500 transition-all">
-                    <i class="fas fa-moon text-base" id="themeIcon"></i>
+                <button id="themeToggle" class="w-10 h-10 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center rounded-2xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 shadow-sm hover:border-sky-500 transition-all">
+                    <i class="fas fa-moon text-sm sm:text-base" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 space-y-6">
+    <main class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 pt-20 sm:pt-28 space-y-4 sm:space-y-6">
         
         <!-- Status & Countdown Banner -->
-        <div id="systemStatusBanner" class="glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl shrink-0 shadow-inner"><i class="fas fa-clock"></i></div>
+        <div id="systemStatusBanner" class="glossy-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-lg sm:text-xl shrink-0 shadow-inner"><i class="fas fa-clock"></i></div>
                 <div>
-                    <h2 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white" id="bannerTitle">กำลังตรวจสอบสถานะระบบ...</h2>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal" id="bannerDesc">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูล</p>
+                    <h2 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white" id="bannerTitle">กำลังตรวจสอบสถานะระบบ...</h2>
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="bannerDesc">กรุณารอสักครู่...</p>
                 </div>
             </div>
-            <div id="countdownTimerBox" class="hidden text-right bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 rounded-2xl border border-amber-500/20">
-                <span id="countdownLabel" class="text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
-                <span id="countdownDisplay" class="font-black text-amber-700 dark:text-amber-300 text-sm tracking-wide">--:--:--:--</span>
+            <div id="countdownTimerBox" class="hidden w-full sm:w-auto text-left sm:text-right bg-amber-50 dark:bg-amber-950/30 px-3.5 py-2 rounded-xl sm:rounded-2xl border border-amber-500/20">
+                <span id="countdownLabel" class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider block font-bold">ระบบจะเปิดในอีก</span>
+                <span id="countdownDisplay" class="font-black text-amber-700 dark:text-amber-300 text-xs sm:text-sm tracking-wide">--:--:--:--</span>
             </div>
         </div>
 
         <!-- My Current Booking Card -->
-        <div id="myBookingSection" class="hidden glossy-card p-8 rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 space-y-5 shadow-xl shadow-emerald-500/5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-emerald-500/20">
+        <div id="myBookingSection" class="hidden glossy-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50/60 to-teal-50/30 dark:from-emerald-950/20 dark:to-teal-950/10 space-y-4 shadow-xl shadow-emerald-500/5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-emerald-500/20">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg sm:text-xl shadow-lg shadow-emerald-500/30 shrink-0">
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div>
-                        <span class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full">จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
-                        <h3 class="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white mt-1" id="mySlotTimeText">-</h3>
+                        <span class="text-[10px] sm:text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full">จองสำเร็จแล้ว (สิทธิ์ของคุณ)</span>
+                        <h3 class="font-extrabold text-sm sm:text-xl text-slate-900 dark:text-white mt-1" id="mySlotTimeText">-</h3>
                     </div>
                 </div>
             </div>
-            <div class="flex items-start gap-3 bg-amber-500/10 dark:bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-medium">
-                <i class="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
+            <div class="flex items-start gap-2.5 bg-amber-500/10 dark:bg-amber-500/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] sm:text-xs font-medium">
+                <i class="fas fa-triangle-exclamation text-amber-500 text-xs sm:text-sm mt-0.5 shrink-0"></i>
                 <span><strong>หมายเหตุ:</strong> เมื่อยืนยันการจองแล้วจะไม่สามารถยกเลิกได้เอง หากต้องการเปลี่ยนแปลงเวลาหรือมีเหตุฉุกเฉิน กรุณาติดต่ออาจารย์ผู้สอนโดยตรง</span>
             </div>
         </div>
 
         <!-- 🚫 Access Denied Card -->
-        <div id="accessDeniedSection" class="hidden glossy-card p-10 sm:p-14 rounded-3xl border-2 border-rose-500/30 bg-gradient-to-br from-rose-50/60 to-orange-50/30 dark:from-rose-950/20 dark:to-orange-950/10 text-center space-y-4">
-            <div class="w-16 h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-2xl mx-auto shadow-inner">
+        <div id="accessDeniedSection" class="hidden glossy-card p-8 sm:p-14 rounded-2xl sm:rounded-3xl border-2 border-rose-500/30 bg-gradient-to-br from-rose-50/60 to-orange-50/30 dark:from-rose-950/20 dark:to-orange-950/10 text-center space-y-3 sm:space-y-4">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-rose-500/10 text-rose-500 flex items-center justify-center text-xl sm:text-2xl mx-auto shadow-inner">
                 <i class="fas fa-ban"></i>
             </div>
-            <h3 class="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white">คอร์สของท่านไม่มีการจองคิว Consult ขออภัยในความไม่สะดวก</h3>
+            <h3 class="font-extrabold text-sm sm:text-xl text-slate-900 dark:text-white">คอร์สของท่านไม่มีการจองคิว Consult ขออภัยในความไม่สะดวก</h3>
             <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
                 ระบบตรวจสอบพบว่าบัญชีของคุณยังไม่ได้ลงทะเบียนในรายวิชาที่เปิดให้มีการจอง Consult ในรอบนี้ หากมีข้อสงสัยหรือต้องการความช่วยเหลือกรุณาติดต่ออาจารย์ผู้สอน
             </p>
         </div>
 
         <!-- Booking Interface -->
-        <div id="bookingInterface" class="space-y-6">
+        <div id="bookingInterface" class="space-y-4 sm:space-y-6">
             
             <!-- Interactive Monthly Calendar View -->
-            <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-base"><i class="fas fa-calendar-alt"></i></div>
-                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white">เลือกวันจากปฏิทิน</h3>
+            <div class="glossy-card p-4 sm:p-8 rounded-2xl sm:rounded-3xl space-y-4 sm:space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center text-sm sm:text-base"><i class="fas fa-calendar-alt"></i></div>
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">เลือกวันจากปฏิทิน</h3>
                     </div>
-                    <div class="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
-                        <button onclick="goToCurrentMonth()" class="px-3.5 py-2 bg-white dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm">เดือนนี้</button>
+                    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                        <button onclick="goToCurrentMonth()" class="px-3 py-2 bg-white dark:bg-darkinput hover:bg-sky-500 hover:text-white text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm">เดือนนี้</button>
                         <div class="flex items-center gap-1 bg-white dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                             <button onclick="changeMonth(-1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all"><i class="fas fa-chevron-left text-xs"></i></button>
-                            <span id="currentMonthLabel" class="font-extrabold text-xs text-slate-900 dark:text-white w-32 text-center">เดือน...</span>
+                            <span id="currentMonthLabel" class="font-extrabold text-xs text-slate-900 dark:text-white w-28 text-center">เดือน...</span>
                             <button onclick="changeMonth(1)" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all"><i class="fas fa-chevron-right text-xs"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-3 border-t border-slate-200/60 dark:border-slate-800">
-                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> ว่าง (&gt; 2 ช่วง)</span>
-                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span> ใกล้เต็ม (&le; 2 ช่วง)</span>
-                    <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></span> เต็ม / ไม่มีคิว</span>
+                <div class="flex flex-wrap items-center gap-3 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 pt-2.5 border-t border-slate-200/60 dark:border-slate-800">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span> ว่าง (&gt; 2 ช่วง)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span> ใกล้เต็ม (&le; 2 ช่วง)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></span> เต็ม / ไม่มีคิว</span>
                 </div>
 
-                <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-400 pt-2">
+                <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[11px] sm:text-xs font-bold text-slate-400 pt-1">
                     <div class="text-rose-500">อา.</div><div>จ.</div><div>อ.</div><div>พ.</div><div>พฤ.</div><div>ศ.</div><div class="text-sky-500">ส.</div>
                 </div>
 
-                <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
                     <!-- โหลดวันในปฏิทิน -->
                 </div>
             </div>
 
             <!-- Available Slots List for Selected Date -->
-            <div class="glossy-card p-6 sm:p-8 rounded-3xl space-y-5">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-200/60 dark:border-slate-800">
+            <div class="glossy-card p-4 sm:p-8 rounded-2xl sm:rounded-3xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 pb-3.5 border-b border-slate-200/60 dark:border-slate-800">
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Time Slots</span>
-                        <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
                             ช่วงเวลาว่างวันที่: <span id="selectedDateText" class="text-sky-600 dark:text-sky-400 font-black">-</span>
                         </h3>
                     </div>
                     <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold border border-sky-500/20" id="slotCountBadge">0 ช่วงเวลาว่าง</span>
                 </div>
-                <div id="availableSlotsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div class="col-span-2 text-center py-12 text-slate-400 text-xs">
+                <div id="availableSlotsContainer" class="grid grid-cols-1 gap-3">
+                    <div class="col-span-full text-center py-10 text-slate-400 text-xs">
                         <i class="far fa-calendar-days text-3xl mb-2 block opacity-40"></i>
                         กรุณาเลือกวันที่ต้องการจากปฏิทินด้านบน
                     </div>
@@ -324,7 +323,7 @@
             if (countdownInterval) clearInterval(countdownInterval);
 
             if (isOpen) {
-                banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
+                banner.className = 'glossy-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4';
                 bannerTitle.textContent = 'ระบบเปิดรับจอง Consult แล้ว';
                 
                 if (systemSettings.close_at && new Date(systemSettings.close_at) > now) {
@@ -339,11 +338,11 @@
 
                 if (hasValidCourseAccess) bookingInterface.classList.remove('hidden');
             } else {
-                banner.className = 'glossy-card p-6 rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
+                banner.className = 'glossy-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-l-4 border-l-amber-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4';
                 bannerTitle.textContent = 'ระบบปิดรับจอง Consult ในขณะนี้';
                 
                 if (systemSettings.open_at && new Date(systemSettings.open_at) > now) {
-                    bannerDesc.textContent = `⏰ กำหนดการเปิดรับจอง: ${new Date(systemSettings.open_at).toLocaleString('th-TH')}`;
+                    bannerDesc.textContent = `⏰ เปิดรับจอง: ${new Date(systemSettings.open_at).toLocaleString('th-TH')}`;
                     countdownBox.classList.remove('hidden');
                     countdownLabel.textContent = 'ระบบจะเปิดในอีก';
                     startCountdown(new Date(systemSettings.open_at).getTime(), () => loadSystemStatus());
@@ -381,7 +380,6 @@
         async function checkStudentCourseAccess() {
             try {
                 const allowedCoursesSetting = systemSettings?.allowed_courses || [];
-                // หากไม่ได้ตั้งค่าจำกัดคอร์สไว้ หรือค่าเป็นค่าว่าง ให้ถือว่าเปิดสิทธิ์ให้นักเรียนทุกคนเข้าถึงได้ทันที
                 if (!allowedCoursesSetting || allowedCoursesSetting.length === 0) {
                     hasValidCourseAccess = true;
                     return;
@@ -395,12 +393,9 @@
                 if (en2) enrolledCourseIds = enrolledCourseIds.concat(en2.map(e => String(e.course_id)));
 
                 enrolledCourseIds = [...new Set(enrolledCourseIds)];
-                
-                // ถ้าระบบเปิดรับคอร์สทั้งหมด หรือนักเรียนอยู่ในรายวิชาที่กำหนด
                 hasValidCourseAccess = enrolledCourseIds.length === 0 || enrolledCourseIds.some(courseId => allowedCoursesSetting.includes(courseId));
             } catch (err) {
-                console.error("Error checking course access:", err);
-                hasValidCourseAccess = true; // Fallback ป้องกันติดบล็อกหากตารางยังไม่ได้สร้าง
+                hasValidCourseAccess = true;
             }
         }
 
@@ -486,24 +481,24 @@
 
                 if (count > 2) {
                     badgeColor = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-bold shadow-sm';
-                    dotHtml = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>`;
+                    dotHtml = `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>`;
                 } else if (count > 0) {
                     badgeColor = 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-bold shadow-sm';
-                    dotHtml = `<span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>`;
+                    dotHtml = `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-amber-500 inline-block"></span>`;
                 } else {
-                    dotHtml = `<span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 inline-block"></span>`;
+                    dotHtml = `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-slate-300 dark:bg-slate-700 inline-block"></span>`;
                 }
 
                 const isSelected = selectedDateStr === dateKey;
-                const selectedRing = isSelected ? 'ring-2 ring-sky-500 ring-offset-2 dark:ring-offset-darkbox shadow-md font-extrabold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-500' : '';
+                const selectedRing = isSelected ? 'ring-2 ring-sky-500 ring-offset-1 sm:ring-offset-2 dark:ring-offset-darkbox shadow-md font-extrabold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-500' : '';
                 const isToday = todayStr === dateKey && !isSelected ? 'border-sky-400 font-extrabold' : '';
 
                 grid.innerHTML += `
-                    <div onclick="selectDate('${dateKey}')" class="calendar-day p-2.5 rounded-2xl ${badgeColor} ${selectedRing} ${isToday} flex flex-col items-center justify-between min-h-[70px] cursor-pointer">
-                        <span class="text-xs font-semibold">${day}</span>
-                        <div class="flex items-center gap-1 mt-1">
+                    <div onclick="selectDate('${dateKey}')" class="calendar-day p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl ${badgeColor} ${selectedRing} ${isToday} flex flex-col items-center justify-between min-h-[58px] sm:min-h-[70px] cursor-pointer">
+                        <span class="text-[11px] sm:text-xs font-semibold">${day}</span>
+                        <div class="flex items-center gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
                             ${dotHtml}
-                            <span class="text-[10px]">${count > 0 ? count : ''}</span>
+                            <span class="text-[9px] sm:text-[10px]">${count > 0 ? count : ''}</span>
                         </div>
                     </div>
                 `;
@@ -525,7 +520,7 @@
             document.getElementById('slotCountBadge').textContent = `${filtered.length} ช่วงเวลาว่าง`;
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center py-12 text-slate-400 text-xs"><i class="far fa-calendar-times text-3xl mb-2 block opacity-40"></i> ไม่มีช่วงเวลาว่างสำหรับวันที่เลือก</div>`;
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-xs"><i class="far fa-calendar-times text-3xl mb-2 block opacity-40"></i> ไม่มีช่วงเวลาว่างสำหรับวันที่เลือก</div>`;
                 return;
             }
 
@@ -533,15 +528,15 @@
                 const startStr = new Date(s.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 const endStr = new Date(s.end_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
                 return `
-                    <div class="slot-card p-4.5 rounded-2xl bg-white/70 dark:bg-darkinput/80 border border-slate-200/80 dark:border-slate-700/80 flex justify-between items-center shadow-sm">
+                    <div class="slot-card p-3.5 sm:p-4.5 rounded-2xl bg-white/70 dark:bg-darkinput/80 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
                         <div class="space-y-0.5">
-                            <div class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                            <div class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>
                                 ${startStr} - ${endStr} น.
                             </div>
-                            <div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold pl-4">● สถานะ: ว่าง</div>
+                            <div class="text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold pl-4">● สถานะ: ว่าง</div>
                         </div>
-                        <button onclick="bookSlot('${s.id}')" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-500/25 transition-all active:scale-95">จองเวลานี้</button>
+                        <button onclick="bookSlot('${s.id}')" class="w-full sm:w-auto px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-500/25 transition-all active:scale-95">จองเวลานี้</button>
                     </div>
                 `;
             }).join('');
