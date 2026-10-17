@@ -9,6 +9,34 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- 🔄 Auto-Login Check: ตรวจสอบ Session ทันทีที่โหลดหน้าจอ ป้องกันการล็อกอินซ้ำซ้อน -->
+    <script>
+        const SUPABASE_URL_INIT = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY_INIT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
+        (async function() {
+            try {
+                const tempClient = window.supabase.createClient(SUPABASE_URL_INIT, SUPABASE_KEY_INIT);
+                const { data: { session } } = await tempClient.auth.getSession();
+
+                if (session && session.user) {
+                    const userId = session.user.id;
+                    const { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
+
+                    // หากมี Session อยู่แล้ว และมีโปรไฟล์ ให้พาไปหน้าหลักตามสิทธิ์ทันที
+                    if (profile && ['admin', 'teacher', 'exam_creator', 'instructor'].includes(String(profile.role || '').toLowerCase())) {
+                        window.location.replace('admin.html');
+                    } else {
+                        window.location.replace('student.html');
+                    }
+                }
+            } catch (e) {
+                console.log('Auto-login check skipped:', e);
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -96,7 +124,6 @@
 
             Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // แปลง Username เป็นอีเมลจำลอง @lms-system.com อัตโนมัติ
             const loginEmail = userInput.includes('@') ? userInput : `${userInput}@lms-system.com`;
 
             const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ 
@@ -123,10 +150,10 @@
             localStorage.setItem('profile', JSON.stringify(profile || {}));
 
             setTimeout(() => {
-                if (profile && ['admin', 'teacher', 'exam_creator'].includes(profile.role)) {
-                    window.location.href = 'admin.html';
+                if (profile && ['admin', 'teacher', 'exam_creator', 'instructor'].includes(String(profile.role || '').toLowerCase())) {
+                    window.location.replace('admin.html');
                 } else {
-                    window.location.href = 'student.html';
+                    window.location.replace('student.html');
                 }
             }, 300);
         });
