@@ -102,8 +102,8 @@
             </div>
             
             <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-                <!-- 🪙 Token Balance Badge (คลิกเปิดร้านค้าได้ทันที) -->
-                <button onclick="openStudentShopModal()" class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border border-amber-500/30 shadow-sm" title="ร้านค้าของรางวัล & Token ของฉัน">
+                <!-- 🪙 Token Balance Badge (คลิกเปิดหน้า Shop แยก) -->
+                <button onclick="goToShopPage()" class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border border-amber-500/30 shadow-sm" title="ไปที่คลังของรางวัล & Token ของฉัน">
                     <i class="fas fa-coins text-amber-500 animate-pulse"></i> 
                     <span id="navTokenBalance">-- Token</span>
                 </button>
@@ -166,8 +166,8 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- 🎁 ปุ่มทางลัดเข้าหน้าร้านค้าของรางวัล -->
-            <div onclick="openStudentShopModal()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent">
+            <!-- 🎁 ปุ่มทางลัดเข้าหน้า Shop แยก (student_shop.html) -->
+            <div onclick="goToShopPage()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 text-white flex items-center justify-center text-lg shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform">
                         <i class="fas fa-store"></i>
@@ -427,6 +427,12 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        // ฟังก์ชันพาไปยังหน้าแยก Shop (student_shop.html) พร้อมพก student_id ไปด้วย
+        function goToShopPage() {
+            const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
+            window.location.href = studentId ? `student_shop.html?student_id=${studentId}` : 'student_shop.html';
+        }
+
         function goToConsultPage() {
             const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
             window.location.href = studentId ? `student_consult.html?student_id=${studentId}` : 'student_consult.html';
@@ -524,157 +530,6 @@
             } catch (err) {
                 console.warn("Notification count warning:", err);
             }
-        }
-
-        // ================= 🎁 STUDENT SHOP & REDEMPTION MODAL =================
-        async function openStudentShopModal() {
-            const isDark = document.documentElement.classList.contains('dark');
-            Swal.fire({ title: 'กำลังโหลดคลังของรางวัล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            // รีเฟรشยอด Token ล่าสุดจาก DB
-            const { data: freshProf } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).maybeSingle();
-            if (freshProf) {
-                studentTokenBalance = freshProf.tokens ?? freshProf.point ?? freshProf.coin ?? 0;
-                document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
-            }
-
-            // โหลดสินค้าที่เปิดขายอยู่ (is_active = true) พร้อมข้อมูลคอร์สที่ผูก
-            const { data: shopItems, error: shopErr } = await mySupabase
-                .from('shop_items')
-                .select('*, shop_item_courses(course_id, courses(title))')
-                .eq('is_active', true)
-                .order('token_price', { ascending: true });
-
-            if (shopErr) {
-                Swal.fire({ icon: 'error', title: 'โหลดร้านค้าไม่สำเร็จ', text: shopErr.message });
-                return;
-            }
-
-            // โหลดประวัติการแลกของนักเรียนคนนี้
-            const { data: myRedemptions } = await mySupabase
-                .from('redemption_logs')
-                .select('*')
-                .eq('student_id', currentStudentId);
-
-            const categoryLabels = { discount: '🏷️ ส่วนลด', cash: '💵 เงินสด', gift: '🎁 ของขวัญ', other: '✨ อื่นๆ' };
-
-            let shopHtml = `
-                <div class="space-y-4 text-left max-h-[70vh] overflow-y-auto px-1">
-                    <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-coins text-amber-500 text-lg"></i>
-                            <div>
-                                <div class="text-[11px] text-slate-500 font-semibold">Token ของคุณ</div>
-                                <div class="text-base font-extrabold text-amber-600 dark:text-amber-400">${studentTokenBalance.toLocaleString()} Token</div>
-                            </div>
-                        </div>
-                        <span class="text-xs text-slate-500 font-medium">กดแลกของรางวัลด้านล่างได้เลย</span>
-                    </div>
-            `;
-
-            if (!shopItems || shopItems.length === 0) {
-                shopHtml += `<div class="py-12 text-center text-slate-400 space-y-2"><i class="fas fa-store-slash text-3xl text-amber-500"></i><p class="text-xs">ยังไม่มีสินค้าเปิดจำหน่ายในขณะนี้</p></div>`;
-            } else {
-                shopHtml += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
-                shopItems.forEach(item => {
-                    const catText = categoryLabels[item.category] || item.category;
-                    const canAfford = studentTokenBalance >= item.token_price;
-                    const isOutOfStock = item.stock <= 0;
-
-                    // ตรวจสอบว่าแลกไปกี่ครั้งแล้ว
-                    const redeemedCount = (myRedemptions || []).filter(r => r.item_id === item.id && r.status !== 'rejected').length;
-                    const maxAllowed = item.max_per_user || 1;
-                    const isLimitReached = item.limit_mode !== 'unlimited' && redeemedCount >= maxAllowed;
-
-                    shopHtml += `
-                        <div class="p-4 rounded-2xl bg-white dark:bg-darkinput border ${canAfford && !isOutOfStock && !isLimitReached ? 'border-amber-500/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 opacity-80'} flex flex-col justify-between space-y-3">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between items-center">
-                                    <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold text-[10px]">${catText}</span>
-                                    <span class="text-xs font-extrabold text-amber-500"><i class="fas fa-coins mr-1"></i>${item.token_price.toLocaleString()} Token</span>
-                                </div>
-                                <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">${item.title}</h4>
-                                <p class="text-xs text-slate-500 font-light line-clamp-2">${item.description || 'ไม่มีรายละเอียดสินค้า'}</p>
-                            </div>
-                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px]">
-                                <span class="text-slate-400 font-medium">เหลือสต็อก: ${item.stock} ชิ้น</span>
-                                ${isOutOfStock ? '<span class="text-rose-500 font-bold">สินค้าหมด</span>' : isLimitReached ? '<span class="text-amber-500 font-bold">แลกครบสิทธิ์แล้ว</span>' : !canAfford ? '<span class="text-slate-400 font-bold">Token ไม่พอ</span>' : `<button onclick="confirmRedeemItem('${item.id}', '${item.title}',${item.token_price})" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกของรางวัล</button>`}
-                            </div>
-                        </div>
-                    `;
-                });
-                shopHtml += `</div>`;
-            }
-            shopHtml += `</div>`;
-
-            Swal.fire({
-                title: `<span class="text-base font-extrabold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-2"><i class="fas fa-store"></i> ร้านค้าของรางวัล (Student Reward Shop)</span>`,
-                html: shopHtml,
-                width: '700px',
-                confirmButtonText: 'ปิดหน้าต่าง',
-                confirmButtonColor: '#0284c7',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b'
-            });
-        }
-
-        async function confirmRedeemItem(itemId, itemTitle, itemPrice) {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ยืนยันการแลกของรางวัล?',
-                html: `คุณต้องการใช้ <b class="text-amber-500 font-bold">${itemPrice.toLocaleString()} Token</b> เพื่อแลกรับ <b>"${itemTitle}"</b> ใช่หรือไม่?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันแลก',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#f59e0b'
-            });
-
-            if (!isConfirmed) return;
-
-            Swal.fire({ title: 'กำลังดำเนินการแลก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            // 1. ตรวจสอบ Token ล่าสุดอีกรอบ
-            const { data: prof } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).single();
-            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.coin ?? 0;
-
-            if (currentTokens < itemPrice) {
-                Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
-                return;
-            }
-
-            // 2. หัก Token ของนักเรียน
-            const newTokens = currentTokens - itemPrice;
-            const { error: updateProfErr } = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
-            if (updateProfErr) {
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: updateProfErr.message });
-                return;
-            }
-
-            // 3. ลดสต็อกสินค้าใน shop_items
-            const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
-            if (prodData) {
-                await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
-            }
-
-            // 4. บันทึกประวัติลง redemption_logs
-            await mySupabase.from('redemption_logs').insert([{
-                student_id: currentStudentId,
-                item_id: itemId,
-                token_spent: itemPrice,
-                status: 'pending'
-            }]);
-
-            studentTokenBalance = newTokens;
-            document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
-
-            await Swal.fire({
-                icon: 'success',
-                title: 'แลกของรางวัลสำเร็จ!',
-                text: 'ระบบได้ส่งคำขอไปยังคุณครูเรียบร้อยแล้ว กรุณารอการตรวจสอบและจัดส่งของรางวัล',
-                confirmButtonColor: '#0284c7'
-            });
-
-            openStudentShopModal();
         }
 
         async function openEnrolledCoursesModal() {
