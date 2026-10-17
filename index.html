@@ -10,23 +10,26 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- 🔄 Auto-Login Check: ป้องกัน Loop โดยเพิ่มระบบดึงข้อมูลสำรอง -->
+    <!-- 🔄 Auto-Login Check: ป้องกัน Loop และเช็คสถานะการล็อกอิน -->
     <script>
         const SUPABASE_URL_INIT = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY_INIT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         
         (async function() {
             try {
+                // ถ้าเพิ่งกด Logout มา จะมีแฟล็กบอกไว้ ไม่ให้ Auto-Login ซ้ำซ้อน
+                if (sessionStorage.getItem('just_logged_out') === 'true') {
+                    return;
+                }
+
                 const tempClient = window.supabase.createClient(SUPABASE_URL_INIT, SUPABASE_KEY_INIT);
                 const { data: { session } } = await tempClient.auth.getSession();
 
                 if (session && session.user) {
                     const userId = session.user.id;
                     
-                    // ลองดึงจาก profiles ก่อน
                     let { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
 
-                    // ถ้าไม่เจอ ลองดึงจาก students เพื่อกันเหนียว
                     if (!profile) {
                         const { data: studentData } = await tempClient.from('students').select('*').eq('id', userId).maybeSingle();
                         profile = studentData || { role: 'student' };
@@ -34,7 +37,6 @@
 
                     const userRole = String(profile.role || profile.user_role || 'student').toLowerCase();
                     
-                    // บันทึก Session สำรองลง localStorage ป้องกันข้อมูลหาย
                     localStorage.setItem('id', userId);
                     localStorage.setItem('student_id', userId);
                     localStorage.setItem('user_id', userId);
@@ -141,8 +143,11 @@
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function clearLocalStorageAndReset() {
-            await mySupabase.auth.signOut();
+            try {
+                await mySupabase.auth.signOut();
+            } catch (err) {}
             localStorage.clear();
+            sessionStorage.clear();
             Swal.fire({ icon: 'success', title: 'ล้างข้อมูลสำเร็จ', text: 'กำลังรีเฟรชหน้าจอ...', timer: 1500, showConfirmButton: false })
               .then(() => window.location.reload());
         }
@@ -176,6 +181,9 @@
 
             const userName = profile?.username || profile?.full_name || userInput;
             
+            // เคลียร์ธง Logout ออกก่อนเข้าสู่ระบบใหม่
+            sessionStorage.removeItem('just_logged_out');
+
             localStorage.setItem('id', userId);
             localStorage.setItem('student_id', userId);
             localStorage.setItem('user_id', userId);
