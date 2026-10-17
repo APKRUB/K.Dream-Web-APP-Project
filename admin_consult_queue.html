@@ -54,6 +54,8 @@
             background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); 
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
         }
+        .calendar-day { aspect-ratio: 1; transition: all 0.2s ease; }
+        .calendar-day:hover { transform: translateY(-2px); border-color: #0284c7; }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
@@ -69,8 +71,8 @@
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <div class="min-w-0">
-                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Daily Consult Queue</h1>
-                        <span class="text-[9px] sm:text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase block truncate">ระบบตรวจสอบคิวปรึกษา (Realtime)</span>
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Daily Consult Calendar & Queue</h1>
+                        <span class="text-[9px] sm:text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase block truncate">ระบบปฏิทินและนับถอยหลังคิวปรึกษา (Realtime)</span>
                     </div>
                 </div>
 
@@ -86,27 +88,67 @@
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
+    <main class="max-w-6xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
         
-        <!-- Header Banner -->
-        <div class="p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-purple-500/10 border border-sky-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <!-- Header Banner & Active Countdown Overview -->
+        <div class="p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-purple-500/10 border border-sky-500/30 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
-                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Queue Monitor
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Live Countdown & Calendar Active
                 </div>
-                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">ตรวจสอบคิว Consult ประจำวัน</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">แสดงตาราง Slot เวลา 30 นาที เฉพาะช่องที่มีนักเรียนจองเข้ามาแล้ว อัปเดตอัตโนมัติแบบเรียลไทม์</p>
+                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">ปฏิทินและคิว Consult อัจฉริยะ</h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ตรวจสอบตารางเวลา Slot ละ 30 นาที พร้อมเวลานับถอยหลังสู่คิวถัดไปแบบเรียลไทม์</p>
             </div>
-            <!-- Date Switcher Buttons -->
-            <div class="flex items-center gap-2 bg-white dark:bg-darkbox p-1.5 rounded-2xl border border-sky-500/20 shadow-sm shrink-0">
-                <button onclick="changeActiveDate('today')" id="btnTabToday" class="px-3 sm:px-4 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs shadow-md transition-all">วันนี้ (<span id="labelDateToday">--</span>)</button>
-                <button onclick="changeActiveDate('tomorrow')" id="btnTabTomorrow" class="px-3 py-2 bg-transparent text-slate-600 dark:text-slate-400 rounded-xl font-bold text-xs transition-all">พรุ่งนี้ (<span id="labelDateTomorrow">--</span>)</button>
+
+            <!-- Next Up Countdown Widget -->
+            <div id="nextUpWidget" class="w-full lg:w-80 p-4 bg-white/90 dark:bg-darkbox/90 backdrop-blur-md rounded-2xl border border-sky-500/30 shadow-lg space-y-2">
+                <div class="flex justify-between items-center text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+                    <span><i class="fas fa-hourglass-half fa-spin mr-1"></i> คิวถัดไป (Next Up)</span>
+                    <span id="countdownTimer" class="font-mono bg-sky-500/10 px-2 py-0.5 rounded text-xs">--:--:--</span>
+                </div>
+                <div id="nextUpDetails" class="text-xs text-slate-700 dark:text-slate-300 font-semibold truncate">
+                    กำลังตรวจสอบคิวถัดไป...
+                </div>
             </div>
         </div>
 
-        <!-- Slot Queue Cards Container -->
-        <div class="space-y-3" id="queueListContainer">
-            <div class="text-center py-16 text-slate-400 font-bold">กำลังโหลดข้อมูลคิว Consult...</div>
+        <!-- Main Layout: Calendar UI & Selected Date Queue -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Left: Interactive Calendar (5 cols) -->
+            <div class="lg:col-span-5 hitech-card p-5 rounded-2xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-darkinput flex items-center justify-center text-xs font-bold hover:border-sky-500 transition-all"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="calendarMonthTitle" class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">เดือน --</h3>
+                    <button onclick="changeMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-darkinput flex items-center justify-center text-xs font-bold hover:border-sky-500 transition-all"><i class="fas fa-chevron-right"></i></button>
+                </div>
+
+                <!-- Days Header -->
+                <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400">
+                    <div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div>
+                </div>
+
+                <!-- Days Grid -->
+                <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1.5 text-xs font-bold">
+                    <!-- วันในปฏิทินจะถูกเรนเดอร์ที่นี่ -->
+                </div>
+            </div>
+
+            <!-- Right: Selected Date Queue Slots (7 cols) -->
+            <div class="lg:col-span-7 space-y-4">
+                <div class="flex justify-between items-center bg-white dark:bg-darkbox p-4 rounded-2xl border border-sky-500/20 shadow-sm">
+                    <div>
+                        <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">ตารางคิววันที่: <span id="selectedDateLabel" class="text-sky-600 dark:text-sky-400">--</span></h4>
+                        <p class="text-[11px] text-slate-500">แสดง Slot เวลา 30 นาที เฉพาะช่องที่มีการจองแล้ว</p>
+                    </div>
+                    <button onclick="selectToday()" class="px-3 py-1.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-xl font-bold text-xs hover:bg-sky-500/20 transition-all">กลับมาวันนี้</button>
+                </div>
+
+                <div id="selectedDateQueueContainer" class="space-y-3">
+                    <div class="text-center py-16 text-slate-400 font-bold">กรุณาเลือกวันที่จากปฏิทินด้านซ้าย</div>
+                </div>
+            </div>
+
         </div>
 
     </main>
@@ -118,7 +160,8 @@
 
         let allConsultBookings = [];
         let profilesMap = {};
-        let activeDateMode = 'today'; // 'today' หรือ 'tomorrow'
+        let currentCalendarDate = new Date();
+        let selectedDateStr = new Date().toISOString().split('T')[0];
 
         // 🌗 ธีมมืด/สว่าง
         const htmlElement = document.documentElement;
@@ -134,20 +177,9 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        // คำนวณวันที่ วันนี้ และ พรุ่งนี้
-        const getTodayStr = () => new Date().toISOString().split('T')[0];
-        const getTomorrowStr = () => {
-            const d = new Date();
-            d.setDate(d.getDate() + 1);
-            return d.toISOString().split('T')[0];
-        };
-
-        document.getElementById('labelDateToday').textContent = getTodayStr();
-        document.getElementById('labelDateTomorrow').textContent = getTomorrowStr();
-
-        async function loadConsultQueueData() {
+        async function initCalendarAndData() {
             try {
-                // 1. โหลดรายชื่อ profiles มาทำ Map ชื่อนักเรียน
+                // 1. โหลด Profiles ทำ Map ชื่อนักเรียน
                 const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, name, username, email');
                 if (profData) {
                     profData.forEach(p => {
@@ -155,108 +187,204 @@
                     });
                 }
 
-                // 2. โหลดรายการจอง Consult (รองรับตาราง consult_bookings หรือ consultations)
+                // 2. โหลดรายการจอง Consult
                 let { data, error } = await supabaseClient.from('consult_bookings').select('*').order('date', { ascending: true });
                 if (error || !data) {
                     const altRes = await supabaseClient.from('consultations').select('*');
                     data = altRes.data || [];
                 }
                 allConsultBookings = data || [];
-                renderQueueList();
+
+                renderCalendar();
+                renderSelectedDateQueue();
+                updateNextUpCountdown();
 
             } catch (err) {
                 console.error(err);
             }
         }
 
-        function changeActiveDate(mode) {
-            activeDateMode = mode;
-            const isToday = mode === 'today';
-            document.getElementById('btnTabToday').className = isToday ? 'px-3 sm:px-4 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs shadow-md transition-all' : 'px-3 py-2 bg-transparent text-slate-600 dark:text-slate-400 rounded-xl font-bold text-xs transition-all';
-            document.getElementById('btnTabTomorrow').className = !isToday ? 'px-3 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs shadow-md transition-all' : 'px-3 py-2 bg-transparent text-slate-600 dark:text-slate-400 rounded-xl font-bold text-xs transition-all';
-            renderQueueList();
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            document.getElementById('calendarMonthTitle').textContent = `${thaiMonths[month]} ${year + 543}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+
+            const grid = document.getElementById('calendarDaysGrid');
+            let html = '';
+
+            // ช่องว่างต้นเดือน
+            for (let i = 0; i < firstDayIndex; i++) {
+                html += `<div></div>`;
+            }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            for (let day = 1; day <= totalDays; day++) {
+                const mm = String(month + 1).padStart(2, '0');
+                const dd = String(day).padStart(2, '0');
+                const dateStr = `${year}-${mm}-${dd}`;
+
+                // เช็คว่าวันนี้มีคิวจองไหม
+                const hasBookings = allConsultBookings.some(b => (b.date || b.booking_date || '').startsWith(dateStr));
+                const isSelected = dateStr === selectedDateStr;
+                const isToday = dateStr === todayStr;
+
+                let btnClass = 'calendar-day rounded-2xl flex flex-col items-center justify-center p-1 cursor-pointer border ';
+                if (isSelected) {
+                    btnClass += 'bg-sky-600 text-white border-sky-500 shadow-md';
+                } else if (isToday) {
+                    btnClass += 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/40 font-extrabold';
+                } else {
+                    btnClass += 'bg-slate-50 dark:bg-darkinput text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800';
+                }
+
+                let badgeHtml = hasBookings ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 animate-pulse"></span>` : `<span class="w-1.5 h-1.5 rounded-full opacity-0 mt-1"></span>`;
+
+                html += `
+                    <div onclick="selectDate('${dateStr}')" class="${btnClass}">
+                        <span>${day}</span>
+                        ${badgeHtml}
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = html;
         }
 
-        function renderQueueList() {
-            const container = document.getElementById('queueListContainer');
-            const targetDateStr = activeDateMode === 'today' ? getTodayStr() : getTomorrowStr();
+        function changeMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            renderCalendar();
+        }
 
-            // กรองเฉพาะวันที่เลือก และเฉพาะช่องที่มีการจองแล้ว
-            const matchedBookings = allConsultBookings.filter(b => {
-                const bDate = b.date || b.booking_date || '';
-                return bDate.startsWith(targetDateStr);
-            });
+        function selectDate(dateStr) {
+            selectedDateStr = dateStr;
+            renderCalendar();
+            renderSelectedDateQueue();
+        }
 
-            if (matchedBookings.length === 0) {
+        function selectToday() {
+            selectedDateStr = new Date().toISOString().split('T')[0];
+            currentCalendarDate = new Date();
+            renderCalendar();
+            renderSelectedDateQueue();
+        }
+
+        function renderSelectedDateQueue() {
+            document.getElementById('selectedDateLabel').textContent = selectedDateStr;
+            const container = document.getElementById('selectedDateQueueContainer');
+
+            const matched = allConsultBookings.filter(b => (b.date || b.booking_date || '').startsWith(selectedDateStr));
+
+            if (matched.length === 0) {
                 container.innerHTML = `
-                    <div class="hitech-card p-12 rounded-2xl text-center space-y-3">
-                        <div class="w-16 h-16 bg-sky-500/10 text-sky-500 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-                            <i class="fas fa-calendar-check"></i>
+                    <div class="hitech-card p-10 rounded-2xl text-center space-y-2">
+                        <div class="w-12 h-12 bg-sky-500/10 text-sky-500 rounded-xl flex items-center justify-center mx-auto text-lg">
+                            <i class="fas fa-calendar-day"></i>
                         </div>
-                        <h3 class="font-bold text-base text-slate-800 dark:text-slate-200">ยังไม่มีคิวจอง Consult สำหรับวันนี้</h3>
-                        <p class="text-xs text-slate-400">ทุก Slot เวลาว่าง สามารถรอรับการจองจากนักเรียนได้ทันที</p>
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">ไม่มีคิว Consult ในวันที่เลือก</h4>
+                        <p class="text-xs text-slate-400">ทุก Slot เวลาว่าง สามารถรอรับการจองได้</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = matchedBookings.map(b => {
-                const studentName = profilesMap[b.student_id || b.user_id] || b.student_name || 'นักเรียน (ไม่พบข้อมูล)';
+            container.innerHTML = matched.map(b => {
+                const studentName = profilesMap[b.student_id || b.user_id] || b.student_name || 'นักเรียน';
                 const timeSlot = b.time_slot || b.time || b.slot || '00:00 - 00:30';
-                const topic = b.topic || b.title || b.question || 'ปรึกษาทั่วไป / การบ้าน';
+                const topic = b.topic || b.title || b.question || 'ปรึกษาทั่วไป';
                 const status = b.status || 'confirmed';
-                const bookingId = b.id;
 
                 let statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ยืนยันแล้ว</span>';
-                if (status === 'pending') {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
-                } else if (status === 'completed') {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 font-bold text-[10px]">🎉 เสร็จสิ้นแล้ว</span>';
-                }
+                if (status === 'pending') statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
 
                 return `
-                    <div class="hitech-card p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="flex items-start sm:items-center gap-3.5">
-                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center text-lg font-bold shrink-0 shadow-md">
+                    <div class="hitech-card p-4 rounded-2xl flex justify-between items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-base shrink-0">
                                 <i class="fas fa-clock"></i>
                             </div>
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">${timeSlot} น. (ช่องละ 30 นาที)</span>
-                                    ${statusBadge}
+                            <div>
+                                <div class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                    <span>${timeSlot} น. (30 นาที)</span> ${statusBadge}
                                 </div>
                                 <div class="text-xs text-slate-600 dark:text-slate-300">
-                                    ผู้จอง: <span class="font-bold text-sky-600 dark:text-sky-400">${studentName}</span>
-                                </div>
-                                <div class="text-[11px] text-slate-400">
-                                    หัวข้อ: <span class="text-slate-700 dark:text-slate-300 font-semibold">${topic}</span>
+                                    ผู้จอง: <span class="font-bold text-sky-600 dark:text-sky-400">${studentName}</span> | หัวข้อ: ${topic}
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                            <button onclick="window.location.href='admin_consult.html'" class="px-4 py-2 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs hover:bg-sky-100 transition-all">
-                                <i class="fas fa-arrow-right"></i> ไปหน้าจัดการหลัก
-                            </button>
-                        </div>
+                        <button onclick="window.location.href='admin_consult.html'" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs hover:bg-sky-100 transition-all shrink-0">
+                            จัดการ
+                        </button>
                     </div>
                 `;
             }).join('');
         }
 
-        // 🌟 ตั้งค่า Realtime Subscription ซิงค์อัตโนมัติ
+        // ระบบจับเวลา Countdown สำหรับคิวถัดไปที่ใกล้ที่สุด
+        function updateNextUpCountdown() {
+            const now = new Date();
+            
+            // กรองคิวที่ยังไม่ผ่านไป (อนาคต)
+            const upcoming = allConsultBookings.filter(b => {
+                const bDateStr = b.date || b.booking_date || '';
+                const timeSlot = b.time_slot || b.time || b.slot || '00:00 - 00:30';
+                const startTimeStr = timeSlot.split('-')[0].trim(); // เช่น '14:00'
+                const fullDateTimeStr = `${bDateStr}T${startTimeStr}:00`;
+                return new Date(fullDateTimeStr) > now;
+            }).sort((a, b) => {
+                const timeA = new Date((a.date || a.booking_date) + 'T' + (a.time_slot || a.time || '00:00').split('-')[0].trim() + ':00');
+                const timeB = new Date((b.date || b.booking_date) + 'T' + (b.time_slot || b.time || '00:00').split('-')[0].trim() + ':00');
+                return timeA - timeB;
+            });
+
+            const widget = document.getElementById('nextUpWidget');
+            const timerEl = document.getElementById('countdownTimer');
+            const detailsEl = document.getElementById('nextUpDetails');
+
+            if (upcoming.length === 0) {
+                widget.style.display = 'none';
+                return;
+            }
+
+            widget.style.display = 'block';
+            const nextB = upcoming[0];
+            const studentName = profilesMap[nextB.student_id || nextB.user_id] || 'นักเรียน';
+            const bDateStr = nextB.date || nextB.booking_date;
+            const timeSlot = nextB.time_slot || nextB.time || nextB.slot || '00:00 - 00:30';
+            const targetTime = new Date(`${bDateStr}T${timeSlot.split('-')[0].trim()}:00`);
+
+            const diff = targetTime - now;
+            if (diff <= 0) {
+                timerEl.textContent = 'กำลังดำเนินการ';
+                detailsEl.innerHTML = `คิวของ <span class="font-bold text-emerald-500">${studentName}</span> (${timeSlot} น.) กำลังเริ่ม!`;
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timerEl.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            detailsEl.innerHTML = `ของ <span class="font-bold text-sky-600 dark:text-sky-400">${studentName}</span> วันที่ ${bDateStr} เวลา ${timeSlot} น.`;
+        }
+
+        setInterval(updateNextUpCountdown, 1000);
+
+        // Realtime Subscription
         function setupRealtimeSubscriptions() {
             supabaseClient
                 .channel('admin-consult-queue-realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_bookings' }, () => {
-                    loadConsultQueueData();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'consultations' }, () => {
-                    loadConsultQueueData();
-                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consult_bookings' }, () => { initCalendarAndData(); })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'consultations' }, () => { initCalendarAndData(); })
                 .subscribe();
         }
 
-        loadConsultQueueData();
+        initCalendarAndData();
         setupRealtimeSubscriptions();
     </script>
 </body>
