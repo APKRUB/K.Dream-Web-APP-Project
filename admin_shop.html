@@ -269,7 +269,10 @@
                         <td class="p-4 text-center text-[11px]">${timeStatusBadge}</td>
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-right space-x-1">
-                            <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
+                            <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="แก้ไขสินค้า">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
                                 <i class="fas fa-power-off"></i>
                             </button>
                             <button onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs" title="ลบสินค้า">
@@ -359,7 +362,6 @@
                             </div>
                         </div>
 
-                        <!-- 🎛️ ช่องกรอกโควตาที่จะแสดง/ซ่อนตามโหมดแบบ Dynamic -->
                         <div id="swalQuotaContainer">
                             <label id="swalQuotaLabel" class="block font-bold mb-1">จำนวนสิทธิ์สูงสุดต่อคน <span class="text-red-500">*</span></label>
                             <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
@@ -401,14 +403,13 @@
                     </div>
                 `,
                 didOpen: () => {
-                    // กำหนดค่าเริ่มต้นตอนเปิด modal
                     window.onLimitModeChange = function() {
                         const mode = document.getElementById('swalLimitMode').value;
                         const container = document.getElementById('swalQuotaContainer');
                         const label = document.getElementById('swalQuotaLabel');
                         
                         if (mode === 'unlimited') {
-                            container.style.display = 'none'; // ซ่อนช่องกรอกเมื่อไม่จำกัดสิทธิ์
+                            container.style.display = 'none';
                         } else {
                             container.style.display = 'block';
                             if (mode === 'person') {
@@ -482,6 +483,190 @@
                 }
 
                 Swal.fire({ icon: 'success', title: 'เพิ่มสินค้าและผูกคอร์สสำเร็จ!', confirmButtonColor: '#f59e0b' });
+                loadShopData();
+            }
+        }
+
+        // ✏️ ฟังก์ชันเปิด Modal แก้ไขสินค้าภายใน
+        async function openEditProductModal(productId) {
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            const linkedCourseIds = (product.shop_item_courses || []).map(ic => ic.course_id);
+
+            const courseCheckboxHtml = allCoursesList.length > 0 
+                ? allCoursesList.map(c => {
+                    const isChecked = linkedCourseIds.includes(c.id) ? 'checked' : '';
+                    return `
+                        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="checkbox" name="swalEditCourseCheck" value="${c.id}" ${isChecked} class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold">${c.title}</span>
+                        </label>
+                      `;
+                  }).join('')
+                : '<div class="text-slate-400 text-xs">ไม่พบรายชื่อคอร์สในระบบ</div>';
+
+            const formatLocalDateTime = (isoString) => {
+                if (!isoString) return '';
+                const date = new Date(isoString);
+                const tzOffset = date.getTimezoneOffset() * 60000;
+                return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+            };
+
+            const startsAtFormatted = formatLocalDateTime(product.starts_at);
+            const expiresAtFormatted = formatLocalDateTime(product.expires_at);
+
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ แก้ไขข้อมูลของรางวัล',
+                html: `
+                    <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
+                            <input type="text" id="swalEditTitle" value="${product.title || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+                                <select id="swalEditCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="discount" ${product.category === 'discount' ? 'selected' : ''}>🏷️ ส่วนลด</option>
+                                    <option value="cash" ${product.category === 'cash' ? 'selected' : ''}>💵 เงินสด</option>
+                                    <option value="gift" ${product.category === 'gift' ? 'selected' : ''}>🎁 ของขวัญ</option>
+                                    <option value="other" ${product.category === 'other' ? 'selected' : ''}>✨ อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">รูปแบบการจำกัดสิทธิ์ <span class="text-red-500">*</span></label>
+                                <select id="swalEditLimitMode" onchange="onEditLimitModeChange()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="person" ${product.limit_mode === 'person' ? 'selected' : ''}>👤 จำกัดคนละ X สิทธิ์</option>
+                                    <option value="course" ${product.limit_mode === 'course' ? 'selected' : ''}>📚 ตามจำนวนคอร์สที่ลง</option>
+                                    <option value="unlimited" ${product.limit_mode === 'unlimited' ? 'selected' : ''}>♾️ ไม่จำกัดสิทธิ์</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="swalEditQuotaContainer" style="${product.limit_mode === 'unlimited' ? 'display: none;' : 'display: block;'}">
+                            <label id="swalEditQuotaLabel" class="block font-bold mb-1">จำนวนสิทธิ์สูงสุดต่อคน <span class="text-red-500">*</span></label>
+                            <input type="number" id="swalEditMaxPerUser" min="1" value="${product.max_per_user || 1}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">เลือกคอร์สที่เข้าเงื่อนไข</label>
+                            <div class="p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl max-h-32 overflow-y-auto space-y-1">
+                                ${courseCheckboxHtml}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ราคา (Token) <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalEditPrice" min="1" value="${product.token_price || 0}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">จำนวนสต็อก <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalEditStock" min="0" value="${product.stock || 0}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">เริ่มเปิดขาย</label>
+                                <input type="datetime-local" id="swalEditStartsAt" value="${startsAtFormatted}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">หมดเขต</label>
+                                <input type="datetime-local" id="swalEditExpiresAt" value="${expiresAtFormatted}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">รายละเอียดเพิ่มเติม</label>
+                            <textarea id="swalEditDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="เงื่อนไขหรือรายละเอียดสินค้า...">${product.description || ''}</textarea>
+                        </div>
+                    </div>
+                `,
+                didOpen: () => {
+                    window.onEditLimitModeChange = function() {
+                        const mode = document.getElementById('swalEditLimitMode').value;
+                        const container = document.getElementById('swalEditQuotaContainer');
+                        const label = document.getElementById('swalEditQuotaLabel');
+                        
+                        if (mode === 'unlimited') {
+                            container.style.display = 'none';
+                        } else {
+                            container.style.display = 'block';
+                            if (mode === 'person') {
+                                label.textContent = 'จำนวนสิทธิ์สูงสุดที่ 1 คนแลกได้ (สิทธิ์/คน)';
+                            } else if (mode === 'course') {
+                                label.textContent = 'อัตราสิทธิ์แลกได้ต่อ 1 คอร์ส (เช่น 1 คอร์สได้ 1 สิทธิ์)';
+                            }
+                        }
+                    };
+                },
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการแก้ไข',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                preConfirm: () => {
+                    const title = document.getElementById('swalEditTitle').value.trim();
+                    const category = document.getElementById('swalEditCategory').value;
+                    const limit_mode = document.getElementById('swalEditLimitMode').value;
+                    const token_price = parseInt(document.getElementById('swalEditPrice').value);
+                    const stock = parseInt(document.getElementById('swalEditStock').value);
+                    const max_per_user = limit_mode === 'unlimited' ? 999999 : (parseInt(document.getElementById('swalEditMaxPerUser').value) || 1);
+                    const starts_at_val = document.getElementById('swalEditStartsAt').value;
+                    const expires_at_val = document.getElementById('swalEditExpiresAt').value;
+                    const description = document.getElementById('swalEditDesc').value.trim();
+
+                    const selectedCourses = Array.from(document.querySelectorAll('input[name="swalEditCourseCheck"]:checked')).map(cb => cb.value);
+
+                    if (!title || isNaN(token_price) || isNaN(stock)) {
+                        Swal.showValidationMessage('⚠️ กรุณากรอกข้อมูลสำคัญให้ถูกต้องครบถ้วน');
+                        return false;
+                    }
+
+                    return { 
+                        productData: {
+                            title, 
+                            category, 
+                            limit_mode,
+                            token_price, 
+                            stock, 
+                            max_per_user,
+                            starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
+                            expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                            description
+                        },
+                        selectedCourses 
+                    };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังอัปเดตข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // 1. อัปเดตข้อมูลหลักในตาราง shop_items
+                const { error: updateErr } = await supabaseClient
+                    .from('shop_items')
+                    .update(formValues.productData)
+                    .eq('id', productId);
+
+                if (updateErr) {
+                    Swal.fire({ icon: 'error', title: 'อัปเดตไม่สำเร็จ', text: updateErr.message });
+                    return;
+                }
+
+                // 2. เคลียร์ความสัมพันธ์คอร์สเก่า และเพิ่มคอร์สใหม่ที่เลือก
+                await supabaseClient.from('shop_item_courses').delete().eq('item_id', productId);
+
+                if (formValues.selectedCourses.length > 0) {
+                    const relationInserts = formValues.selectedCourses.map(courseId => ({
+                        item_id: productId,
+                        course_id: courseId
+                    }));
+                    await supabaseClient.from('shop_item_courses').insert(relationInserts);
+                }
+
+                Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสินค้าสำเร็จ!', confirmButtonColor: '#0284c7' });
                 loadShopData();
             }
         }
