@@ -95,7 +95,7 @@
                     <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
                 <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และรูปแบบการจำกัดสิทธิ์ที่จะปรับเปลี่ยนฟอร์มกรอกข้อมูลตามเงื่อนไขอัตโนมัติ</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียน</p>
             </div>
         </div>
 
@@ -140,6 +140,7 @@
                     <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                         <thead>
                             <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
+                                <th class="py-3 px-3 sm:p-4">เวลาที่ขอ</th>
                                 <th class="py-3 px-3 sm:p-4">นักเรียน</th>
                                 <th class="py-3 px-3 sm:p-4">ของรางวัลที่แลก</th>
                                 <th class="py-3 px-3 sm:p-4 text-center">Token ที่ใช้</th>
@@ -148,7 +149,7 @@
                             </tr>
                         </thead>
                         <tbody id="requestsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="5" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการคำขอ...</td></tr>
+                            <tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการคำขอ...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -164,6 +165,7 @@
         let allProducts = [];
         let allRequests = [];
         let allCoursesList = [];
+        let allProfilesMap = {};
 
         // 🌗 ธีมมืด/สว่าง
         const htmlElement = document.documentElement;
@@ -181,9 +183,19 @@
 
         async function loadShopData() {
             try {
+                // 1. โหลดรายชื่อคอร์ส
                 const { data: courseData } = await supabaseClient.from('courses').select('id, title');
                 allCoursesList = courseData || [];
 
+                // 2. โหลดโปรไฟล์นักเรียนทั้งหมดมาทำ Map
+                const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, username, nickname');
+                if (profData) {
+                    profData.forEach(p => {
+                        allProfilesMap[p.id] = p.full_name || p.username || 'นักเรียน';
+                    });
+                }
+
+                // 3. โหลดสินค้าทั้งหมด
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('shop_items')
                     .select('*, shop_item_courses(course_id, courses(title))')
@@ -193,9 +205,10 @@
                 document.getElementById('countProducts').textContent = allProducts.length;
                 renderProductsTable(allProducts);
 
+                // 4. โหลดคำขอแลกของรางวัลแบบตรงไปตรงมา
                 const { data: reqData, error: reqErr } = await supabaseClient
                     .from('redemption_logs')
-                    .select(`*, profiles(full_name, username), shop_items(title)`)
+                    .select('*')
                     .order('created_at', { ascending: false });
                 if (reqErr) throw reqErr;
                 allRequests = reqData || [];
@@ -259,11 +272,11 @@
                             <div>${courseTags}</div>
                         </td>
                         <td class="py-3 px-3 sm:p-4 text-center">
-                            <div class="font-extrabold text-amber-500">${p.token_price.toLocaleString()} Token</div>
+                            <div class="font-extrabold text-amber-500">${Number(p.token_price).toLocaleString()} Token</div>
                             <div class="text-[10px] text-slate-400 mt-0.5">${limitText}</div>
                         </td>
                         <td class="py-3 px-3 sm:p-4 text-center">
-                            <div class="font-bold">สต็อก: ${p.stock.toLocaleString()}</div>
+                            <div class="font-bold">สต็อก: ${Number(p.stock).toLocaleString()}</div>
                             <div class="text-[10px] text-slate-400">โควตา: ${quotaDisplay}</div>
                         </td>
                         <td class="py-3 px-3 sm:p-4 text-center text-[11px]">${timeStatusBadge}</td>
@@ -287,13 +300,15 @@
         function renderRequestsTable(requests) {
             const tbody = document.getElementById('requestsTableBody');
             if (requests.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-400">ยังไม่มีรายการคำขอแลกของรางวัลจากนักเรียน</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ยังไม่มีรายการคำขอแลกของรางวัลจากนักเรียน</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = requests.map(r => {
-                const studentName = r.profiles?.full_name || r.profiles?.username || 'ไม่ระบุชื่อ';
-                const itemTitle = r.shop_items?.title || 'สินค้าถูกลบ';
+                const studentName = allProfilesMap[r.student_id] || 'นักเรียน (ไม่พบชื่อ)';
+                const product = allProducts.find(p => p.id === r.item_id);
+                const itemTitle = product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)';
+                const dateStr = new Date(r.created_at).toLocaleString('th-TH');
                 
                 let statusBadge = '';
                 if (r.status === 'pending') statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
@@ -302,9 +317,10 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
+                        <td class="py-3 px-3 sm:p-4 font-mono text-slate-500 text-[11px]">${dateStr}</td>
                         <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white">${studentName}</td>
                         <td class="py-3 px-3 sm:p-4 font-semibold">${itemTitle}</td>
-                        <td class="py-3 px-3 sm:p-4 text-center font-bold text-amber-500">${r.token_spent} Token</td>
+                        <td class="py-3 px-3 sm:p-4 text-center font-bold text-amber-500">${Number(r.token_spent).toLocaleString()} Token</td>
                         <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
                         <td class="py-3 px-3 sm:p-4 text-right space-x-1">
                             <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
