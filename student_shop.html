@@ -217,6 +217,7 @@
         function renderShopItems() {
             const container = document.getElementById('shopItemsContainer');
             const keyword = document.getElementById('searchShopInput').value.toLowerCase();
+            const now = new Date();
 
             const filtered = allShopItems.filter(item => {
                 if (currentCategoryFilter !== 'all' && item.category !== currentCategoryFilter) return false;
@@ -244,6 +245,29 @@
                 const maxAllowed = item.max_per_user || 1;
                 const isLimitReached = item.limit_mode !== 'unlimited' && redeemedCount >= maxAllowed;
 
+                // 🌟 ตรวจสอบเงื่อนไขเวลาเปิดขาย (Active Time Window Check)
+                const startsAt = item.starts_at ? new Date(item.starts_at) : null;
+                const expiresAt = item.expires_at ? new Date(item.expires_at) : null;
+                
+                let isNotStartedYet = startsAt && now < startsAt;
+                let isExpired = expiresAt && now > expiresAt;
+
+                let actionButtonHtml = '';
+                if (isNotStartedYet) {
+                    const formatStart = startsAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                    actionButtonHtml = `<span class="text-amber-500 font-bold text-[11px]" title="เริ่มเปิดขายวันที่ ${formatStart}">⏳ ยังไม่เปิดจำหน่าย</span>`;
+                } else if (isExpired) {
+                    actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">⏰ หมดเขตแลกแล้ว</span>`;
+                } else if (isOutOfStock) {
+                    actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">สินค้าหมด</span>`;
+                } else if (isLimitReached) {
+                    actionButtonHtml = `<span class="text-amber-500 font-bold text-[11px]">แลกครบสิทธิ์แล้ว</span>`;
+                } else if (!canAfford) {
+                    actionButtonHtml = `<span class="text-slate-400 font-bold text-[11px]">Token ไม่พอ</span>`;
+                } else {
+                    actionButtonHtml = `<button onclick="confirmRedeemItem('${item.id}', '${item.title}', ${item.token_price})" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`;
+                }
+
                 return `
                     <div class="hitech-card shop-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4">
                         <div class="space-y-2">
@@ -256,7 +280,7 @@
                         </div>
                         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
                             <span class="text-slate-400 font-medium">เหลือสต็อก: ${item.stock} ชิ้น</span>
-                            ${isOutOfStock ? '<span class="text-rose-500 font-bold">สินค้าหมด</span>' : isLimitReached ? '<span class="text-amber-500 font-bold">แลกครบสิทธิ์แล้ว</span>' : !canAfford ? '<span class="text-slate-400 font-bold">Token ไม่พอ</span>' : `<button onclick="confirmRedeemItem('${item.id}', '${item.title}',${item.token_price})" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`}
+                            ${actionButtonHtml}
                         </div>
                     </div>
                 `;
