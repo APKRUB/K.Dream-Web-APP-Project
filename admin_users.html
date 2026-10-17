@@ -284,13 +284,13 @@
             }
         }
 
-        // 🗑️ ฟังก์ชันลบบัญชีนักเรียนจากตาราง profiles โดยตรง (ปลอดภัย ไม่ติด Schema Cache)
+        // 🗑️ ฟังก์ชันลบบัญชีนักเรียน (ลบจากโปรไฟล์ และแนะนำลิงก์ไปลบใน Auth Dashboard เพิ่มเติมเพื่อความสะอาดเกลี้ยงเกลา)
         async function triggerDeleteStudent(studentId, username) {
             const isDark = document.documentElement.classList.contains('dark');
 
             const { isConfirmed } = await Swal.fire({
                 title: '🗑️ ยืนยันการลบบัญชี?',
-                html: `คุณต้องการลบบัญชีของ <b class="text-rose-500">${username}</b> ออกจากระบบใช่หรือไม่?<br><span class="text-xs text-slate-400">ข้อมูลจะถูกลบออกจากตารางรายชื่อทันที</span>`,
+                html: `คุณต้องการลบบัญชีของ <b class="text-rose-500">${username}</b> ออกจากระบบใช่หรือไม่?<br><span class="text-xs text-slate-400">ข้อมูลจะถูกลบออกจากระบบทันที</span>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'ใช่, ลบเลย',
@@ -307,7 +307,12 @@
 
                 if (!error) {
                     Swal.close();
-                    await Swal.fire({ icon: 'success', title: 'ลบบัญชีสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    await Swal.fire({ 
+                        icon: 'success', 
+                        title: 'ลบบัญชีสำเร็จ!', 
+                        html: `ลบรายชื่อของ <b>${username}</b> เรียบร้อยแล้วครับ<br><span class="text-xs text-slate-400 mt-2 block">💡 หากต้องการลบประวัติในหน้า Auth แนะนำให้กดลบเพิ่มที่ Supabase Dashboard ได้เลยครับ</span>`,
+                        confirmButtonColor: '#0284c7' 
+                    });
                     initPage();
                 } else {
                     Swal.close();
