@@ -75,10 +75,16 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <!-- 🎁 ปุ่มเข้าหน้าจัดการระบบ Shop (เพิ่มใหม่) -->
+                    <button onclick="window.location.href='admin_shop.html'" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/30 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-1.5" title="จัดการระบบร้านค้าและของรางวัล">
+                        <i class="fas fa-store"></i> <span class="hidden sm:inline">จัดการระบบ Shop</span>
+                    </button>
+
                     <!-- ปุ่มรีเฟรช -->
                     <button onclick="loadStudents()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all flex items-center gap-1.5">
                         <i class="fas fa-rotate"></i> <span class="hidden sm:inline">รีเฟรช</span>
                     </button>
+
                     <!-- ปุ่มสลับธีม Dark/Light Mode -->
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
