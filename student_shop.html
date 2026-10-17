@@ -166,7 +166,12 @@
                 return;
             }
 
-            // โหลด Token นักเรียน
+            await loadStudentDataAndShop();
+            setupStudentRealtime();
+        }
+
+        async function loadStudentDataAndShop() {
+            // 1. โหลด Token นักเรียนล่าสุด
             const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).maybeSingle();
             if (prof) {
                 studentTokenBalance = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
@@ -176,11 +181,11 @@
             }
             document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
-            // โหลดสินค้าในร้าน
+            // 2. โหลดสินค้าในร้าน
             const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
             allShopItems = items || [];
 
-            // โหลดประวัติการแลกของนักเรียนคนนี้
+            // 3. โหลดประวัติการแลกของนักเรียนคนนี้
             await fetchMyRedemptions();
 
             renderShopItems();
@@ -245,7 +250,6 @@
                 const maxAllowed = item.max_per_user || 1;
                 const isLimitReached = item.limit_mode !== 'unlimited' && redeemedCount >= maxAllowed;
 
-                // 🌟 ตรวจสอบเงื่อนไขเวลาเปิดขาย (Active Time Window Check)
                 const startsAt = item.starts_at ? new Date(item.starts_at) : null;
                 const expiresAt = item.expires_at ? new Date(item.expires_at) : null;
                 
@@ -268,7 +272,6 @@
                     actionButtonHtml = `<button onclick="confirmRedeemItem('${item.id}', '${item.title}', ${item.token_price})" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`;
                 }
 
-                // 🖼️ ส่วนแสดงผลรูปภาพสินค้า
                 let imageHtml = item.image_url 
                     ? `<div class="w-full h-44 overflow-hidden rounded-xl bg-slate-100 dark:bg-darkinput border border-amber-500/20 mb-3"><img src="${item.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}"></div>`
                     : `<div class="w-full h-44 rounded-xl bg-amber-500/5 dark:bg-darkinput border border-amber-500/20 flex flex-col items-center justify-center text-amber-500/60 mb-3 space-y-1"><i class="fas fa-gift text-3xl"></i><span class="text-[10px] font-semibold text-slate-400">Reward Item</span></div>`;
@@ -308,7 +311,6 @@
 
             Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. ตรวจสอบยอด Token ล่าสุดจากตาราง profiles
             const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
             const currentTokens = prof?.tokens ?? prof?.point ?? prof?.points ?? prof?.coin ?? prof?.coins ?? 0;
 
@@ -319,19 +321,16 @@
 
             const newTokens = currentTokens - itemPrice;
 
-            // 2. หัก Token ของนักเรียน
             let updateResult = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
             if (updateResult.error) {
                 await mySupabase.from('profiles').update({ point: newTokens }).eq('id', currentStudentId);
             }
 
-            // 3. ตัดสต็อกสินค้า
             const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
             if (prodData) {
                 await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
             }
 
-            // 4. บันทึกประวัติการแลกลงตาราง redemption_logs (เพื่อให้ฝั่งครูเห็นและเก็บประวัติ)
             const { error: insertError } = await mySupabase.from('redemption_logs').insert([{
                 student_id: String(currentStudentId),
                 item_id: String(itemId),
@@ -348,13 +347,7 @@
             studentTokenBalance = newTokens;
             document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
-            // 5. โหลดประวัติใหม่ทันที
-            await fetchMyRedemptions();
-
-            // 6. อัปเดตการแสดงผลหน้าร้าน
-            const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
-            allShopItems = items || [];
-            renderShopItems();
+            await loadStudentDataAndShop();
 
             Swal.fire({
                 icon: 'success',
@@ -365,7 +358,7 @@
         }
 
         async function openMyRedemptionHistoryModal() {
-            await fetchMyRedemptions(); // โหลดข้อมูลล่าสุดก่อนเปิด Modal
+            await fetchMyRedemptions();
             const isDark = document.documentElement.classList.contains('dark');
             let historyHtml = '';
 
@@ -379,7 +372,7 @@
                     
                     let statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
                     if (r.status === 'approved') statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 font-bold text-[10px]">✅ อนุมัติแล้ว</span>';
-                    else if (r.status === 'rejected') statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 font-bold text-[10px]">❌ ไม่อนุมัติ</span>';
+                    else if (r.status === 'rejected') statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 font-bold text-[10px]">❌ ไม่อนุมัติ (คืน Token แล้ว)</span>';
 
                     historyHtml += `
                         <div class="p-3.5 rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm">
@@ -403,6 +396,22 @@
                 background: isDark ? '#090d16' : '#ffffff',
                 color: isDark ? '#f1f5f9' : '#1e293b'
             });
+        }
+
+        // 🌟 ตั้งค่า Realtime ฝั่งนักเรียน (ซิงค์ Token, สินค้า, และสถานะคำขออัตโนมัติ)
+        function setupStudentRealtime() {
+            mySupabase
+                .channel('student-shop-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
+                    loadStudentDataAndShop();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_logs', filter: `student_id=eq.${currentStudentId}` }, () => {
+                    loadStudentDataAndShop();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${currentStudentId}` }, () => {
+                    loadStudentDataAndShop();
+                })
+                .subscribe();
         }
 
         window.addEventListener('DOMContentLoaded', initShopPage);
