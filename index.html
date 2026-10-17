@@ -10,7 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- 🔄 Auto-Login Check: ตรวจสอบ Session ทันทีที่โหลดหน้าจอ ป้องกันการล็อกอินซ้ำซ้อน -->
+    <!-- 🔄 Auto-Login Check: ป้องกัน Loop โดยเพิ่มระบบดึงข้อมูลสำรอง -->
     <script>
         const SUPABASE_URL_INIT = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY_INIT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
@@ -22,18 +22,29 @@
 
                 if (session && session.user) {
                     const userId = session.user.id;
-                    const { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
+                    
+                    // ลองดึงจาก profiles ก่อน
+                    let { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
 
-                    if (profile) {
-                        const userRole = String(profile.role || '').toLowerCase();
-                        // 🔀 แยกเส้นทางตาม role อัตโนมัติเมื่อ Auto-Login
-                        if (userRole === 'teacher' || userRole === 'instructor') {
-                            window.location.replace('teacher.html');
-                        } else if (userRole === 'admin' || userRole === 'exam_creator') {
-                            window.location.replace('admin.html');
-                        } else {
-                            window.location.replace('student.html');
-                        }
+                    // ถ้าไม่เจอ ลองดึงจาก students เพื่อกันเหนียว
+                    if (!profile) {
+                        const { data: studentData } = await tempClient.from('students').select('*').eq('id', userId).maybeSingle();
+                        profile = studentData || { role: 'student' };
+                    }
+
+                    const userRole = String(profile.role || profile.user_role || 'student').toLowerCase();
+                    
+                    // บันทึก Session สำรองลง localStorage ป้องกันข้อมูลหาย
+                    localStorage.setItem('id', userId);
+                    localStorage.setItem('student_id', userId);
+                    localStorage.setItem('user_id', userId);
+
+                    if (userRole === 'teacher' || userRole === 'instructor') {
+                        window.location.replace('teacher.html');
+                    } else if (userRole === 'admin' || userRole === 'exam_creator') {
+                        window.location.replace('admin.html');
+                    } else {
+                        window.location.replace('student.html');
                     }
                 }
             } catch (e) {
@@ -95,6 +106,13 @@
             </button>
         </form>
 
+        <!-- 🧹 ปุ่มเคลียร์แคชกรณีติดลูป -->
+        <div class="mt-4 text-center">
+            <button onclick="clearLocalStorageAndReset()" class="text-xs text-rose-500 hover:underline font-semibold">
+                <i class="fas fa-sync-alt mr-1"></i> ล้างค่าเซสชัน & เริ่มใหม่ (แก้ลูป)
+            </button>
+        </div>
+
         <div class="mt-6 text-center text-xs text-gray-400">
             ระบบบริหารจัดการการเรียนการสอนออนไลน์ &copy; 2026
         </div>
@@ -122,6 +140,13 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
         const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        async function clearLocalStorageAndReset() {
+            await mySupabase.auth.signOut();
+            localStorage.clear();
+            Swal.fire({ icon: 'success', title: 'ล้างข้อมูลสำเร็จ', text: 'กำลังรีเฟรชหน้าจอ...', timer: 1500, showConfirmButton: false })
+              .then(() => window.location.reload());
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const userInput = document.getElementById('username').value.trim();
@@ -142,7 +167,11 @@
             }
 
             const userId = authData.user.id;
-            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+            let { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+            if (!profile) {
+                const { data: studentData } = await mySupabase.from('students').select('*').eq('id', userId).maybeSingle();
+                profile = studentData || { role: 'student' };
+            }
             Swal.close();
 
             const userName = profile?.username || profile?.full_name || userInput;
@@ -155,8 +184,7 @@
             localStorage.setItem('profile', JSON.stringify(profile || {}));
 
             setTimeout(() => {
-                const userRole = String(profile?.role || '').toLowerCase();
-                // 🎯 เงื่อนไขการเปลี่ยนหน้าหลังกดเข้าสู่ระบบสำเร็จ
+                const userRole = String(profile?.role || profile?.user_role || 'student').toLowerCase();
                 if (userRole === 'teacher' || userRole === 'instructor') {
                     window.location.replace('teacher.html');
                 } else if (userRole === 'admin' || userRole === 'exam_creator') {
