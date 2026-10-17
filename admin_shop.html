@@ -4,7 +4,7 @@
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จัดการร้านค้าและของรางวัล (Shop Management)</title>
+    <title>LMS | จัดการร้านค้าและของรางวัลขั้นสูง (Advanced Shop Management)</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -69,8 +69,8 @@
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Shop Command Center</h1>
-                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการร้านค้าและของรางวัล</span>
+                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Advanced Shop Command</h1>
+                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการร้านค้าขั้นสูง (Flash Sale & Targeting)</span>
                     </div>
                 </div>
 
@@ -92,10 +92,10 @@
         <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-                    <i class="fas fa-store"></i> Reward Store Administration
+                    <i class="fas fa-store"></i> Flash Sale & Course Targeting Hub
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัล & คำขอแลก</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้าในร้านค้า (ส่วนลด, เงินสด, ของขวัญ) พร้อมกำหนดเวลาหมดอายุและตรวจสอบคำขอแลกจากนักเรียน</p>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">กำหนดเวลาเปิดขาย-หมดอายุ, จำกัดสิทธิ์ตามคอร์สเรียน, และตรวจสอบคำขอแลกจากนักเรียนแบบเรียลไทม์</p>
             </div>
         </div>
 
@@ -117,10 +117,10 @@
                         <thead>
                             <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
                                 <th class="p-4">ชื่อของรางวัล</th>
-                                <th class="p-4">หมวดหมู่</th>
+                                <th class="p-4">หมวดหมู่ & คอร์สเป้าหมาย</th>
                                 <th class="p-4 text-center">ราคา (Token)</th>
                                 <th class="p-4 text-center">สต็อก / สิทธิ์ต่อคน</th>
-                                <th class="p-4 text-center">กำหนดหมดอายุ</th>
+                                <th class="p-4 text-center">ระยะเวลาเปิดขาย</th>
                                 <th class="p-4 text-center">สถานะ</th>
                                 <th class="p-4 text-right">จัดการ</th>
                             </tr>
@@ -163,6 +163,7 @@
 
         let allProducts = [];
         let allRequests = [];
+        let allCoursesList = [];
 
         // 🌗 ธีมมืด/สว่าง
         const htmlElement = document.documentElement;
@@ -180,15 +181,21 @@
 
         async function loadShopData() {
             try {
+                // โหลดคอร์สเรียนทั้งหมดเผื่อไว้ใช้เทียบเป้าหมาย
+                const { data: courseData } = await supabaseClient.from('courses').select('id, title');
+                allCoursesList = courseData || [];
+
+                // โหลดสินค้า พร้อมดึงชื่อคอร์สเป้าหมาย
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('shop_items')
-                    .select('*')
+                    .select('*, courses(title)')
                     .order('created_at', { ascending: false });
                 if (prodErr) throw prodErr;
                 allProducts = prodData || [];
                 document.getElementById('countProducts').textContent = allProducts.length;
                 renderProductsTable(allProducts);
 
+                // โหลดคำขอแลก
                 const { data: reqData, error: reqErr } = await supabaseClient
                     .from('redemption_logs')
                     .select(`*, profiles(full_name, username), shop_items(title)`)
@@ -216,24 +223,26 @@
 
             tbody.innerHTML = products.map(p => {
                 const catText = categoryLabels[p.category] || p.category;
-                
-                // ตรวจสอบวันหมดอายุ
-                let expireStr = '<span class="text-slate-400">ไม่จำกัดเวลา</span>';
-                let isExpired = false;
-                if (p.expires_at) {
-                    const expDate = new Date(p.expires_at);
-                    isExpired = now > expDate;
-                    expireStr = expDate.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                    if (isExpired) {
-                        expireStr = `<span class="text-rose-500 font-bold">⏰ หมดเขต (${expireStr})</span>`;
-                    }
+                const courseTarget = p.courses?.title ? `<div class="text-[10px] text-sky-500 font-bold mt-0.5"><i class="fas fa-graduation-cap"></i> เฉพาะคอร์ส: ${p.courses.title}</div>` : '<div class="text-[10px] text-slate-400 mt-0.5">ทุกคอร์สเรียน</div>';
+
+                // เช็คสถานะเวลา (Coming Soon / Active / Expired)
+                let timeStatusBadge = '';
+                const startsAt = p.starts_at ? new Date(p.starts_at) : null;
+                const expiresAt = p.expires_at ? new Date(p.expires_at) : null;
+
+                if (startsAt && now < startsAt) {
+                    timeStatusBadge = `<div class="text-[10px] text-amber-500 font-bold">⏳ เปิดขาย: ${startsAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}</div>`;
+                } else if (expiresAt && now > expiresAt) {
+                    timeStatusBadge = `<div class="text-[10px] text-rose-500 font-bold">⏰ หมดเขตแล้ว</div>`;
+                } else {
+                    timeStatusBadge = `<div class="text-[10px] text-emerald-500 font-bold">🟢 เปิดจำหน่ายปกติ</div>`;
                 }
 
                 let statusBadge = '';
-                if (isExpired) {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-500 font-bold text-[10px]">⏰ หมดอายุแล้ว</span>';
+                if (expiresAt && now > expiresAt) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-500 font-bold text-[10px]">⏰ หมดอายุ</span>';
                 } else if (p.is_active) {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">🟢 เปิดขายอยู่</span>';
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">🟢 เปิดใช้งาน</span>';
                 } else {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 font-bold text-[10px]">🔴 ปิดขาย</span>';
                 }
@@ -241,13 +250,16 @@
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
                         <td class="p-4 font-bold text-slate-900 dark:text-white text-sm">${p.title}</td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span></td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span>
+                            ${courseTarget}
+                        </td>
                         <td class="p-4 text-center font-extrabold text-amber-500">${p.token_price.toLocaleString()} Token</td>
                         <td class="p-4 text-center">
                             <div class="font-bold">สต็อก: ${p.stock.toLocaleString()}</div>
                             <div class="text-[10px] text-slate-400">จำกัด ${p.max_per_user || 1} สิทธิ์/คน</div>
                         </td>
-                        <td class="p-4 text-center text-[11px]">${expireStr}</td>
+                        <td class="p-4 text-center text-[11px]">${timeStatusBadge}</td>
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-right space-x-1">
                             <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
@@ -286,7 +298,7 @@
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-right space-x-1">
                             <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
-                            <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
+                            <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-emerald-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
                         </td>
                     </tr>
                 `;
@@ -303,22 +315,33 @@
         }
 
         async function openAddProductModal() {
+            const courseOptions = allCoursesList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
             const { value: formValues } = await Swal.fire({
-                title: '🎁 เพิ่มของรางวัลใหม่ใน Shop',
+                title: '🎁 เพิ่มของรางวัลขั้นสูงใน Shop',
                 html: `
                     <div class="text-left text-xs space-y-3">
                         <div>
                             <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
                             <input type="text" id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none" placeholder="เช่น ส่วนลดวิชาเรียน 100 บาท">
                         </div>
-                        <div>
-                            <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
-                            <select id="swalCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
-                                <option value="discount">🏷️ ส่วนลด</option>
-                                <option value="cash">💵 เงินสด</option>
-                                <option value="gift">🎁 ของขวัญ</option>
-                                <option value="other">✨ อื่นๆ</option>
-                            </select>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+                                <select id="swalCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="discount">🏷️ ส่วนลด</option>
+                                    <option value="cash">💵 เงินสด</option>
+                                    <option value="gift">🎁 ของขวัญ</option>
+                                    <option value="other">✨ อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">จำกัดสิทธิ์เฉพาะคอร์ส</label>
+                                <select id="swalCourseId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[11px]">
+                                    <option value="">-- ทุกคอร์ส (ทุกคนแลกได้) --</option>
+                                    ${courseOptions}
+                                </select>
+                            </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
@@ -330,14 +353,18 @@
                                 <input type="number" id="swalStock" min="1" value="10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
                             <div>
-                                <label class="block font-bold mb-1">จำกัดสิทธิ์ / คน</label>
+                                <label class="block font-bold mb-1">จำกัดสิทธิ์/คน</label>
                                 <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                             </div>
                             <div>
-                                <label class="block font-bold mb-1">วันเวลาหมดอายุ (ถ้ามี)</label>
-                                <input type="datetime-local" id="swalExpiresAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[11px]">
+                                <label class="block font-bold mb-1">เริ่มเปิดขาย</label>
+                                <input type="datetime-local" id="swalStartsAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">หมดเขต</label>
+                                <input type="datetime-local" id="swalExpiresAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
                             </div>
                         </div>
                         <div>
@@ -353,9 +380,11 @@
                 preConfirm: () => {
                     const title = document.getElementById('swalTitle').value.trim();
                     const category = document.getElementById('swalCategory').value;
+                    const target_course_id = document.getElementById('swalCourseId').value || null;
                     const token_price = parseInt(document.getElementById('swalPrice').value);
                     const stock = parseInt(document.getElementById('swalStock').value);
                     const max_per_user = parseInt(document.getElementById('swalMaxPerUser').value) || 1;
+                    const starts_at_val = document.getElementById('swalStartsAt').value;
                     const expires_at_val = document.getElementById('swalExpiresAt').value;
                     const description = document.getElementById('swalDesc').value.trim();
 
@@ -367,9 +396,11 @@
                     return { 
                         title, 
                         category, 
+                        target_course_id,
                         token_price, 
                         stock, 
                         max_per_user,
+                        starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
                         expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
                         description, 
                         is_active: true 
