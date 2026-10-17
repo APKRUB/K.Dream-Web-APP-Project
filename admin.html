@@ -10,6 +10,50 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- 🔒 Security Guard: ตรวจสอบสิทธิ์การเข้าถึงหน้า Admin ทันทีตั้งแต่โหลดหน้าเว็บ -->
+    <script>
+        const SUPABASE_URL_CHECK = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY_CHECK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
+        (async function() {
+            const tempClient = window.supabase.createClient(SUPABASE_URL_CHECK, SUPABASE_KEY_CHECK);
+            
+            // 1. ตรวจสอบ Session จาก Supabase Auth ก่อน
+            const { data: { session } } = await tempClient.auth.getSession();
+            
+            if (!session) {
+                // ถ้าไม่มี Session ในระบบ ให้ดีดกลับหน้า Login ทันที
+                window.location.replace('index.html');
+                return;
+            }
+
+            // 2. ตรวจสอบบทบาท (Role) จากตาราง profiles ว่าเป็นแอดมินหรือครูจริงหรือไม่
+            const userId = session.user.id;
+            const { data: profile, error } = await tempClient
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error || !profile) {
+                window.location.replace('index.html');
+                return;
+            }
+
+            const role = String(profile.role || '').toLowerCase();
+            const email = String(profile.email || '').toLowerCase();
+            
+            // เงื่อนไขสิทธิ์แอดมินหรือครู
+            const isAdminOrTeacher = (role === 'admin' || role === 'teacher' || role === 'instructor' || email.includes('admin') || email.includes('teacher'));
+
+            if (!isAdminOrTeacher) {
+                // แจ้งเตือนหากนักเรียนพยายามแอบเข้า
+                alert('⚠️ พื้นที่นี้สำหรับผู้ดูแลระบบหรือคุณครูเท่านั้น!');
+                window.location.replace('index.html'); // หรือเปลี่ยนเป็นหน้าแดชบอร์ดนักเรียน เช่น student.html
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
