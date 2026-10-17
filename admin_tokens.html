@@ -100,7 +100,7 @@
             <div class="w-full md:w-72">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchStudentInput" oninput="filterStudents()" placeholder="ค้นหาชื่อ หรือ Username นร...." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:border-amber-500 transition-all">
+                    <input type="text" id="searchStudentInput" oninput="filterStudents()" placeholder="ค้นหาชื่อ, ชื่อเล่น หรือ Username..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:border-amber-500 transition-all">
                 </div>
             </div>
         </div>
@@ -111,8 +111,8 @@
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                            <th class="p-4">นักเรียน (Student Name)</th>
-                            <th class="p-4">ระดับชั้น / ห้องเรียน</th>
+                            <th class="p-4">นักเรียน (Student Name & Nickname)</th>
+                            <th class="p-4">ระดับชั้น (Grade Level)</th>
                             <th class="p-4 text-center">Token ปัจจุบัน</th>
                             <th class="p-4 text-center">สถานะ Shop / แลกของรางวัล</th>
                             <th class="p-4 text-right">จัดการ (Adjust / Deduct)</th>
@@ -215,19 +215,23 @@
             }
 
             tbody.innerHTML = students.map(s => {
-                const name = s.full_name || s.username || 'ไม่ระบุชื่อ';
+                const fullName = s.full_name || s.username || 'ไม่ระบุชื่อ';
+                const nickname = s.nickname ? ` (${s.nickname})` : '';
+                const nameDisplay = fullName + nickname;
                 const username = s.username ? `@${s.username}` : '-';
-                const classRoom = s.classroom || s.class_room || s.room || 'ม.304 / ทั่วไป';
+                
+                // 🎓 ดึงระดับชั้นจาก grade_level
+                const gradeLevel = s.grade_level || s.classroom || s.class_room || 'ระบุระดับชั้น';
                 const tokens = s.tokens ?? s.point ?? s.coin ?? 0;
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
                         <td class="p-4">
-                            <div class="font-bold text-slate-900 dark:text-white text-sm">${name}</div>
+                            <div class="font-bold text-slate-900 dark:text-white text-sm">${nameDisplay}</div>
                             <div class="text-[11px] text-slate-400 font-mono">${username}</div>
                         </td>
                         <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">${classRoom}</span>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">${gradeLevel}</span>
                         </td>
                         <td class="p-4 text-center">
                             <span class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-sm border border-amber-500/25">
@@ -240,10 +244,10 @@
                             </span>
                         </td>
                         <td class="p-4 text-right space-x-1">
-                            <button onclick="openTokenModal('${s.id}', '${name}', ${tokens}, 'add')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-all" title="เพิ่ม Token">
+                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'add')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-all" title="เพิ่ม Token">
                                 <i class="fas fa-plus"></i> ปรับเพิ่ม
                             </button>
-                            <button onclick="openTokenModal('${s.id}', '${name}', ${tokens}, 'deduct')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all" title="หัก Token">
+                            <button onclick="openTokenModal('${s.id}', '${fullName}${s.nickname ? ' (' + s.nickname + ')' : ''}', ${tokens}, 'deduct')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all" title="หัก Token">
                                 <i class="fas fa-minus"></i> หักออก
                             </button>
                         </td>
@@ -256,8 +260,9 @@
             const keyword = document.getElementById('searchStudentInput').value.toLowerCase();
             const filtered = allStudents.filter(s => 
                 (s.full_name && s.full_name.toLowerCase().includes(keyword)) || 
+                (s.nickname && s.nickname.toLowerCase().includes(keyword)) ||
                 (s.username && s.username.toLowerCase().includes(keyword)) ||
-                (s.classroom && s.classroom.toLowerCase().includes(keyword))
+                (s.grade_level && s.grade_level.toLowerCase().includes(keyword))
             );
             renderStudentTable(filtered);
         }
