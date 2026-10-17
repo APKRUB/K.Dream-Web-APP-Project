@@ -96,8 +96,8 @@
 
             Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // ถ้านักเรียนกรอก Username ธรรมดา (เช่น DREAM) ระบบจะแปลงเป็น DREAM@lms.local อัตโนมัติทันที
-            const loginEmail = userInput.includes('@') ? userInput : `${userInput}@lms.local`;
+            // แปลง Username เป็นอีเมลจำลอง @lms-system.com อัตโนมัติ
+            const loginEmail = userInput.includes('@') ? userInput : `${userInput}@lms-system.com`;
 
             const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ 
                 email: loginEmail, 
