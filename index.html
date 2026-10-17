@@ -24,11 +24,16 @@
                     const userId = session.user.id;
                     const { data: profile } = await tempClient.from('profiles').select('*').eq('id', userId).maybeSingle();
 
-                    // หากมี Session อยู่แล้ว และมีโปรไฟล์ ให้พาไปหน้าหลักตามสิทธิ์ทันที
-                    if (profile && ['admin', 'teacher', 'exam_creator', 'instructor'].includes(String(profile.role || '').toLowerCase())) {
-                        window.location.replace('admin.html');
-                    } else {
-                        window.location.replace('student.html');
+                    if (profile) {
+                        const userRole = String(profile.role || '').toLowerCase();
+                        // 🔀 แยกเส้นทางตาม role อัตโนมัติเมื่อ Auto-Login
+                        if (userRole === 'teacher' || userRole === 'instructor') {
+                            window.location.replace('teacher.html');
+                        } else if (userRole === 'admin' || userRole === 'exam_creator') {
+                            window.location.replace('admin.html');
+                        } else {
+                            window.location.replace('student.html');
+                        }
                     }
                 }
             } catch (e) {
@@ -150,7 +155,11 @@
             localStorage.setItem('profile', JSON.stringify(profile || {}));
 
             setTimeout(() => {
-                if (profile && ['admin', 'teacher', 'exam_creator', 'instructor'].includes(String(profile.role || '').toLowerCase())) {
+                const userRole = String(profile?.role || '').toLowerCase();
+                // 🎯 เงื่อนไขการเปลี่ยนหน้าหลังกดเข้าสู่ระบบสำเร็จ
+                if (userRole === 'teacher' || userRole === 'instructor') {
+                    window.location.replace('teacher.html');
+                } else if (userRole === 'admin' || userRole === 'exam_creator') {
                     window.location.replace('admin.html');
                 } else {
                     window.location.replace('student.html');
