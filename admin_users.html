@@ -190,7 +190,7 @@
             }
 
             tbody.innerHTML = filtered.map((s, idx) => {
-                const sId = s.id || s.user_id;
+                const sId = s.id;
                 const username = s.username || s.student_id || '-';
                 const fullName = s.full_name || (s.first_name ? `${s.first_name} ${s.last_name || ''}` : '-');
                 const nickname = s.nickname || '-';
@@ -284,7 +284,7 @@
             }
         }
 
-        // 🗑️ ฟังก์ชันลบบัญชีนักเรียน (เรียกใช้จากข้างใน Modal แก้ไข)
+        // 🗑️ ฟังก์ชันลบบัญชีนักเรียน (อ้างอิงผ่านคอลัมน์ id)
         async function triggerDeleteStudent(studentId, username) {
             const isDark = document.documentElement.classList.contains('dark');
 
@@ -303,14 +303,15 @@
             if (isConfirmed) {
                 Swal.fire({ title: 'กำลังลบบัญชี...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                const targetKey = String(studentId).length > 20 ? 'id' : 'user_id'; 
-                // ลบข้อมูลจากตาราง profiles
-                const { error } = await mySupabase.from('profiles').delete().or(`id.eq.${studentId},user_id.eq.${studentId}`);
+                // ลบข้อมูลจากตาราง profiles โดยใช้ฟิลด์ id โดยตรง
+                const { error } = await mySupabase.from('profiles').delete().eq('id', studentId);
 
                 if (!error) {
-                    Swal.fire({ icon: 'success', title: 'ลบบัญชีสำเร็จ!', timer: 1200, showConfirmButton: false });
+                    Swal.close();
+                    await Swal.fire({ icon: 'success', title: 'ลบบัญชีสำเร็จ!', timer: 1200, showConfirmButton: false });
                     initPage();
                 } else {
+                    Swal.close();
                     Swal.fire('ลบไม่สำเร็จ', `เกิดข้อผิดพลาด: ${error.message}`, 'error');
                 }
             }
@@ -438,7 +439,7 @@
                 const userId = authData.user ? authData.user.id : null;
 
                 const profilePayload = {
-                    ...(userId ? { id: userId, user_id: userId } : {}),
+                    ...(userId ? { id: userId } : {}),
                     username: formValues.username,
                     student_id: formValues.student_id,
                     full_name: formValues.full_name,
@@ -474,9 +475,9 @@
             }
         }
 
-        // ✏️ ฟังก์ชันเปิด Modal แก้ไขข้อมูล พร้อมปุ่มลบบัญชีข้างใน
+        // ✏️ ฟังก์ชันเปิด Modal แก้ไขข้อมูล (อ้างอิงผ่าน id ของตาราง)
         async function openEditStudentModal(studentId) {
-            const student = studentsList.find(s => String(s.id || s.user_id) === String(studentId));
+            const student = studentsList.find(s => String(s.id) === String(studentId));
             if (!student) return;
 
             const isDark = document.documentElement.classList.contains('dark');
@@ -499,7 +500,7 @@
                             </div>
                             <div>
                                 <span class="text-[10px] text-slate-400 block font-bold mb-1">ลบผู้ใช้งานนี้</span>
-                                <button type="button" onclick="triggerDeleteStudent('${student.id || student.user_id}', '${usernameValStr}')" class="w-full px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center justify-center gap-1.5">
+                                <button type="button" onclick="triggerDeleteStudent('${student.id}', '${usernameValStr}')" class="w-full px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow transition-all flex items-center justify-center gap-1.5">
                                     <i class="fas fa-trash-can"></i> ลบบัญชี
                                 </button>
                             </div>
@@ -572,10 +573,7 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                const targetKey = student.id ? 'id' : 'user_id';
-                const targetId = student.id || student.user_id;
-
-                const { error } = await mySupabase.from('profiles').update(formValues).eq(targetKey, targetId);
+                const { error } = await mySupabase.from('profiles').update(formValues).eq('id', student.id);
 
                 if (!error) {
                     Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ!', timer: 1200, showConfirmButton: false });
