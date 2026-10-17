@@ -79,7 +79,7 @@
             background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); 
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
         }
-        .hitech-card:hover { transform: translateY(-4px); border-color: #0ea5e9; box-shadow: 0 20px 40px -15px rgba(2, 132, 199, 0.2); }
+        .hitech-card:hover { transform: translateY(-3px); border-color: #0ea5e9; box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.2); }
         .hero-banner { background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%); border: 1px solid rgba(56, 189, 248, 0.3); }
         .dark .hero-banner { background: linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(30, 58, 138, 0.2) 100%); border: 1px solid rgba(56, 189, 248, 0.2); }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
@@ -88,176 +88,176 @@
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
-    <!-- Navbar -->
+    <!-- Responsive Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+            <div class="flex justify-between h-16 items-center gap-2">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-sm sm:text-lg shadow-lg shadow-sky-500/30 shrink-0">
                         <i class="fas fa-shield-halved"></i>
                     </div>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Admin Command Center</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">LMS Secure Portal</span>
+                    <div class="min-w-0">
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white truncate leading-tight">Admin Portal</h1>
+                        <span class="text-[9px] sm:text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase truncate block">Secure Command</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2.5">
-                    <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
-                        <i class="fas fa-bell text-sm"></i>
+                <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    <button onclick="openNotificationsModal()" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
+                        <i class="fas fa-bell text-xs sm:text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
                     </button>
 
-                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
-                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    <button id="themeToggle" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
+                        <i class="fas fa-moon text-xs sm:text-sm" id="themeIcon"></i>
                     </button>
 
-                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน -->
-                    <button onclick="openChangePasswordModal()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5" title="เปลี่ยนรหัสผ่าน">
-                        <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
+                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน (ซ่อนข้อความบนมือถือจอเล็กมากๆ เพื่อความสะอาด) -->
+                    <button onclick="openChangePasswordModal()" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 font-bold text-[11px] sm:text-xs rounded-xl transition-all flex items-center gap-1" title="เปลี่ยนรหัสผ่าน">
+                        <i class="fas fa-key"></i> <span class="hidden md:inline">เปลี่ยนรหัสผ่าน</span>
                     </button>
 
-                    <button onclick="logoutAdmin()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
-                        <i class="fas fa-right-from-bracket"></i> ออกจากระบบ
+                    <button onclick="logoutAdmin()" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 font-bold text-[11px] sm:text-xs rounded-xl transition-all flex items-center gap-1" title="ออกจากระบบ">
+                        <i class="fas fa-right-from-bracket"></i> <span class="hidden md:inline">ออก</span>
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-5 sm:space-y-6">
         
         <!-- Welcome Banner -->
-        <div class="hero-banner p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div class="space-y-2 relative z-10">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs border border-sky-500/20">
+        <div class="hero-banner p-5 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+            <div class="space-y-2 relative z-10 w-full">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[11px] sm:text-xs border border-sky-500/20">
                     <span class="w-2 h-2 rounded-full bg-sky-500 animate-ping"></span> Realtime Signal Active
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName" class="text-sky-600 dark:text-sky-400">ผู้ดูแลระบบ</span></h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl">
+                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">ยินดีต้อนรับกลับสู่ระบบจัดการ LMS, คุณ <span id="displayAdminName" class="text-sky-600 dark:text-sky-400">ผู้ดูแลระบบ</span></h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed">
                     จัดการชุดข้อสอบ, สร้าง OMR, ตรวจข้อสอบอัตนัย, ประกาศข่าวสาร, และจัดการเทปเรียนย้อนหลังผ่านศูนย์ควบคุม Hi-Tech
                 </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3 relative z-10 w-full md:w-auto shrink-0">
-                <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
-                    <div id="statTotalExams" class="text-xl font-extrabold text-sky-600 dark:text-sky-400">0</div>
-                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">ชุดข้อสอบทั้งหมด</div>
+                <div class="p-3.5 sm:p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
+                    <div id="statTotalExams" class="text-lg sm:text-xl font-extrabold text-sky-600 dark:text-sky-400">0</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider">ชุดข้อสอบทั้งหมด</div>
                 </div>
-                <div class="p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
-                    <div id="statTotalSubmissions" class="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0</div>
-                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนส่งข้อสอบ</div>
+                <div class="p-3.5 sm:p-4 bg-white/80 dark:bg-darkbox/80 backdrop-blur-md rounded-2xl border border-sky-500/20 text-center space-y-1">
+                    <div id="statTotalSubmissions" class="text-lg sm:text-xl font-extrabold text-indigo-600 dark:text-indigo-400">0</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-wider">นักเรียนส่งข้อสอบ</div>
                 </div>
             </div>
         </div>
 
         <!-- Modules Grid -->
         <div class="space-y-4">
-            <h3 class="font-extrabold text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <h3 class="font-extrabold text-xs sm:text-sm text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <i class="fas fa-th-large text-sky-500"></i> ฟังก์ชันหลักระบบผู้ดูแลระบบ (Admin Modules)
             </h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-file-signature"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-200 dark:border-sky-800">Exam Hub</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">ศูนย์จัดการชุดข้อสอบ</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-sky-500 transition-colors">ศูนย์จัดการชุดข้อสอบ</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้าง แก้ไข โคลน และตั้งค่าชุดข้อสอบ พร้อมระบบอัปโหลด PDF และ OMR ครบวงจร</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_analytics.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                <div onclick="window.location.href='admin_analytics.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 text-white flex items-center justify-center text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-chart-pie"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] border border-indigo-200 dark:border-indigo-800">Analytics</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-indigo-500 transition-colors">วิเคราะห์ผลคะแนน & สถิติ</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-indigo-500 transition-colors">วิเคราะห์ผลคะแนน & สถิติ</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">วิเคราะห์จุดอ่อนรายข้อ ออกรายงานคะแนนเฉลย กราฟกระจายตัว และ Export CSV</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_audit_logs.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                <div onclick="window.location.href='admin_audit_logs.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-700 text-white flex items-center justify-center text-lg shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-700 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-history"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 font-bold text-[10px] border border-cyan-200 dark:border-cyan-800">Security</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-cyan-500 transition-colors">Audit Logs (ประวัติระบบ)</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-cyan-500 transition-colors">Audit Logs (ประวัติระบบ)</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบประวัติการแก้ไข การสร้างข้อสอบ และกิจกรรมทั้งหมดในระบบแบบเรียลไทม์</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_announcements.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                <div onclick="window.location.href='admin_announcements.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-bullhorn"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">Broadcast</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">ระบบประกาศข่าวสาร</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">ระบบประกาศข่าวสาร</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้างและจัดการประกาศแจ้งเตือน ข่าวสารสำคัญ หรือกำหนดการสอบส่งตรงถึงหน้านักเรียน</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_consult.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group">
+                <div onclick="window.location.href='admin_consult.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-pink-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-comments"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-bold text-[10px] border border-purple-200 dark:border-purple-800">Consult</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ระบบ Consult ปรึกษา</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ระบบ Consult ปรึกษา</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ระบบรับข้อซักถาม ให้คำปรึกษา หรือพูดคุยตอบข้อสงสัยกับนักเรียนภายในแพลตฟอร์ม</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_videos.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-rose-500/30">
+                <div onclick="window.location.href='admin_videos.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-rose-500/30">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-video"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold text-[10px] border border-rose-200 dark:border-rose-800">Video Vault</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">จัดการเทปเรียนย้อนหลัง</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">จัดการเทปเรียนย้อนหลัง</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">เพิ่ม ลบ และจัดเรียงลำดับคลิปวิดีโอย้อนหลัง พร้อมระบบความปลอดภัยป้องกันการดาวน์โหลดและ Pop-out</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_courses.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-purple-500/30">
+                <div onclick="window.location.href='admin_courses.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-purple-500/30">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-graduation-cap"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 font-bold text-[10px] border border-purple-200 dark:border-purple-800">Courses</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ศูนย์จัดการคอร์สเรียน</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">ศูนย์จัดการคอร์สเรียน</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สร้างคอร์ส จัดการรายชื่อนักเรียนที่ลงทะเบียนเรียนในแต่ละคอร์สได้อย่างอิสระ</p>
                     </div>
                 </div>
 
-                <div onclick="window.location.href='admin_users.html'" class="hitech-card p-6 rounded-2xl cursor-pointer space-y-4 group border-teal-500/30">
+                <div onclick="window.location.href='admin_users.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-teal-500/30">
                     <div class="flex justify-between items-start">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-teal-500/30 group-hover:scale-110 transition-transform">
                             <i class="fas fa-users-gear"></i>
                         </div>
                         <span class="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">Users</span>
                     </div>
                     <div class="space-y-1">
-                        <h4 class="font-bold text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">จัดการบัญชีผู้ใช้งาน</h4>
                         <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจสอบรายชื่อนักเรียน แก้ไขข้อมูลส่วนตัว และจัดการคอร์สเรียนรายบุคคล</p>
                     </div>
                 </div>
