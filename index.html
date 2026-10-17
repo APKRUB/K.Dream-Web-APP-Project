@@ -37,15 +37,15 @@
                 <i class="fas fa-graduation-cap"></i>
             </div>
             <h1 class="text-2xl font-bold text-gray-800 dark:text-white">LMS Online Platform</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">เข้าสู่ระบบเพื่อเริ่มทำข้อสอบและเรียนรู้</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">เข้าสู่ระบบด้วย Username หรือรหัสนักเรียน</p>
         </div>
 
         <form id="loginForm" class="space-y-5">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">อีเมล (Email)</label>
+                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Username หรือ รหัสนักเรียน</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-envelope"></i></span>
-                    <input type="email" id="email" required placeholder="name@school.ac.th" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fas fa-user"></i></span>
+                    <input type="text" id="username" required placeholder="เช่น angpao หรือ 6701" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl dark:text-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm font-bold">
                 </div>
             </div>
 
@@ -91,14 +91,33 @@
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            const userInput = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ email, password });
+            let targetEmail = userInput;
+            
+            // ค้นหาอีเมลจากตาราง profiles โดยเทียบกับ username หรือ student_id หากไม่มีเครื่องหมาย @
+            if (!userInput.includes('@')) {
+                const { data: profileMatch } = await mySupabase
+                    .from('profiles')
+                    .select('email')
+                    .or(`username.eq.${userInput},student_id.eq.${userInput},first_name.eq.${userInput}`)
+                    .maybeSingle();
+
+                if (profileMatch && profileMatch.email) {
+                    targetEmail = profileMatch.email;
+                }
+            }
+
+            const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ 
+                email: targetEmail, 
+                password 
+            });
+
             if (authError || !authData.user) {
-                Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+                Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
                 return;
             }
 
@@ -106,7 +125,7 @@
             const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).single();
             Swal.close();
 
-            const userName = profile?.full_name || profile?.username || email.split('@')[0];
+            const userName = profile?.full_name || profile?.username || userInput;
             
             localStorage.setItem('id', userId);
             localStorage.setItem('student_id', userId);
