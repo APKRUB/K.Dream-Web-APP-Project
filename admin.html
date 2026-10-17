@@ -49,7 +49,7 @@
             if (!isAdminOrTeacher) {
                 // แจ้งเตือนหากนักเรียนพยายามแอบเข้า
                 alert('⚠️ พื้นที่นี้สำหรับผู้ดูแลระบบหรือคุณครูเท่านั้น!');
-                window.location.replace('index.html'); // หรือเปลี่ยนเป็นหน้าแดชบอร์ดนักเรียน เช่น student.html
+                window.location.replace('index.html'); 
             }
         })();
     </script>
@@ -100,7 +100,7 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5">
                     <button onclick="openNotificationsModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500 relative" title="การแจ้งเตือน">
                         <i class="fas fa-bell text-sm"></i>
                         <span id="notifBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span>
@@ -110,7 +110,12 @@
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
                     </button>
 
-                    <button onclick="logoutAdmin()" class="px-3.5 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
+                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน -->
+                    <button onclick="openChangePasswordModal()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5" title="เปลี่ยนรหัสผ่าน">
+                        <i class="fas fa-key"></i> เปลี่ยนรหัสผ่าน
+                    </button>
+
+                    <button onclick="logoutAdmin()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5">
                         <i class="fas fa-right-from-bracket"></i> ออกจากระบบ
                     </button>
                 </div>
@@ -298,6 +303,83 @@
                 await fetchLiveNotifications();
                 listenRealtimeNotifications();
             } catch (err) { console.error(err); }
+        }
+
+        // 🔑 ฟังก์ชันเปิด Modal เปลี่ยนรหัสผ่าน Admin
+        async function openChangePasswordModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+
+            const { value: formValues } = await Swal.fire({
+                title: '🔑 เปลี่ยนรหัสผ่านผู้ดูแลระบบ',
+                width: '450px',
+                html: `
+                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">รหัสผ่านใหม่ <span class="text-red-500">*</span></label>
+                            <input type="password" id="swalNewPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">ยืนยันรหัสผ่านใหม่ <span class="text-red-500">*</span></label>
+                            <input type="password" id="swalConfirmPassword" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกรหัสผ่านใหม่',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const newPwd = document.getElementById('swalNewPassword').value.trim();
+                    const confirmPwd = document.getElementById('swalConfirmPassword').value.trim();
+                    const errorBox = document.getElementById('swalErrorMsg');
+
+                    if (!newPwd || !confirmPwd) {
+                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
+                        errorBox.classList.remove('hidden');
+                        return false;
+                    }
+
+                    if (newPwd.length < 6) {
+                        errorBox.textContent = '⚠️ รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+                        errorBox.classList.remove('hidden');
+                        return false;
+                    }
+
+                    if (newPwd !== confirmPwd) {
+                        errorBox.textContent = '⚠️ รหัสผ่านทั้งสองช่องไม่ตรงกัน';
+                        errorBox.classList.remove('hidden');
+                        return false;
+                    }
+
+                    return newPwd;
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังอัปเดตรหัสผ่าน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // ใช้ Supabase Auth อัปเดตรหัสผ่านของผู้ใช้ปัจจุบัน
+                const { error } = await supabaseClient.auth.updateUser({ password: formValues });
+
+                if (!error) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'เปลี่ยนรหัสผ่านสำเร็จ!',
+                        text: 'รหัสผ่านของคุณถูกอัปเดตเรียบร้อยแล้ว',
+                        confirmButtonColor: '#0284c7'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เปลี่ยนรหัสผ่านไม่สำเร็จ',
+                        text: error.message,
+                        confirmButtonColor: '#0284c7'
+                    });
+                }
+            }
         }
 
         async function fetchLiveNotifications() {
