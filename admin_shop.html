@@ -200,10 +200,13 @@
                 allCoursesList = courseData || [];
 
                 // 2. โหลดโปรไฟล์นักเรียนทั้งหมดมาทำ Map
-                const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, username, nickname');
+                const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, username, nickname, tokens, point, points, coin, coins');
                 if (profData) {
                     profData.forEach(p => {
-                        allProfilesMap[p.id] = p.full_name || p.username || 'นักเรียน';
+                        allProfilesMap[p.id] = {
+                            name: p.full_name || p.username || 'นักเรียน',
+                            tokens: p.tokens ?? p.point ?? p.points ?? p.coin ?? p.coins ?? 0
+                        };
                     });
                 }
 
@@ -345,7 +348,8 @@
             const keyword = (document.getElementById('searchRequestInput')?.value || '').toLowerCase().trim();
             
             const filtered = allRequests.filter(r => {
-                const studentName = (allProfilesMap[r.student_id] || '').toLowerCase();
+                const studentInfo = allProfilesMap[r.student_id];
+                const studentName = (studentInfo ? studentInfo.name : '').toLowerCase();
                 const product = allProducts.find(p => p.id === r.item_id);
                 const itemTitle = (product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)').toLowerCase();
                 
@@ -364,7 +368,8 @@
             }
 
             tbody.innerHTML = requests.map(r => {
-                const studentName = allProfilesMap[r.student_id] || 'นักเรียน (ไม่พบชื่อ)';
+                const studentInfo = allProfilesMap[r.student_id];
+                const studentName = studentInfo ? studentInfo.name : 'นักเรียน (ไม่พบชื่อ)';
                 const product = allProducts.find(p => p.id === r.item_id);
                 const itemTitle = product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)';
                 const dateStr = new Date(r.created_at).toLocaleString('th-TH');
@@ -382,7 +387,7 @@
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
                     actionButtons = '<span class="text-[11px] text-emerald-600 font-bold">ดำเนินการแล้ว</span>';
                 } else if (r.status === 'rejected') {
-                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ</span>';
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ (คืน Token แล้ว)</span>';
                     actionButtons = '<span class="text-[11px] text-rose-500 font-bold">ปฏิเสธแล้ว</span>';
                 }
 
@@ -792,19 +797,69 @@
             });
         }
 
+        // 🌟 อัปเดตสถานะคำขอ พร้อมระบบคืน Token อัตโนมัติเมื่อปฏิเสธ
         async function updateRequestStatus(reqId, newStatus) {
-            const { error } = await supabaseClient.from('redemption_logs').update({ status: newStatus }).eq('id', reqId);
-            if (!error) {
-                Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1200, showConfirmButton: false });
-            } else {
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message });
+            const targetReq = allRequests.find(r => r.id === reqId);
+            if (!targetReq) return;
+
+            // ถ้าสถานะเดิมถูกปฏิเสธไปแล้ว หรือกดเป็นสถานะเดิม ไม่ต้องทำซ้ำ
+            if (targetReq.status === newStatus) return;
+
+            Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // 1. อัปเดตสถานะในตาราง redemption_logs ก่อน
+            const { error: updateErr } = await supabaseClient
+                .from('redemption_logs')
+                .update({ status: newStatus })
+                .eq('id', reqId);
+
+            if (updateErr) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: updateErr.message });
+                return;
             }
+
+            // 2. ถ้านครูปฏิเสธ (rejected) และตอนแรกยังไม่ได้ปฏิเสธ ให้ทำการคืน Token คืนให้นักเรียน
+            if (newStatus === 'rejected') {
+                const studentId = targetReq.student_id;
+                const tokenSpent = Number(targetReq.token_spent || 0);
+
+                // ดึงข้อมูล Token ปัจจุบันของนักเรียนคนนั้นจากตาราง profiles
+                const { data: prof } = await supabaseClient.from('profiles').select('*').eq('id', studentId).maybeSingle();
+                
+                if (prof) {
+                    const currentTokens = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
+                    const refundedTokens = currentTokens + tokenSpent;
+
+                    // อัปเดตคืน Token (รองรับชื่อคอลัมน์ tokens หรือ point)
+                    let refundRes = await supabaseClient.from('profiles').update({ tokens: refundedTokens }).eq('id', studentId);
+                    if (refundRes.error) {
+                        await supabaseClient.from('profiles').update({ point: refundedTokens }).eq('id', studentId);
+                    }
+                }
+
+                // คืนสต็อกสินค้ากลับเข้าคลังด้วย (เนื่องจากปฏิเสธคำขอ)
+                const itemId = targetReq.item_id;
+                const { data: itemData } = await supabaseClient.from('shop_items').select('stock').eq('id', itemId).maybeSingle();
+                if (itemData) {
+                    await supabaseClient.from('shop_items').update({ stock: (itemData.stock || 0) + 1 }).eq('id', itemId);
+                }
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: newStatus === 'approved' ? 'อนุมัติคำขอสำเร็จ!' : 'ปฏิเสธคำขอและคืน Token สำเร็จ!',
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // ข้อมูลจะซิงค์อัตโนมัติผ่าน Realtime หรือโหลดใหม่ทันที
+            await loadShopData();
         }
 
-        // 🌟 ตั้งค่า Realtime Subscription
+        // 🌟 ตั้งค่า Realtime Subscription ให้หน้า Admin อัปเดตอัตโนมัติแบบ Realtime ทันที
         function setupRealtimeSubscriptions() {
             supabaseClient
-                .channel('admin-shop-realtime')
+                .channel('admin-shop-realtime-v2')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
                     loadShopData();
                 })
