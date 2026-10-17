@@ -229,7 +229,7 @@
                     </div>
                 </div>
 
-                <!-- 🌟 ปุ่มตรวจคิว Consult (ลิงก์ไปหน้า admin_consult_queue.html) -->
+                <!-- 🌟 ปุ่มตรวจคิว Consult -->
                 <div onclick="window.location.href='admin_consult_queue.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-sky-500/40">
                     <div class="flex justify-between items-start">
                         <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
@@ -305,8 +305,6 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let liveNotifications = [];
-        let profilesMap = {};
-        let allConsultBookings = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -338,66 +336,51 @@
                 const { count: subCount } = await supabaseClient.from('exam_submissions').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
-                // โหลด Profiles และ Consults สำหรับเช็ค Time Bar 24 ชม.
-                const { data: profs } = await supabaseClient.from('profiles').select('id, full_name, name, username, email');
-                if (profs) {
-                    profs.forEach(p => {
-                        profilesMap[p.id] = p.full_name || p.name || p.username || p.email || 'นักเรียน';
-                    });
-                }
-
-                let { data: consults } = await supabaseClient.from('consult_bookings').select('*').order('date', { ascending: true });
-                if (!consults) {
-                    const alt = await supabaseClient.from('consultations').select('*');
-                    consults = alt.data || [];
-                }
-                allConsultBookings = consults || [];
-
-                checkConsultTimeBar();
+                await checkConsultTimeBar();
                 await fetchLiveNotifications();
                 listenRealtimeNotifications();
             } catch (err) { console.error(err); }
         }
 
-        // 🌟 ตรวจสอบคิวล่วงหน้า 24 ชั่วโมงเพื่อแสดง Time Bar (ถ้าไม่มีคิวจะซ่อน)
-async function checkConsultTimeBar() {
-    const now = new Date();
-    const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        // 🌟 ตรวจสอบคิวล่วงหน้า 24 ชั่วโมงจากตาราง consult_slots
+        async function checkConsultTimeBar() {
+            const now = new Date();
+            const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    const { data: upcomingSlots } = await mySupabase
-        .from('consult_slots')
-        .select('*, profiles(full_name)')
-        .eq('status', 'booked')
-        .gte('start_time', now.toISOString())
-        .lte('start_time', twentyFourHoursLater.toISOString())
-        .order('start_time', { ascending: true });
+            const { data: upcomingSlots, error } = await supabaseClient
+                .from('consult_slots')
+                .select('*, profiles(full_name)')
+                .eq('status', 'booked')
+                .gte('start_time', now.toISOString())
+                .lte('start_time', twentyFourHoursLater.toISOString())
+                .order('start_time', { ascending: true });
 
-    const timeBar = document.getElementById('consultTimeBar');
-    const mainText = document.getElementById('timeBarMainText');
+            const timeBar = document.getElementById('consultTimeBar');
+            const mainText = document.getElementById('timeBarMainText');
 
-    if (!timeBar || !mainText) return;
+            if (!timeBar || !mainText) return;
 
-    if (!upcomingSlots || upcomingSlots.length === 0) {
-        timeBar.style.display = 'none';
-        return;
-    }
+            if (error || !upcomingSlots || upcomingSlots.length === 0) {
+                timeBar.style.display = 'none';
+                return;
+            }
 
-    timeBar.style.display = 'flex';
-    const curr = upcomingSlots[0];
-    const currName = curr.profiles?.full_name || 'นักเรียน';
-    const currTime = new Date(curr.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-    
-    let text = `คิวใกล้ถึงที่สุด: <span class="text-amber-300 font-black">${currName}</span> (เวลา ${currTime} น.)`;
+            timeBar.style.display = 'flex';
+            const curr = upcomingSlots[0];
+            const currName = curr.profiles?.full_name || 'นักเรียน';
+            const currTime = new Date(curr.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+            
+            let text = `คิวใกล้ถึงที่สุด: <span class="text-amber-300 font-black">${currName}</span> (เวลา ${currTime} น.)`;
 
-    if (upcomingSlots.length > 1) {
-        const next = upcomingSlots[1];
-        const nextName = next.profiles?.full_name || 'นักเรียน';
-        const nextTime = new Date(next.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
-        text += ` | ➔ คิวถัดไป: <span class="text-cyan-200 font-bold">${nextName}</span> (${nextTime} น.)`;
-    }
+            if (upcomingSlots.length > 1) {
+                const next = upcomingSlots[1];
+                const nextName = next.profiles?.full_name || 'นักเรียน';
+                const nextTime = new Date(next.start_time).toLocaleTimeString('th-TH', { timeStyle: 'short' });
+                text += ` | ➔ คิวถัดไป: <span class="text-cyan-200 font-bold">${nextName}</span> (${nextTime} น.)`;
+            }
 
-    mainText.innerHTML = text;
-}
+            mainText.innerHTML = text;
+        }
 
         // อัปเดต Time Bar ทุกๆ 30 วินาที
         setInterval(checkConsultTimeBar, 30000);
