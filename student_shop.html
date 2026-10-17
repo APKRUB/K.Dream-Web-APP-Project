@@ -250,69 +250,71 @@
         }
 
         async function confirmRedeemItem(itemId, itemTitle, itemPrice) {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ยืนยันการแลกของรางวัล?',
-                html: `คุณต้องการใช้ <b class="text-amber-500 font-bold">${itemPrice.toLocaleString()} Token</b> เพื่อแลกรับ <b>"${itemTitle}"</b> ใช่หรือไม่?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันแลก',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#f59e0b'
-            });
+    const { isConfirmed } = await Swal.fire({
+        title: 'ยืนยันการแลกของรางวัล?',
+        html: `คุณต้องการใช้ <b class="text-amber-500 font-bold">${itemPrice.toLocaleString()} Token</b> เพื่อแลกรับ <b>"${itemTitle}"</b> ใช่หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันแลก',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#f59e0b'
+    });
 
-            if (!isConfirmed) return;
+    if (!isConfirmed) return;
 
-            Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // ดึงยอด Token ล่าสุด
-            const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
-            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.points ?? prof?.coin ?? prof?.coins ?? 0;
+    // 1. ดึงยอด Token ล่าสุด
+    const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
+    const currentTokens = prof?.tokens ?? prof?.point ?? prof?.points ?? prof?.coin ?? prof?.coins ?? 0;
 
-            if (currentTokens < itemPrice) {
-                Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
-                return;
-            }
+    if (currentTokens < itemPrice) {
+        Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
+        return;
+    }
 
-            const newTokens = currentTokens - itemPrice;
+    const newTokens = currentTokens - itemPrice;
 
-            // บันทึกอัปเดต Token (รองรับทั้ง tokens และ point)
-            let updateResult = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
-            if (updateResult.error) {
-                await mySupabase.from('profiles').update({ point: newTokens }).eq('id', currentStudentId);
-            }
+    // 2. หัก Token ของนักเรียน
+    let updateResult = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
+    if (updateResult.error) {
+        await mySupabase.from('profiles').update({ point: newTokens }).eq('id', currentStudentId);
+    }
 
-            // ตัดสต็อกสินค้า
-            const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
-            if (prodData) {
-                await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
-            }
+    // 3. ตัดสต็อกสินค้า
+    const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
+    if (prodData) {
+        await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
+    }
 
-            // บันทึกประวัติการแลก
-            await mySupabase.from('redemption_logs').insert([{
-                student_id: currentStudentId,
-                item_id: itemId,
-                token_spent: itemPrice,
-                status: 'pending'
-            }]);
+    // 4. บันทึกประวัติการแลกลงตาราง redemption_logs (ส่งข้อมูลให้ฝั่งครูเห็น)
+    const { error: insertError } = await mySupabase.from('redemption_logs').insert([{
+        student_id: currentStudentId,
+        item_id: itemId,
+        token_spent: itemPrice,
+        status: 'pending'
+    }]);
 
-            studentTokenBalance = newTokens;
-            document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
+    if (insertError) {
+        console.error("Redemption log error:", insertError);
+    }
 
-            // รีเฟรชข้อมูลในหน้า
-            const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
-            allShopItems = items || [];
-            const { data: redemps } = await mySupabase.from('redemption_logs').select('*').eq('student_id', currentStudentId);
-            myRedemptions = redemps || [];
+    studentTokenBalance = newTokens;
+    document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
 
-            renderShopItems();
+    // 5. โหลดประวัติใหม่
+    const { data: redemps } = await mySupabase.from('redemption_logs').select('*').eq('student_id', currentStudentId);
+    myRedemptions = redemps || [];
 
-            Swal.fire({
-                icon: 'success',
-                title: 'แลกของรางวัลสำเร็จ!',
-                text: 'ระบบได้ส่งคำขอไปยังคุณครูเรียบร้อยแล้ว กรุณารอการตรวจสอบและจัดส่งของรางวัล',
-                confirmButtonColor: '#f59e0b'
-            });
-        }
+    renderShopItems();
+
+    Swal.fire({
+        icon: 'success',
+        title: 'แลกของรางวัลสำเร็จ!',
+        text: 'ระบบได้ส่งคำขอไปยังคุณครูเรียบร้อยแล้ว กรุณารอการตรวจสอบและจัดส่งของรางวัล',
+        confirmButtonColor: '#f59e0b'
+    });
+}
 
         async function openMyRedemptionHistoryModal() {
             const isDark = document.documentElement.classList.contains('dark');
