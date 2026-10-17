@@ -116,6 +116,7 @@
                     <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                         <thead>
                             <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
+                                <th class="py-3 px-3 sm:p-4 text-center">รูปภาพ</th>
                                 <th class="py-3 px-3 sm:p-4">ชื่อของรางวัล</th>
                                 <th class="py-3 px-3 sm:p-4">คอร์สที่เข้าร่วม</th>
                                 <th class="py-3 px-3 sm:p-4 text-center">ราคา / กฎสิทธิ์</th>
@@ -126,7 +127,7 @@
                             </tr>
                         </thead>
                         <tbody id="productsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="7" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการสินค้า...</td></tr>
+                            <tr><td colspan="8" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการสินค้า...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -225,7 +226,6 @@
                 allRequests = reqData || [];
                 document.getElementById('countRequests').textContent = allRequests.length;
                 
-                // กรองและแสดงผลตารางคำขอ
                 filterRequests();
 
             } catch (err) {
@@ -234,10 +234,38 @@
             }
         }
 
+        // 🖼️ ฟังก์ชันช่วยอัปโหลดไฟล์รูปภาพไปยัง Supabase Storage Bucket ('shop-images')
+        async function uploadShopImage(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
+
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `item_${Date.now()}_${Math.random().toString(36.substring(2, 7))}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // อัปโหลดไปยัง Bucket 'shop-images'
+            const { error: uploadError } = await supabaseClient.storage
+                .from('shop-images')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                throw new Error('ไม่สามารถอัปโหลดรูปภาพได้: ' + uploadError.message);
+            }
+
+            // ดึง Public URL ของรูปภาพ
+            const { data } = supabaseClient.storage
+                .from('shop-images')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        }
+
         function renderProductsTable(products) {
             const tbody = document.getElementById('productsTableBody');
             if (products.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400">ยังไม่มีสินค้าในร้านค้า กดปุ่ม "เพิ่มสินค้าใหม่" ด้านบนได้เลย</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400">ยังไม่มีสินค้าในร้านค้า กดปุ่ม "เพิ่มสินค้าใหม่" ด้านบนได้เลย</td></tr>`;
                 return;
             }
 
@@ -253,6 +281,10 @@
                 const courseTags = linkedCourses.length > 0 
                     ? linkedCourses.map(ic => `<span class="inline-block px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 text-[9px] font-bold mr-1 mb-1">${ic.courses?.title || 'คอร์ส'}</span>`).join('')
                     : '<span class="text-[10px] text-slate-400">ทุกคอร์สเรียน (อิสระ)</span>';
+
+                let imageHtml = p.image_url 
+                    ? `<img src="${p.image_url}" class="w-10 h-10 object-cover rounded-xl border border-amber-500/30 mx-auto shadow-sm" alt="Product Image">`
+                    : `<div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto text-xs"><i class="fas fa-image"></i></div>`;
 
                 let timeStatusBadge = '';
                 const startsAt = p.starts_at ? new Date(p.starts_at) : null;
@@ -279,6 +311,7 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
+                        <td class="py-3 px-3 sm:p-4 text-center">${imageHtml}</td>
                         <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white text-xs sm:text-sm">${p.title}</td>
                         <td class="py-3 px-3 sm:p-4">
                             <div class="mb-1"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span></div>
@@ -310,7 +343,6 @@
             }).join('');
         }
 
-        // 🔍 ฟังก์ชันกรองคำขอตามคำค้นหา (ชื่อนักเรียน / ชื่อของรางวัล)
         function filterRequests() {
             const keyword = (document.getElementById('searchRequestInput')?.value || '').toLowerCase().trim();
             
@@ -389,13 +421,19 @@
                 : '<div class="text-slate-400 text-xs">ไม่พบรายชื่อคอร์สในระบบ</div>';
 
             const { value: formValues } = await Swal.fire({
-                title: '🎁 เพิ่มของรางวัลขั้นสูง (Dynamic Limit)',
+                title: '🎁 เพิ่มของรางวัลขั้นสูงพร้อมรูปภาพ',
                 html: `
                     <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
                         <div>
                             <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
                             <input type="text" id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none" placeholder="เช่น ส่วนลดพิเศษ 100 บาท">
                         </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">อัปโหลดรูปภาพของรางวัล</label>
+                            <input type="file" id="swalProductImage" accept="image/*" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-white hover:file:bg-amber-600">
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
@@ -478,7 +516,7 @@
                 confirmButtonText: 'บันทึกเพิ่มสินค้า',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#f59e0b',
-                preConfirm: () => {
+                preConfirm: async () => {
                     const title = document.getElementById('swalTitle').value.trim();
                     const category = document.getElementById('swalCategory').value;
                     const limit_mode = document.getElementById('swalLimitMode').value;
@@ -496,21 +534,34 @@
                         return false;
                     }
 
-                    return { 
-                        productData: {
-                            title, 
-                            category, 
-                            limit_mode,
-                            token_price, 
-                            stock, 
-                            max_per_user,
-                            starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
-                            expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
-                            description, 
-                            is_active: true
-                        },
-                        selectedCourses 
-                    };
+                    try {
+                        Swal.showLoading();
+                        let imageUrl = null;
+                        const fileInput = document.getElementById('swalProductImage');
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            imageUrl = await uploadShopImage('swalProductImage');
+                        }
+
+                        return { 
+                            productData: {
+                                title, 
+                                category, 
+                                limit_mode,
+                                token_price, 
+                                stock, 
+                                max_per_user,
+                                image_url: imageUrl,
+                                starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
+                                expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                                description, 
+                                is_active: true
+                            },
+                            selectedCourses 
+                        };
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                        return false;
+                    }
                 }
             });
 
@@ -536,7 +587,7 @@
                     await supabaseClient.from('shop_item_courses').insert(relationInserts);
                 }
 
-                Swal.fire({ icon: 'success', title: 'เพิ่มสินค้าและผูกคอร์สสำเร็จ!', confirmButtonColor: '#f59e0b' });
+                Swal.fire({ icon: 'success', title: 'เพิ่มสินค้าและรูปภาพสำเร็จ!', confirmButtonColor: '#f59e0b' });
             }
         }
 
@@ -568,14 +619,25 @@
             const startsAtFormatted = formatLocalDateTime(product.starts_at);
             const expiresAtFormatted = formatLocalDateTime(product.expires_at);
 
+            const currentImagePreview = product.image_url 
+                ? `<div class="flex items-center gap-2 mb-2"><img src="${product.image_url}" class="w-12 h-12 object-cover rounded-xl border"><span class="text-[11px] text-slate-500">รูปภาพปัจจุบัน</span></div>`
+                : '';
+
             const { value: formValues } = await Swal.fire({
-                title: '✏️ แก้ไขข้อมูลของรางวัล',
+                title: '✏️ แก้ไขข้อมูลของรางวัลและรูปภาพ',
                 html: `
                     <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
                         <div>
                             <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
                             <input type="text" id="swalEditTitle" value="${product.title || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                         </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">เปลี่ยนรูปภาพของรางวัล (อัปโหลดใหม่)</label>
+                            ${currentImagePreview}
+                            <input type="file" id="swalEditProductImage" accept="image/*" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600">
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
@@ -658,7 +720,7 @@
                 confirmButtonText: 'บันทึกการแก้ไข',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#0284c7',
-                preConfirm: () => {
+                preConfirm: async () => {
                     const title = document.getElementById('swalEditTitle').value.trim();
                     const category = document.getElementById('swalEditCategory').value;
                     const limit_mode = document.getElementById('swalEditLimitMode').value;
@@ -676,20 +738,33 @@
                         return false;
                     }
 
-                    return { 
-                        productData: {
-                            title, 
-                            category, 
-                            limit_mode,
-                            token_price, 
-                            stock, 
-                            max_per_user,
-                            starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
-                            expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
-                            description
-                        },
-                        selectedCourses 
-                    };
+                    try {
+                        Swal.showLoading();
+                        let imageUrl = product.image_url; // คงรูปเดิมไว้ถ้าไม่ได้เลือกใหม่
+                        const fileInput = document.getElementById('swalEditProductImage');
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            imageUrl = await uploadShopImage('swalEditProductImage');
+                        }
+
+                        return { 
+                            productData: {
+                                title, 
+                                category, 
+                                limit_mode,
+                                token_price, 
+                                stock, 
+                                max_per_user,
+                                image_url: imageUrl,
+                                starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
+                                expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                                description
+                            },
+                            selectedCourses 
+                        };
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                        return false;
+                    }
                 }
             });
 
