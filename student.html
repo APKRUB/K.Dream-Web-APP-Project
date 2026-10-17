@@ -89,7 +89,6 @@
             </div>
             
             <div class="flex items-center gap-2.5">
-                <!-- เพิ่มปุ่มตรวจสอบคอร์สที่ลงทะเบียนเรียน -->
                 <button onclick="openEnrolledCoursesModal()" class="px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-sky-500/20 shadow-sm" title="คอร์สของฉัน">
                     <i class="fas fa-book-reader"></i> <span class="hidden md:inline">คอร์สที่ลงทะเบียน</span>
                 </button>
@@ -156,7 +155,7 @@
                     <div>
                         <span class="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Video Vault</span>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
-                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา</p>
+                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา (เฉพาะคอร์สที่ยังไม่หมดอายุ)</p>
                     </div>
                 </div>
                 <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
@@ -195,7 +194,7 @@
                 </div>
                 <div class="w-full sm:w-80">
                     <select id="globalCourseSelect" onchange="onGlobalCourseChange()" class="w-full px-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none cursor-pointer focus:border-sky-500">
-                        <option value="all">📚 ทุกคอร์สที่ลงทะเบียน</option>
+                        <option value="all">📚 ทุกคอร์สที่ยังใช้งานได้</option>
                     </select>
                 </div>
             </div>
@@ -234,7 +233,7 @@
 
             <div class="space-y-6">
                 <div id="examCategoriesGroupContainer" class="space-y-5">
-                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบตามคอร์สเรียนที่คุณลงทะเบียน...</div>
+                    <div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-book-open text-sky-500 mr-2 text-base"></i> กำลังโหลดชุดข้อสอบตามคอร์สเรียน...</div>
                 </div>
             </div>
         </div>
@@ -282,7 +281,7 @@
                     </div>
                     <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
                         <select id="analyticsCourseFilter" onchange="updateAnalyticsDashboard()" class="px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none cursor-pointer focus:border-sky-500">
-                            <option value="all">📚 ทุกคอร์สที่ลงทะเบียน</option>
+                            <option value="all">📚 ทุกคอร์สที่ยังใช้งานได้</option>
                         </select>
                         <button onclick="resetAnalyticsFilter()" class="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
                             <i class="fas fa-undo mr-1"></i> รีเซ็ต
@@ -358,8 +357,9 @@
         let currentStudentData = null;
         let allExams = [];
         let allCourses = [];
-        let enrolledCoursesList = [];
-        let enrolledCourseIds = [];
+        let enrolledCoursesList = [];          
+        let activeEnrolledCoursesList = [];    
+        let activeEnrolledCourseIds = [];      
         let categoriesMap = {};
         let userAttempts = [];
         let examQuestionCounts = {};
@@ -478,7 +478,7 @@
             }
         }
 
-        // ฟังก์ชันสำหรับเปิด Pop-up ตรวจสอบคอร์สเรียนที่ลงทะเบียน
+        // ฟังก์ชันเปิด Pop-up ตรวจสอบคอร์สเรียน พร้อมระบบ Countdown นับถอยหลังเวลาหมดอายุ
         async function openEnrolledCoursesModal() {
             const isDark = document.documentElement.classList.contains('dark');
             let htmlList = '';
@@ -488,14 +488,25 @@
             } else {
                 htmlList = `<div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-left">`;
                 enrolledCoursesList.forEach((c, idx) => {
+                    const hasExpiry = c.expires_at ? true : false;
+                    const expiryTimeMs = hasExpiry ? new Date(c.expires_at).getTime() : 0;
+                    const isExpired = hasExpiry && expiryTimeMs < Date.now();
+                    const expiryText = hasExpiry ? new Date(c.expires_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : 'ไม่จำกัดเวลา';
+
                     htmlList += `
-                        <div class="p-4 rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
+                        <div class="p-4 rounded-2xl bg-white dark:bg-darkinput border ${isExpired ? 'border-rose-500/40 bg-rose-500/5' : 'border-slate-200 dark:border-slate-800'} flex items-center justify-between shadow-sm">
                             <div class="space-y-1">
-                                <span class="px-2 py-0.5 bg-sky-500/15 text-sky-600 rounded-md text-[10px] font-extrabold font-mono">${c.course_code || 'COURSE #' + (idx + 1)}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 bg-sky-500/15 text-sky-600 rounded-md text-[10px] font-extrabold font-mono">${c.course_code || 'COURSE #' + (idx + 1)}</span>
+                                    ${isExpired ? '<span class="px-2 py-0.5 bg-rose-500/20 text-rose-500 rounded-md text-[10px] font-bold">❌ คอร์สหมดอายุแล้ว</span>' : `<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-600 rounded-md text-[10px] font-bold">🟢 ใช้งานได้ปกติ</span>`}
+                                </div>
                                 <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">${c.title || c.name || 'คอร์สเรียน'}</h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-1">${c.description || 'ไม่มีคำอธิบายเพิ่มเติม'}</p>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 font-light space-y-0.5">
+                                    <p>หมดอายุวันที่: ${expiryText}</p>
+                                    ${hasExpiry && !isExpired ? `<p class="font-bold text-sky-600 dark:text-sky-400 course-countdown-timer" data-expiry-time="${expiryTimeMs}"><i class="fas fa-hourglass-half mr-1"></i> กำลังคำนวณเวลา...</p>` : ''}
+                                </div>
                             </div>
-                            <button onclick="Swal.close(); document.getElementById('globalCourseSelect').value='${c.id}'; onGlobalCourseChange();" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shrink-0">เลือกคอร์สนี้</button>
+                            ${!isExpired ? `<button onclick="Swal.close(); document.getElementById('globalCourseSelect').value='${c.id}'; onGlobalCourseChange();" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all shrink-0">เลือกคอร์สนี้</button>` : `<span class="text-xs text-slate-400 font-bold px-3 py-2">หมดสิทธิ์เข้าถึง</span>`}
                         </div>
                     `;
                 });
@@ -503,7 +514,7 @@
             }
 
             Swal.fire({
-                title: `<span class="text-base font-extrabold text-sky-700 dark:text-sky-400">📖 คอร์สเรียนที่ฉันลงทะเบียน (${enrolledCoursesList.length} คอร์ส)</span>`,
+                title: `<span class="text-base font-extrabold text-sky-700 dark:text-sky-400">📖 คอร์สที่ลงทะเบียนทั้งหมด (${enrolledCoursesList.length} คอร์ส)</span>`,
                 html: htmlList,
                 width: '650px',
                 confirmButtonText: 'ปิดหน้าต่าง',
@@ -706,19 +717,22 @@
             if (en1) enrollments = enrollments.concat(en1);
             const { data: en2 } = await mySupabase.from('course_enrollments').select('*').eq('user_id', currentStudentId);
             if (en2) enrollments = enrollments.concat(en2);
-            // เพิ่มการดึงข้อมูลจากตาราง enrollments สำรองด้วย
             const { data: en3 } = await mySupabase.from('enrollments').select('*').eq('student_id', currentStudentId);
             if (en3) enrollments = enrollments.concat(en3);
 
-            enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(id => id !== '');
+            const enrolledCourseIds = [...new Set(enrollments.map(e => String(e.course_id || e.courseid || '')))].filter(id => id !== '');
             enrolledCoursesList = allCourses.filter(c => enrolledCourseIds.includes(String(c.id)));
 
+            const now = Date.now();
+            activeEnrolledCoursesList = enrolledCoursesList.filter(c => !c.expires_at || new Date(c.expires_at).getTime() >= now);
+            activeEnrolledCourseIds = activeEnrolledCoursesList.map(c => String(c.id));
+
             const courseSelect = document.getElementById('globalCourseSelect');
-            if (enrolledCoursesList.length === 0) {
-                courseSelect.innerHTML = `<option value="none">⚠️ คุณยังไม่ได้ลงทะเบียนในคอร์สใดๆ</option>`;
+            if (activeEnrolledCoursesList.length === 0) {
+                courseSelect.innerHTML = `<option value="none">⚠️ ไม่มีคอร์สที่ยังใช้งานได้ (อาจหมดอายุทั้งหมด)</option>`;
             } else {
-                courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์สที่ลงทะเบียน (${enrolledCoursesList.length} คอร์ส)</option>`;
-                enrolledCoursesList.forEach(c => {
+                courseSelect.innerHTML = `<option value="all">📚 ทุกคอร์สที่ยังใช้งานได้ (${activeEnrolledCoursesList.length} คอร์ส)</option>`;
+                activeEnrolledCoursesList.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c.id;
                     opt.textContent = `📖 ${c.title || c.name || 'คอร์สเรียน'}`;
@@ -775,6 +789,8 @@
 
         function updateCountdownsLive() {
             const now = Date.now();
+            
+            // 1. Countdown สำหรับห้องสอบ
             document.querySelectorAll('.exam-countdown-timer').forEach(el => {
                 const startTime = parseInt(el.getAttribute('data-start-time'));
                 const diff = startTime - now;
@@ -787,9 +803,28 @@
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                 el.textContent = `⏳ เปิดใน: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             });
+
+            // 2. Countdown สำหรับวันหมดอายุคอร์สใน Modal คอร์สของฉัน
+            document.querySelectorAll('.course-countdown-timer').forEach(el => {
+                const expiryTime = parseInt(el.getAttribute('data-expiry-time'));
+                const diff = expiryTime - now;
+                if (diff <= 0) {
+                    el.innerHTML = '<span class="text-rose-500 font-bold">❌ หมดอายุแล้ว</span>';
+                    return;
+                }
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                if (days > 0) {
+                    el.innerHTML = `<i class="fas fa-hourglass-half mr-1"></i> เหลือเวลา: ${days} วัน ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                } else {
+                    el.innerHTML = `<i class="fas fa-hourglass-half mr-1 text-amber-500"></i> ใกล้หมดอายุ: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            });
         }
 
-        // กรองแสดงข้อสอบเฉพาะคอร์สที่นักเรียนลงทะเบียนเรียนจริง ๆ เท่านั้น
         function renderExamCatalog() {
             const container = document.getElementById('examCategoriesGroupContainer');
             const quickPendingContainer = document.getElementById('quickPendingContainer');
@@ -800,8 +835,7 @@
                 if (exam.status === 'draft') return false;
                 const examCourseId = String(exam.course_id || exam.courseid || '');
                 
-                // ตรวจสอบคอร์สที่นักเรียนลงทะเบียน (หากมีข้อมูลการลงทะเบียน จะกรองไม่ให้เห็นคอร์สที่ไม่ได้ลง)
-                if (enrolledCourseIds.length > 0 && examCourseId && !enrolledCourseIds.includes(examCourseId)) return false;
+                if (activeEnrolledCourseIds.length > 0 && examCourseId && !activeEnrolledCourseIds.includes(examCourseId)) return false;
                 if (selectedGlobalCourseId !== 'all' && examCourseId !== String(selectedGlobalCourseId)) return false;
                 if (!exam.title.toLowerCase().includes(keyword) && (!exam.description || !exam.description.toLowerCase().includes(keyword))) return false;
 
@@ -818,7 +852,7 @@
             const activeExams = allExams.filter(e => {
                 if (e.status === 'draft') return false;
                 const examCourseId = String(e.course_id || e.courseid || '');
-                if (enrolledCourseIds.length > 0 && examCourseId && !enrolledCourseIds.includes(examCourseId)) return false;
+                if (activeEnrolledCourseIds.length > 0 && examCourseId && !activeEnrolledCourseIds.includes(examCourseId)) return false;
                 if (selectedGlobalCourseId !== 'all') return examCourseId === String(selectedGlobalCourseId);
                 return true;
             });
@@ -870,7 +904,7 @@
             }
 
             if (availableExams.length === 0) {
-                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สที่คุณลงทะเบียน</div>`;
+                container.innerHTML = `<div class="text-slate-400 text-xs py-16 text-center"><i class="fas fa-folder-open text-2xl text-sky-500 mb-2"></i><br>ไม่พบชุดข้อสอบในคอร์สที่ยังใช้งานได้</div>`;
                 return;
             }
 
@@ -1064,8 +1098,8 @@
         function renderAnalyticsCourseOptions() {
             const select = document.getElementById('analyticsCourseFilter');
             if (!select) return;
-            select.innerHTML = `<option value="all">📚 ทุกคอร์สที่ลงทะเบียน</option>`;
-            enrolledCoursesList.forEach(c => {
+            select.innerHTML = `<option value="all">📚 ทุกคอร์สที่ยังใช้งานได้</option>`;
+            activeEnrolledCoursesList.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
                 opt.textContent = `📖 ${c.title || c.name || 'คอร์สเรียน'}`;
