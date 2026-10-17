@@ -65,7 +65,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าหลัก">
+                    <button onclick="window.location.href='admin_tokens.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าจัดการ Token">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
                     <div>
@@ -95,7 +95,7 @@
                     <i class="fas fa-store"></i> Reward Store Administration
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัล & คำขอแลก</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้าในร้านค้า (ส่วนลด, เงินสด, ของขวัญ) พร้อมตรวจสอบและอนุมัติคำขอแลกของรางวัลจากนักเรียน</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้าในร้านค้า (ส่วนลด, เงินสด, ของขวัญ) พร้อมกำหนดเวลาหมดอายุและตรวจสอบคำขอแลกจากนักเรียน</p>
             </div>
         </div>
 
@@ -119,13 +119,14 @@
                                 <th class="p-4">ชื่อของรางวัล</th>
                                 <th class="p-4">หมวดหมู่</th>
                                 <th class="p-4 text-center">ราคา (Token)</th>
-                                <th class="p-4 text-center">สต็อกคงเหลือ</th>
-                                <th class="p-4 text-center">สถานะร้านค้า</th>
+                                <th class="p-4 text-center">สต็อก / สิทธิ์ต่อคน</th>
+                                <th class="p-4 text-center">กำหนดหมดอายุ</th>
+                                <th class="p-4 text-center">สถานะ</th>
                                 <th class="p-4 text-right">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                            <tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการสินค้า...</td></tr>
+                            <tr><td colspan="7" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการสินค้า...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -179,7 +180,6 @@
 
         async function loadShopData() {
             try {
-                // โหลดสินค้า
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('shop_items')
                     .select('*')
@@ -189,7 +189,6 @@
                 document.getElementById('countProducts').textContent = allProducts.length;
                 renderProductsTable(allProducts);
 
-                // โหลดคำขอแลก พร้อมดึงข้อมูลโปรไฟล์นักเรียนและสินค้า
                 const { data: reqData, error: reqErr } = await supabaseClient
                     .from('redemption_logs')
                     .select(`*, profiles(full_name, username), shop_items(title)`)
@@ -208,24 +207,47 @@
         function renderProductsTable(products) {
             const tbody = document.getElementById('productsTableBody');
             if (products.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ยังไม่มีสินค้าในร้านค้า กดปุ่ม "เพิ่มสินค้าใหม่" ด้านบนได้เลย</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 text-slate-400">ยังไม่มีสินค้าในร้านค้า กดปุ่ม "เพิ่มสินค้าใหม่" ด้านบนได้เลย</td></tr>`;
                 return;
             }
 
             const categoryLabels = { discount: '🏷️ ส่วนลด', cash: '💵 เงินสด', gift: '🎁 ของขวัญ', other: '✨ อื่นๆ' };
+            const now = new Date();
 
             tbody.innerHTML = products.map(p => {
                 const catText = categoryLabels[p.category] || p.category;
-                const statusBadge = p.is_active 
-                    ? '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">🟢 เปิดขายอยู่</span>'
-                    : '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-[10px]">🔴 ปิดขาย</span>';
+                
+                // ตรวจสอบวันหมดอายุ
+                let expireStr = '<span class="text-slate-400">ไม่จำกัดเวลา</span>';
+                let isExpired = false;
+                if (p.expires_at) {
+                    const expDate = new Date(p.expires_at);
+                    isExpired = now > expDate;
+                    expireStr = expDate.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                    if (isExpired) {
+                        expireStr = `<span class="text-rose-500 font-bold">⏰ หมดเขต (${expireStr})</span>`;
+                    }
+                }
+
+                let statusBadge = '';
+                if (isExpired) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-500 font-bold text-[10px]">⏰ หมดอายุแล้ว</span>';
+                } else if (p.is_active) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">🟢 เปิดขายอยู่</span>';
+                } else {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 font-bold text-[10px]">🔴 ปิดขาย</span>';
+                }
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
                         <td class="p-4 font-bold text-slate-900 dark:text-white text-sm">${p.title}</td>
                         <td class="p-4"><span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span></td>
                         <td class="p-4 text-center font-extrabold text-amber-500">${p.token_price.toLocaleString()} Token</td>
-                        <td class="p-4 text-center font-bold">${p.stock.toLocaleString()} ชิ้น</td>
+                        <td class="p-4 text-center">
+                            <div class="font-bold">สต็อก: ${p.stock.toLocaleString()}</div>
+                            <div class="text-[10px] text-slate-400">จำกัด ${p.max_per_user || 1} สิทธิ์/คน</div>
+                        </td>
+                        <td class="p-4 text-center text-[11px]">${expireStr}</td>
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-right space-x-1">
                             <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
@@ -308,6 +330,16 @@
                                 <input type="number" id="swalStock" min="1" value="10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                             </div>
                         </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">จำกัดสิทธิ์ / คน</label>
+                                <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">วันเวลาหมดอายุ (ถ้ามี)</label>
+                                <input type="datetime-local" id="swalExpiresAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[11px]">
+                            </div>
+                        </div>
                         <div>
                             <label class="block font-bold mb-1">รายละเอียดเพิ่มเติม</label>
                             <textarea id="swalDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="เงื่อนไขหรือรายละเอียดสินค้า..."></textarea>
@@ -323,13 +355,25 @@
                     const category = document.getElementById('swalCategory').value;
                     const token_price = parseInt(document.getElementById('swalPrice').value);
                     const stock = parseInt(document.getElementById('swalStock').value);
+                    const max_per_user = parseInt(document.getElementById('swalMaxPerUser').value) || 1;
+                    const expires_at_val = document.getElementById('swalExpiresAt').value;
                     const description = document.getElementById('swalDesc').value.trim();
 
                     if (!title || !token_price || !stock) {
                         Swal.showValidationMessage('⚠️ กรุณากรอกข้อมูลสำคัญให้ครบถ้วน');
                         return false;
                     }
-                    return { title, category, token_price, stock, description, is_active: true };
+
+                    return { 
+                        title, 
+                        category, 
+                        token_price, 
+                        stock, 
+                        max_per_user,
+                        expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                        description, 
+                        is_active: true 
+                    };
                 }
             });
 
