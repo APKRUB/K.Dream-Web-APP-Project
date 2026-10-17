@@ -1,36 +1,14 @@
 <!DOCTYPE html>
-<html lang="th" class="light">
+<html lang="th" class="light select-none">
 <head>
-    <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | จัดการ Token / หน่วยเงินรางวัล</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>LMS | Admin - Token Management & Audit Trail</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- 🔒 Security Guard: ตรวจสอบสิทธิ์ Admin หรือ Teacher -->
-    <script>
-        const SUPABASE_URL_CHECK = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
-        const SUPABASE_KEY_CHECK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        
-        (async function() {
-            const tempClient = window.supabase.createClient(SUPABASE_URL_CHECK, SUPABASE_KEY_CHECK);
-            const { data: { session } } = await tempClient.auth.getSession();
-            if (!session) { window.location.replace('index.html'); return; }
-
-            const { data: profile } = await tempClient.from('profiles').select('*').eq('id', session.user.id).single();
-            const role = String(profile?.role || '').toLowerCase();
-            const email = String(profile?.email || '').toLowerCase();
-            if (!['admin', 'teacher', 'instructor'].includes(role) && !email.includes('admin') && !email.includes('teacher')) {
-                alert('⚠️ พื้นที่นี้สำหรับผู้ดูแลระบบหรือคุณครูเท่านั้น!');
-                window.location.replace('index.html');
-            }
-        })();
-    </script>
-
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -44,262 +22,264 @@
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
-        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
+        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(2, 132, 199, 0.15); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid rgba(2, 132, 199, 0.3); }
         .hitech-card { 
-            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(251, 191, 36, 0.3); 
-            box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.08); transition: all 0.3s ease; 
+            background: rgba(255, 255, 255, 0.98); 
+            border: 1px solid rgba(186, 230, 253, 0.8); 
+            box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .dark .hitech-card { 
-            background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(217, 119, 6, 0.3); 
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
+            background: #090d16; 
+            border: 1px solid rgba(30, 58, 138, 0.6);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
         }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
-        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
+<body class="bg-slate-50/70 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าหลัก">
-                        <i class="fas fa-arrow-left text-sm"></i>
-                    </button>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Token Management Hub</h1>
-                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการหน่วยเงินรางวัล</span>
-                    </div>
+    <nav class="glass-nav fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center font-extrabold text-lg shadow-md">
+                    <i class="fas fa-coins"></i>
                 </div>
-
-                <div class="flex items-center gap-2">
-                    <!-- 🎁 ปุ่มเข้าหน้าจัดการระบบ Shop (เพิ่มใหม่) -->
-                    <button onclick="window.location.href='admin_shop.html'" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/30 hover:from-amber-600 hover:to-orange-700 transition-all flex items-center gap-1.5" title="จัดการระบบร้านค้าและของรางวัล">
-                        <i class="fas fa-store"></i> <span class="hidden sm:inline">จัดการระบบ Shop</span>
-                    </button>
-
-                    <!-- ปุ่มรีเฟรช -->
-                    <button onclick="loadStudents()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all flex items-center gap-1.5">
-                        <i class="fas fa-rotate"></i> <span class="hidden sm:inline">รีเฟรช</span>
-                    </button>
-
-                    <!-- ปุ่มสลับธีม Dark/Light Mode -->
-                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
-                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
-                    </button>
+                <div>
+                    <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">Admin Token Center</h1>
+                    <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">ระบบจัดการและตรวจสอบประวัติโทเค็น</p>
                 </div>
+            </div>
+            <div>
+                <button onclick="window.location.href='admin.html'" class="px-3.5 py-2 bg-slate-100 dark:bg-darkinput hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-all">
+                    <i class="fas fa-arrow-left mr-1"></i> กลับหน้าแอดมิน
+                </button>
             </div>
         </div>
     </nav>
 
+    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
-        
-        <!-- Header Banner -->
-        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="space-y-1">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-                    <i class="fas fa-coins"></i> Secure Token Ledger & Shop Ready
+
+        <!-- Action Card สำหรับปรับยอดโทเค็น -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fas fa-sliders-h text-sky-600"></i> ทำการปรับลดหรือเติมโทเค็นให้ผู้ใช้
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">เลือกผู้ใช้งาน</label>
+                    <select id="targetUserSelect" class="w-full px-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none">
+                        <option value="">-- กำลังโหลดรายชื่อผู้ใช้ --</option>
+                    </select>
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการ Token นักเรียน</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เพิ่มคะแนนสะสม (Adjust) หรือหักลด Token (Deduct) สำหรับนักเรียนแต่ละบุคคล เพื่อเตรียมพร้อมระบบแลกของรางวัล Shop ในอนาคต</p>
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">ประเภทการทำรายการ</label>
+                    <select id="actionTypeSelect" class="w-full px-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none">
+                        <option value="adjust">➕ เติม/เพิ่มโทเค็น (Adjust)</option>
+                        <option value="deduct">➖ หัก/ลดโทเค็น (Deduct)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">จำนวนโทเค็น</label>
+                    <input type="number" id="tokenAmountInput" min="1" value="10" class="w-full px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1 text-slate-600 dark:text-slate-400">เหตุผล / หมายเหตุ</label>
+                    <input type="text" id="tokenReasonInput" placeholder="ระบุเหตุผลประกอบการทำรายการ..." class="w-full px-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none">
+                </div>
             </div>
-            <div class="w-full md:w-72">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchStudentInput" oninput="filterStudents()" placeholder="ค้นหาชื่อ หรือ Username นร...." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:border-amber-500 transition-all">
-                </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="executeTokenAction()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-extrabold shadow-md shadow-sky-500/20 transition-all">
+                    <i class="fas fa-check mr-1"></i> ยืนยันทำรายการโทเค็น
+                </button>
             </div>
         </div>
 
-        <!-- Student Tokens Table Grid -->
-        <div class="hitech-card rounded-2xl overflow-hidden">
+        <!-- ตารางแสดงประวัติ (Audit Trail) -->
+        <div class="hitech-card p-6 rounded-3xl space-y-4">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                    <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-history text-sky-600"></i> ประวัติการปรับลด/เติมโทเค็น (Token Audit Trail)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">บันทึกประวัติการเพิ่มและหักโทเค็นของผู้ใช้งานทั้งหมดในระบบเพื่อการตรวจสอบย้อนหลัง</p>
+                </div>
+                <button onclick="loadTokenHistory()" class="px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fas fa-sync-alt"></i> รีเฟรชประวัติ
+                </button>
+            </div>
+
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                            <th class="p-4">นักเรียน (Student Name)</th>
-                            <th class="p-4">ระดับชั้น / ห้องเรียน</th>
-                            <th class="p-4 text-center">Token ปัจจุบัน</th>
-                            <th class="p-4 text-center">สถานะ Shop / แลกของรางวัล</th>
-                            <th class="p-4 text-right">จัดการ (Adjust / Deduct)</th>
+                        <tr class="bg-slate-100 dark:bg-darkinput text-[11px] text-slate-500 font-extrabold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                            <th class="py-3 px-4">เวลา</th>
+                            <th class="py-3 px-4">เป้าหมาย (ผู้รับ/ถูกหัก)</th>
+                            <th class="py-3 px-4">ประเภท / จำนวน</th>
+                            <th class="py-3 px-4">ยอดก่อน ➡️ หลัง</th>
+                            <th class="py-3 px-4">เหตุผล / หมายเหตุ</th>
+                            <th class="py-3 px-4">ผู้ดำเนินการ (Admin)</th>
                         </tr>
                     </thead>
-                    <tbody id="studentTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
-                        <tr>
-                            <td colspan="5" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดข้อมูลนักเรียน...</td>
-                        </tr>
+                    <tbody id="tokenHistoryContainer">
+                        <tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs">กำลังโหลดประวัติ...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
     </main>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let allStudents = [];
+        let allUsersMap = {};
 
-        // 🌗 จัดการธีมมืด/สว่าง
-        const htmlElement = document.documentElement;
-        const themeIcon = document.getElementById('themeIcon');
-        if (localStorage.getItem('theme') === 'dark') {
-            htmlElement.classList.add('dark');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            htmlElement.classList.toggle('dark');
-            const isDark = htmlElement.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
-        });
-
-        async function loadStudents() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .select('*')
-                    .order('full_name', { ascending: true });
-
-                if (error) throw error;
-                
-                // 🛡️ กรองเฉพาะนักเรียนเท่านั้น (ซ่อน admin, teacher, instructor ทั้งหมด)
-                allStudents = (data || []).filter(s => {
-                    const r = String(s.role || 'student').toLowerCase();
-                    const email = String(s.email || '').toLowerCase();
-                    const isStaff = r === 'admin' || r === 'teacher' || r === 'instructor' || email.includes('admin') || email.includes('teacher');
-                    return !isStaff;
-                });
-
-                renderStudentTable(allStudents);
-            } catch (err) {
-                console.error(err);
-                Swal.fire({ icon: 'error', title: 'โหลดข้อมูลไม่สำเร็จ', text: err.message });
-            }
+        async function initAdminTokens() {
+            await loadUsersList();
+            await loadTokenHistory();
         }
 
-        function renderStudentTable(students) {
-            const tbody = document.getElementById('studentTableBody');
-            if (students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-400">ไม่พบรายชื่อนักเรียนในระบบ</td></tr>`;
+        async function loadUsersList() {
+            const selectEl = document.getElementById('targetUserSelect');
+            const { data: profiles, error } = await mySupabase.from('profiles').select('id, full_name, username, tokens');
+            
+            if (error || !profiles || profiles.length === 0) {
+                selectEl.innerHTML = `<option value="">ไม่พบรายชื่อผู้ใช้ในระบบ</option>`;
                 return;
             }
 
-            tbody.innerHTML = students.map(s => {
-                const name = s.full_name || s.username || 'ไม่ระบุชื่อ';
-                const username = s.username ? `@${s.username}` : '-';
-                const classRoom = s.classroom || s.class_room || s.room || 'ม.304 / ทั่วไป'; // รองรับข้อมูลห้องเรียน
-                const tokens = s.tokens ?? s.point ?? s.coin ?? 0;
+            selectEl.innerHTML = `<option value="">-- เลือกผู้ใช้งาน --</option>`;
+            profiles.forEach(p => {
+                allUsersMap[p.id] = p;
+                const name = p.full_name || p.username || 'ไม่ระบุชื่อ';
+                const currentTokens = p.tokens !== undefined ? p.tokens : 0;
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${name} (มีอยู่: ${currentTokens} โทเค็น)`;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        async function executeTokenAction() {
+            const userId = document.getElementById('targetUserSelect').value;
+            const actionType = document.getElementById('actionTypeSelect').value;
+            const amountInput = document.getElementById('tokenAmountInput').value;
+            const reason = document.getElementById('tokenReasonInput').value.trim();
+
+            if (!userId) {
+                Swal.fire('แจ้งเตือน', 'กรุณาเลือกผู้ใช้งานที่ต้องการปรับโทเค็น', 'warning');
+                return;
+            }
+
+            const amount = parseInt(amountInput);
+            if (isNaN(amount) || amount <= 0) {
+                Swal.fire('แจ้งเตือน', 'กรุณากรอกจำนวนโทเค็นให้ถูกต้อง', 'warning');
+                return;
+            }
+
+            const targetUser = allUsersMap[userId];
+            const prevBalance = targetUser.tokens !== undefined ? parseInt(targetUser.tokens) : 0;
+            let newBalance = actionType === 'adjust' ? prevBalance + amount : prevBalance - amount;
+
+            if (newBalance < 0) newBalance = 0; // ป้องกันติดลบ
+
+            Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // 1. อัปเดตยอดโทเค็นในตาราง profiles
+            const { error: updateError } = await mySupabase
+                .from('profiles')
+                .update({ tokens: newBalance })
+                .eq('id', userId);
+
+            if (updateError) {
+                Swal.fire('เกิดข้อผิดพลาด', updateError.message, 'error');
+                return;
+            }
+
+            // 2. บันทึกประวัติลงตาราง token_transactions
+            const adminId = localStorage.getItem('id') || localStorage.getItem('user_id') || 'admin';
+            const adminName = localStorage.getItem('full_name') || localStorage.getItem('student_username') || 'Super Admin';
+            const targetUserName = targetUser.full_name || targetUser.username || 'ผู้ใช้';
+
+            await mySupabase.from('token_transactions').insert([{
+                admin_id: adminId,
+                admin_name: adminName,
+                target_user_id: userId,
+                target_user_name: targetUserName,
+                action_type: actionType,
+                amount: amount,
+                previous_balance: prevBalance,
+                new_balance: newBalance,
+                reason: reason || 'ไม่มีหมายเหตุ'
+            }]);
+
+            // อัปเดตข้อมูลในแมปจำลอง
+            targetUser.tokens = newBalance;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'ทำรายการสำเร็จ!',
+                text: `ปรับยอดโทเค็นของ ${targetUserName} จาก ${prevBalance} เป็น ${newBalance} เรียบร้อยแล้ว`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            document.getElementById('tokenAmountInput').value = '10';
+            document.getElementById('tokenReasonInput').value = '';
+            loadUsersList();
+            loadTokenHistory();
+        }
+
+        async function loadTokenHistory() {
+            const container = document.getElementById('tokenHistoryContainer');
+            if (!container) return;
+
+            container.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs">กำลังโหลดประวัติ...</td></tr>`;
+
+            const { data: historyList, error } = await mySupabase
+                .from('token_transactions')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error || !historyList || historyList.length === 0) {
+                container.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 text-xs">ยังไม่มีประวัติการปรับลด/เติมโทเค็นย้อนหลัง</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = historyList.map((item) => {
+                const dateStr = new Date(item.created_at).toLocaleString('th-TH');
+                const isDeduct = item.action_type === 'deduct';
+                const badgeColor = isDeduct ? 'bg-rose-500/15 text-rose-600 border-rose-200' : 'bg-emerald-500/15 text-emerald-600 border-emerald-200';
+                const sign = isDeduct ? '-' : '+';
+                const actionLabel = isDeduct ? 'หักโทเค็น' : 'เติมโทเค็น';
 
                 return `
-                    <tr class="hover:bg-amber-500/5 transition-colors">
-                        <td class="p-4">
-                            <div class="font-bold text-slate-900 dark:text-white text-sm">${name}</div>
-                            <div class="text-[11px] text-slate-400 font-mono">${username}</div>
-                        </td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">${classRoom}</span>
-                        </td>
-                        <td class="p-4 text-center">
-                            <span class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-sm border border-amber-500/25">
-                                <i class="fas fa-coins mr-1"></i> ${tokens.toLocaleString()}
+                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-darkinput/50 transition-all text-xs">
+                        <td class="py-3.5 px-4 font-mono text-slate-500">${dateStr}</td>
+                        <td class="py-3.5 px-4 font-bold text-slate-900 dark:text-white">${item.target_user_name || 'ผู้ใช้'}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2.5 py-1 rounded-lg border font-extrabold uppercase ${badgeColor}">
+                                ${actionLabel} (${sign}${item.amount})
                             </span>
                         </td>
-                        <td class="p-4 text-center">
-                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20" title="เตรียมพร้อมสำหรับระบบ Shop แลกของรางวัล">
-                                <i class="fas fa-store mr-1"></i> พร้อมแลกสินค้า
-                            </span>
-                        </td>
-                        <td class="p-4 text-right space-x-1">
-                            <button onclick="openTokenModal('${s.id}', '${name}', ${tokens}, 'add')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl font-bold text-xs hover:bg-emerald-100 transition-all" title="เพิ่ม Token">
-                                <i class="fas fa-plus"></i> ปรับเพิ่ม
-                            </button>
-                            <button onclick="openTokenModal('${s.id}', '${name}', ${tokens}, 'deduct')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs hover:bg-rose-100 transition-all" title="หัก Token (ซ่อนฟังก์ชันพิเศษ)">
-                                <i class="fas fa-minus"></i> หักออก
-                            </button>
-                        </td>
+                        <td class="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-300 font-bold">${item.previous_balance} ➡️ ${item.new_balance}</td>
+                        <td class="py-3.5 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate" title="${item.reason || ''}">${item.reason || '-'}</td>
+                        <td class="py-3.5 px-4 font-semibold text-slate-700 dark:text-slate-300">${item.admin_name || 'Admin'}</td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function filterStudents() {
-            const keyword = document.getElementById('searchStudentInput').value.toLowerCase();
-            const filtered = allStudents.filter(s => 
-                (s.full_name && s.full_name.toLowerCase().includes(keyword)) || 
-                (s.username && s.username.toLowerCase().includes(keyword)) ||
-                (s.classroom && s.classroom.toLowerCase().includes(keyword))
-            );
-            renderStudentTable(filtered);
-        }
-
-        async function openTokenModal(userId, studentName, currentTokens, mode) {
-            const isAdd = mode === 'add';
-            const titleColor = isAdd ? '#10b981' : '#f43f5e';
-            const actionTitle = isAdd ? '🟢 ปรับเพิ่ม Token (Adjust)' : '🔴 หักลด Token (Deduct)';
-
-            const { value: formValues } = await Swal.fire({
-                title: `<span style="color: ${titleColor};">${actionTitle}</span>`,
-                html: `
-                    <div class="text-left text-xs space-y-3">
-                        <div class="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                            <div><b>นักเรียน:</b> ${studentName}</div>
-                            <div><b>Token ปัจจุบัน:</b> <span class="text-amber-500 font-bold">${currentTokens}</span></div>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">จำนวน Token ที่ต้องการ${isAdd ? 'เพิ่ม' : 'หัก'} <span class="text-red-500">*</span></label>
-                            <input type="number" id="swalTokenAmount" min="1" value="10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">เหตุผล / หมายเหตุ <span class="text-red-500">*</span></label>
-                            <input type="text" id="swalTokenReason" placeholder="${isAdd ? 'เช่น ตอบคำถามในคาบถูกต้องพิเศษ' : 'เช่น ปรับแก้แต้มเนื่องจากข้อผิดพลาด'}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none">
-                        </div>
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: isAdd ? 'ยืนยันเพิ่ม Token' : 'ยืนยันหัก Token',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: titleColor,
-                preConfirm: () => {
-                    const amount = parseInt(document.getElementById('swalTokenAmount').value);
-                    const reason = document.getElementById('swalTokenReason').value.trim();
-
-                    if (!amount || amount <= 0) {
-                        Swal.showValidationMessage('⚠️ กรุณากรอกจำนวน Token ให้ถูกต้อง');
-                        return false;
-                    }
-                    if (!reason) {
-                        Swal.showValidationMessage('⚠️ กรุณาระบุเหตุผลในการปรับ Token');
-                        return false;
-                    }
-                    return { amount, reason };
-                }
-            });
-
-            if (formValues) {
-                const delta = isAdd ? formValues.amount : -formValues.amount;
-                const newTotal = Math.max(0, currentTokens + delta);
-
-                Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .update({ tokens: newTotal })
-                    .eq('id', userId);
-
-                if (!error) {
-                    Swal.fire({ icon: 'success', title: 'อัปเดต Token สำเร็จ!', text: `ยอดใหม่ของ ${studentName} คือ ${newTotal} Token`, confirmButtonColor: '#0284c7' });
-                    loadStudents();
-                } else {
-                    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: error.message });
-                }
-            }
-        }
-
-        loadStudents();
+        window.addEventListener('DOMContentLoaded', () => {
+            initAdminTokens();
+        });
     </script>
 </body>
 </html>
