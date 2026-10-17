@@ -471,11 +471,22 @@
             }
         }
 
-        function logoutStudent() {
-            localStorage.removeItem('student_id');
-            localStorage.removeItem('id');
-            window.location.href = 'index.html';
-        }
+        async function logoutStudent() {
+    Swal.fire({ title: 'กำลังออกจากระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    // ตั้งค่าสถานะว่าเพิ่งกด Logout เพื่อบอกหน้า index.html ไม่ให้ทำ Auto-Login ซ้ำ
+    sessionStorage.setItem('just_logged_out', 'true');
+
+    try {
+        await mySupabase.auth.signOut();
+    } catch (err) {
+        console.warn("Signout warning:", err);
+    }
+
+    localStorage.clear();
+    
+    window.location.replace('index.html');
+}
 
         async function loadStudentNotificationsCount() {
             try {
