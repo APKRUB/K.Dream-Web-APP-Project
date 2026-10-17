@@ -99,6 +99,7 @@
 
         let coursesList = [];
         let enrollmentsList = [];
+        let countdownTimer = null;
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -122,11 +123,9 @@
                 ]);
 
                 coursesList = coursesRes.data || [];
-                // รวมข้อมูลจากทั้ง course_enrollments และ enrollments เพื่อความแม่นยำสูงสุด
                 const primaryEnrolls = enrollRes.data || [];
                 const secondaryEnrolls = altEnrollRes.data || [];
                 
-                // รวมและกรองไม่ให้ซ้ำกัน (ถ้ามี)
                 enrollmentsList = [...primaryEnrolls];
                 secondaryEnrolls.forEach(se => {
                     if (!enrollmentsList.some(pe => String(pe.id) === String(se.id) || (String(pe.course_id) === String(se.course_id) && String(pe.student_id || pe.user_id) === String(se.student_id || se.user_id)))) {
@@ -135,6 +134,7 @@
                 });
 
                 renderCoursesGrid();
+                startCountdownInterval();
             } catch (err) {
                 console.error("Init Page Error:", err);
             }
@@ -155,6 +155,17 @@
             container.innerHTML = coursesList.map(c => {
                 const enrolledCount = enrollmentsList.filter(e => String(e.course_id) === String(c.id)).length;
                 const coverImg = c.image_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&auto=format&fit=crop&q=80';
+                
+                let expiryHtml = `<span class="text-slate-400">♾️ ไม่จำกัดระยะเวลา</span>`;
+                if (c.expires_at) {
+                    const expiryDateStr = new Date(c.expires_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+                    expiryHtml = `
+                        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-400"><i class="fas fa-clock mr-1 text-purple-500"></i> หมดอายุ: ${expiryDateStr}</span>
+                            <span class="font-mono font-bold text-rose-500 countdown-badge" data-expires="${c.expires_at}">กำลังคำนวณ...</span>
+                        </div>
+                    `;
+                }
 
                 return `
                     <div class="hitech-card rounded-3xl overflow-hidden flex flex-col justify-between group border border-purple-500/20">
@@ -165,10 +176,13 @@
                                     ${c.course_code || 'COURSE'}
                                 </div>
                             </div>
-                            <div class="p-5 space-y-2">
+                            <div class="p-5 space-y-2.5">
                                 <h3 class="font-extrabold text-base text-slate-900 dark:text-white line-clamp-1">${c.title}</h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">${c.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
-                                <div class="pt-2 flex items-center justify-between text-xs font-bold">
+                                
+                                ${expiryHtml}
+
+                                <div class="pt-1 flex items-center justify-between text-xs font-bold">
                                     <a href="admin_course_detail.html?id=${c.id}" class="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5">
                                         <i class="fas fa-users"></i> นักเรียนลงทะเบียน ${enrolledCount} คน <i class="fas fa-arrow-right text-[10px]"></i>
                                     </a>
@@ -189,14 +203,53 @@
                     </div>
                 `;
             }).join('');
+
+            updateCountdowns();
+        }
+
+        function startCountdownInterval() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = setInterval(updateCountdowns, 1000);
+        }
+
+        function updateCountdowns() {
+            const badges = document.querySelectorAll('.countdown-badge');
+            const now = new Date().getTime();
+
+            badges.forEach(badge => {
+                const expiresStr = badge.getAttribute('data-expires');
+                const targetTime = new Date(expiresStr).getTime();
+                const distance = targetTime - now;
+
+                if (distance < 0) {
+                    badge.innerHTML = `<span class="px-2 py-0.5 bg-rose-500/20 text-rose-500 rounded-lg text-[10px]">❌ คอร์สหมดอายุแล้ว</span>`;
+                } else {
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    let timeText = '';
+                    if (days > 0) timeText += `${days}วัน `;
+                    timeText += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    badge.textContent = `⏳ เหลือเวลา ${timeText}`;
+                }
+            });
         }
 
         async function openCourseModal(courseId = null) {
-            let course = { course_code: '', title: '', description: '', image_url: '' };
+            let course = { course_code: '', title: '', description: '', image_url: '', expires_at: '' };
             let isEdit = false;
             if (courseId) {
                 isEdit = true;
                 course = coursesList.find(c => String(c.id) === String(courseId)) || course;
+            }
+
+            // แปลงค่า expires_at ให้อยู่ในรูปแบบ input datetime-local ถ้ามี
+            let formattedExpiry = '';
+            if (course.expires_at) {
+                const d = new Date(course.expires_at);
+                formattedExpiry = d.toISOString().slice(0, 16);
             }
 
             const isDark = document.documentElement.classList.contains('dark');
@@ -214,6 +267,10 @@
                         <div>
                             <label class="block font-bold mb-1">ชื่อคอร์สเรียน <span class="text-red-500">*</span></label>
                             <input id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="${course.title || ''}" placeholder="เช่น ค่ายคอมพิวเตอร์ สอวน. ม.3">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">กำหนดวัน-เวลาหมดอายุของคอร์ส (ปล่อยว่างถ้าไม่จำกัด)</label>
+                            <input type="datetime-local" id="swalExpires" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono" value="${formattedExpiry}">
                         </div>
                         <div>
                             <label class="block font-bold mb-1">ลิงก์รูปภาพปกคอร์ส (Image URL)</label>
@@ -234,6 +291,7 @@
                 preConfirm: () => {
                     const code = document.getElementById('swalCode').value.trim();
                     const title = document.getElementById('swalTitle').value.trim();
+                    const expires = document.getElementById('swalExpires').value;
                     const image = document.getElementById('swalImage').value.trim();
                     const desc = document.getElementById('swalDesc').value.trim();
                     const errBox = document.getElementById('swalErrorMsg');
@@ -243,7 +301,14 @@
                         errBox.classList.remove('hidden');
                         return false;
                     }
-                    return { course_code: code, title: title, image_url: image, description: desc };
+
+                    return { 
+                        course_code: code, 
+                        title: title, 
+                        expires_at: expires ? new Date(expires).toISOString() : null,
+                        image_url: image, 
+                        description: desc 
+                    };
                 }
             });
 
