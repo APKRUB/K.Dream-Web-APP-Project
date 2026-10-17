@@ -75,7 +75,6 @@
                 </div>
 
                 <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <!-- ปุ่มทางลัดเข้าหน้าร้านค้า (admin_shop.html) -->
                     <button onclick="window.location.href='admin_shop.html'" class="px-2.5 sm:px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 font-bold text-xs rounded-xl hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-all flex items-center gap-1.5" title="จัดการร้านค้าของรางวัล">
                         <i class="fas fa-store"></i> <span class="hidden md:inline">จัดการร้านค้า (Shop)</span>
                     </button>
@@ -132,7 +131,7 @@
             </div>
         </div>
 
-        <!-- 📜 Token Audit Trail (ประวัติการปรับยอดโทเค็นย้อนหลัง) -->
+        <!-- 📜 Token Audit Trail -->
         <div class="hitech-card p-4 sm:p-6 rounded-2xl space-y-4 shadow-sm">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-amber-500/20">
                 <div>
@@ -197,7 +196,6 @@
 
                 if (error) throw error;
                 
-                // 🛡️ กรองเฉพาะนักเรียนเท่านั้น (ซ่อน admin, teacher, instructor ทั้งหมด)
                 allStudents = (data || []).filter(s => {
                     const r = String(s.role || 'student').toLowerCase();
                     const email = String(s.email || '').toLowerCase();
@@ -225,9 +223,9 @@
                 const nameDisplay = fullName + nickname;
                 const username = s.username ? `@${s.username}` : '-';
                 
-                // 🎓 ดึงระดับชั้นจาก grade_level
                 const gradeLevel = s.grade_level || s.classroom || s.class_room || 'ระบุระดับชั้น';
-                const tokens = s.tokens ?? s.point ?? s.coin ?? 0;
+                // รองรับทุกชื่อคอลัมน์ที่เป็นไปได้ (tokens, point, points, coin, coins)
+                const tokens = s.tokens ?? s.point ?? s.points ?? s.coin ?? s.coins ?? 0;
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
@@ -240,7 +238,7 @@
                         </td>
                         <td class="py-3 px-3 sm:p-4 text-center">
                             <span class="px-2.5 sm:px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-xs sm:text-sm border border-amber-500/25">
-                                <i class="fas fa-coins mr-1"></i> ${tokens.toLocaleString()}
+                                <i class="fas fa-coins mr-1"></i> ${Number(tokens).toLocaleString()}
                             </span>
                         </td>
                         <td class="py-3 px-3 sm:p-4 text-center">
@@ -321,14 +319,17 @@
 
                 Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                // 1. อัปเดตยอด Token ในตาราง profiles
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .update({ tokens: newTotal })
-                    .eq('id', userId);
+                // ตรวจสอบว่าตารางใช้คอลัมน์ชื่ออะไร (ลองอัปเดตผ่าน tokens ก่อน ถ้าไม่ได้ลอง point)
+                let updateError = null;
+                let updateResult = await supabaseClient.from('profiles').update({ tokens: newTotal }).eq('id', userId);
+                
+                if (updateResult.error) {
+                    // ถ้าคอลัมน์ tokens ไม่มี ลองใช้ point แทน
+                    updateResult = await supabaseClient.from('profiles').update({ point: newTotal }).eq('id', userId);
+                }
+                updateError = updateResult.error;
 
-                if (!error) {
-                    // 2. บันทึกประวัติลงตาราง token_transactions (Audit Trail)
+                if (!updateError) {
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     const adminId = session?.user?.id || 'admin';
                     
@@ -348,18 +349,17 @@
                         previous_balance: currentTokens,
                         new_balance: newTotal,
                         reason: formValues.reason
-                    }]);
+                    }]).select();
 
                     Swal.fire({ icon: 'success', title: 'อัปเดต Token สำเร็จ!', text: `ยอดใหม่ของ ${studentName} คือ ${newTotal} Token`, confirmButtonColor: '#0284c7' });
                     loadStudents();
                     loadTokenHistory();
                 } else {
-                    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: error.message });
+                    Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: updateError.message });
                 }
             }
         }
 
-        // 📜 โหลดประวัติการปรับยอดโทเค็นย้อนหลัง
         async function loadTokenHistory() {
             const container = document.getElementById('tokenHistoryContainer');
             if (!container) return;
@@ -401,7 +401,6 @@
             }).join('');
         }
 
-        // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
         loadStudents();
         loadTokenHistory();
     </script>
