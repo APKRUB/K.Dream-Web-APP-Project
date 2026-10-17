@@ -70,7 +70,7 @@
                     </button>
                     <div>
                         <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Advanced Shop Command</h1>
-                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการร้านค้าขั้นสูง (Multi-Course & Limit Rules)</span>
+                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการร้านค้าขั้นสูง (Dynamic Limit Rules)</span>
                     </div>
                 </div>
 
@@ -92,10 +92,10 @@
         <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-                    <i class="fas fa-store"></i> Multi-Course & Smart Limitation Hub
+                    <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เลือกหลายคอร์สเรียนเป้าหมาย, กำหนดรูปแบบการจำกัดสิทธิ์ (จำกัดคน / ตามคอร์ส / ไม่จำกัด) และ Flash Sale ได้อย่างแม่นยำ</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และรูปแบบการจำกัดสิทธิ์ที่จะปรับเปลี่ยนฟอร์มกรอกข้อมูลตามเงื่อนไขอัตโนมัติ</p>
             </div>
         </div>
 
@@ -181,11 +181,9 @@
 
         async function loadShopData() {
             try {
-                // โหลดรายชื่อคอร์สทั้งหมด
                 const { data: courseData } = await supabaseClient.from('courses').select('id, title');
                 allCoursesList = courseData || [];
 
-                // โหลดสินค้า พร้อมความสัมพันธ์คอร์สหลายคอร์ส (shop_item_courses -> courses)
                 const { data: prodData, error: prodErr } = await supabaseClient
                     .from('shop_items')
                     .select('*, shop_item_courses(course_id, courses(title))')
@@ -195,7 +193,6 @@
                 document.getElementById('countProducts').textContent = allProducts.length;
                 renderProductsTable(allProducts);
 
-                // โหลดคำขอแลก
                 const { data: reqData, error: reqErr } = await supabaseClient
                     .from('redemption_logs')
                     .select(`*, profiles(full_name, username), shop_items(title)`)
@@ -226,7 +223,6 @@
                 const catText = categoryLabels[p.category] || p.category;
                 const limitText = limitModeLabels[p.limit_mode] || 'จำกัดคนละสิทธิ์';
 
-                // รายชื่อคอร์สที่ผูกไว้
                 const linkedCourses = p.shop_item_courses || [];
                 const courseTags = linkedCourses.length > 0 
                     ? linkedCourses.map(ic => `<span class="inline-block px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 text-[9px] font-bold mr-1 mb-1">${ic.courses?.title || 'คอร์ส'}</span>`).join('')
@@ -253,6 +249,8 @@
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 font-bold text-[10px]">🔴 ปิดขาย</span>';
                 }
 
+                let quotaDisplay = p.limit_mode === 'unlimited' ? 'ไม่จำกัด' : `${p.max_per_user || 1} สิทธิ์`;
+
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
                         <td class="p-4 font-bold text-slate-900 dark:text-white text-sm">${p.title}</td>
@@ -266,7 +264,7 @@
                         </td>
                         <td class="p-4 text-center">
                             <div class="font-bold">สต็อก: ${p.stock.toLocaleString()}</div>
-                            <div class="text-[10px] text-slate-400">โควตา: ${p.max_per_user || 1}</div>
+                            <div class="text-[10px] text-slate-400">โควตา: ${quotaDisplay}</div>
                         </td>
                         <td class="p-4 text-center text-[11px]">${timeStatusBadge}</td>
                         <td class="p-4 text-center">${statusBadge}</td>
@@ -324,7 +322,6 @@
         }
 
         async function openAddProductModal() {
-            // สร้าง Checkbox รายชื่อคอร์สทั้งหมดเพื่อให้เลือกได้หลายคอร์ส
             const courseCheckboxHtml = allCoursesList.length > 0 
                 ? allCoursesList.map(c => `
                     <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
@@ -335,7 +332,7 @@
                 : '<div class="text-slate-400 text-xs">ไม่พบรายชื่อคอร์สในระบบ</div>';
 
             const { value: formValues } = await Swal.fire({
-                title: '🎁 เพิ่มของรางวัลขั้นสูง (Multi-Course)',
+                title: '🎁 เพิ่มของรางวัลขั้นสูง (Dynamic Limit)',
                 html: `
                     <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
                         <div>
@@ -354,19 +351,27 @@
                             </div>
                             <div>
                                 <label class="block font-bold mb-1">รูปแบบการจำกัดสิทธิ์ <span class="text-red-500">*</span></label>
-                                <select id="swalLimitMode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                <select id="swalLimitMode" onchange="onLimitModeChange()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                                     <option value="person">👤 จำกัดคนละ X สิทธิ์</option>
                                     <option value="course">📚 ตามจำนวนคอร์สที่ลง</option>
                                     <option value="unlimited">♾️ ไม่จำกัดสิทธิ์</option>
                                 </select>
                             </div>
                         </div>
+
+                        <!-- 🎛️ ช่องกรอกโควตาที่จะแสดง/ซ่อนตามโหมดแบบ Dynamic -->
+                        <div id="swalQuotaContainer">
+                            <label id="swalQuotaLabel" class="block font-bold mb-1">จำนวนสิทธิ์สูงสุดต่อคน <span class="text-red-500">*</span></label>
+                            <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+
                         <div>
                             <label class="block font-bold mb-1">เลือกคอร์สที่เข้าเงื่อนไข (เลือกได้หลายคอร์ส / ไม่เลือกคือทุกคอร์ส)</label>
                             <div class="p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl max-h-32 overflow-y-auto space-y-1">
                                 ${courseCheckboxHtml}
                             </div>
                         </div>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold mb-1">ราคา (Token) <span class="text-red-500">*</span></label>
@@ -377,11 +382,8 @@
                                 <input type="number" id="swalStock" min="1" value="10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-2">
-                            <div>
-                                <label class="block font-bold mb-1">โควตา/ค่าจำกัด</label>
-                                <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
-                            </div>
+
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold mb-1">เริ่มเปิดขาย</label>
                                 <input type="datetime-local" id="swalStartsAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
@@ -391,12 +393,32 @@
                                 <input type="datetime-local" id="swalExpiresAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
                             </div>
                         </div>
+
                         <div>
                             <label class="block font-bold mb-1">รายละเอียดเพิ่มเติม</label>
                             <textarea id="swalDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="เงื่อนไขหรือรายละเอียดสินค้า..."></textarea>
                         </div>
                     </div>
                 `,
+                didOpen: () => {
+                    // กำหนดค่าเริ่มต้นตอนเปิด modal
+                    window.onLimitModeChange = function() {
+                        const mode = document.getElementById('swalLimitMode').value;
+                        const container = document.getElementById('swalQuotaContainer');
+                        const label = document.getElementById('swalQuotaLabel');
+                        
+                        if (mode === 'unlimited') {
+                            container.style.display = 'none'; // ซ่อนช่องกรอกเมื่อไม่จำกัดสิทธิ์
+                        } else {
+                            container.style.display = 'block';
+                            if (mode === 'person') {
+                                label.textContent = 'จำนวนสิทธิ์สูงสุดที่ 1 คนแลกได้ (สิทธิ์/คน)';
+                            } else if (mode === 'course') {
+                                label.textContent = 'อัตราสิทธิ์แลกได้ต่อ 1 คอร์ส (เช่น 1 คอร์สได้ 1 สิทธิ์)';
+                            }
+                        }
+                    };
+                },
                 showCancelButton: true,
                 confirmButtonText: 'บันทึกเพิ่มสินค้า',
                 cancelButtonText: 'ยกเลิก',
@@ -407,12 +429,11 @@
                     const limit_mode = document.getElementById('swalLimitMode').value;
                     const token_price = parseInt(document.getElementById('swalPrice').value);
                     const stock = parseInt(document.getElementById('swalStock').value);
-                    const max_per_user = parseInt(document.getElementById('swalMaxPerUser').value) || 1;
+                    const max_per_user = limit_mode === 'unlimited' ? 999999 : (parseInt(document.getElementById('swalMaxPerUser').value) || 1);
                     const starts_at_val = document.getElementById('swalStartsAt').value;
                     const expires_at_val = document.getElementById('swalExpiresAt').value;
                     const description = document.getElementById('swalDesc').value.trim();
 
-                    // เก็บรายการคอร์สที่ติ๊กเลือกหลายอัน
                     const selectedCourses = Array.from(document.querySelectorAll('input[name="swalCourseCheck"]:checked')).map(cb => cb.value);
 
                     if (!title || !token_price || !stock) {
@@ -441,7 +462,6 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังบันทึกสินค้า...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
-                // 1. บันทึกข้อมูลลงตาราง shop_items
                 const { data: newProd, error: prodErr } = await supabaseClient
                     .from('shop_items')
                     .insert([formValues.productData])
@@ -453,7 +473,6 @@
                     return;
                 }
 
-                // 2. บันทึกความสัมพันธ์คอร์สหลายคอร์สลงตาราง shop_item_courses
                 if (formValues.selectedCourses.length > 0 && newProd) {
                     const relationInserts = formValues.selectedCourses.map(courseId => ({
                         item_id: newProd.id,
@@ -475,7 +494,6 @@
         async function deleteProduct(id) {
             Swal.fire({ title: 'ลบสินค้านี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยันลบ' }).then(async res => {
                 if (res.isConfirmed) {
-                    // ลบความสัมพันธ์ในตารางเชื่อมก่อน แล้วค่อยลบตัวสินค้า
                     await supabaseClient.from('shop_item_courses').delete().eq('item_id', id);
                     await supabaseClient.from('shop_items').delete().eq('id', id);
                     loadShopData();
