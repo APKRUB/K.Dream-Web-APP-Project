@@ -1040,7 +1040,7 @@
         async function handleExamClick(examId, action, attemptId) {
             const exam = allExams.find(e => e.id === examId);
             if (!exam) return;
-            window.location.href = `exam_room.html?exam_id=${examId}&student_id=${currentStudentId}`;
+            window.location.href = `exam_take.html?exam_id=${examId}&student_id=${currentStudentId}`;
         }
 
         function renderExamHistory() {
