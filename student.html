@@ -20,7 +20,7 @@
             if (urlStudentId) {
                 localStorage.setItem('student_id', urlStudentId);
                 localStorage.setItem('id', urlStudentId);
-                return; // ผ่านทันทีถ้ามีบน URL
+                return;
             }
 
             let hasSession = false;
@@ -33,9 +33,7 @@
             }
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('user_id') || localStorage.getItem('student_id');
             
-            // ถ้าไม่มี Session และไม่มีไอดีสำรองในเครื่อง ให้พาไปหน้า login หรือ index
             if (!hasSession && !fallbackId) {
-                // หากต้องการให้เด้งกลับ index สามารถเปิดใช้งานบรรทัดด้านล่างนี้
                 // window.location.replace('index.html');
             }
         })();
@@ -86,24 +84,31 @@
 </head>
 <body class="bg-slate-50/70 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
+    <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-18 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div id="navAvatarContainer" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-lg shadow-md shadow-sky-500/20 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-18 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div id="navAvatarContainer" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-700 text-white flex items-center justify-center font-extrabold text-base sm:text-lg shadow-md shadow-sky-500/20 overflow-hidden shrink-0">
                     <i class="fas fa-graduation-cap" id="navAvatarIcon"></i>
                     <img id="navAvatarImg" src="" class="w-full h-full object-cover hidden">
                 </div>
-                <div>
+                <div class="min-w-0">
                     <div class="flex items-center gap-2">
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight" id="studentNavName">กำลังโหลดชื่อ...</h1>
-                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[10px] rounded-md shadow-sm">Portal v3.6</span>
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white tracking-tight truncate" id="studentNavName">กำลังโหลดชื่อ...</h1>
+                        <span class="px-2 py-0.5 bg-sky-600 text-white font-bold text-[9px] sm:text-[10px] rounded-md shadow-sm shrink-0">Portal v3.7</span>
                     </div>
-                    <p class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold">Student Examination Center</p>
+                    <p class="text-[10px] sm:text-[11px] text-sky-600 dark:text-sky-400 font-semibold truncate">Student Examination Center</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-2.5">
-                <button onclick="openEnrolledCoursesModal()" class="px-3.5 py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-sky-500/20 shadow-sm" title="คอร์สของฉัน">
+            <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                <!-- 🪙 Token Balance Badge (คลิกเปิดร้านค้าได้ทันที) -->
+                <button onclick="openStudentShopModal()" class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 border border-amber-500/30 shadow-sm" title="ร้านค้าของรางวัล & Token ของฉัน">
+                    <i class="fas fa-coins text-amber-500 animate-pulse"></i> 
+                    <span id="navTokenBalance">-- Token</span>
+                </button>
+
+                <button onclick="openEnrolledCoursesModal()" class="p-2 sm:px-3.5 sm:py-2 bg-sky-500/10 hover:bg-sky-500 hover:text-white text-sky-600 dark:text-sky-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-sky-500/20 shadow-sm" title="คอร์สของฉัน">
                     <i class="fas fa-book-reader"></i> <span class="hidden md:inline">คอร์สที่ลงทะเบียน</span>
                 </button>
 
@@ -116,27 +121,27 @@
                     <i class="fas fa-cog text-xs"></i>
                 </button>
 
-                <button onclick="logoutStudent()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-500/20 shadow-sm">
+                <button onclick="logoutStudent()" class="p-2 sm:px-3.5 sm:py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-600 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-red-500/20 shadow-sm" title="ออกจากระบบ">
                     <i class="fas fa-sign-out-alt"></i> <span class="hidden sm:inline">ออกจากระบบ</span>
                 </button>
 
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all">
+                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-sky-500 text-sky-600 dark:text-slate-300 transition-all" title="สลับธีม">
                     <i class="fas fa-moon text-xs" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
 
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl shadow-sky-500/10 relative overflow-hidden space-y-6">
+        <div class="hitech-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl shadow-sky-500/10 relative overflow-hidden space-y-4 sm:space-y-6">
             <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div class="space-y-2">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                <div class="space-y-1 sm:space-y-2">
                     <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold tracking-wide uppercase">ศูนย์การเรียนรู้ออนไลน์อัจฉริยะ</span>
-                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
-                    <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามรายวิชา ทบทวนเทปเรียนย้อนหลัง หรือตรวจสอบคอร์สเรียนได้จากเมนูด้านล่างนี้</p>
+                    <h2 class="text-lg sm:text-2xl font-extrabold tracking-tight" id="studentWelcomeBanner">ยินดีต้อนรับ</h2>
+                    <p class="text-xs sm:text-sm text-sky-100 max-w-xl font-light">เลือกทำชุดข้อสอบตามรายวิชา ทบทวนเทปเรียนย้อนหลัง หรือแลกของรางวัลจาก Token สะสมได้จากเมนูด้านล่างนี้</p>
                 </div>
 
                 <div class="flex items-center gap-1 bg-black/30 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0 w-full md:w-auto">
@@ -160,7 +165,24 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 🎁 ปุ่มทางลัดเข้าหน้าร้านค้าของรางวัล -->
+            <div onclick="openStudentShopModal()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 text-white flex items-center justify-center text-lg shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Reward Shop</span>
+                        <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">ร้านค้าแลกของรางวัล</h3>
+                        <p class="text-[11px] text-slate-500 font-light">ใช้ Token แลกส่วนลด ของขวัญ และสิทธิพิเศษ</p>
+                    </div>
+                </div>
+                <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </div>
+            </div>
+
             <div onclick="goToVideosPage()" class="feature-box hitech-card p-5 rounded-2xl flex items-center justify-between cursor-pointer group border-rose-500/40 bg-gradient-to-r from-rose-500/10 via-transparent to-transparent">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white flex items-center justify-center text-lg shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform">
@@ -169,7 +191,7 @@
                     <div>
                         <span class="text-[10px] font-extrabold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Video Vault</span>
                         <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-rose-600 transition-colors">เทปเรียนย้อนหลัง</h3>
-                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา (เฉพาะคอร์สที่ยังไม่หมดอายุ)</p>
+                        <p class="text-[11px] text-slate-500 font-light">ทบทวนบทเรียนและวิดีโอย้อนหลังได้ตลอดเวลา</p>
                     </div>
                 </div>
                 <div class="w-8 h-8 rounded-xl bg-rose-500/15 text-rose-600 flex items-center justify-center group-hover:translate-x-1 transition-transform">
@@ -385,6 +407,7 @@
         let historyViewMode = 'list';
         let collapsedCategories = {};
         let quickPendingCount = 0;
+        let studentTokenBalance = 0;
 
         let chartProgressInstance = null;
         let chartRadarInstance = null;
@@ -438,12 +461,14 @@
             if (profileData) {
                 currentStudentData = profileData;
                 studentFullName = profileData.full_name || profileData.username || 'นักเรียน';
+                studentTokenBalance = profileData.tokens ?? profileData.point ?? profileData.coin ?? 0;
             } else {
                 try {
                     const { data: studentData } = await mySupabase.from('students').select('*').eq('id', currentStudentId).maybeSingle();
                     if (studentData) {
                         currentStudentData = studentData;
                         studentFullName = studentData.full_name || studentData.fullname || studentData.username || 'นักเรียน';
+                        studentTokenBalance = studentData.tokens ?? studentData.point ?? studentData.coin ?? 0;
                     }
                 } catch (err) {
                     console.warn("Table students not found:", err);
@@ -453,6 +478,7 @@
             currentStudentName = studentFullName;
             document.getElementById('studentNavName').textContent = currentStudentName;
             document.getElementById('studentWelcomeBanner').textContent = `ยินดีต้อนรับ, ${currentStudentName}`;
+            document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
             updateNavAvatar(currentStudentData?.avatar_url);
             loadStudentNotificationsCount();
             return true;
@@ -472,21 +498,18 @@
         }
 
         async function logoutStudent() {
-    Swal.fire({ title: 'กำลังออกจากระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    
-    // ตั้งค่าสถานะว่าเพิ่งกด Logout เพื่อบอกหน้า index.html ไม่ให้ทำ Auto-Login ซ้ำ
-    sessionStorage.setItem('just_logged_out', 'true');
+            Swal.fire({ title: 'กำลังออกจากระบบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            sessionStorage.setItem('just_logged_out', 'true');
 
-    try {
-        await mySupabase.auth.signOut();
-    } catch (err) {
-        console.warn("Signout warning:", err);
-    }
+            try {
+                await mySupabase.auth.signOut();
+            } catch (err) {
+                console.warn("Signout warning:", err);
+            }
 
-    localStorage.clear();
-    
-    window.location.replace('index.html');
-}
+            localStorage.clear();
+            window.location.replace('index.html');
+        }
 
         async function loadStudentNotificationsCount() {
             try {
@@ -501,6 +524,157 @@
             } catch (err) {
                 console.warn("Notification count warning:", err);
             }
+        }
+
+        // ================= 🎁 STUDENT SHOP & REDEMPTION MODAL =================
+        async function openStudentShopModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+            Swal.fire({ title: 'กำลังโหลดคลังของรางวัล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // รีเฟรشยอด Token ล่าสุดจาก DB
+            const { data: freshProf } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).maybeSingle();
+            if (freshProf) {
+                studentTokenBalance = freshProf.tokens ?? freshProf.point ?? freshProf.coin ?? 0;
+                document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
+            }
+
+            // โหลดสินค้าที่เปิดขายอยู่ (is_active = true) พร้อมข้อมูลคอร์สที่ผูก
+            const { data: shopItems, error: shopErr } = await mySupabase
+                .from('shop_items')
+                .select('*, shop_item_courses(course_id, courses(title))')
+                .eq('is_active', true)
+                .order('token_price', { ascending: true });
+
+            if (shopErr) {
+                Swal.fire({ icon: 'error', title: 'โหลดร้านค้าไม่สำเร็จ', text: shopErr.message });
+                return;
+            }
+
+            // โหลดประวัติการแลกของนักเรียนคนนี้
+            const { data: myRedemptions } = await mySupabase
+                .from('redemption_logs')
+                .select('*')
+                .eq('student_id', currentStudentId);
+
+            const categoryLabels = { discount: '🏷️ ส่วนลด', cash: '💵 เงินสด', gift: '🎁 ของขวัญ', other: '✨ อื่นๆ' };
+
+            let shopHtml = `
+                <div class="space-y-4 text-left max-h-[70vh] overflow-y-auto px-1">
+                    <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-coins text-amber-500 text-lg"></i>
+                            <div>
+                                <div class="text-[11px] text-slate-500 font-semibold">Token ของคุณ</div>
+                                <div class="text-base font-extrabold text-amber-600 dark:text-amber-400">${studentTokenBalance.toLocaleString()} Token</div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-medium">กดแลกของรางวัลด้านล่างได้เลย</span>
+                    </div>
+            `;
+
+            if (!shopItems || shopItems.length === 0) {
+                shopHtml += `<div class="py-12 text-center text-slate-400 space-y-2"><i class="fas fa-store-slash text-3xl text-amber-500"></i><p class="text-xs">ยังไม่มีสินค้าเปิดจำหน่ายในขณะนี้</p></div>`;
+            } else {
+                shopHtml += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
+                shopItems.forEach(item => {
+                    const catText = categoryLabels[item.category] || item.category;
+                    const canAfford = studentTokenBalance >= item.token_price;
+                    const isOutOfStock = item.stock <= 0;
+
+                    // ตรวจสอบว่าแลกไปกี่ครั้งแล้ว
+                    const redeemedCount = (myRedemptions || []).filter(r => r.item_id === item.id && r.status !== 'rejected').length;
+                    const maxAllowed = item.max_per_user || 1;
+                    const isLimitReached = item.limit_mode !== 'unlimited' && redeemedCount >= maxAllowed;
+
+                    shopHtml += `
+                        <div class="p-4 rounded-2xl bg-white dark:bg-darkinput border ${canAfford && !isOutOfStock && !isLimitReached ? 'border-amber-500/40 shadow-sm' : 'border-slate-200 dark:border-slate-800 opacity-80'} flex flex-col justify-between space-y-3">
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center">
+                                    <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold text-[10px]">${catText}</span>
+                                    <span class="text-xs font-extrabold text-amber-500"><i class="fas fa-coins mr-1"></i>${item.token_price.toLocaleString()} Token</span>
+                                </div>
+                                <h4 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">${item.title}</h4>
+                                <p class="text-xs text-slate-500 font-light line-clamp-2">${item.description || 'ไม่มีรายละเอียดสินค้า'}</p>
+                            </div>
+                            <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px]">
+                                <span class="text-slate-400 font-medium">เหลือสต็อก: ${item.stock} ชิ้น</span>
+                                ${isOutOfStock ? '<span class="text-rose-500 font-bold">สินค้าหมด</span>' : isLimitReached ? '<span class="text-amber-500 font-bold">แลกครบสิทธิ์แล้ว</span>' : !canAfford ? '<span class="text-slate-400 font-bold">Token ไม่พอ</span>' : `<button onclick="confirmRedeemItem('${item.id}', '${item.title}',${item.token_price})" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกของรางวัล</button>`}
+                            </div>
+                        </div>
+                    `;
+                });
+                shopHtml += `</div>`;
+            }
+            shopHtml += `</div>`;
+
+            Swal.fire({
+                title: `<span class="text-base font-extrabold text-amber-600 dark:text-amber-400 flex items-center justify-center gap-2"><i class="fas fa-store"></i> ร้านค้าของรางวัล (Student Reward Shop)</span>`,
+                html: shopHtml,
+                width: '700px',
+                confirmButtonText: 'ปิดหน้าต่าง',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b'
+            });
+        }
+
+        async function confirmRedeemItem(itemId, itemTitle, itemPrice) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'ยืนยันการแลกของรางวัล?',
+                html: `คุณต้องการใช้ <b class="text-amber-500 font-bold">${itemPrice.toLocaleString()} Token</b> เพื่อแลกรับ <b>"${itemTitle}"</b> ใช่หรือไม่?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยันแลก',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#f59e0b'
+            });
+
+            if (!isConfirmed) return;
+
+            Swal.fire({ title: 'กำลังดำเนินการแลก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            // 1. ตรวจสอบ Token ล่าสุดอีกรอบ
+            const { data: prof } = await mySupabase.from('profiles').select('tokens, point, coin').eq('id', currentStudentId).single();
+            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.coin ?? 0;
+
+            if (currentTokens < itemPrice) {
+                Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
+                return;
+            }
+
+            // 2. หัก Token ของนักเรียน
+            const newTokens = currentTokens - itemPrice;
+            const { error: updateProfErr } = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
+            if (updateProfErr) {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: updateProfErr.message });
+                return;
+            }
+
+            // 3. ลดสต็อกสินค้าใน shop_items
+            const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
+            if (prodData) {
+                await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
+            }
+
+            // 4. บันทึกประวัติลง redemption_logs
+            await mySupabase.from('redemption_logs').insert([{
+                student_id: currentStudentId,
+                item_id: itemId,
+                token_spent: itemPrice,
+                status: 'pending'
+            }]);
+
+            studentTokenBalance = newTokens;
+            document.getElementById('navTokenBalance').textContent = `${studentTokenBalance.toLocaleString()} Token`;
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'แลกของรางวัลสำเร็จ!',
+                text: 'ระบบได้ส่งคำขอไปยังคุณครูเรียบร้อยแล้ว กรุณารอการตรวจสอบและจัดส่งของรางวัล',
+                confirmButtonColor: '#0284c7'
+            });
+
+            openStudentShopModal();
         }
 
         async function openEnrolledCoursesModal() {
