@@ -70,7 +70,7 @@
                     </button>
                     <div class="min-w-0">
                         <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Advanced Shop Command</h1>
-                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง</span>
+                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง (Realtime)</span>
                     </div>
                 </div>
 
@@ -95,7 +95,7 @@
                     <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
                 <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียน</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียนแบบเรียลไทม์</p>
             </div>
         </div>
 
@@ -311,9 +311,24 @@
                 const dateStr = new Date(r.created_at).toLocaleString('th-TH');
                 
                 let statusBadge = '';
-                if (r.status === 'pending') statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
-                else if (r.status === 'approved') statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
-                else if (r.status === 'rejected') statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ</span>';
+                let actionButtons = '';
+
+                if (r.status === 'pending') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
+                    // 🌟 ถ้าสถานะเป็นรอดำเนินการ ให้แสดงปุ่มอนุมัติและปฏิเสธ
+                    actionButtons = `
+                        <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
+                        <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
+                    `;
+                } else if (r.status === 'approved') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
+                    // 🌟 ถ้าอนุมัติแล้ว ปุ่มดำเนินการจะหายไป (แสดงขีดหรือข้อความแทน)
+                    actionButtons = '<span class="text-[11px] text-emerald-600 font-bold">ดำเนินการแล้ว</span>';
+                } else if (r.status === 'rejected') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ</span>';
+                    // 🌟 ถ้าปฏิเสธแล้ว ปุ่มดำเนินการจะหายไปเช่นกัน
+                    actionButtons = '<span class="text-[11px] text-rose-500 font-bold">ปฏิเสธแล้ว</span>';
+                }
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
@@ -322,10 +337,7 @@
                         <td class="py-3 px-3 sm:p-4 font-semibold">${itemTitle}</td>
                         <td class="py-3 px-3 sm:p-4 text-center font-bold text-amber-500">${Number(r.token_spent).toLocaleString()} Token</td>
                         <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
-                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">
-                            <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
-                            <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
-                        </td>
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">${actionButtons}</td>
                     </tr>
                 `;
             }).join('');
@@ -499,7 +511,6 @@
                 }
 
                 Swal.fire({ icon: 'success', title: 'เพิ่มสินค้าและผูกคอร์สสำเร็จ!', confirmButtonColor: '#f59e0b' });
-                loadShopData();
             }
         }
 
@@ -680,13 +691,11 @@
                 }
 
                 Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสินค้าสำเร็จ!', confirmButtonColor: '#0284c7' });
-                loadShopData();
             }
         }
 
         async function toggleProductStatus(id, currentStatus) {
-            const { error } = await supabaseClient.from('shop_items').update({ is_active: !currentStatus }).eq('id', id);
-            if (!error) loadShopData();
+            await supabaseClient.from('shop_items').update({ is_active: !currentStatus }).eq('id', id);
         }
 
         async function deleteProduct(id) {
@@ -694,7 +703,6 @@
                 if (res.isConfirmed) {
                     await supabaseClient.from('shop_item_courses').delete().eq('item_id', id);
                     await supabaseClient.from('shop_items').delete().eq('id', id);
-                    loadShopData();
                 }
             });
         }
@@ -702,14 +710,30 @@
         async function updateRequestStatus(reqId, newStatus) {
             const { error } = await supabaseClient.from('redemption_logs').update({ status: newStatus }).eq('id', reqId);
             if (!error) {
-                Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1500, showConfirmButton: false });
-                loadShopData();
+                Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1200, showConfirmButton: false });
             } else {
                 Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message });
             }
         }
 
+        // 🌟 ตั้งค่า Realtime Subscription ให้ข้อมูลอัปเดตอัตโนมัติแบบ Realtime
+        function setupRealtimeSubscriptions() {
+            supabaseClient
+                .channel('admin-shop-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
+                    loadShopData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_item_courses' }, () => {
+                    loadShopData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_logs' }, () => {
+                    loadShopData();
+                })
+                .subscribe();
+        }
+
         loadShopData();
+        setupRealtimeSubscriptions();
     </script>
 </body>
 </html>
