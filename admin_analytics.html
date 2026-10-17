@@ -316,7 +316,7 @@
         let allAttempts = [];
         let allProfilesList = [];
         let allProfilesMap = {};
-        let totalRegisteredStudents = 30;
+        let totalRegisteredStudents = 0;
         let examQuestionsMap = {}; 
 
         let chart1 = null, chart2 = null, chart3 = null, chart4 = null;
@@ -335,7 +335,6 @@
         });
 
         function goBack() {
-            // ตรวจสอบ course_id จาก URL หรือตัวแปร filterCourseId เพื่อพากลับหน้าคอร์สให้ถูกต้อง
             const params = new URLSearchParams(window.location.search);
             const cId = params.get('course_id') || filterCourseId;
 
@@ -460,7 +459,7 @@
             
             if (profiles) {
                 allProfilesList = profiles.filter(p => !isUserAdmin(p));
-                totalRegisteredStudents = allProfilesList.length || 1;
+                totalRegisteredStudents = allProfilesList.length; // แสดงจำนวนตามจริง (0 หากไม่มี)
                 profiles.forEach(p => {
                     const identifier = p.id || p.user_id || p.student_id;
                     if (identifier) allProfilesMap[String(identifier)] = p;
@@ -528,7 +527,7 @@
                 return { totalScore };
             });
 
-            const totalStudentsCount = combinedStudents.length || 1;
+            const totalStudentsCount = combinedStudents.length > 0 ? combinedStudents.length : 1;
             combinedStudents.forEach(s => {
                 const lowerCount = combinedStudents.filter(other => other.totalScore < s.totalScore).length;
                 s.percentile = Math.round((lowerCount / totalStudentsCount) * 100);
@@ -621,7 +620,7 @@
                     labels: labels,
                     datasets: [{ label: 'จำนวนคนส่ง (คน)', data: submissionCounts, backgroundColor: '#6366f1', borderRadius: 8 }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: totalRegisteredStudents } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: totalRegisteredStudents > 0 ? totalRegisteredStudents : 10 } } }
             });
 
             let gradeRanges = [0, 0, 0, 0]; 
@@ -764,7 +763,7 @@
                 return { sId, name, studentIdCode, totalScore, count, studentAttempts };
             });
 
-            const totalStudentsCount = combinedStudents.length || 1;
+            const totalStudentsCount = combinedStudents.length > 0 ? combinedStudents.length : 1;
             combinedStudents.forEach(s => {
                 const lowerCount = combinedStudents.filter(other => other.totalScore < s.totalScore).length;
                 s.percentile = Math.round((lowerCount / totalStudentsCount) * 100);
@@ -789,7 +788,7 @@
             document.getElementById('studentDirectoryCount').textContent = `แสดง ${filtered.length} รายการ (จากทั้งหมด ${combinedStudents.length} คน)`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ไม่พบรายชื่อนักเรียนในระบบ</td></tr>`;
                 return;
             }
 
