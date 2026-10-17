@@ -70,7 +70,7 @@
                     </button>
                     <div class="min-w-0">
                         <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Advanced Shop Command</h1>
-                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง (Realtime)</span>
+                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง (Realtime & Search)</span>
                     </div>
                 </div>
 
@@ -95,7 +95,7 @@
                     <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
                 <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียนแบบเรียลไทม์</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียนย้อนหลังรายคน</p>
             </div>
         </div>
 
@@ -133,8 +133,19 @@
             </div>
         </div>
 
-        <!-- Tab 2: Redemption Requests Queue -->
+        <!-- Tab 2: Redemption Requests Queue & History Search -->
         <div id="tabContentRequests" class="hidden space-y-4">
+            <!-- Search & Filter Bar -->
+            <div class="flex flex-col sm:flex-row gap-2 items-center justify-between bg-white dark:bg-darkbox p-3 rounded-2xl border border-amber-500/20 shadow-sm">
+                <div class="relative w-full sm:w-80">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                    <input type="text" id="searchRequestInput" oninput="filterRequests()" placeholder="ค้นหาชื่อนักเรียน หรือชื่อของรางวัล..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-amber-500 transition-all">
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-bold px-2">
+                    แสดงผล <span id="filteredCount">0</span> รายการ
+                </div>
+            </div>
+
             <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
                 <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
                     <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
@@ -205,7 +216,7 @@
                 document.getElementById('countProducts').textContent = allProducts.length;
                 renderProductsTable(allProducts);
 
-                // 4. โหลดคำขอแลกของรางวัลแบบตรงไปตรงมา
+                // 4. โหลดคำขอแลกของรางวัลทั้งหมด
                 const { data: reqData, error: reqErr } = await supabaseClient
                     .from('redemption_logs')
                     .select('*')
@@ -213,7 +224,9 @@
                 if (reqErr) throw reqErr;
                 allRequests = reqData || [];
                 document.getElementById('countRequests').textContent = allRequests.length;
-                renderRequestsTable(allRequests);
+                
+                // กรองและแสดงผลตารางคำขอ
+                filterRequests();
 
             } catch (err) {
                 console.error(err);
@@ -297,10 +310,26 @@
             }).join('');
         }
 
+        // 🔍 ฟังก์ชันกรองคำขอตามคำค้นหา (ชื่อนักเรียน / ชื่อของรางวัล)
+        function filterRequests() {
+            const keyword = (document.getElementById('searchRequestInput')?.value || '').toLowerCase().trim();
+            
+            const filtered = allRequests.filter(r => {
+                const studentName = (allProfilesMap[r.student_id] || '').toLowerCase();
+                const product = allProducts.find(p => p.id === r.item_id);
+                const itemTitle = (product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)').toLowerCase();
+                
+                return studentName.includes(keyword) || itemTitle.includes(keyword);
+            });
+
+            document.getElementById('filteredCount').textContent = filtered.length;
+            renderRequestsTable(filtered);
+        }
+
         function renderRequestsTable(requests) {
             const tbody = document.getElementById('requestsTableBody');
             if (requests.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ยังไม่มีรายการคำขอแลกของรางวัลจากนักเรียน</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ไม่พบรายการคำขอที่ค้นหา</td></tr>`;
                 return;
             }
 
@@ -315,18 +344,15 @@
 
                 if (r.status === 'pending') {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
-                    // 🌟 ถ้าสถานะเป็นรอดำเนินการ ให้แสดงปุ่มอนุมัติและปฏิเสธ
                     actionButtons = `
                         <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
                         <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
                     `;
                 } else if (r.status === 'approved') {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
-                    // 🌟 ถ้าอนุมัติแล้ว ปุ่มดำเนินการจะหายไป (แสดงขีดหรือข้อความแทน)
                     actionButtons = '<span class="text-[11px] text-emerald-600 font-bold">ดำเนินการแล้ว</span>';
                 } else if (r.status === 'rejected') {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ</span>';
-                    // 🌟 ถ้าปฏิเสธแล้ว ปุ่มดำเนินการจะหายไปเช่นกัน
                     actionButtons = '<span class="text-[11px] text-rose-500 font-bold">ปฏิเสธแล้ว</span>';
                 }
 
@@ -716,7 +742,7 @@
             }
         }
 
-        // 🌟 ตั้งค่า Realtime Subscription ให้ข้อมูลอัปเดตอัตโนมัติแบบ Realtime
+        // 🌟 ตั้งค่า Realtime Subscription
         function setupRealtimeSubscriptions() {
             supabaseClient
                 .channel('admin-shop-realtime')
