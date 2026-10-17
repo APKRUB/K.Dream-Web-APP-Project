@@ -25,9 +25,9 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
-        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
-        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
+        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+        .glass-nav { background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { 
             background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); 
             box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
@@ -40,197 +40,204 @@
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
         
         .result-bubble {
-            width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 12px; border: 2px solid #cbd5e1; background-color: #ffffff; color: #334155; transition: all 0.2s;
+            width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 11px; border: 2px solid #cbd5e1; background-color: #ffffff; color: #334155; transition: all 0.2s;
+            flex-shrink: 0;
         }
         .dark .result-bubble { border-color: #334155; background-color: #0f172a; color: #94a3b8; }
         .result-bubble.student-choice { border-color: #0284c7 !important; color: #0284c7 !important; background-color: rgba(2, 132, 199, 0.2) !important; }
-        .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
-        .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+        .result-bubble.correct-choice { background-color: #10b981 !important; color: #ffffff !important; border-color: #10b981 !important; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+        .result-bubble.wrong-choice { background-color: #ef4444 !important; color: #ffffff !important; border-color: #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
         
-        .ai-pulse-glow { box-shadow: 0 0 30px rgba(99, 102, 241, 0.2); }
-        .hide-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .ai-pulse-glow { box-shadow: 0 0 30px rgba(99, 102, 241, 0.15); }
+        .hide-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20" oncontextmenu="return false;">
 
+    <!-- Navbar (Optimized for Mobile) -->
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm" title="กลับหน้าพอร์ทัล">
-                    <i class="fas fa-arrow-left text-sm"></i>
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm shrink-0" title="กลับหน้าพอร์ทัล">
+                    <i class="fas fa-arrow-left text-xs"></i>
                 </button>
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-base shadow-md shadow-sky-500/30 shrink-0">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <div>
-                    <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none" id="resultTitleNav">ผลการสอบ & Analytics สถิติชั้นเรียน</h1>
-                    <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">ระบบประเมินผลสัมฤทธิ์อัจฉริยะ</span>
+                <div class="min-w-0">
+                    <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate" id="resultTitleNav">ผลการสอบ & Analytics</h1>
+                    <span class="text-[9px] sm:text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase truncate block">ระบบประเมินผลสัมฤทธิ์อัจฉริยะ</span>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 shrink-0">
                 <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
-                    <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    <i class="fas fa-moon text-xs" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-[96rem] mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-[96rem] mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
         
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-2 border-sky-500/40 bg-gradient-to-r from-sky-500/10 via-teal-500/5 to-transparent shadow-xl shadow-sky-500/10">
+        <!-- Header Banner -->
+        <div class="hitech-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-2 border-sky-500/40 bg-gradient-to-r from-sky-500/10 via-teal-500/5 to-transparent shadow-xl shadow-sky-500/10">
             <div class="space-y-2 w-full">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="px-3 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold text-[11px] sm:text-xs rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-sm">
                         <i class="fas fa-circle-check"></i> สถานะ: ตรวจผลคะแนนเรียบร้อย
                     </span>
-                    <button onclick="downloadSummaryReport()" class="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-2 shadow-lg shadow-sky-500/25">
-                        <i class="fas fa-file-pdf"></i> ดาวน์โหลดใบรายงานผลการสอบ (PDF)
+                    <button onclick="downloadSummaryReport()" class="px-4 py-2 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-sky-500/20">
+                        <i class="fas fa-file-pdf"></i> ดาวน์โหลด PDF[cite: 1]
                     </button>
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white pt-1" id="examTitleHeader">กำลังโหลดชื่อชุดข้อสอบ...</h2>
-                <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
-                    <span id="submissionTimeText"><i class="fas fa-clock mr-1 text-sky-500"></i> เวลาที่ส่งข้อสอบ: --</span>
+                <h2 class="text-base sm:text-2xl font-extrabold text-slate-900 dark:text-white pt-1" id="examTitleHeader">กำลังโหลดชื่อชุดข้อสอบ...</h2>
+                <div class="flex flex-wrap items-center gap-3 text-[11px] sm:text-xs text-slate-500 pt-1">
+                    <span id="submissionTimeText"><i class="fas fa-clock mr-1 text-sky-500"></i> เวลาส่ง: --</span>
                     <span id="studentNameDisplay" class="text-sky-600 dark:text-sky-400 font-extrabold"><i class="fas fa-user-graduate mr-1"></i> ผู้สอบ: กำลังโหลด...</span>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-5 rounded-3xl border border-sky-500/30 shadow-lg shrink-0 w-full md:w-auto justify-center">
-                <div class="text-center px-4 border-r border-slate-200 dark:border-slate-800">
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนที่ได้</span>
-                    <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400" id="scoreDisplay">--</span>
+            <div class="flex items-center justify-around md:justify-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-sky-500/30 shadow-lg shrink-0 w-full md:w-auto">
+                <div class="text-center px-3 border-r border-slate-200 dark:border-slate-800">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนที่ได้</span>
+                    <span class="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400" id="scoreDisplay">--</span>
                 </div>
-                <div class="text-center px-2">
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนเต็ม</span>
-                    <span class="text-3xl font-extrabold text-slate-700 dark:text-slate-200" id="totalScoreDisplay">--</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="hitech-card p-5 rounded-3xl flex items-center gap-4 hover:border-amber-500/50 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xl shadow-inner shrink-0">🏆</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">อันดับในห้อง</span>
-                    <span class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white" id="rankDisplay">#-- / --</span>
-                </div>
-            </div>
-            <div class="hitech-card p-5 rounded-3xl flex items-center gap-4 hover:border-sky-500/50 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl shadow-inner shrink-0">📊</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนเฉลี่ยห้อง</span>
-                    <span class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white" id="avgScoreDisplay">-- / --</span>
-                </div>
-            </div>
-            <div class="hitech-card p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-500/50 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xl shadow-inner shrink-0">🥇</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนสูงสุด</span>
-                    <span class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white" id="maxScoreDisplay">-- / --</span>
-                </div>
-            </div>
-            <div class="hitech-card p-5 rounded-3xl flex items-center gap-4 hover:border-purple-500/50 transition-all">
-                <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-xl shadow-inner shrink-0">🚀</div>
-                <div>
-                    <span class="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">Percentile</span>
-                    <span class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white" id="percentileDisplay">Top --%</span>
+                <div class="text-center px-3">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">คะแนนเต็ม</span>
+                    <span class="text-2xl sm:text-3xl font-extrabold text-slate-700 dark:text-slate-200" id="totalScoreDisplay">--</span>
                 </div>
             </div>
         </div>
 
-        <div class="hitech-card p-6 rounded-3xl space-y-4">
+        <!-- Stats Grid (Responsive for Mobile) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="hitech-card p-4 sm:p-5 rounded-2xl flex items-center gap-3 hover:border-amber-500/50 transition-all">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-base sm:text-xl shadow-inner shrink-0">🏆</div>
+                <div class="min-w-0">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider truncate">อันดับในห้อง</span>
+                    <span class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white truncate block" id="rankDisplay">#-- / --</span>
+                </div>
+            </div>
+            <div class="hitech-card p-4 sm:p-5 rounded-2xl flex items-center gap-3 hover:border-sky-500/50 transition-all">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-base sm:text-xl shadow-inner shrink-0">📊</div>
+                <div class="min-w-0">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider truncate">คะแนนเฉลี่ย</span>
+                    <span class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white truncate block" id="avgScoreDisplay">-- / --</span>
+                </div>
+            </div>
+            <div class="hitech-card p-4 sm:p-5 rounded-2xl flex items-center gap-3 hover:border-emerald-500/50 transition-all">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-base sm:text-xl shadow-inner shrink-0">🥇</div>
+                <div class="min-w-0">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider truncate">คะแนนสูงสุด</span>
+                    <span class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white truncate block" id="maxScoreDisplay">-- / --</span>
+                </div>
+            </div>
+            <div class="hitech-card p-4 sm:p-5 rounded-2xl flex items-center gap-3 hover:border-purple-500/50 transition-all">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-base sm:text-xl shadow-inner shrink-0">🚀</div>
+                <div class="min-w-0">
+                    <span class="text-[10px] text-slate-400 block font-bold uppercase tracking-wider truncate">Percentile</span>
+                    <span class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white truncate block" id="percentileDisplay">Top --%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2.5">
+                <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-chart-bar text-sky-500"></i> แผนภูมิการกระจายตัวของคะแนนรวมในชั้นเรียน
                 </h3>
-                <span class="px-3 py-1 bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold border" id="totalStudentsText">ผู้เข้าสอบทั้งหมด: -- คน</span>
+                <span class="px-2.5 py-1 bg-slate-100 dark:bg-darkinput text-slate-600 dark:text-slate-300 rounded-xl text-[11px] font-bold border" id="totalStudentsText">ผู้เข้าสอบทั้งหมด: -- คน</span>
             </div>
-            <div class="h-64 sm:h-72 w-full relative">
+            <div class="h-56 sm:h-72 w-full relative">
                 <canvas id="scoreDistributionChart"></canvas>
             </div>
         </div>
 
-        <div class="hitech-card ai-pulse-glow p-6 sm:p-8 rounded-3xl space-y-4 border-2 border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-500/10">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-indigo-500/20 gap-3">
+        <!-- AI Diagnostic Engine Section -->
+        <div class="hitech-card ai-pulse-glow p-5 sm:p-8 rounded-2xl sm:rounded-3xl space-y-4 border-2 border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-transparent to-sky-500/10">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 border-b border-indigo-500/20 gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-base shadow-lg shadow-indigo-500/30">
+                    <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center text-sm sm:text-base shadow-lg shadow-indigo-500/30 shrink-0">
                         <i class="fas fa-brain"></i>
                     </div>
                     <div>
-                        <h3 class="font-extrabold text-base text-indigo-600 dark:text-indigo-300">AI Gemini Tutor Diagnostic Engine (PDF Alignment)</h3>
-                        <p class="text-xs text-slate-400 font-light">วิเคราะห์ผลสัมฤทธิ์เชิงลึกเทียบกับเนื้อหาบทเรียนและชุดข้อสอบ</p>
+                        <h3 class="font-extrabold text-xs sm:text-base text-indigo-600 dark:text-indigo-300">AI Gemini Tutor Diagnostic Engine</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-400 font-light">วิเคราะห์ผลสัมฤทธิ์เชิงลึกเทียบกับเนื้อหาบทเรียน</p>
                     </div>
                 </div>
-                <span class="px-3.5 py-1.5 bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-extrabold border border-indigo-500/30 flex items-center gap-1.5 shadow-sm">
-                    <i class="fas fa-bolt"></i> Powered by Gemini 1.5 Flash
+                <span class="px-3 py-1 bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-xl text-[10px] sm:text-xs font-extrabold border border-indigo-500/30 flex items-center gap-1 shadow-sm">
+                    <i class="fas fa-bolt"></i> Gemini 1.5 Flash
                 </span>
             </div>
             <div id="aiAnalysisContainer" class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed space-y-3">
-                <div class="text-slate-400 py-10 text-center"><i class="fas fa-spinner fa-spin mr-2 text-indigo-500 text-lg"></i> AI กำลังเชื่อมต่อและวิเคราะห์ข้อมูลจากเอกสาร PDF...</div>
+                <div class="text-slate-400 py-8 text-center text-xs"><i class="fas fa-spinner fa-spin mr-2 text-indigo-500 text-base"></i> AI กำลังเชื่อมต่อและวิเคราะห์ข้อมูล...</div>
             </div>
         </div>
 
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl space-y-5">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 gap-3">
-                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2.5">
-                    <i class="fas fa-table-cells text-sky-500"></i> ตารางเปรียบเทียบเปอร์เซ็นต์คะแนนแต่ละหมวดหมู่กับเกณฑ์มาตรฐาน
+        <!-- Category Comparison Table -->
+        <div class="hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
+                <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-table-cells text-sky-500"></i> เปอร์เซ็นต์คะแนนแต่ละหมวดหมู่กับเกณฑ์มาตรฐาน
                 </h3>
-                <span class="text-xs text-slate-400 font-light bg-slate-100 dark:bg-darkinput px-3 py-1.5 rounded-xl border">เกณฑ์ผ่าน: $\ge 70\%$ (ดีเยี่ยม/ผ่าน), $50-69\%$ (ปานกลาง), $<50\%$ (ควรปรับปรุง)</span>
+                <span class="text-[10px] sm:text-[11px] text-slate-400 font-light bg-slate-100 dark:bg-darkinput px-2.5 py-1 rounded-xl border">เกณฑ์ผ่าน: $\ge 70\%$</span>
             </div>
             <div class="overflow-x-auto hide-scrollbar">
-                <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <table class="w-full text-left border-collapse text-xs sm:text-sm whitespace-nowrap sm:whitespace-normal">
                     <thead>
-                        <tr class="bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">
-                            <th class="p-3.5 rounded-l-2xl">หมวดหมู่ข้อสอบ (Category)</th>
-                            <th class="p-3.5 text-center">ทำได้ / ทั้งหมด</th>
-                            <th class="p-3.5 text-center">% คะแนนที่ได้</th>
-                            <th class="p-3.5 text-center">เกณฑ์มาตรฐาน</th>
-                            <th class="p-3.5 text-center rounded-r-2xl">ผลการประเมิน</th>
+                        <tr class="bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px] sm:text-[11px]">
+                            <th class="p-3 rounded-l-xl">หมวดหมู่ข้อสอบ</th>
+                            <th class="p-3 text-center">ทำได้ / ทั้งหมด</th>
+                            <th class="p-3 text-center">% คะแนน</th>
+                            <th class="p-3 text-center">เกณฑ์</th>
+                            <th class="p-3 text-center rounded-r-xl">ผลประเมิน</th>
                         </tr>
                     </thead>
                     <tbody id="categoryComparisonTableBody" class="divide-y divide-slate-200/50 dark:divide-slate-800/50">
-                        <tr>
-                            <td colspan="5" class="text-center py-8 text-slate-400">กำลังประมวลผลข้อมูลหมวดหมู่...</td>
-                        </tr>
+                        <tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">กำลังประมวลผลหมวดหมู่...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-5 rounded-3xl space-y-4 sticky top-24">
+        <!-- Questions & PDF Viewer Grid (Mobile friendly order) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+            <!-- PDF Viewer (Stacked below or above on mobile) -->
+            <div id="pdfViewerCard" class="hidden lg:col-span-6 hitech-card p-4 sm:p-5 rounded-2xl sm:rounded-3xl space-y-3 lg:sticky lg:top-24">
                 <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
-                    <h3 class="font-bold text-xs sm:text-sm text-red-600 flex items-center gap-2"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบทบทวน (ความคมชัดสูง)</h3>
-                    <span class="px-2.5 py-1 bg-red-500/10 text-red-600 text-[10px] font-extrabold rounded-xl border border-red-500/20"><i class="fas fa-shield-alt mr-1"></i> ป้องกันการดาวน์โหลด</span>
+                    <h3 class="font-bold text-xs sm:text-sm text-red-600 flex items-center gap-1.5"><i class="fas fa-file-pdf"></i> เอกสารข้อสอบทบทวน</h3>
+                    <span class="px-2 py-0.5 bg-red-500/10 text-red-600 text-[9px] font-extrabold rounded-lg border border-red-500/20">🔒 ป้องกันดาวน์โหลด</span>
                 </div>
-                <div id="pdfContainer" class="w-full h-[78vh] bg-slate-100 dark:bg-slate-900 rounded-2xl overflow-y-auto border p-4 flex flex-col items-center gap-4 select-none hide-scrollbar" oncontextmenu="return false;">
-                    <div class="text-slate-400 text-xs py-20 flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดเอกสารข้อสอบ...</div>
+                <div id="pdfContainer" class="w-full h-[60vh] lg:h-[75vh] bg-slate-100 dark:bg-slate-900 rounded-xl overflow-y-auto border p-3 flex flex-col items-center gap-3 select-none hide-scrollbar" oncontextmenu="return false;">
+                    <div class="text-slate-400 text-xs py-16 flex items-center gap-2"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดเอกสาร...</div>
                 </div>
             </div>
 
-            <div id="rightResultCard" class="lg:col-span-6 hitech-card p-6 rounded-3xl space-y-5">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
-                    <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2.5">
-                        <i class="fas fa-list-check text-sky-500"></i> เฉลยคำตอบและผลการทำข้อสอบ (ข้อละ 1 คะแนน)
+            <!-- Detailed Answers Card -->
+            <div id="rightResultCard" class="lg:col-span-6 hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <h3 class="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-list-check text-sky-500"></i> เฉลยคำตอบรายข้อ
                     </h3>
                     
-                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkinput p-1 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs shadow-inner">
-                        <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-xl font-bold transition-all bg-sky-600 text-white shadow-sm">ทั้งหมด (<span id="count-all">0</span>)</button>
-                        <button onclick="setFilter('correct')" id="filter-correct" class="px-3 py-1.5 rounded-xl font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-emerald-500">ตอบถูก (<span id="count-correct">0</span>)</button>
-                        <button onclick="setFilter('wrong')" id="filter-wrong" class="px-3 py-1.5 rounded-xl font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-red-500">ตอบผิด (<span id="count-wrong">0</span>)</button>
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] w-full sm:w-auto justify-center">
+                        <button onclick="setFilter('all')" id="filter-all" class="flex-1 sm:flex-none px-2.5 py-1 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm">ทั้งหมด (<span id="count-all">0</span>)</button>
+                        <button onclick="setFilter('correct')" id="filter-correct" class="flex-1 sm:flex-none px-2.5 py-1 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-emerald-500">ถูก (<span id="count-correct">0</span>)</button>
+                        <button onclick="setFilter('wrong')" id="filter-wrong" class="flex-1 sm:flex-none px-2.5 py-1 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-red-500">ผิด (<span id="count-wrong">0</span>)</button>
                     </div>
                 </div>
 
-                <div id="resultsContainer" class="space-y-4 max-h-[75vh] overflow-y-auto pr-1 hide-scrollbar">
-                    <div class="text-center py-16 text-slate-400 text-xs flex flex-col items-center gap-2">
-                        <i class="fas fa-spinner fa-spin text-xl text-sky-500"></i>
+                <div id="resultsContainer" class="space-y-3.5 max-h-[70vh] overflow-y-auto pr-1 hide-scrollbar">
+                    <div class="text-center py-12 text-slate-400 text-xs flex flex-col items-center gap-2">
+                        <i class="fas fa-spinner fa-spin text-lg text-sky-500"></i>
                         กำลังประมวลผลข้อมูลเฉลยรายข้อ...
                     </div>
                 </div>
             </div>
-
         </div>
 
     </main>
@@ -297,15 +304,10 @@
             return null;
         }
 
-        // ฟังก์ชันช่วยแปลงข้อมูลตัวเลือก q.options ให้เป็น Array ที่ถูกต้องเสมอ (รองรับทั้ง JSON string และ Array)
         function getQuestionOptions(q) {
             let opts = q.options;
             if (typeof opts === 'string') {
-                try {
-                    opts = JSON.parse(opts);
-                } catch(e) {
-                    opts = null;
-                }
+                try { opts = JSON.parse(opts); } catch(e) { opts = null; }
             }
             if (!Array.isArray(opts) || opts.length === 0) {
                 opts = ['ก', 'ข', 'ค', 'ง'];
@@ -354,16 +356,16 @@
 
             document.getElementById('examTitleHeader').textContent = cachedExamTitle;
             document.getElementById('resultTitleNav').textContent = cachedExamTitle;
-            document.getElementById('submissionTimeText').innerHTML = `<i class="fas fa-clock mr-1 text-sky-500"></i> เวลาที่ส่งข้อสอบ: ${new Date(attempt.submission_time || attempt.submitted_at || attempt.created_at || Date.now()).toLocaleString('th-TH')}`;
+            document.getElementById('submissionTimeText').innerHTML = `<i class="fas fa-clock mr-1 text-sky-500"></i> เวลาส่ง: ${new Date(attempt.submission_time || attempt.submitted_at || attempt.created_at || Date.now()).toLocaleString('th-TH')}`;
             document.getElementById('studentNameDisplay').innerHTML = `<i class="fas fa-user-graduate mr-1"></i> ผู้สอบ: ${studentNameStr}`;
 
             if (exam && exam.pdf_url) {
                 document.getElementById('pdfViewerCard').classList.remove('hidden');
-                document.getElementById('rightResultCard').className = 'lg:col-span-6 hitech-card p-6 rounded-3xl space-y-5';
+                document.getElementById('rightResultCard').className = 'lg:col-span-6 hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4';
                 renderSecurePDF(exam.pdf_url);
             } else {
                 document.getElementById('pdfViewerCard').classList.add('hidden');
-                document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-6 rounded-3xl space-y-5';
+                document.getElementById('rightResultCard').className = 'lg:col-span-12 hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-4';
             }
 
             let { data: questions } = await mySupabase.from('questions').select('*').eq('exam_id', attempt.exam_id).order('question_number', { ascending: true });
@@ -441,7 +443,7 @@
 
             const entries = Object.entries(cachedCategoryStats);
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">ไม่พบข้อมูลหมวดหมู่ข้อสอบ</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-xs">ไม่พบข้อมูลหมวดหมู่ข้อสอบ</td></tr>`;
                 return;
             }
 
@@ -459,12 +461,12 @@
 
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-darkinput transition-all">
-                        <td class="p-3.5 font-bold text-slate-800 dark:text-slate-200">🏷️ ${tag}</td>
-                        <td class="p-3.5 text-center">${stat.correct} / ${stat.total} ข้อ</td>
-                        <td class="p-3.5 text-center font-extrabold text-sky-600 dark:text-sky-400">${pct}%</td>
-                        <td class="p-3.5 text-center text-slate-400 text-xs">เกณฑ์มาตรฐาน 70%</td>
-                        <td class="p-3.5 text-center">
-                            <span class="px-3 py-1 rounded-xl text-[11px] font-bold border ${badgeColor}">${evalText}</span>
+                        <td class="p-3 font-bold text-slate-800 dark:text-slate-200">🏷️ ${tag}</td>
+                        <td class="p-3 text-center">${stat.correct} / ${stat.total}</td>
+                        <td class="p-3 text-center font-extrabold text-sky-600 dark:text-sky-400">${pct}%</td>
+                        <td class="p-3 text-center text-slate-400 text-xs">70%</td>
+                        <td class="p-3 text-center">
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold border ${badgeColor}">${evalText}</span>
                         </td>
                     </tr>
                 `;
@@ -472,16 +474,10 @@
         }
 
         async function loadClassAnalytics(examId, studentScore, totalQuestions) {
-            let { data: attempts, error } = await mySupabase
-                .from('exam_attempts')
-                .select('*')
-                .eq('exam_id', examId);
-
+            let { data: attempts, error } = await mySupabase.from('exam_attempts').select('*').eq('exam_id', examId);
             if (error || !attempts || attempts.length === 0) {
                 const { data: allAttempts } = await mySupabase.from('exam_attempts').select('*');
-                if (allAttempts) {
-                    attempts = allAttempts.filter(a => String(a.exam_id) === String(examId));
-                }
+                if (allAttempts) attempts = allAttempts.filter(a => String(a.exam_id) === String(examId));
             }
 
             if (!attempts || attempts.length === 0) {
@@ -502,7 +498,6 @@
             const totalStudents = scores.length;
             const sortedScores = [...scores].sort((a, b) => b - a);
             const rank = sortedScores.indexOf(studentScore) + 1;
-
             const avgScore = (scores.reduce((a, b) => a + b, 0) / totalStudents).toFixed(1);
             const maxScore = Math.max(...scores);
             const topPercentile = Math.max(1, Math.round((rank / totalStudents) * 100));
@@ -533,9 +528,7 @@
             if (!canvasCtx) return;
             const ctx = canvasCtx.getContext('2d');
             
-            if (scoreDistributionChartInstance) {
-                scoreDistributionChartInstance.destroy();
-            }
+            if (scoreDistributionChartInstance) scoreDistributionChartInstance.destroy();
 
             scoreDistributionChartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -547,7 +540,7 @@
                         backgroundColor: backgroundColors,
                         borderColor: borderColors,
                         borderWidth: 2,
-                        borderRadius: 8
+                        borderRadius: 6
                     }]
                 },
                 options: {
@@ -558,9 +551,7 @@
                         tooltip: {
                             callbacks: {
                                 afterLabel: function(context) {
-                                    if (context.dataIndex === studentScore) {
-                                        return '📍 คะแนนของคุณ';
-                                    }
+                                    if (context.dataIndex === studentScore) return '📍 คะแนนของคุณ';
                                 }
                             }
                         }
@@ -582,14 +573,14 @@
 
                 for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                     const page = await pdfDoc.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 2.5 });
+                    const viewport = page.getViewport({ scale: 2.0 });
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
                     canvas.style.width = '100%';
                     canvas.style.height = 'auto';
-                    canvas.className = 'shadow-md rounded-2xl mb-4 bg-white';
+                    canvas.className = 'shadow-md rounded-xl mb-3 bg-white';
                     
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
                     container.appendChild(canvas);
@@ -602,41 +593,14 @@
         function downloadSummaryReport() {
             let categoryTableRowsHtml = Object.entries(cachedCategoryStats).map(([tag, stat]) => {
                 const pct = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
-                let evalText = pct >= 70 ? 'ดีเยี่ยม (ผ่านเกณฑ์)' : (pct >= 50 ? 'ปานกลาง' : 'ควรปรับปรุง');
+                let evalText = pct >= 70 ? 'ดีเยี่ยม' : (pct >= 50 ? 'ปานกลาง' : 'ควรปรับปรุง');
                 let colorHex = pct >= 70 ? '#10b981' : (pct >= 50 ? '#f59e0b' : '#ef4444');
                 return `
                     <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
-                        <td style="padding: 8px;"><b>${tag}</b></td>
-                        <td style="padding: 8px; text-align: center;">${stat.correct} / ${stat.total} ข้อ</td>
-                        <td style="padding: 8px; text-align: center; font-weight: bold; color: ${colorHex};">${pct}%</td>
-                        <td style="padding: 8px; text-align: center;">เกณฑ์มาตรฐาน 70%</td>
-                        <td style="padding: 8px; text-align: center; color: ${colorHex}; font-weight: bold;">${evalText}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            let detailedRowsHtml = globalQuestions.map((q, idx) => {
-                const qNum = q.question_number || (idx + 1);
-                let userAns = '-';
-                if (globalRawAnswers && typeof globalRawAnswers === 'object') {
-                    userAns = globalRawAnswers[q.id] || globalRawAnswers[String(q.id)] || globalRawAnswers[q.question_number] || '-';
-                }
-                const correctAns = q.correct_answer || q.answer || q.solution || '-';
-                const studentIdx = parseChoiceIndex(userAns);
-                const correctIdx = parseChoiceIndex(correctAns);
-                const isCorrect = studentIdx !== null && studentIdx !== undefined && studentIdx === correctIdx;
-                const studentChoiceChar = studentIdx !== null && studentIdx !== undefined ? String.fromCharCode(65 + studentIdx) : userAns;
-                const correctChoiceChar = correctIdx !== null ? String.fromCharCode(65 + correctIdx) : correctAns;
-
-                return `
-                    <tr style="border-bottom: 1px solid #e2e8f0; font-size: 11px;">
-                        <td style="padding: 8px; text-align: center;">ข้อ ${qNum}</td>
-                        <td style="padding: 8px;">${q.category_tag || 'ทั่วไป'}</td>
-                        <td style="padding: 8px; text-align: center; font-weight: bold; color: ${isCorrect ? '#10b981' : '#ef4444'};">
-                            ${isCorrect ? 'ถูก (+1)' : 'ผิด (0)'}
-                        </td>
-                        <td style="padding: 8px; text-align: center;"><b>${studentChoiceChar}</b></td>
-                        <td style="padding: 8px; text-align: center;"><b>${correctChoiceChar}</b></td>
+                        <td style="padding: 6px;"><b>${tag}</b></td>
+                        <td style="padding: 6px; text-align: center;">${stat.correct} / ${stat.total}</td>
+                        <td style="padding: 6px; text-align: center; font-weight: bold; color: ${colorHex};">${pct}%</td>
+                        <td style="padding: 6px; text-align: center; color: ${colorHex}; font-weight: bold;">${evalText}</td>
                     </tr>
                 `;
             }).join('');
@@ -650,56 +614,34 @@
                     <title>รายงานผลการสอบ - ${cachedStudentName}</title>
                     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
                     <style>
-                        body { font-family: 'Prompt', sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
-                        h2 { color: #0284c7; margin-bottom: 5px; }
-                        h3 { margin-top: 25px; color: #0f172a; border-bottom: 2px solid #0284c7; padding-bottom: 5px; }
-                        .header-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                        th { background: #0284c7; color: white; padding: 10px; font-size: 12px; text-align: left; }
+                        body { font-family: 'Prompt', sans-serif; padding: 20px; color: #1e293b; background: #ffffff; }
+                        h2 { color: #0284c7; margin-bottom: 5px; font-size: 18px; }
+                        h3 { margin-top: 20px; color: #0f172a; border-bottom: 2px solid #0284c7; padding-bottom: 4px; font-size: 14px; }
+                        .header-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+                        th { background: #0284c7; color: white; padding: 8px; font-size: 11px; text-align: left; }
                     </style>
                 </head>
                 <body>
                     <div class="header-box">
-                        <h2>ใบรายงานผลคะแนนสอบออนไลน์ (Detailed Exam Report)</h2>
-                        <p><b>ชื่อชุดข้อสอบ:</b> ${cachedExamTitle}</p>
-                        <p><b>ผู้เข้าสอบ:</b> ${cachedStudentName}</p>
-                        <p><b>คะแนนที่ทำได้:</b> <span style="color: #10b981; font-size: 18px; font-weight: bold;">${cachedScore} / ${cachedTotal}</span> คะแนน (นับข้อ)</p>
+                        <h2>ใบรายงานผลคะแนนสอบออนไลน์</h2>
+                        <p><b>ชุดข้อสอบ:</b> ${cachedExamTitle}</p>
+                        <p><b>ผู้สอบ:</b> ${cachedStudentName}</p>
+                        <p><b>คะแนนที่ได้:</b> <span style="color: #10b981; font-size: 16px; font-weight: bold;">${cachedScore} / ${cachedTotal}</span> คะแนน</p>
                     </div>
-
-                    <h3>ตารางเปรียบเทียบ % คะแนนแต่ละหมวดหมู่กับเกณฑ์มาตรฐาน</h3>
+                    <h3>สรุปผลการประเมินรายหมวดหมู่</h3>
                     <table>
                         <thead>
                             <tr>
-                                <th>หมวดหมู่ข้อสอบ</th>
+                                <th>หมวดหมู่</th>
                                 <th style="text-align: center;">ทำได้ / ทั้งหมด</th>
                                 <th style="text-align: center;">% ที่ได้</th>
-                                <th style="text-align: center;">เกณฑ์มาตรฐาน</th>
-                                <th style="text-align: center;">ผลการประเมิน</th>
+                                <th style="text-align: center;">ผลประเมิน</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${categoryTableRowsHtml}
-                        </tbody>
+                        <tbody>${categoryTableRowsHtml}</tbody>
                     </table>
-
-                    <h3>รายละเอียดคำตอบรายข้อ</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="text-align: center;">ข้อที่</th>
-                                <th>หมวดหมู่</th>
-                                <th style="text-align: center;">ผลการตรวจ</th>
-                                <th style="text-align: center;">คำตอบของคุณ</th>
-                                <th style="text-align: center;">เฉลยที่ถูกต้อง</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${detailedRowsHtml}
-                        </tbody>
-                    </table>
-                    <script>
-                        window.onload = function() { window.print(); }
-                    <\/script>
+                    <script>window.onload = function() { window.print(); }<\/script>
                 </body>
                 </html>
             `);
@@ -711,9 +653,9 @@
             ['all', 'correct', 'wrong'].forEach(f => {
                 const btn = document.getElementById(`filter-${f}`);
                 if (f === filterType) {
-                    btn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all bg-sky-600 text-white shadow-sm';
+                    btn.className = 'flex-1 sm:flex-none px-2.5 py-1 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm';
                 } else {
-                    btn.className = 'px-3 py-1.5 rounded-xl font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500';
+                    btn.className = 'flex-1 sm:flex-none px-2.5 py-1 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500';
                 }
             });
             renderDetailedResults();
@@ -796,14 +738,14 @@
 
                 if (isEssay) {
                     return `
-                        <div class="p-5 bg-white dark:bg-darkinput rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-sm">
+                        <div class="p-4 bg-white dark:bg-darkinput rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm">
                             <div class="flex justify-between items-center">
-                                <span class="px-3 py-1 bg-amber-500/10 text-amber-600 font-bold text-xs rounded-xl">ข้อที่ ${qNum} (อัตนัย)</span>
-                                <span class="text-xs font-bold text-amber-500">รอตรวจ</span>
+                                <span class="px-2.5 py-0.5 bg-amber-500/10 text-amber-600 font-bold text-[11px] rounded-lg">ข้อที่ ${qNum} (อัตนัย)</span>
+                                <span class="text-[11px] font-bold text-amber-500">รอตรวจ</span>
                             </div>
                             <div class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">${q.question_text || q.content || ''}</div>
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border text-xs">
-                                <span class="text-[10px] font-bold text-slate-400 block mb-1">คำตอบของคุณ:</span>
+                            <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border text-xs">
+                                <span class="text-[10px] font-bold text-slate-400 block mb-0.5">คำตอบของคุณ:</span>
                                 <p class="text-slate-700 dark:text-slate-300">${userAns !== '-' ? userAns : '- ไม่ได้ตอบ -'}</p>
                             </div>
                         </div>
@@ -817,42 +759,42 @@
 
                         if (isStudentPicked && isCorrectOpt) {
                             bubbleClass += ' correct-choice';
-                            badgeIcon = '<i class="fas fa-check text-xs ml-1"></i>';
+                            badgeIcon = '<i class="fas fa-check text-[10px] ml-auto"></i>';
                         } else if (isStudentPicked && !isCorrectOpt) {
                             bubbleClass += ' wrong-choice';
-                            badgeIcon = '<i class="fas fa-times text-xs ml-1"></i>';
+                            badgeIcon = '<i class="fas fa-times text-[10px] ml-auto"></i>';
                         } else if (!isStudentPicked && isCorrectOpt) {
                             bubbleClass += ' correct-choice';
-                            badgeIcon = '<i class="fas fa-check text-xs ml-1 opacity-70"></i>';
+                            badgeIcon = '<i class="fas fa-check text-[10px] ml-auto opacity-70"></i>';
                         } else if (isStudentPicked) {
                             bubbleClass += ' student-choice';
                         }
 
                         return `
-                            <div class="flex items-center gap-3 p-2 rounded-xl transition-all">
+                            <div class="flex items-center gap-2.5 p-2 rounded-xl transition-all bg-white dark:bg-darkinput border border-slate-100 dark:border-slate-800/80">
                                 <div class="${bubbleClass}">${String.fromCharCode(65 + optIdx)}</div>
-                                <span class="text-xs sm:text-sm text-slate-700 dark:text-slate-300">${optText}</span>
+                                <span class="text-xs text-slate-700 dark:text-slate-300 truncate">${optText}</span>
                                 ${badgeIcon}
                             </div>
                         `;
                     }).join('');
 
                     return `
-                        <div class="p-5 bg-white dark:bg-darkinput rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-sm">
+                        <div class="p-4 bg-white dark:bg-darkinput rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
                             <div class="flex justify-between items-center">
-                                <span class="px-3 py-1 bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-xs rounded-xl">ข้อที่ ${qNum} (${q.category_tag || 'ทั่วไป'})</span>
-                                <span class="px-3 py-1 rounded-xl text-xs font-bold ${isCorrect ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}">
+                                <span class="px-2.5 py-0.5 bg-sky-500/10 text-sky-600 dark:text-sky-300 font-bold text-[11px] rounded-lg">ข้อ ${qNum} (${q.category_tag || 'ทั่วไป'})</span>
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold ${isCorrect ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-red-500/10 text-red-600 border border-red-500/20'}">
                                     ${isCorrect ? '<i class="fas fa-check-circle mr-1"></i> ถูก (+1)' : '<i class="fas fa-times-circle mr-1"></i> ผิด (0)'}
                                 </span>
                             </div>
 
-                            ${q.image_url ? `<div><img src="${q.image_url}" class="max-h-48 rounded-2xl border shadow-sm"></div>` : ''}
+                            ${q.image_url ? `<div><img src="${q.image_url}" class="max-h-40 rounded-xl border shadow-sm object-cover"></div>` : ''}
 
                             <div class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
                                 ${q.question_text || q.content || ''}
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border">
+                            <div class="grid grid-cols-1 gap-1.5 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border">
                                 ${bubblesHtml}
                             </div>
                         </div>
@@ -879,20 +821,15 @@
                         const textContent = await page.getTextContent();
                         pdfTextContent += textContent.items.map(item => item.str).join(" ") + " ";
                     }
-                } catch (e) {
-                    console.warn("Could not extract PDF text for AI:", e);
-                }
+                } catch (e) { console.warn("PDF extraction warning:", e); }
             }
 
             const prompt = `
 คุณคือ AI Tutor ผู้เชี่ยวชาญด้านการวิเคราะห์ผลการเรียน
 ข้อมูลประกอบการวิเคราะห์:
 - ชื่อชุดข้อสอบ: "${examTitle}"
-- เนื้อหาข้อสอบจาก PDF: ${pdfTextContent ? pdfTextContent.substring(0, 2000) : "ไม่มีข้อมูล PDF"}
-- คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน (นับข้อละ 1 คะแนน)
-
-กรุณาสรุปผลสัมฤทธิ์ภาพรวมเป็นภาษาไทย โดยให้กระชับ ชัดเจน ไม่ต้องระบุข้อที่ทำผิดแยกย่อย (เน้นสรุปภาพรวมและให้กำลังใจ)
-ตอบเป็น HTML สั้นๆ (ใช้แท็ก h4, p, ul, li ได้)
+- คะแนนรวมที่ได้: ${score} จาก ${total} คะแนน
+สรุปผลสัมฤทธิ์ภาพรวมเป็นภาษาไทย สั้นกระชับ เป็นกันเอง ตอบเป็น HTML แท็ก h4, p, ul, li
 `;
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY.trim()}`;
@@ -909,7 +846,7 @@
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                     let aiText = data.candidates[0].content.parts[0].text;
                     aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
-                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-darkinput p-6 rounded-2xl border border-indigo-500/30 shadow-inner">${aiText}</div>`;
+                    container.innerHTML = `<div class="space-y-3 bg-white dark:bg-darkinput p-4 sm:p-5 rounded-xl border border-indigo-500/30 shadow-inner">${aiText}</div>`;
                 } else {
                     renderLocalAIAnalysis(questions, answerMap, score, total);
                 }
@@ -925,17 +862,17 @@
 
             let breakdownHtml = Object.entries(cachedCategoryStats).map(([tag, stat]) => {
                 const p = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
-                return `<li class="flex items-center justify-between text-xs sm:text-sm py-2 border-b border-slate-200/50 dark:border-slate-800/50">
+                return `<li class="flex items-center justify-between text-xs py-1.5 border-b border-slate-200/50 dark:border-slate-800/50">
                     <span>🏷️ <b>${tag}</b></span>
                     <span class="font-bold ${p >= 70 ? 'text-emerald-500' : 'text-amber-500'}">${stat.correct}/${stat.total} ข้อ (${p}%)</span>
                 </li>`;
             }).join('');
 
             container.innerHTML = `
-                <div class="space-y-4 bg-white dark:bg-darkinput p-6 rounded-2xl border border-indigo-500/30 shadow-inner">
-                    <h4 class="font-bold text-xs sm:text-sm text-sky-600 dark:text-sky-400 flex items-center gap-2"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม (${score}/${total} คะแนน)</h4>
+                <div class="space-y-3 bg-white dark:bg-darkinput p-4 sm:p-5 rounded-xl border border-indigo-500/30 shadow-inner">
+                    <h4 class="font-bold text-xs sm:text-sm text-sky-600 dark:text-sky-400 flex items-center gap-1.5"><i class="fas fa-chart-pie"></i> สรุปผลสัมฤทธิ์ภาพรวม (${score}/${total} คะแนน)</h4>
                     <p class="text-slate-700 dark:text-slate-300 text-xs sm:text-sm">${performanceSummary}</p>
-                    <div class="pt-2"><ul class="space-y-1.5">${breakdownHtml}</ul></div>
+                    <div class="pt-1"><ul class="space-y-1">${breakdownHtml}</ul></div>
                 </div>
             `;
         }
