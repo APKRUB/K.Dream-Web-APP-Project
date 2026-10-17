@@ -42,6 +42,8 @@
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(186, 230, 253, 0.8); box-shadow: 0 10px 30px -10px rgba(2, 132, 199, 0.08); transition: all 0.25s ease; }
         .dark .hitech-card { background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(30, 58, 138, 0.5); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); }
+        div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
+        .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
@@ -74,13 +76,16 @@
                 <h2 class="font-extrabold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                     <i class="fas fa-address-book text-sky-500"></i> รายชื่อบัญชีนักเรียนในระบบ
                 </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น, โรงเรียน, LINE ID, อีเมล)</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">จัดการสร้างบัญชีผู้ใช้ใหม่ หรือแก้ไขข้อมูลส่วนตัวของนักเรียน (ชื่อจริง, นามสกุล, ชื่อเล่น, รหัสนักเรียน, ระดับชั้น, โรงเรียน, LINE ID, อีเมล)</p>
             </div>
             
-            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                <div class="relative flex-1 md:w-72">
+            <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                <button onclick="openCreateStudentModal()" class="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 text-white font-bold rounded-xl text-xs shadow-md shadow-sky-500/20 transition-all flex items-center gap-2 shrink-0">
+                    <i class="fas fa-user-plus"></i> สร้างบัญชีนักเรียนใหม่
+                </button>
+                <div class="relative flex-1 md:w-64">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, โรงเรียน..." class="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
+                    <input type="text" id="searchInput" oninput="renderStudentsTable()" placeholder="🔍 ค้นหาชื่อ, นามสกุล, โรงเรียน..." class="w-full pl-9 pr-3 py-2.5 bg-slate-100 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-sky-500 font-bold">
                 </div>
             </div>
         </div>
@@ -219,6 +224,110 @@
             }).join('');
         }
 
+        // ➕ ฟังก์ชันเปิด Modal สำหรับสร้างบัญชีนักเรียนใหม่
+        async function openCreateStudentModal() {
+            const isDark = document.documentElement.classList.contains('dark');
+
+            const { value: formValues } = await Swal.fire({
+                title: '➕ สร้างบัญชีนักเรียนใหม่',
+                width: '600px',
+                html: `
+                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
+                    <div class="space-y-3 text-left text-xs">
+                        <div>
+                            <label class="block font-bold mb-1">เลขประจำตัวนักเรียน <span class="text-red-500">*</span></label>
+                            <input id="swalStudentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-mono font-bold" placeholder="เช่น 6701">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อจริง <span class="text-red-500">*</span></label>
+                                <input id="swalFirstName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="ชื่อจริง">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">นามสกุล <span class="text-red-500">*</span></label>
+                                <input id="swalLastName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="นามสกุล">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ชื่อเล่น <span class="text-red-500">*</span></label>
+                                <input id="swalNickname" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="ชื่อเล่น">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">ระดับชั้น <span class="text-red-500">*</span></label>
+                                <input id="swalGradeLevel" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น ม.3/1 หรือ ม.304">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">โรงเรียน <span class="text-red-500">*</span></label>
+                                <input id="swalSchool" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" value="สวนกุหลาบวิทยาลัย" placeholder="สวนกุหลาบวิทยาลัย">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">LINE ID <span class="text-red-500">*</span></label>
+                                <input id="swalLineId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="เช่น @line_id">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">อีเมล (Email) <span class="text-red-500">*</span></label>
+                            <input type="email" id="swalEmail" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none font-bold" placeholder="student@example.com">
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'สร้างบัญชี',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                background: isDark ? '#090d16' : '#ffffff',
+                color: isDark ? '#f1f5f9' : '#1e293b',
+                preConfirm: () => {
+                    const studentIdVal = document.getElementById('swalStudentId').value.trim();
+                    const firstName = document.getElementById('swalFirstName').value.trim();
+                    const lastName = document.getElementById('swalLastName').value.trim();
+                    const nickname = document.getElementById('swalNickname').value.trim();
+                    const gradeLevel = document.getElementById('swalGradeLevel').value.trim();
+                    const school = document.getElementById('swalSchool').value.trim();
+                    const lineId = document.getElementById('swalLineId').value.trim();
+                    const email = document.getElementById('swalEmail').value.trim();
+
+                    const errorBox = document.getElementById('swalErrorMsg');
+
+                    if (!studentIdVal || !firstName || !lastName || !nickname || !gradeLevel || !school || !lineId || !email) {
+                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
+                        errorBox.classList.remove('hidden');
+                        return false;
+                    }
+
+                    return {
+                        id: 'stu_' + Math.random().toString(36).substring(2, 11),
+                        student_id: studentIdVal,
+                        first_name: firstName,
+                        last_name: lastName,
+                        nickname: nickname,
+                        grade_level: gradeLevel,
+                        school: school,
+                        line_id: lineId,
+                        email: email,
+                        full_name: `${firstName} ${lastName}`,
+                        role: 'student'
+                    };
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังสร้างบัญชี...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const { error } = await mySupabase.from('profiles').insert([formValues]);
+
+                if (!error) {
+                    Swal.fire({ icon: 'success', title: 'สร้างบัญชีผู้ใช้สำเร็จ!', timer: 1200, showConfirmButton: false });
+                    initPage();
+                } else {
+                    Swal.fire('สร้างบัญชีไม่สำเร็จ', `เกิดข้อผิดพลาดจากฐานข้อมูล:<br><code class="text-xs text-red-400 font-mono mt-2 block">${error.message}</code>`, 'error');
+                }
+            }
+        }
+
         async function openEditStudentModal(studentId) {
             const student = studentsList.find(s => String(s.id || s.user_id) === String(studentId));
             if (!student) return;
@@ -289,11 +398,10 @@
 
                     const errorBox = document.getElementById('swalErrorMsg');
 
-                    // ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
                     if (!studentIdVal || !firstName || !lastName || !nickname || !gradeLevel || !school || !lineId || !email) {
-                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง (ข้อมูลจำเป็นทั้งหมด)';
+                        errorBox.textContent = '⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง';
                         errorBox.classList.remove('hidden');
-                        return false; // ป้องกันไม่ให้ modal ปิดตัวลง
+                        return false;
                     }
 
                     return {
