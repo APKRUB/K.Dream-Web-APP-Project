@@ -12,8 +12,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- 🔒 ปรับปรุงระบบตรวจสอบสิทธิ์ ป้องกัน Loop และรองรับ URL Param -->
     <script>
         (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlStudentId = urlParams.get('student_id') || urlParams.get('id');
+            if (urlStudentId) {
+                localStorage.setItem('student_id', urlStudentId);
+                localStorage.setItem('id', urlStudentId);
+                return; // ผ่านทันทีถ้ามีบน URL
+            }
+
             let hasSession = false;
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -23,7 +32,12 @@
                 }
             }
             const fallbackId = localStorage.getItem('id') || localStorage.getItem('user_id') || localStorage.getItem('student_id');
-            if (!hasSession && !fallbackId) { window.location.replace('index.html'); }
+            
+            // ถ้าไม่มี Session และไม่มีไอดีสำรองในเครื่อง ให้พาไปหน้า login หรือ index
+            if (!hasSession && !fallbackId) {
+                // หากต้องการให้เด้งกลับ index สามารถเปิดใช้งานบรรทัดด้านล่างนี้
+                // window.location.replace('index.html');
+            }
         })();
     </script>
     <script>
@@ -357,7 +371,7 @@
         let currentStudentData = null;
         let allExams = [];
         let allCourses = [];
-        let enrolledCoursesList = [];          
+        let enrolledCoursesList = [];        
         let activeEnrolledCoursesList = [];    
         let activeEnrolledCourseIds = [];      
         let categoriesMap = {};
@@ -478,7 +492,6 @@
             }
         }
 
-        // ฟังก์ชันเปิด Pop-up ตรวจสอบคอร์สเรียน พร้อมระบบ Countdown นับถอยหลังเวลาหมดอายุ
         async function openEnrolledCoursesModal() {
             const isDark = document.documentElement.classList.contains('dark');
             let htmlList = '';
@@ -790,7 +803,6 @@
         function updateCountdownsLive() {
             const now = Date.now();
             
-            // 1. Countdown สำหรับห้องสอบ
             document.querySelectorAll('.exam-countdown-timer').forEach(el => {
                 const startTime = parseInt(el.getAttribute('data-start-time'));
                 const diff = startTime - now;
@@ -804,7 +816,6 @@
                 el.textContent = `⏳ เปิดใน: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             });
 
-            // 2. Countdown สำหรับวันหมดอายุคอร์สใน Modal คอร์สของฉัน
             document.querySelectorAll('.course-countdown-timer').forEach(el => {
                 const expiryTime = parseInt(el.getAttribute('data-expiry-time'));
                 const diff = expiryTime - now;
