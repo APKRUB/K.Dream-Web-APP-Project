@@ -112,7 +112,7 @@
                         <i class="fas fa-moon text-xs sm:text-sm" id="themeIcon"></i>
                     </button>
 
-                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน (ซ่อนข้อความบนมือถือจอเล็กมากๆ เพื่อความสะอาด) -->
+                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน -->
                     <button onclick="openChangePasswordModal()" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 font-bold text-[11px] sm:text-xs rounded-xl transition-all flex items-center gap-1" title="เปลี่ยนรหัสผ่าน">
                         <i class="fas fa-key"></i> <span class="hidden md:inline">เปลี่ยนรหัสผ่าน</span>
                     </button>
@@ -158,6 +158,21 @@
             </h3>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                
+                <!-- 🪙 ปุ่มจัดการ Token (เพิ่มใหม่) -->
+                <div onclick="window.location.href='admin_tokens.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-amber-500/40">
+                    <div class="flex justify-between items-start">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-200 dark:border-amber-800">Token Hub</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">จัดการ Token / หน่วยเงิน</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ระบบปรับเพิ่มหรือหักลด (Adjust / Deduct) หน่วยเงิน Token ของนักเรียนแต่ละคนแบบเรียลไทม์</p>
+                    </div>
+                </div>
+
                 <div onclick="window.location.href='admin_exams.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group">
                     <div class="flex justify-between items-start">
                         <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-sky-500/30 group-hover:scale-110 transition-transform">
