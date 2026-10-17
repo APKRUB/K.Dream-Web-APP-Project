@@ -62,21 +62,21 @@
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='admin_tokens.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าจัดการ Token">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+            <div class="flex justify-between h-16 items-center gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <button onclick="window.location.href='admin_tokens.html'" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าจัดการ Token">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Advanced Shop Command</h1>
-                        <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการร้านค้าขั้นสูง (Dynamic Limit Rules)</span>
+                    <div class="min-w-0">
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Advanced Shop Command</h1>
+                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <button onclick="openAddProductModal()" class="px-3.5 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all flex items-center gap-1.5">
-                        <i class="fas fa-plus"></i> เพิ่มสินค้าใหม่
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button onclick="openAddProductModal()" class="px-3 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all flex items-center gap-1.5">
+                        <i class="fas fa-plus"></i> <span class="hidden sm:inline">เพิ่มสินค้าใหม่</span>
                     </button>
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
                         <i class="fas fa-moon text-sm" id="themeIcon"></i>
@@ -86,43 +86,43 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
         
         <!-- Header Banner -->
-        <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
                     <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
+                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และรูปแบบการจำกัดสิทธิ์ที่จะปรับเปลี่ยนฟอร์มกรอกข้อมูลตามเงื่อนไขอัตโนมัติ</p>
             </div>
         </div>
 
         <!-- Tabs Navigation -->
-        <div class="flex gap-2 border-b dark:border-slate-800 pb-2">
-            <button onclick="switchTab('products')" id="tabBtnProducts" class="px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2">
+        <div class="flex gap-2 border-b dark:border-slate-800 pb-2 overflow-x-auto">
+            <button onclick="switchTab('products')" id="tabBtnProducts" class="px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fas fa-boxes-stacked"></i> รายการสินค้าทั้งหมด (<span id="countProducts">0</span>)
             </button>
-            <button onclick="switchTab('requests')" id="tabBtnRequests" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2">
+            <button onclick="switchTab('requests')" id="tabBtnRequests" class="px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap">
                 <i class="fas fa-clipboard-list"></i> คำขอแลกของรางวัล (<span id="countRequests">0</span>)
             </button>
         </div>
 
         <!-- Tab 1: Products Inventory -->
         <div id="tabContentProducts" class="space-y-4">
-            <div class="hitech-card rounded-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+            <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                         <thead>
                             <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                                <th class="p-4">ชื่อของรางวัล</th>
-                                <th class="p-4">คอร์สที่เข้าร่วม</th>
-                                <th class="p-4 text-center">ราคา / กฎสิทธิ์</th>
-                                <th class="p-4 text-center">สต็อก / โควตา</th>
-                                <th class="p-4 text-center">ระยะเวลา</th>
-                                <th class="p-4 text-center">สถานะ</th>
-                                <th class="p-4 text-right">จัดการ</th>
+                                <th class="py-3 px-3 sm:p-4">ชื่อของรางวัล</th>
+                                <th class="py-3 px-3 sm:p-4">คอร์สที่เข้าร่วม</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">ราคา / กฎสิทธิ์</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สต็อก / โควตา</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">ระยะเวลา</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สถานะ</th>
+                                <th class="py-3 px-3 sm:p-4 text-right">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -135,16 +135,16 @@
 
         <!-- Tab 2: Redemption Requests Queue -->
         <div id="tabContentRequests" class="hidden space-y-4">
-            <div class="hitech-card rounded-2xl overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+            <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
                         <thead>
                             <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                                <th class="p-4">นักเรียน</th>
-                                <th class="p-4">ของรางวัลที่แลก</th>
-                                <th class="p-4 text-center">Token ที่ใช้</th>
-                                <th class="p-4 text-center">สถานะ</th>
-                                <th class="p-4 text-right">ดำเนินการ</th>
+                                <th class="py-3 px-3 sm:p-4">นักเรียน</th>
+                                <th class="py-3 px-3 sm:p-4">ของรางวัลที่แลก</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">Token ที่ใช้</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สถานะ</th>
+                                <th class="py-3 px-3 sm:p-4 text-right">ดำเนินการ</th>
                             </tr>
                         </thead>
                         <tbody id="requestsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -253,29 +253,29 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
-                        <td class="p-4 font-bold text-slate-900 dark:text-white text-sm">${p.title}</td>
-                        <td class="p-4">
+                        <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white text-xs sm:text-sm">${p.title}</td>
+                        <td class="py-3 px-3 sm:p-4">
                             <div class="mb-1"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span></div>
                             <div>${courseTags}</div>
                         </td>
-                        <td class="p-4 text-center">
+                        <td class="py-3 px-3 sm:p-4 text-center">
                             <div class="font-extrabold text-amber-500">${p.token_price.toLocaleString()} Token</div>
                             <div class="text-[10px] text-slate-400 mt-0.5">${limitText}</div>
                         </td>
-                        <td class="p-4 text-center">
+                        <td class="py-3 px-3 sm:p-4 text-center">
                             <div class="font-bold">สต็อก: ${p.stock.toLocaleString()}</div>
                             <div class="text-[10px] text-slate-400">โควตา: ${quotaDisplay}</div>
                         </td>
-                        <td class="p-4 text-center text-[11px]">${timeStatusBadge}</td>
-                        <td class="p-4 text-center">${statusBadge}</td>
-                        <td class="p-4 text-right space-x-1">
-                            <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="แก้ไขสินค้า">
+                        <td class="py-3 px-3 sm:p-4 text-center text-[11px]">${timeStatusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">
+                            <button onclick="openEditProductModal('${p.id}')" class="px-2.5 sm:px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="แก้ไขสินค้า">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
+                            <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
                                 <i class="fas fa-power-off"></i>
                             </button>
-                            <button onclick="deleteProduct('${p.id}')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs" title="ลบสินค้า">
+                            <button onclick="deleteProduct('${p.id}')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs" title="ลบสินค้า">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -302,13 +302,13 @@
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
-                        <td class="p-4 font-bold text-slate-900 dark:text-white">${studentName}</td>
-                        <td class="p-4 font-semibold">${itemTitle}</td>
-                        <td class="p-4 text-center font-bold text-amber-500">${r.token_spent} Token</td>
-                        <td class="p-4 text-center">${statusBadge}</td>
-                        <td class="p-4 text-right space-x-1">
-                            <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
-                            <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-emerald-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
+                        <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white">${studentName}</td>
+                        <td class="py-3 px-3 sm:p-4 font-semibold">${itemTitle}</td>
+                        <td class="py-3 px-3 sm:p-4 text-center font-bold text-amber-500">${r.token_spent} Token</td>
+                        <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">
+                            <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
+                            <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
                         </td>
                     </tr>
                 `;
@@ -320,8 +320,8 @@
             document.getElementById('tabContentProducts').classList.toggle('hidden', !isProd);
             document.getElementById('tabContentRequests').classList.toggle('hidden', isProd);
 
-            document.getElementById('tabBtnProducts').className = isProd ? 'px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2' : 'px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2';
-            document.getElementById('tabBtnRequests').className = !isProd ? 'px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2' : 'px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2';
+            document.getElementById('tabBtnProducts').className = isProd ? 'px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap' : 'px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap';
+            document.getElementById('tabBtnRequests').className = !isProd ? 'px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap' : 'px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap';
         }
 
         async function openAddProductModal() {
@@ -487,7 +487,6 @@
             }
         }
 
-        // ✏️ ฟังก์ชันเปิด Modal แก้ไขสินค้าภายใน
         async function openEditProductModal(productId) {
             const product = allProducts.find(p => p.id === productId);
             if (!product) return;
@@ -644,7 +643,6 @@
             if (formValues) {
                 Swal.fire({ title: 'กำลังอัปเดตข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                // 1. อัปเดตข้อมูลหลักในตาราง shop_items
                 const { error: updateErr } = await supabaseClient
                     .from('shop_items')
                     .update(formValues.productData)
@@ -655,7 +653,6 @@
                     return;
                 }
 
-                // 2. เคลียร์ความสัมพันธ์คอร์สเก่า และเพิ่มคอร์สใหม่ที่เลือก
                 await supabaseClient.from('shop_item_courses').delete().eq('item_id', productId);
 
                 if (formValues.selectedCourses.length > 0) {
