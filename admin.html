@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- 📱 PWA Web App Meta Tags (สำหรับติดตั้งลงหน้าจอ) -->
+    <!-- 📱 PWA Web App Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
     <meta name="apple-mobile-web-app-title" content="LMS Admin">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3413/3413535.png">
     
-    <!-- 🔒 Security Guard: ตรวจสอบสิทธิ์การเข้าถึงหน้า Admin ทันทีตั้งแต่โหลดหน้าเว็บ -->
+    <!-- 🔒 Security Guard -->
     <script>
         const SUPABASE_URL_CHECK = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY_CHECK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
@@ -27,29 +27,15 @@
         (async function() {
             const tempClient = window.supabase.createClient(SUPABASE_URL_CHECK, SUPABASE_KEY_CHECK);
             const { data: { session } } = await tempClient.auth.getSession();
-            
-            if (!session) {
-                window.location.replace('index.html');
-                return;
-            }
+            if (!session) { window.location.replace('index.html'); return; }
 
             const userId = session.user.id;
-            const { data: profile, error } = await tempClient
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            if (error || !profile) {
-                window.location.replace('index.html');
-                return;
-            }
+            const { data: profile, error } = await tempClient.from('profiles').select('*').eq('id', userId).single();
+            if (error || !profile) { window.location.replace('index.html'); return; }
 
             const role = String(profile.role || '').toLowerCase();
             const email = String(profile.email || '').toLowerCase();
-            const isAdminOrTeacher = (role === 'admin' || role === 'teacher' || role === 'instructor' || email.includes('admin') || email.includes('teacher'));
-
-            if (!isAdminOrTeacher) {
+            if (!['admin', 'teacher', 'instructor'].includes(role) && !email.includes('admin') && !email.includes('teacher')) {
                 alert('⚠️ พื้นที่นี้สำหรับผู้ดูแลระบบหรือคุณครูเท่านั้น!');
                 window.location.replace('index.html'); 
             }
@@ -112,7 +98,6 @@
                         <i class="fas fa-moon text-xs sm:text-sm" id="themeIcon"></i>
                     </button>
 
-                    <!-- 🔑 ปุ่มเปลี่ยนรหัสผ่าน -->
                     <button onclick="openChangePasswordModal()" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 font-bold text-[11px] sm:text-xs rounded-xl transition-all flex items-center gap-1" title="เปลี่ยนรหัสผ่าน">
                         <i class="fas fa-key"></i> <span class="hidden md:inline">เปลี่ยนรหัสผ่าน</span>
                     </button>
@@ -127,6 +112,26 @@
 
     <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-5 sm:space-y-6">
         
+        <!-- 🌟 Smart Consult Time Bar (แสดงเฉพาะเมื่อมีคิวภายใน 24 ชั่วโมงข้างหน้า) -->
+        <div id="consultTimeBar" class="hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-purple-400/40 animate-pulse">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shrink-0">
+                    <i class="fas fa-clock-rotate-left"></i>
+                </div>
+                <div class="space-y-0.5">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-purple-200 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Consult Alert (ภายใน 24 ชม.)
+                    </div>
+                    <div id="timeBarMainText" class="text-xs sm:text-sm font-extrabold">
+                        กำลังโหลดข้อมูลคิว...
+                    </div>
+                </div>
+            </div>
+            <button onclick="window.location.href='admin_consult_queue.html'" class="px-4 py-2 bg-white text-purple-900 font-bold text-xs rounded-xl shadow-md hover:bg-purple-50 transition-all shrink-0">
+                <i class="fas fa-calendar-check mr-1"></i> ดูปฏิทินและคิวทั้งหมด
+            </button>
+        </div>
+
         <!-- Welcome Banner -->
         <div class="hero-banner p-5 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
             <div class="space-y-2 relative z-10 w-full">
@@ -224,7 +229,7 @@
                     </div>
                 </div>
 
-                <!-- 🌟 ปุ่มใหม่: ตรวจสอบคิว Consult ประจำวัน (ลิงก์ไปหน้า admin_consult_queue.html) -->
+                <!-- 🌟 ปุ่มตรวจคิว Consult (ลิงก์ไปหน้า admin_consult_queue.html) -->
                 <div onclick="window.location.href='admin_consult_queue.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-sky-500/40">
                     <div class="flex justify-between items-start">
                         <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
@@ -234,7 +239,7 @@
                     </div>
                     <div class="space-y-1">
                         <h4 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">ตรวจสอบคิว Consult ประจำวัน</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ดูตารางเวลา Slot ละ 30 นาที และรายการคิวจอง Consult ของนักเรียนในแต่ละวันแบบ Realtime</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ปฏิทินและเวลานับถอยหลังคิวปรึกษา Slot ละ 30 นาทีแบบ Realtime</p>
                     </div>
                 </div>
 
@@ -277,7 +282,6 @@
                     </div>
                 </div>
 
-                <!-- 🪙 ปุ่มจัดการ Token -->
                 <div onclick="window.location.href='admin_tokens.html'" class="hitech-card p-5 sm:p-6 rounded-2xl cursor-pointer space-y-3 sm:space-y-4 group border-amber-500/40">
                     <div class="flex justify-between items-start">
                         <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
@@ -301,6 +305,8 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let liveNotifications = [];
+        let profilesMap = {};
+        let allConsultBookings = [];
 
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
@@ -332,10 +338,75 @@
                 const { count: subCount } = await supabaseClient.from('exam_submissions').select('*', { count: 'exact', head: true });
                 document.getElementById('statTotalSubmissions').textContent = subCount ?? 0;
 
+                // โหลด Profiles และ Consults สำหรับเช็ค Time Bar 24 ชม.
+                const { data: profs } = await supabaseClient.from('profiles').select('id, full_name, name, username, email');
+                if (profs) {
+                    profs.forEach(p => {
+                        profilesMap[p.id] = p.full_name || p.name || p.username || p.email || 'นักเรียน';
+                    });
+                }
+
+                let { data: consults } = await supabaseClient.from('consult_bookings').select('*').order('date', { ascending: true });
+                if (!consults) {
+                    const alt = await supabaseClient.from('consultations').select('*');
+                    consults = alt.data || [];
+                }
+                allConsultBookings = consults || [];
+
+                checkConsultTimeBar();
                 await fetchLiveNotifications();
                 listenRealtimeNotifications();
             } catch (err) { console.error(err); }
         }
+
+        // 🌟 ตรวจสอบคิวล่วงหน้า 24 ชั่วโมงเพื่อแสดง Time Bar (ถ้าไม่มีคิวจะซ่อน)
+        function checkConsultTimeBar() {
+            const now = new Date();
+            const twentyFourHoursLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+            // กรองคิวที่อยู่ในช่วง 24 ชม. ข้างหน้า
+            const upcomingWithin24h = allConsultBookings.filter(b => {
+                const bDateStr = b.date || b.booking_date || '';
+                const timeSlot = b.time_slot || b.time || b.slot || '00:00 - 00:30';
+                const startTimeStr = timeSlot.split('-')[0].trim();
+                const bookingTime = new Date(`${bDateStr}T${startTimeStr}:00`);
+                return bookingTime >= now && bookingTime <= twentyFourHoursLater;
+            }).sort((a, b) => {
+                const timeA = new Date((a.date || a.booking_date) + 'T' + (a.time_slot || a.time || '00:00').split('-')[0].trim() + ':00');
+                const timeB = new Date((b.date || b.booking_date) + 'T' + (b.time_slot || b.time || '00:00').split('-')[0].trim() + ':00');
+                return timeA - timeB;
+            });
+
+            const timeBar = document.getElementById('consultTimeBar');
+            const mainText = document.getElementById('timeBarMainText');
+
+            if (upcomingWithin24h.length === 0) {
+                timeBar.style.display = 'none';
+                return;
+            }
+
+            timeBar.style.display = 'flex';
+            const currentQueue = upcomingWithin24h[0];
+            const currStudent = profilesMap[currentQueue.student_id || currentQueue.user_id] || 'นักเรียน';
+            const currTime = currentQueue.time_slot || currentQueue.time || currentQueue.slot || '00:00 - 00:30';
+            const currDate = currentQueue.date || currentQueue.booking_date;
+
+            let text = `คิวปัจจุบัน/ใกล้ถึงที่สุด: <span class="text-amber-300 font-black">${currStudent}</span> (${currDate} เวลา ${currTime} น.)`;
+
+            if (upcomingWithin24h.length > 1) {
+                const nextQueue = upcomingWithin24h[1];
+                const nextStudent = profilesMap[nextQueue.student_id || nextQueue.user_id] || 'นักเรียน';
+                const nextTime = nextQueue.time_slot || nextQueue.time || nextQueue.slot || '00:00 - 00:30';
+                text += ` | ➔ คิวต่อไป: <span class="text-cyan-200 font-bold">${nextStudent}</span> (${nextTime} น.)`;
+            } else {
+                text += ` | (ยังไม่มีคิวถัดไปใน 24 ชม. นี้)`;
+            }
+
+            mainText.innerHTML = text;
+        }
+
+        // อัปเดต Time Bar ทุกๆ 30 วินาที
+        setInterval(checkConsultTimeBar, 30000);
 
         async function openChangePasswordModal() {
             const isDark = document.documentElement.classList.contains('dark');
@@ -344,7 +415,7 @@
                 title: '🔑 เปลี่ยนรหัสผ่านผู้ดูแลระบบ',
                 width: '450px',
                 html: `
-                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/20 border border-rose-500 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold text-center"></div>
+                    <div id="swalErrorMsg" class="hidden mb-3 p-2 bg-rose-500/25 border border-rose-500 text-rose-300 rounded-xl text-xs font-bold text-center"></div>
                     <div class="space-y-3 text-left text-xs">
                         <div>
                             <label class="block font-bold mb-1">รหัสผ่านใหม่ <span class="text-red-500">*</span></label>
