@@ -23,7 +23,7 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; }
+        body { font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(2, 132, 199, 0.15); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid rgba(2, 132, 199, 0.3); }
         .hitech-card { 
@@ -42,7 +42,7 @@
             box-shadow: 0 15px 35px -10px rgba(245, 158, 11, 0.25);
             border-color: #f59e0b;
         }
-        .hide-scrollbar::-webkit-scrollbar { height: 6px; }
+        .hide-scrollbar::-webkit-scrollbar { height: 4px; width: 4px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 9999px; }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
@@ -51,73 +51,75 @@
 </head>
 <body class="bg-slate-50/70 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
 
-    <!-- Navbar -->
+    <!-- Navbar (Optimized for Mobile) -->
     <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-18 flex justify-between items-center gap-2">
-            <div class="flex items-center gap-3">
-                <button onclick="goBackToStudentPortal()" class="w-10 h-10 rounded-2xl bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 flex items-center justify-center font-bold transition-all shadow-sm" title="กลับสู่หน้าหลักนักเรียน">
-                    <i class="fas fa-arrow-left"></i>
+        <div class="max-w-7xl mx-auto px-2.5 sm:px-6 h-16 sm:h-18 flex justify-between items-center gap-1.5">
+            <div class="flex items-center gap-2 min-w-0">
+                <button onclick="goBackToStudentPortal()" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 flex items-center justify-center font-bold transition-all shadow-sm shrink-0" title="กลับสู่หน้าหลักนักเรียน">
+                    <i class="fas fa-arrow-left text-xs"></i>
                 </button>
-                <div>
-                    <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <i class="fas fa-store text-amber-500"></i> Student Reward Shop
+                <div class="min-w-0">
+                    <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5 truncate">
+                        <i class="fas fa-store text-amber-500 shrink-0"></i> <span class="truncate">Reward Shop</span>
                     </h1>
-                    <p class="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-semibold">คลังของรางวัลและสิทธิพิเศษสะสม Token</p>
+                    <p class="text-[9px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-semibold truncate">คลังของรางวัลสะสม Token</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 shrink-0">
-                <div class="px-3.5 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl text-xs font-extrabold flex items-center gap-2 border border-amber-500/30 shadow-sm">
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <div class="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-extrabold flex items-center gap-1.5 border border-amber-500/30 shadow-sm">
                     <i class="fas fa-coins text-amber-500 animate-pulse"></i> 
                     <span id="navTokenBalance">-- Token</span>
                 </div>
 
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500 text-amber-600 dark:text-slate-300 transition-all" title="สลับธีม">
+                <button id="themeToggle" class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500 text-amber-600 dark:text-slate-300 transition-all shrink-0" title="สลับธีม">
                     <i class="fas fa-moon text-xs" id="themeIcon"></i>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
 
         <!-- Banner -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500 via-yellow-600 to-orange-600 text-white shadow-xl shadow-amber-500/10 relative overflow-hidden space-y-3">
+        <div class="hitech-card p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500 via-yellow-600 to-orange-600 text-white shadow-xl shadow-amber-500/10 relative overflow-hidden space-y-3">
             <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
             <div class="relative z-10 space-y-1">
                 <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold uppercase tracking-wide">Reward Marketplace</span>
-                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">แลกของรางวัลสุดพิเศษด้วย Token ของคุณ</h2>
+                <h2 class="text-base sm:text-2xl font-extrabold tracking-tight">แลกของรางวัลสุดพิเศษด้วย Token ของคุณ</h2>
                 <p class="text-xs sm:text-sm text-amber-100 max-w-xl font-light">สะสม Token จากการทำข้อสอบและการเข้าร่วมกิจกรรมในห้องเรียน นำมาแลกรับของขวัญ ส่วนลด หรือสิทธิพิเศษได้ที่นี่</p>
             </div>
-            <div class="pt-3 border-t border-white/20 flex flex-wrap gap-4 text-xs relative z-10">
+            <div class="pt-3 border-t border-white/20 flex flex-wrap gap-3 text-[11px] sm:text-xs relative z-10">
                 <div><i class="fas fa-check-circle mr-1"></i> สินค้าอนุมัติโดยคุณครู</div>
                 <div><i class="fas fa-shipping-fast mr-1"></i> ตรวจสอบสถานะการจัดส่งได้ตลอดเวลา</div>
             </div>
         </div>
 
-        <!-- Filter & Search Bar -->
-        <div class="hitech-card p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
-                <button onclick="setShopCategoryFilter('all')" id="shopCatAll" class="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">ทั้งหมด</button>
-                <button onclick="setShopCategoryFilter('discount')" id="shopCatDiscount" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🏷️ ส่วนลด</button>
-                <button onclick="setShopCategoryFilter('gift')" id="shopCatGift" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🎁 ของขวัญ</button>
-                <button onclick="setShopCategoryFilter('cash')" id="shopCatCash" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">💵 เงินสด/ทุน</button>
-                <button onclick="setShopCategoryFilter('other')" id="shopCatOther" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">✨ อื่นๆ</button>
+        <!-- Filter & Search Bar (Responsive for Mobile) -->
+        <div class="hitech-card p-4 sm:p-5 rounded-2xl space-y-3 sm:space-y-0 sm:flex sm:justify-between sm:items-center sm:gap-4">
+            <!-- Category Horizontal Scroll on Mobile -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar shrink-0">
+                <button onclick="setShopCategoryFilter('all')" id="shopCatAll" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">ทั้งหมด</button>
+                <button onclick="setShopCategoryFilter('discount')" id="shopCatDiscount" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🏷️ ส่วนลด</button>
+                <button onclick="setShopCategoryFilter('gift')" id="shopCatGift" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🎁 ของขวัญ</button>
+                <button onclick="setShopCategoryFilter('cash')" id="shopCatCash" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">💵 เงินสด/ทุน</button>
+                <button onclick="setShopCategoryFilter('other')" id="shopCatOther" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">✨ อื่นๆ</button>
             </div>
 
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <div class="relative flex-1 sm:w-72">
-                    <i class="fas fa-search absolute left-3.5 top-3.5 text-amber-500 text-xs"></i>
-                    <input type="text" id="searchShopInput" oninput="renderShopItems()" placeholder="ค้นหาชื่อของรางวัล..." class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 outline-none transition-all font-medium">
+            <!-- Search & History Button -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-64">
+                    <i class="fas fa-search absolute left-3.5 top-3 text-amber-500 text-xs"></i>
+                    <input type="text" id="searchShopInput" oninput="renderShopItems()" placeholder="ค้นหาชื่อของรางวัล..." class="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 outline-none transition-all font-medium">
                 </div>
-                <button onclick="openMyRedemptionHistoryModal()" class="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold transition-all border border-amber-500/30 shrink-0">
-                    <i class="fas fa-history mr-1"></i> ประวัติการแลก
+                <button onclick="openMyRedemptionHistoryModal()" class="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold transition-all border border-amber-500/30 shrink-0 flex items-center gap-1">
+                    <i class="fas fa-history"></i> <span class="hidden sm:inline">ประวัติการแลก</span>
                 </button>
             </div>
         </div>
 
         <!-- Shop Items Grid -->
-        <div id="shopItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div id="shopItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             <div class="col-span-full py-16 text-center text-slate-400 space-y-2">
                 <i class="fas fa-spinner fa-spin text-2xl text-amber-500"></i>
                 <p class="text-xs">กำลังโหลดรายการของรางวัล...</p>
@@ -170,7 +172,6 @@
             await loadStudentDataAndShop();
             setupStudentRealtime();
 
-            // เริ่มรันระบบนับถอยหลังทุก ๆ 1 วินาที
             if (countdownTimerInterval) clearInterval(countdownTimerInterval);
             countdownTimerInterval = setInterval(updateCountdowns, 1000);
         }
@@ -212,9 +213,9 @@
             ['All', 'Discount', 'Gift', 'Cash', 'Other'].forEach(c => {
                 const btn = document.getElementById(`shopCat${c}`);
                 if (c.toLowerCase() === cat || (cat === 'all' && c === 'All')) {
-                    btn.className = 'px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0';
+                    btn.className = 'px-3.5 py-1.5 sm:px-4 sm:py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0';
                 } else {
-                    btn.className = 'px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0';
+                    btn.className = 'px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0';
                 }
             });
             renderShopItems();
@@ -259,7 +260,6 @@
 
                 let actionButtonHtml = '';
                 if (isNotStartedYet) {
-                    const timeDiff = startsAt.getTime() - now.getTime();
                     actionButtonHtml = `<div class="text-amber-600 dark:text-amber-400 font-extrabold text-[11px] bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20" data-countdown="${startsAt.toISOString()}"><i class="fas fa-clock animate-spin mr-1"></i> กำลังเปิดใน: <span class="countdown-text">คำนวณ...</span></div>`;
                 } else if (isExpired) {
                     actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">⏰ หมดเขตแลกแล้ว</span>`;
@@ -270,26 +270,26 @@
                 } else if (!canAfford) {
                     actionButtonHtml = `<span class="text-slate-400 font-bold text-[11px]">Token ไม่พอ</span>`;
                 } else {
-                    actionButtonHtml = `<button onclick="confirmRedeemItem('${item.id}', '${item.title}', ${item.token_price})" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`;
+                    actionButtonHtml = `<button onclick="confirmRedeemItem('${item.id}', '${item.title}', ${item.token_price})" class="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`;
                 }
 
                 let imageHtml = item.image_url 
-                    ? `<div class="w-full h-44 overflow-hidden rounded-xl bg-slate-100 dark:bg-darkinput border border-amber-500/20 mb-3"><img src="${item.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}"></div>`
-                    : `<div class="w-full h-44 rounded-xl bg-amber-500/5 dark:bg-darkinput border border-amber-500/20 flex flex-col items-center justify-center text-amber-500/60 mb-3 space-y-1"><i class="fas fa-gift text-3xl"></i><span class="text-[10px] font-semibold text-slate-400">Reward Item</span></div>`;
+                    ? `<div class="w-full h-40 sm:h-44 overflow-hidden rounded-xl bg-slate-100 dark:bg-darkinput border border-amber-500/20 mb-3"><img src="${item.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}"></div>`
+                    : `<div class="w-full h-40 sm:h-44 rounded-xl bg-amber-500/5 dark:bg-darkinput border border-amber-500/20 flex flex-col items-center justify-center text-amber-500/60 mb-3 space-y-1"><i class="fas fa-gift text-3xl"></i><span class="text-[10px] font-semibold text-slate-400">Reward Item</span></div>`;
 
                 return `
-                    <div class="hitech-card shop-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 group">
+                    <div class="hitech-card shop-card-hover p-4 sm:p-5 rounded-2xl flex flex-col justify-between space-y-3 sm:space-y-4 group">
                         <div class="space-y-2">
                             ${imageHtml}
                             <div class="flex justify-between items-center">
                                 <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[10px]">${catText}</span>
                                 <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1"><i class="fas fa-coins"></i> ${Number(item.token_price).toLocaleString()} Token</span>
                             </div>
-                            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${item.title}</h3>
+                            <h3 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1">${item.title}</h3>
                             <p class="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-3">${item.description || 'ไม่มีรายละเอียดสินค้าเพิ่มเติม'}</p>
                         </div>
                         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
-                            <span class="text-slate-400 font-medium">เหลือสต็อก: ${item.stock} ชิ้น</span>
+                            <span class="text-slate-400 font-medium text-[11px] sm:text-xs">เหลือ: ${item.stock} ชิ้น</span>
                             ${actionButtonHtml}
                         </div>
                     </div>
@@ -297,7 +297,6 @@
             }).join('');
         }
 
-        // ⏱️ ฟังก์ชันอัปเดตตัวเลขนับถอยหลังทุก ๆ วินาทีแบบเรียลไทม์
         function updateCountdowns() {
             const countdownElements = document.querySelectorAll('[data-countdown]');
             if (countdownElements.length === 0) return;
@@ -314,7 +313,7 @@
 
                 if (distance < 0) {
                     textSpan.textContent = 'เปิดแล้ว!';
-                    shouldRefresh = true; // เมื่อถึงเวลา ให้รีเฟรชหน้าร้านทันทีเพื่อให้ปุ่มกดแลกโผล่ขึ้นมา
+                    shouldRefresh = true;
                 } else {
                     const days = Math.floor(distance / (1000 * 60 * 60 * 24));
                     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -329,7 +328,7 @@
             });
 
             if (shouldRefresh) {
-                loadStudentDataAndShop(); // โหลดข้อมูลใหม่เมื่อเวลาหมดลง
+                loadStudentDataAndShop();
             }
         }
 
@@ -412,10 +411,10 @@
                     else if (r.status === 'rejected') statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 font-bold text-[10px]">❌ ไม่อนุมัติ (คืน Token แล้ว)</span>';
 
                     historyHtml += `
-                        <div class="p-3.5 rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">${statusBadge}<span class="text-[10px] text-slate-400">${dateStr}</span></div>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${item.title}</h4>
+                        <div class="p-3.5 rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm gap-2">
+                            <div class="space-y-1 min-w-0">
+                                <div class="flex items-center gap-2 flex-wrap">${statusBadge}<span class="text-[10px] text-slate-400">${dateStr}</span></div>
+                                <h4 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">${item.title}</h4>
                                 <p class="text-xs text-amber-500 font-bold"><i class="fas fa-coins mr-1"></i> ใช้ไป ${Number(r.token_spent).toLocaleString()} Token</p>
                             </div>
                         </div>
@@ -435,7 +434,6 @@
             });
         }
 
-        // 🌟 ตั้งค่า Realtime ฝั่งนักเรียน (ซิงค์ Token, สินค้า, และสถานะคำขออัตโนมัติ)
         function setupStudentRealtime() {
             mySupabase
                 .channel('student-shop-realtime')
