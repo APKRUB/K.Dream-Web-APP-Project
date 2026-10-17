@@ -380,8 +380,8 @@
                 if (r.status === 'pending') {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
                     actionButtons = '\
-                        <button onclick="updateRequestStatus(\'' + r.id + '\', \'approved\')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>\
-                        <button onclick="updateRequestStatus(\'' + r.id + '\', \'rejected\')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>\
+                        <button onclick="confirmAndUpdateStatus(\'' + r.id + '\', \'approved\', \'' + studentName + '\', \'' + itemTitle + '\')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>\
+                        <button onclick="confirmAndUpdateStatus(\'' + r.id + '\', \'rejected\', \'' + studentName + '\', \'' + itemTitle + '\')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>\
                     ';
                 } else if (r.status === 'approved') {
                     statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
@@ -797,17 +797,42 @@
             });
         }
 
+        // 🛡️ ฟังก์ชันยืนยันก่อนอนุมัติหรือปฏิเสธ (ป้องกันการเผลอกดโดน)
+        async function confirmAndUpdateStatus(reqId, newStatus, studentName, itemTitle) {
+            const isApproved = newStatus === 'approved';
+            const actionTitle = isApproved ? 'ยืนยันการอนุมัติคำขอ?' : 'ยืนยันการปฏิเสธคำขอ?';
+            const actionHtml = isApproved 
+                ? `คุณต้องการ<b>อนุมัติ</b>การแลก <b>"${itemTitle}"</b> ของนักเรียน <b>${studentName}</b> ใช่หรือไม่?`
+                : `คุณต้องการ<b>ปฏิเสธ</b>การแลก <b>"${itemTitle}"</b> ของนักเรียน <b>${studentName}</b> หรือไม่? <br><span class="text-rose-500 font-bold text-xs mt-2 block">⚠️ ระบบจะทำการคืน Token กลับให้นนักเรียนอัตโนมัติ</span>`;
+            
+            const confirmColor = isApproved ? '#10b981' : '#f43f5e';
+            const confirmText = isApproved ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธและคืน Token';
+
+            const { isConfirmed } = await Swal.fire({
+                title: actionTitle,
+                html: actionHtml,
+                icon: isApproved ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonText: confirmText,
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#64748b'
+            });
+
+            if (!isConfirmed) return;
+
+            await updateRequestStatus(reqId, newStatus);
+        }
+
         // 🌟 อัปเดตสถานะคำขอ พร้อมระบบคืน Token อัตโนมัติเมื่อปฏิเสธ
         async function updateRequestStatus(reqId, newStatus) {
             const targetReq = allRequests.find(r => r.id === reqId);
             if (!targetReq) return;
 
-            // ถ้าสถานะเดิมถูกปฏิเสธไปแล้ว หรือกดเป็นสถานะเดิม ไม่ต้องทำซ้ำ
             if (targetReq.status === newStatus) return;
 
             Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            // 1. อัปเดตสถานะในตาราง redemption_logs ก่อน
             const { error: updateErr } = await supabaseClient
                 .from('redemption_logs')
                 .update({ status: newStatus })
@@ -818,26 +843,22 @@
                 return;
             }
 
-            // 2. ถ้านครูปฏิเสธ (rejected) และตอนแรกยังไม่ได้ปฏิเสธ ให้ทำการคืน Token คืนให้นักเรียน
             if (newStatus === 'rejected') {
                 const studentId = targetReq.student_id;
                 const tokenSpent = Number(targetReq.token_spent || 0);
 
-                // ดึงข้อมูล Token ปัจจุบันของนักเรียนคนนั้นจากตาราง profiles
                 const { data: prof } = await supabaseClient.from('profiles').select('*').eq('id', studentId).maybeSingle();
                 
                 if (prof) {
                     const currentTokens = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
                     const refundedTokens = currentTokens + tokenSpent;
 
-                    // อัปเดตคืน Token (รองรับชื่อคอลัมน์ tokens หรือ point)
                     let refundRes = await supabaseClient.from('profiles').update({ tokens: refundedTokens }).eq('id', studentId);
                     if (refundRes.error) {
                         await supabaseClient.from('profiles').update({ point: refundedTokens }).eq('id', studentId);
                     }
                 }
 
-                // คืนสต็อกสินค้ากลับเข้าคลังด้วย (เนื่องจากปฏิเสธคำขอ)
                 const itemId = targetReq.item_id;
                 const { data: itemData } = await supabaseClient.from('shop_items').select('stock').eq('id', itemId).maybeSingle();
                 if (itemData) {
@@ -852,14 +873,13 @@
                 showConfirmButton: false
             });
 
-            // ข้อมูลจะซิงค์อัตโนมัติผ่าน Realtime หรือโหลดใหม่ทันที
             await loadShopData();
         }
 
         // 🌟 ตั้งค่า Realtime Subscription ให้หน้า Admin อัปเดตอัตโนมัติแบบ Realtime ทันที
         function setupRealtimeSubscriptions() {
             supabaseClient
-                .channel('admin-shop-realtime-v2')
+                .channel('admin-shop-realtime-v3')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
                     loadShopData();
                 })
