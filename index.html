@@ -96,23 +96,11 @@
 
             Swal.fire({ title: 'กำลังตรวจสอบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-            let targetEmail = userInput;
-            
-            // ค้นหาอีเมลจากตาราง profiles โดยเทียบกับ username หรือ student_id ก่อน
-            if (!userInput.includes('@')) {
-                const { data: profileMatch } = await mySupabase
-                    .from('profiles')
-                    .select('email')
-                    .or(`username.eq.${userInput},student_id.eq.${userInput}`)
-                    .maybeSingle();
-
-                if (profileMatch && profileMatch.email) {
-                    targetEmail = profileMatch.email;
-                }
-            }
+            // ถ้านักเรียนกรอก Username ธรรมดา (เช่น DREAM) ระบบจะแปลงเป็น DREAM@lms.local อัตโนมัติทันที
+            const loginEmail = userInput.includes('@') ? userInput : `${userInput}@lms.local`;
 
             const { data: authData, error: authError } = await mySupabase.auth.signInWithPassword({ 
-                email: targetEmail, 
+                email: loginEmail, 
                 password 
             });
 
@@ -122,7 +110,7 @@
             }
 
             const userId = authData.user.id;
-            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).single();
+            const { data: profile } = await mySupabase.from('profiles').select('*').eq('id', userId).maybeSingle();
             Swal.close();
 
             const userName = profile?.username || profile?.full_name || userInput;
