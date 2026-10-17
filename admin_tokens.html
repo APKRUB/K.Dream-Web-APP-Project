@@ -73,9 +73,17 @@
                         <span class="text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase">ระบบจัดการหน่วยเงินรางวัล</span>
                     </div>
                 </div>
-                <button onclick="loadStudents()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 transition-all flex items-center gap-1.5">
-                    <i class="fas fa-rotate"></i> รีเฟรชข้อมูล
-                </button>
+
+                <div class="flex items-center gap-2">
+                    <!-- ปุ่มรีเฟรช -->
+                    <button onclick="loadStudents()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 font-bold text-xs rounded-xl hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all flex items-center gap-1.5">
+                        <i class="fas fa-rotate"></i> <span class="hidden sm:inline">รีเฟรช</span>
+                    </button>
+                    <!-- ปุ่มสลับธีม Dark/Light Mode -->
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -86,15 +94,15 @@
         <div class="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="space-y-1">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
-                    <i class="fas fa-coins"></i> Secure Token Ledger
+                    <i class="fas fa-coins"></i> Secure Token Ledger & Shop Ready
                 </div>
                 <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการ Token นักเรียน</h2>
-                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เพิ่มคะแนนสะสม (Adjust) หรือหักลด Token (Deduct) สำหรับนักเรียนแต่ละบุคคล</p>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">เพิ่มคะแนนสะสม (Adjust) หรือหักลด Token (Deduct) สำหรับนักเรียนแต่ละบุคคล เพื่อเตรียมพร้อมระบบแลกของรางวัล Shop ในอนาคต</p>
             </div>
             <div class="w-full md:w-72">
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                    <input type="text" id="searchStudentInput" oninput="filterStudents()" placeholder="ค้นหาชื่อ หรือ Username..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:border-amber-500 transition-all">
+                    <input type="text" id="searchStudentInput" oninput="filterStudents()" placeholder="ค้นหาชื่อ หรือ Username นร...." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:border-amber-500 transition-all">
                 </div>
             </div>
         </div>
@@ -105,15 +113,16 @@
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
-                            <th class="p-4">นักเรียน / Username</th>
-                            <th class="p-4">ระดับชั้น / บทบาท</th>
+                            <th class="p-4">นักเรียน (Student Name)</th>
+                            <th class="p-4">ระดับชั้น / ห้องเรียน</th>
                             <th class="p-4 text-center">Token ปัจจุบัน</th>
+                            <th class="p-4 text-center">สถานะ Shop / แลกของรางวัล</th>
                             <th class="p-4 text-right">จัดการ (Adjust / Deduct)</th>
                         </tr>
                     </thead>
                     <tbody id="studentTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
                         <tr>
-                            <td colspan="4" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดข้อมูลนักเรียน...</td>
+                            <td colspan="5" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดข้อมูลนักเรียน...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -128,6 +137,20 @@
 
         let allStudents = [];
 
+        // 🌗 จัดการธีมมืด/สว่าง
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            htmlElement.classList.toggle('dark');
+            const isDark = htmlElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
+        });
+
         async function loadStudents() {
             try {
                 const { data, error } = await supabaseClient
@@ -136,7 +159,15 @@
                     .order('full_name', { ascending: true });
 
                 if (error) throw error;
-                allStudents = data || [];
+                
+                // 🛡️ กรองเฉพาะนักเรียนเท่านั้น (ซ่อน admin, teacher, instructor ทั้งหมด)
+                allStudents = (data || []).filter(s => {
+                    const r = String(s.role || 'student').toLowerCase();
+                    const email = String(s.email || '').toLowerCase();
+                    const isStaff = r === 'admin' || r === 'teacher' || r === 'instructor' || email.includes('admin') || email.includes('teacher');
+                    return !isStaff;
+                });
+
                 renderStudentTable(allStudents);
             } catch (err) {
                 console.error(err);
@@ -147,15 +178,15 @@
         function renderStudentTable(students) {
             const tbody = document.getElementById('studentTableBody');
             if (students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-slate-400">ไม่พบรายชื่อนักเรียนในระบบ</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-slate-400">ไม่พบรายชื่อนักเรียนในระบบ</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = students.map(s => {
                 const name = s.full_name || s.username || 'ไม่ระบุชื่อ';
                 const username = s.username ? `@${s.username}` : '-';
-                const role = s.role || 'student';
-                const tokens = s.tokens ?? s.point ?? s.coin ?? 0; // รองรับคอลัมน์ tokens หรือ point
+                const classRoom = s.classroom || s.class_room || s.room || 'ม.304 / ทั่วไป'; // รองรับข้อมูลห้องเรียน
+                const tokens = s.tokens ?? s.point ?? s.coin ?? 0;
 
                 return `
                     <tr class="hover:bg-amber-500/5 transition-colors">
@@ -164,11 +195,16 @@
                             <div class="text-[11px] text-slate-400 font-mono">${username}</div>
                         </td>
                         <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px] uppercase">${role}</span>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">${classRoom}</span>
                         </td>
                         <td class="p-4 text-center">
-                            <span class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-sm border border-amber-500/20">
+                            <span class="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-extrabold text-sm border border-amber-500/25">
                                 <i class="fas fa-coins mr-1"></i> ${tokens.toLocaleString()}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-[10px] border border-sky-500/20" title="เตรียมพร้อมสำหรับระบบ Shop แลกของรางวัล">
+                                <i class="fas fa-store mr-1"></i> พร้อมแลกสินค้า
                             </span>
                         </td>
                         <td class="p-4 text-right space-x-1">
@@ -188,7 +224,8 @@
             const keyword = document.getElementById('searchStudentInput').value.toLowerCase();
             const filtered = allStudents.filter(s => 
                 (s.full_name && s.full_name.toLowerCase().includes(keyword)) || 
-                (s.username && s.username.toLowerCase().includes(keyword))
+                (s.username && s.username.toLowerCase().includes(keyword)) ||
+                (s.classroom && s.classroom.toLowerCase().includes(keyword))
             );
             renderStudentTable(filtered);
         }
@@ -242,7 +279,6 @@
 
                 Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                // อัปเดตลงตาราง profiles (สมมติว่าใช้คอลัมน์ tokens หากฐานข้อมูลใช้ point ให้ปรับเป็น point ได้ครับ)
                 const { error } = await supabaseClient
                     .from('profiles')
                     .update({ tokens: newTotal })
