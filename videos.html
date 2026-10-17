@@ -22,7 +22,7 @@
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; }
+        body { font-family: 'Prompt', sans-serif; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
         .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { 
@@ -40,7 +40,7 @@
         .popout-blocker {
             position: absolute; top: 0; right: 0; width: 100px; height: 70px; z-index: 50; background: transparent; cursor: not-allowed;
         }
-        .hide-scrollbar::-webkit-scrollbar { width: 6px; }
+        .hide-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
         .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.4); border-radius: 9999px; }
         
@@ -64,35 +64,35 @@
         }
         .player-container.portrait {
             aspect-ratio: 9 / 16;
-            max-height: 85vh;
+            max-height: 80vh;
             margin-left: auto;
             margin-right: auto;
-            max-width: 480px;
+            max-width: 420px;
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-12" oncontextmenu="return false;">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-16 sm:pb-12" oncontextmenu="return false;">
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
-                    <button onclick="window.location.href='student.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm" title="กลับหน้าหลักนักเรียน">
+        <div class="max-w-7xl mx-auto px-2.5 sm:px-6">
+            <div class="flex justify-between h-16 items-center gap-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <button onclick="goBackToStudentPortal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:bg-sky-600 hover:text-white transition-all shadow-sm shrink-0" title="กลับหน้าหลักนักเรียน">
                         <i class="fas fa-arrow-left text-sm"></i>
                     </button>
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg shadow-sky-500/30">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-base sm:text-lg shadow-lg shadow-sky-500/30 shrink-0">
                         <i class="fas fa-video"></i>
                     </div>
-                    <div>
-                        <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-none">Student Video & Materials Vault</h1>
-                        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase">คลังเทปเรียน & เอกสารประกอบ</span>
+                    <div class="min-w-0">
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Video & Materials</h1>
+                        <span class="text-[9px] sm:text-[10px] text-sky-600 dark:text-sky-400 font-bold tracking-wider uppercase truncate block">เทปเรียน & เอกสาร</span>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" id="sidebarToggleBtn" class="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 hover:bg-sky-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5" title="ซ่อน/แสดงรายการบทเรียน">
-                        <i class="fas fa-columns"></i> <span class="hidden sm:inline">ซ่อน/แสดงรายการ</span>
+                <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                    <button onclick="toggleSidebar()" id="sidebarToggleBtn" class="px-2.5 sm:px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 hover:bg-sky-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5" title="ซ่อน/แสดงรายการบทเรียน">
+                        <i class="fas fa-columns"></i> <span class="hidden md:inline" id="sidebarToggleText">ซ่อนรายการ</span>
                     </button>
 
                     <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-sky-500">
@@ -104,41 +104,41 @@
     </nav>
 
     <!-- Main Split View Layout -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-24 space-y-6">
+    <main class="max-w-7xl mx-auto px-2.5 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
         
         <!-- 🌟 แถบเลือกคอร์สเรียน -->
-        <div class="hitech-card p-5 sm:p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-2 border-sky-500/60 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent shadow-lg shadow-sky-500/10">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-md shadow-sky-500/30 animate-pulse shrink-0">
+        <div class="hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4 border-2 border-sky-500/60 bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent shadow-lg shadow-sky-500/10">
+            <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white flex items-center justify-center text-lg sm:text-xl shadow-md shadow-sky-500/30 animate-pulse shrink-0">
                     <i class="fas fa-book-reader"></i>
                 </div>
-                <div>
-                    <span class="text-[10px] uppercase tracking-wider font-extrabold text-sky-600 dark:text-sky-400">Course Switcher Hub</span>
-                    <h2 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">เลือกคอร์สเรียนเพื่อดูเทปและเอกสาร</h2>
-                    <p class="text-xs text-slate-500 font-light">แสดงเนื้อหาเฉพาะคอร์สที่ลงทะเบียนและยังไม่หมดอายุเท่านั้น</p>
+                <div class="min-w-0">
+                    <span class="text-[9px] sm:text-[10px] uppercase tracking-wider font-extrabold text-sky-600 dark:text-sky-400">Course Switcher Hub</span>
+                    <h2 class="text-xs sm:text-lg font-extrabold text-slate-900 dark:text-white truncate">เลือกคอร์สเรียนเพื่อดูเทปและเอกสาร</h2>
+                    <p class="text-[11px] text-slate-500 font-light truncate">แสดงเนื้อหาเฉพาะคอร์สที่ลงทะเบียนและยังไม่หมดอายุเท่านั้น</p>
                 </div>
             </div>
             
             <div class="w-full md:w-80">
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-sky-500 font-bold">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-sky-500 font-bold text-xs">
                         <i class="fas fa-layer-group"></i>
                     </div>
-                    <select id="courseSelector" onchange="onCourseChanged()" class="w-full pl-10 pr-10 py-3 bg-white dark:bg-darkinput border-2 border-sky-400 dark:border-sky-600 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer shadow-md hover:border-sky-500 transition-all appearance-none">
+                    <select id="courseSelector" onchange="onCourseChanged()" class="w-full pl-9 pr-9 py-2.5 sm:py-3 bg-white dark:bg-darkinput border-2 border-sky-400 dark:border-sky-600 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white outline-none cursor-pointer shadow-md hover:border-sky-500 transition-all appearance-none">
                         <option value="">-- กำลังตรวจสอบคอร์สที่คุณลงทะเบียน --</option>
                     </select>
-                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-sky-500">
-                        <i class="fas fa-chevron-down text-xs"></i>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-sky-500 text-xs">
+                        <i class="fas fa-chevron-down"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-5 items-start">
+        <div class="flex flex-col lg:flex-row gap-4 sm:gap-5 items-start">
             
             <!-- ฝั่งซ้าย: รายการบทเรียน & ไฟล์เอกสาร -->
-            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-4 rounded-3xl space-y-4 flex flex-col h-[calc(100vh-250px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
-                <div class="space-y-2.5 pb-2.5 border-b border-slate-200 dark:border-slate-800">
+            <div id="sidebarPanel" class="w-full lg:w-80 hitech-card p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4 flex flex-col h-[420px] lg:h-[calc(100vh-250px)] lg:sticky lg:top-24 shrink-0 overflow-hidden">
+                <div class="space-y-2 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                     <div class="flex justify-between items-center">
                         <h3 class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <i class="fas fa-list text-sky-500"></i> รายการบทเรียน (<span id="videoCountDisplay">0</span>)
@@ -158,36 +158,36 @@
                     </div>
                 </div>
 
-                <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2 shrink-0">
                     <h4 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
                         <i class="fas fa-folder-open text-indigo-500"></i> เอกสาร & ไฟล์ประกอบ (<span id="fileCountDisplay">0</span>)
                     </h4>
-                    <div id="fileListContainer" class="max-h-36 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
-                        <div class="text-center py-4 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>
+                    <div id="fileListContainer" class="max-h-28 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
+                        <div class="text-center py-3 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>
                     </div>
                 </div>
             </div>
 
             <!-- ฝั่งขวา: หน้าจอเล่นวิดีโอขนาดใหญ่ -->
-            <div id="mainPlayerPanel" class="flex-1 w-full hitech-card p-5 sm:p-6 rounded-3xl space-y-4 flex flex-col">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 border-b border-slate-200 dark:border-slate-800 gap-3">
-                    <h3 id="currentPlayingTitle" class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2 truncate pr-2">
-                        <i class="fas fa-play-circle text-sky-500"></i> กรุณาเลือกบทเรียนจากรายการด้านซ้าย
+            <div id="mainPlayerPanel" class="flex-1 w-full hitech-card p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-4 flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 border-b border-slate-200 dark:border-slate-800 gap-2.5">
+                    <h3 id="currentPlayingTitle" class="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2 truncate pr-2 w-full sm:w-auto">
+                        <i class="fas fa-play-circle text-sky-500 shrink-0"></i> <span class="truncate">กรุณาเลือกบทเรียนจากรายการด้านซ้าย</span>
                     </h3>
 
-                    <div class="flex items-center gap-1.5 bg-slate-100 dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] shrink-0">
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkinput p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-[11px] shrink-0 self-end sm:self-auto">
                         <button onclick="setVideoOrientation('landscape')" id="btnLandscape" class="px-2.5 py-1 rounded-lg font-bold transition-all bg-sky-600 text-white shadow-sm flex items-center gap-1">
-                            <i class="fas fa-desktop"></i> แนวนอน (16:9)
+                            <i class="fas fa-desktop"></i> แนวนอน
                         </button>
                         <button onclick="setVideoOrientation('portrait')" id="btnPortrait" class="px-2.5 py-1 rounded-lg font-bold transition-all text-slate-600 dark:text-slate-300 hover:text-sky-500 flex items-center gap-1">
-                            <i class="fas fa-mobile-screen"></i> แนวตั้ง (9:16)
+                            <i class="fas fa-mobile-screen"></i> แนวตั้ง
                         </button>
                     </div>
                 </div>
 
                 <div id="playerWrapperContainer" class="player-container landscape shadow-inner">
                     <div id="iframePlayerWrapper" class="w-full h-full relative flex items-center justify-center text-slate-500 text-xs bg-slate-900">
-                        <div class="text-center space-y-2">
+                        <div class="text-center space-y-2 p-4">
                             <i class="fas fa-film text-3xl text-slate-600 animate-pulse"></i>
                             <p>ยังไม่ได้เลือกวิดีโอ</p>
                         </div>
@@ -195,7 +195,7 @@
                     <div class="popout-blocker" onclick="alertPopoutBlocked()" title="ระบบป้องกันการเปิดหน้าต่างภายนอก"></div>
                 </div>
 
-                <div class="flex justify-between items-center pt-1 text-[11px] text-slate-400">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-1 text-[11px] text-slate-400 gap-1">
                     <span><i class="fas fa-shield-alt text-emerald-500 mr-1"></i> ป้องกันการดาวน์โหลด • ปิดกั้น Pop-out สมบูรณ์</span>
                     <span id="videoPublishDate">--</span>
                 </div>
@@ -231,15 +231,23 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
+        function goBackToStudentPortal() {
+            const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
+            window.location.href = studentId ? `student.html?student_id=${studentId}` : 'student.html';
+        }
+
         function toggleSidebar() {
             isSidebarOpen = !isSidebarOpen;
             const sidebar = document.getElementById('sidebarPanel');
+            const toggleText = document.getElementById('sidebarToggleText');
             if (isSidebarOpen) {
                 sidebar.classList.remove('hidden');
                 sidebar.classList.add('flex');
+                if(toggleText) toggleText.textContent = 'ซ่อนรายการ';
             } else {
                 sidebar.classList.remove('flex');
                 sidebar.classList.add('hidden');
+                if(toggleText) toggleText.textContent = 'แสดงรายการ';
             }
         }
 
@@ -297,6 +305,16 @@
         async function initVideoVault() {
             const isValid = await verifyStudentAccess();
             if (!isValid) return;
+
+            // ตรวจสอบขนาดหน้าจออัตโนมัติ: ถือว่าถ้าหน้าจอแคบกว่า 768px (มือถือ) ให้ซ่อน Sidebar ไว้ก่อนเพื่อความสบายตา
+            if (window.innerWidth < 1024) {
+                isSidebarOpen = false;
+                const sidebar = document.getElementById('sidebarPanel');
+                const toggleText = document.getElementById('sidebarToggleText');
+                sidebar.classList.remove('flex');
+                sidebar.classList.add('hidden');
+                if(toggleText) toggleText.textContent = 'แสดงรายการ';
+            }
 
             try {
                 let enrollments = [];
@@ -461,7 +479,7 @@
             document.getElementById('fileCountDisplay').textContent = files.length;
 
             if (files.length === 0) {
-                fileContainer.innerHTML = `<div class="text-center py-4 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>`;
+                fileContainer.innerHTML = `<div class="text-center py-3 text-slate-400 text-[11px]">ไม่มีไฟล์เอกสารในคอร์สนี้</div>`;
             } else {
                 fileContainer.innerHTML = files.map(f => `
                     <a href="${f.pdf_url}" target="_blank" class="p-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 hover:border-indigo-400 rounded-xl flex items-center justify-between gap-2 transition-all block">
@@ -481,7 +499,7 @@
         function playVideo(id, encodedTitle, createdAt, rawUrl) {
             activeVideoId = id;
             const title = decodeURIComponent(encodedTitle);
-            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> ${title}`;
+            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500 shrink-0"></i> <span class="truncate">${title}</span>`;
             document.getElementById('videoPublishDate').textContent = `เผยแพร่เมื่อ: ${new Date(createdAt).toLocaleString('th-TH')}`;
 
             const wrapper = document.getElementById('iframePlayerWrapper');
@@ -498,14 +516,24 @@
             }
 
             wrapper.innerHTML = embedHtml;
+
+            // บนมือถือ เมื่อคลิกเลือกวิดีโอ ให้ซ่อน Sidebar อัตโนมัติเพื่อให้พื้นที่แสดงวิดีโอกว้างเต็มจอ
+            if (window.innerWidth < 1024) {
+                isSidebarOpen = false;
+                const sidebar = document.getElementById('sidebarPanel');
+                const toggleText = document.getElementById('sidebarToggleText');
+                sidebar.classList.remove('flex');
+                sidebar.classList.add('hidden');
+                if(toggleText) toggleText.textContent = 'แสดงรายการ';
+            }
         }
 
         function resetPlayerToEmpty() {
             activeVideoId = null;
-            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500"></i> กรุณาเลือกบทเรียนจากรายการด้านซ้าย`;
+            document.getElementById('currentPlayingTitle').innerHTML = `<i class="fas fa-play-circle text-sky-500 shrink-0"></i> <span class="truncate">กรุณาเลือกบทเรียนจากรายการด้านซ้าย</span>`;
             document.getElementById('videoPublishDate').textContent = `--`;
             document.getElementById('iframePlayerWrapper').innerHTML = `
-                <div class="text-center space-y-2">
+                <div class="text-center space-y-2 p-4">
                     <i class="fas fa-film text-3xl text-slate-600 animate-pulse"></i>
                     <p>ไม่มีวิดีโอในคอร์สนี้</p>
                 </div>
