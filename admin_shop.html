@@ -199,12 +199,13 @@
                 const { data: courseData } = await supabaseClient.from('courses').select('id, title');
                 allCoursesList = courseData || [];
 
-                // 2. โหลดโปรไฟล์นักเรียนทั้งหมดมาทำ Map
-                const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, username, nickname, tokens, point, points, coin, coins');
+                // 2. โหลดโปรไฟล์นักเรียนทั้งหมดมาทำ Map (รองรับทุกฟิลด์ชื่อที่เป็นไปได้)
+                const { data: profData } = await supabaseClient.from('profiles').select('*');
                 if (profData) {
                     profData.forEach(p => {
+                        const studentName = p.full_name || p.name || p.username || p.nickname || p.email || 'นักเรียน';
                         allProfilesMap[p.id] = {
-                            name: p.full_name || p.username || 'นักเรียน',
+                            name: studentName,
                             tokens: p.tokens ?? p.point ?? p.points ?? p.coin ?? p.coins ?? 0
                         };
                     });
@@ -879,7 +880,7 @@
         // 🌟 ตั้งค่า Realtime Subscription ให้หน้า Admin อัปเดตอัตโนมัติแบบ Realtime ทันที
         function setupRealtimeSubscriptions() {
             supabaseClient
-                .channel('admin-shop-realtime-v3')
+                .channel('admin-shop-realtime-v4')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
                     loadShopData();
                 })
