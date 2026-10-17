@@ -1,16 +1,36 @@
 <!DOCTYPE html>
-<html lang="th" class="light select-none">
+<html lang="th" class="light">
 <head>
     <script src="lms_core.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LMS | Student Reward Shop - คลังของรางวัล</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>LMS | จัดการร้านค้าและของรางวัลขั้นสูง (Advanced Shop Management)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- 🔒 Security Guard: ตรวจสอบสิทธิ์ Admin หรือ Teacher -->
+    <script>
+        const SUPABASE_URL_CHECK = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
+        const SUPABASE_KEY_CHECK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
+        
+        (async function() {
+            const tempClient = window.supabase.createClient(SUPABASE_URL_CHECK, SUPABASE_KEY_CHECK);
+            const { data: { session } } = await tempClient.auth.getSession();
+            if (!session) { window.location.replace('index.html'); return; }
+
+            const { data: profile } = await tempClient.from('profiles').select('*').eq('id', session.user.id).single();
+            const role = String(profile?.role || '').toLowerCase();
+            const email = String(profile?.email || '').toLowerCase();
+            if (!['admin', 'teacher', 'instructor'].includes(role) && !email.includes('admin') && !email.includes('teacher')) {
+                alert('⚠️ พื้นที่นี้สำหรับผู้ดูแลระบบหรือคุณครูเท่านั้น!');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -24,120 +44,142 @@
     </script>
     <style>
         body { font-family: 'Prompt', sans-serif; }
-        .glass-nav { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(2, 132, 199, 0.15); }
-        .dark .glass-nav { background: rgba(2, 6, 23, 0.9); border-bottom: 1px solid rgba(2, 132, 199, 0.3); }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(186, 230, 253, 0.5); }
+        .dark .glass-nav { background: rgba(2, 6, 23, 0.88); border-bottom: 1px solid rgba(30, 58, 138, 0.4); }
         .hitech-card { 
-            background: rgba(255, 255, 255, 0.98); 
-            border: 1px solid rgba(245, 158, 11, 0.3); 
-            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(251, 191, 36, 0.3); 
+            box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.08); transition: all 0.3s ease; 
         }
         .dark .hitech-card { 
-            background: #090d16; 
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+            background: rgba(9, 13, 22, 0.95); border: 1px solid rgba(217, 119, 6, 0.3); 
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); 
         }
-        .shop-card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px -10px rgba(245, 158, 11, 0.25);
-            border-color: #f59e0b;
-        }
-        .hide-scrollbar::-webkit-scrollbar { height: 6px; }
-        .hide-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 9999px; }
-        .hide-scrollbar::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 9999px; }
         div:where(.swal2-container) { font-family: 'Prompt', sans-serif; }
         .dark .swal2-popup { background-color: #090d16 !important; color: #f8fafc !important; border: 1px solid #1e293b !important; }
     </style>
 </head>
-<body class="bg-slate-50/70 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-24">
+<body class="bg-slate-50 dark:bg-darkbg min-h-screen text-slate-900 dark:text-slate-100 pb-20">
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 sm:h-18 flex justify-between items-center gap-2">
-            <div class="flex items-center gap-3">
-                <button onclick="goBackToStudentPortal()" class="w-10 h-10 rounded-2xl bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-600 flex items-center justify-center font-bold transition-all shadow-sm" title="กลับสู่หน้าหลักนักเรียน">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div>
-                    <h1 class="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <i class="fas fa-store text-amber-500"></i> Student Reward Shop
-                    </h1>
-                    <p class="text-[10px] sm:text-[11px] text-amber-600 dark:text-amber-400 font-semibold">คลังของรางวัลและสิทธิพิเศษสะสม Token</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2 shrink-0">
-                <div class="px-3.5 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-2xl text-xs font-extrabold flex items-center gap-2 border border-amber-500/30 shadow-sm">
-                    <i class="fas fa-coins text-amber-500 animate-pulse"></i> 
-                    <span id="navTokenBalance">-- Token</span>
+    <nav class="glass-nav fixed w-full top-0 z-40">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6">
+            <div class="flex justify-between h-16 items-center gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <button onclick="window.location.href='admin_tokens.html'" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="กลับหน้าจัดการ Token">
+                        <i class="fas fa-arrow-left text-sm"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <h1 class="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white leading-tight truncate">Advanced Shop Command</h1>
+                        <span class="text-[9px] sm:text-[10px] text-amber-600 dark:text-amber-400 font-bold tracking-wider uppercase block truncate">ระบบจัดการร้านค้าขั้นสูง (Realtime & Search)</span>
+                    </div>
                 </div>
 
-                <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 shadow-sm hover:border-amber-500 text-amber-600 dark:text-slate-300 transition-all" title="สลับธีม">
-                    <i class="fas fa-moon text-xs" id="themeIcon"></i>
-                </button>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button onclick="openAddProductModal()" class="px-3 py-1.5 bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/30 hover:bg-amber-600 transition-all flex items-center gap-1.5">
+                        <i class="fas fa-plus"></i> <span class="hidden sm:inline">เพิ่มสินค้าใหม่</span>
+                    </button>
+                    <button id="themeToggle" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-darkinput text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all" title="สลับธีม">
+                        <i class="fas fa-moon text-sm" id="themeIcon"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-6">
-
-        <!-- Banner -->
-        <div class="hitech-card p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-amber-500 via-yellow-600 to-orange-600 text-white shadow-xl shadow-amber-500/10 relative overflow-hidden space-y-3">
-            <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="relative z-10 space-y-1">
-                <span class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-extrabold uppercase tracking-wide">Reward Marketplace</span>
-                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">แลกของรางวัลสุดพิเศษด้วย Token ของคุณ</h2>
-                <p class="text-xs sm:text-sm text-amber-100 max-w-xl font-light">สะสม Token จากการทำข้อสอบและการเข้าร่วมกิจกรรมในห้องเรียน นำมาแลกรับของขวัญ ส่วนลด หรือสิทธิพิเศษได้ที่นี่</p>
-            </div>
-            <div class="pt-3 border-t border-white/20 flex flex-wrap gap-4 text-xs relative z-10">
-                <div><i class="fas fa-check-circle mr-1"></i> สินค้าอนุมัติโดยคุณครู</div>
-                <div><i class="fas fa-shipping-fast mr-1"></i> ตรวจสอบสถานะการจัดส่งได้ตลอดเวลา</div>
-            </div>
-        </div>
-
-        <!-- Filter & Search Bar -->
-        <div class="hitech-card p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
-                <button onclick="setShopCategoryFilter('all')" id="shopCatAll" class="px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">ทั้งหมด</button>
-                <button onclick="setShopCategoryFilter('discount')" id="shopCatDiscount" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🏷️ ส่วนลด</button>
-                <button onclick="setShopCategoryFilter('gift')" id="shopCatGift" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">🎁 ของขวัญ</button>
-                <button onclick="setShopCategoryFilter('cash')" id="shopCatCash" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">💵 เงินสด/ทุน</button>
-                <button onclick="setShopCategoryFilter('other')" id="shopCatOther" class="px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0">✨ อื่นๆ</button>
-            </div>
-
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <div class="relative flex-1 sm:w-72">
-                    <i class="fas fa-search absolute left-3.5 top-3.5 text-amber-500 text-xs"></i>
-                    <input type="text" id="searchShopInput" oninput="renderShopItems()" placeholder="ค้นหาชื่อของรางวัล..." class="w-full pl-9 pr-3.5 py-2.5 bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs focus:ring-2 focus:ring-amber-500 outline-none transition-all font-medium">
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-20 sm:pt-24 space-y-4 sm:space-y-6">
+        
+        <!-- Header Banner -->
+        <div class="p-4 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-amber-600/10 border border-amber-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20">
+                    <i class="fas fa-store"></i> Dynamic Rule Store Administration
                 </div>
-                <button onclick="openMyRedemptionHistoryModal()" class="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-bold transition-all border border-amber-500/30 shrink-0">
-                    <i class="fas fa-history mr-1"></i> ประวัติการแลก
-                </button>
+                <h2 class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white">จัดการคลังของรางวัลขั้นสูง</h2>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400">ควบคุมสินค้า คอร์สเรียนเป้าหมาย และตรวจสอบคำขอแลกของรางวัลจากนักเรียนย้อนหลังรายคน</p>
             </div>
         </div>
 
-        <!-- Shop Items Grid -->
-        <div id="shopItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <div class="col-span-full py-16 text-center text-slate-400 space-y-2">
-                <i class="fas fa-spinner fa-spin text-2xl text-amber-500"></i>
-                <p class="text-xs">กำลังโหลดรายการของรางวัล...</p>
+        <!-- Tabs Navigation -->
+        <div class="flex gap-2 border-b dark:border-slate-800 pb-2 overflow-x-auto">
+            <button onclick="switchTab('products')" id="tabBtnProducts" class="px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap">
+                <i class="fas fa-boxes-stacked"></i> รายการสินค้าทั้งหมด (<span id="countProducts">0</span>)
+            </button>
+            <button onclick="switchTab('requests')" id="tabBtnRequests" class="px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap">
+                <i class="fas fa-clipboard-list"></i> คำขอแลกของรางวัล (<span id="countRequests">0</span>)
+            </button>
+        </div>
+
+        <!-- Tab 1: Products Inventory -->
+        <div id="tabContentProducts" class="space-y-4">
+            <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
+                        <thead>
+                            <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
+                                <th class="py-3 px-3 sm:p-4 text-center">รูปภาพ</th>
+                                <th class="py-3 px-3 sm:p-4">ชื่อของรางวัล</th>
+                                <th class="py-3 px-3 sm:p-4">คอร์สที่เข้าร่วม</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">ราคา / กฎสิทธิ์</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สต็อก / โควตา</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">ระยะเวลา</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สถานะ</th>
+                                <th class="py-3 px-3 sm:p-4 text-right">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tr><td colspan="8" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการสินค้า...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
+        <!-- Tab 2: Redemption Requests Queue & History Search -->
+        <div id="tabContentRequests" class="hidden space-y-4">
+            <!-- Search & Filter Bar -->
+            <div class="flex flex-col sm:flex-row gap-2 items-center justify-between bg-white dark:bg-darkbox p-3 rounded-2xl border border-amber-500/20 shadow-sm">
+                <div class="relative w-full sm:w-80">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                    <input type="text" id="searchRequestInput" oninput="filterRequests()" placeholder="ค้นหาชื่อนักเรียน หรือชื่อของรางวัล..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-darkinput border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold outline-none focus:border-amber-500 transition-all">
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 font-bold px-2">
+                    แสดงผล <span id="filteredCount">0</span> รายการ
+                </div>
+            </div>
+
+            <div class="hitech-card rounded-2xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto -webkit-overflow-scrolling-touch">
+                    <table class="w-full text-left border-collapse text-xs whitespace-nowrap sm:whitespace-normal">
+                        <thead>
+                            <tr class="bg-amber-500/10 border-b border-amber-500/20 text-slate-700 dark:text-slate-300 uppercase font-bold text-[11px]">
+                                <th class="py-3 px-3 sm:p-4">เวลาที่ขอ</th>
+                                <th class="py-3 px-3 sm:p-4">นักเรียน</th>
+                                <th class="py-3 px-3 sm:p-4">ของรางวัลที่แลก</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">Token ที่ใช้</th>
+                                <th class="py-3 px-3 sm:p-4 text-center">สถานะ</th>
+                                <th class="py-3 px-3 sm:p-4 text-right">ดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <tr><td colspan="6" class="text-center py-10 text-slate-400 font-bold">กำลังโหลดรายการคำขอ...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
         const SUPABASE_URL = 'https://fvsofdlmpnoeeqcpioeu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2c29mZGxtcG5vZWVxY3Bpb2V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NjMwMjEsImV4cCI6MjEwNzQzOTAyMX0.U5nHS_fNHFlgR2rTSu0TrXVn_iIrEkvouHHD0zD4zaw';
-        
-        const mySupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentStudentId = null;
-        let studentTokenBalance = 0;
-        let allShopItems = [];
-        let myRedemptions = [];
-        let currentCategoryFilter = 'all';
+        let allProducts = [];
+        let allRequests = [];
+        let allCoursesList = [];
+        let allProfilesMap = {};
 
+        // 🌗 ธีมมืด/สว่าง
         const htmlElement = document.documentElement;
         const themeIcon = document.getElementById('themeIcon');
         if (localStorage.getItem('theme') === 'dark') {
@@ -151,261 +193,646 @@
             themeIcon.classList.replace(isDark ? 'fa-moon' : 'fa-sun', isDark ? 'fa-sun' : 'fa-moon');
         });
 
-        function goBackToStudentPortal() {
-            const studentId = currentStudentId || localStorage.getItem('student_id') || localStorage.getItem('id');
-            window.location.href = studentId ? `student.html?student_id=${studentId}` : 'student.html';
+        async function loadShopData() {
+            try {
+                // 1. โหลดรายชื่อคอร์ส
+                const { data: courseData } = await supabaseClient.from('courses').select('id, title');
+                allCoursesList = courseData || [];
+
+                // 2. โหลดโปรไฟล์นักเรียนทั้งหมดมาทำ Map
+                const { data: profData } = await supabaseClient.from('profiles').select('id, full_name, username, nickname');
+                if (profData) {
+                    profData.forEach(p => {
+                        allProfilesMap[p.id] = p.full_name || p.username || 'นักเรียน';
+                    });
+                }
+
+                // 3. โหลดสินค้าทั้งหมด
+                const { data: prodData, error: prodErr } = await supabaseClient
+                    .from('shop_items')
+                    .select('*, shop_item_courses(course_id, courses(title))')
+                    .order('created_at', { ascending: false });
+                if (prodErr) throw prodErr;
+                allProducts = prodData || [];
+                document.getElementById('countProducts').textContent = allProducts.length;
+                renderProductsTable(allProducts);
+
+                // 4. โหลดคำขอแลกของรางวัลทั้งหมด
+                const { data: reqData, error: reqErr } = await supabaseClient
+                    .from('redemption_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                if (reqErr) throw reqErr;
+                allRequests = reqData || [];
+                document.getElementById('countRequests').textContent = allRequests.length;
+                
+                filterRequests();
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire({ icon: 'error', title: 'โหลดข้อมูลไม่สำเร็จ', text: err.message });
+            }
         }
 
-        async function initShopPage() {
-            const urlParams = new URLSearchParams(window.location.search);
-            currentStudentId = urlParams.get('student_id') || urlParams.get('id') || localStorage.getItem('student_id') || localStorage.getItem('id');
+        // 🖼️ ฟังก์ชันช่วยอัปโหลดไฟล์รูปภาพไปยัง Supabase Storage Bucket ('shop-images')
+        async function uploadShopImage(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) return null;
 
-            if (!currentStudentId) {
-                await Swal.fire({ icon: 'error', title: 'Access Denied', text: 'กรุณาเข้าสู่ระบบผ่านหน้าพอร์ทัลนักเรียนก่อน', confirmButtonColor: '#f59e0b' });
-                window.location.href = 'index.html';
+            const file = fileInput.files[0];
+            const fileExt = file.name.split('.').pop();
+            const fileName = `item_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+                .from('shop-images')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                throw new Error('ไม่สามารถอัปโหลดรูปภาพได้: ' + uploadError.message);
+            }
+
+            const { data } = supabaseClient.storage
+                .from('shop-images')
+                .getPublicUrl(filePath);
+
+            return data.publicUrl;
+        }
+
+        function renderProductsTable(products) {
+            const tbody = document.getElementById('productsTableBody');
+            if (products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-slate-400">ยังไม่มีสินค้าในร้านค้า กดปุ่ม "เพิ่มสินค้าใหม่" ด้านบนได้เลย</td></tr>`;
                 return;
             }
 
-            // โหลด Token นักเรียน
-            const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).maybeSingle();
-            if (prof) {
-                studentTokenBalance = prof.tokens ?? prof.point ?? prof.points ?? prof.coin ?? prof.coins ?? 0;
-            } else {
-                const { data: stud } = await mySupabase.from('students').select('*').eq('id', currentStudentId).maybeSingle();
-                if (stud) studentTokenBalance = stud.tokens ?? stud.point ?? stud.points ?? stud.coin ?? stud.coins ?? 0;
-            }
-            document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
-
-            // โหลดสินค้าในร้าน
-            const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
-            allShopItems = items || [];
-
-            // โหลดประวัติการแลกของนักเรียนคนนี้
-            await fetchMyRedemptions();
-
-            renderShopItems();
-        }
-
-        async function fetchMyRedemptions() {
-            const { data, error } = await mySupabase
-                .from('redemption_logs')
-                .select('*')
-                .eq('student_id', currentStudentId)
-                .order('created_at', { ascending: false });
-            
-            if (!error) {
-                myRedemptions = data || [];
-            } else {
-                console.error("Fetch redemptions error:", error);
-                myRedemptions = [];
-            }
-        }
-
-        function setShopCategoryFilter(cat) {
-            currentCategoryFilter = cat;
-            ['All', 'Discount', 'Gift', 'Cash', 'Other'].forEach(c => {
-                const btn = document.getElementById(`shopCat${c}`);
-                if (c.toLowerCase() === cat || (cat === 'all' && c === 'All')) {
-                    btn.className = 'px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0';
-                } else {
-                    btn.className = 'px-4 py-2 bg-white dark:bg-darkinput text-slate-600 dark:text-slate-300 hover:text-amber-500 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-800 shrink-0';
-                }
-            });
-            renderShopItems();
-        }
-
-        function renderShopItems() {
-            const container = document.getElementById('shopItemsContainer');
-            const keyword = document.getElementById('searchShopInput').value.toLowerCase();
+            const categoryLabels = { discount: '🏷️ ส่วนลด', cash: '💵 เงินสด', gift: '🎁 ของขวัญ', other: '✨ อื่นๆ' };
+            const limitModeLabels = { person: '👤 จำกัดคนละสิทธิ์', course: '📚 ตามจำนวนคอร์ส', unlimited: '♾️ ไม่จำกัดสิทธิ์' };
             const now = new Date();
 
-            const filtered = allShopItems.filter(item => {
-                if (currentCategoryFilter !== 'all' && item.category !== currentCategoryFilter) return false;
-                if (keyword && !item.title.toLowerCase().includes(keyword) && (!item.description || !item.description.toLowerCase().includes(keyword))) return false;
-                return true;
-            });
+            tbody.innerHTML = products.map(p => {
+                const catText = categoryLabels[p.category] || p.category;
+                const limitText = limitModeLabels[p.limit_mode] || 'จำกัดคนละสิทธิ์';
 
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full py-16 text-center text-slate-400 space-y-2">
-                        <i class="fas fa-store-slash text-3xl text-amber-500 mb-1"></i>
-                        <p class="text-xs">ไม่พบรายการของรางวัลในหมวดหมู่นี้</p>
-                    </div>
-                `;
-                return;
-            }
+                const linkedCourses = p.shop_item_courses || [];
+                const courseTags = linkedCourses.length > 0 
+                    ? linkedCourses.map(ic => `<span class="inline-block px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-500 text-[9px] font-bold mr-1 mb-1">${ic.courses?.title || 'คอร์ส'}</span>`).join('')
+                    : '<span class="text-[10px] text-slate-400">ทุกคอร์สเรียน (อิสระ)</span>';
 
-            const categoryLabels = { discount: '🏷️ ส่วนลด', cash: '💵 เงินสด/ทุน', gift: '🎁 ของขวัญ', other: '✨ อื่นๆ' };
+                let imageHtml = p.image_url 
+                    ? `<img src="${p.image_url}" class="w-10 h-10 object-cover rounded-xl border border-amber-500/30 mx-auto shadow-sm" alt="Product Image">`
+                    : `<div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto text-xs"><i class="fas fa-image"></i></div>`;
 
-            container.innerHTML = filtered.map(item => {
-                const catText = categoryLabels[item.category] || item.category;
-                const canAfford = studentTokenBalance >= item.token_price;
-                const isOutOfStock = item.stock <= 0;
-                const redeemedCount = myRedemptions.filter(r => r.item_id === item.id && r.status !== 'rejected').length;
-                const maxAllowed = item.max_per_user || 1;
-                const isLimitReached = item.limit_mode !== 'unlimited' && redeemedCount >= maxAllowed;
+                let timeStatusBadge = '';
+                const startsAt = p.starts_at ? new Date(p.starts_at) : null;
+                const expiresAt = p.expires_at ? new Date(p.expires_at) : null;
 
-                // 🌟 ตรวจสอบเงื่อนไขเวลาเปิดขาย (Active Time Window Check)
-                const startsAt = item.starts_at ? new Date(item.starts_at) : null;
-                const expiresAt = item.expires_at ? new Date(item.expires_at) : null;
-                
-                let isNotStartedYet = startsAt && now < startsAt;
-                let isExpired = expiresAt && now > expiresAt;
-
-                let actionButtonHtml = '';
-                if (isNotStartedYet) {
-                    const formatStart = startsAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-                    actionButtonHtml = `<span class="text-amber-500 font-bold text-[11px]" title="เริ่มเปิดขายวันที่ ${formatStart}">⏳ ยังไม่เปิดจำหน่าย</span>`;
-                } else if (isExpired) {
-                    actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">⏰ หมดเขตแลกแล้ว</span>`;
-                } else if (isOutOfStock) {
-                    actionButtonHtml = `<span class="text-rose-500 font-bold text-[11px]">สินค้าหมด</span>`;
-                } else if (isLimitReached) {
-                    actionButtonHtml = `<span class="text-amber-500 font-bold text-[11px]">แลกครบสิทธิ์แล้ว</span>`;
-                } else if (!canAfford) {
-                    actionButtonHtml = `<span class="text-slate-400 font-bold text-[11px]">Token ไม่พอ</span>`;
+                if (startsAt && now < startsAt) {
+                    timeStatusBadge = `<div class="text-[10px] text-amber-500 font-bold">⏳ เริ่ม: ${startsAt.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}</div>`;
+                } else if (expiresAt && now > expiresAt) {
+                    timeStatusBadge = `<div class="text-[10px] text-rose-500 font-bold">⏰ หมดเขตแล้ว</div>`;
                 } else {
-                    actionButtonHtml = `<button onclick="confirmRedeemItem('${item.id}', '${item.title}', ${item.token_price})" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-500/20">แลกรับรางวัล</button>`;
+                    timeStatusBadge = `<div class="text-[10px] text-emerald-500 font-bold">🟢 เปิดจำหน่ายปกติ</div>`;
                 }
 
-                // 🖼️ ส่วนแสดงผลรูปภาพสินค้า
-                let imageHtml = item.image_url 
-                    ? `<div class="w-full h-44 overflow-hidden rounded-xl bg-slate-100 dark:bg-darkinput border border-amber-500/20 mb-3"><img src="${item.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${item.title}"></div>`
-                    : `<div class="w-full h-44 rounded-xl bg-amber-500/5 dark:bg-darkinput border border-amber-500/20 flex flex-col items-center justify-center text-amber-500/60 mb-3 space-y-1"><i class="fas fa-gift text-3xl"></i><span class="text-[10px] font-semibold text-slate-400">Reward Item</span></div>`;
+                let statusBadge = '';
+                if (expiresAt && now > expiresAt) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-500 font-bold text-[10px]">⏰ หมดอายุ</span>';
+                } else if (p.is_active) {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">🟢 เปิดใช้งาน</span>';
+                } else {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 font-bold text-[10px]">🔴 ปิดขาย</span>';
+                }
+
+                let quotaDisplay = p.limit_mode === 'unlimited' ? 'ไม่จำกัด' : `${p.max_per_user || 1} สิทธิ์`;
 
                 return `
-                    <div class="hitech-card shop-card-hover p-5 rounded-2xl flex flex-col justify-between space-y-4 group">
-                        <div class="space-y-2">
-                            ${imageHtml}
-                            <div class="flex justify-between items-center">
-                                <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[10px]">${catText}</span>
-                                <span class="text-xs font-extrabold text-amber-500 flex items-center gap-1"><i class="fas fa-coins"></i> ${Number(item.token_price).toLocaleString()} Token</span>
-                            </div>
-                            <h3 class="font-extrabold text-base text-slate-900 dark:text-white">${item.title}</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-3">${item.description || 'ไม่มีรายละเอียดสินค้าเพิ่มเติม'}</p>
-                        </div>
-                        <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
-                            <span class="text-slate-400 font-medium">เหลือสต็อก: ${item.stock} ชิ้น</span>
-                            ${actionButtonHtml}
-                        </div>
-                    </div>
+                    <tr class="hover:bg-amber-500/5 transition-colors">
+                        <td class="py-3 px-3 sm:p-4 text-center">${imageHtml}</td>
+                        <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white text-xs sm:text-sm">${p.title}</td>
+                        <td class="py-3 px-3 sm:p-4">
+                            <div class="mb-1"><span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold text-[10px]">${catText}</span></div>
+                            <div>${courseTags}</div>
+                        </td>
+                        <td class="py-3 px-3 sm:p-4 text-center">
+                            <div class="font-extrabold text-amber-500">${Number(p.token_price).toLocaleString()} Token</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${limitText}</div>
+                        </td>
+                        <td class="py-3 px-3 sm:p-4 text-center">
+                            <div class="font-bold">สต็อก: ${Number(p.stock).toLocaleString()}</div>
+                            <div class="text-[10px] text-slate-400">โควตา: ${quotaDisplay}</div>
+                        </td>
+                        <td class="py-3 px-3 sm:p-4 text-center text-[11px]">${timeStatusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">
+                            <button onclick="openEditProductModal('${p.id}')" class="px-2.5 sm:px-3 py-1.5 bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900 rounded-xl font-bold text-xs" title="แก้ไขสินค้า">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleProductStatus('${p.id}', ${p.is_active})" class="px-2.5 sm:px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900 rounded-xl font-bold text-xs" title="เปิด/ปิดการขาย">
+                                <i class="fas fa-power-off"></i>
+                            </button>
+                            <button onclick="deleteProduct('${p.id}')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl font-bold text-xs" title="ลบสินค้า">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
                 `;
             }).join('');
         }
 
-        async function confirmRedeemItem(itemId, itemTitle, itemPrice) {
-            const { isConfirmed } = await Swal.fire({
-                title: 'ยืนยันการแลกของรางวัล?',
-                html: `คุณต้องการใช้ <b class="text-amber-500 font-bold">${itemPrice.toLocaleString()} Token</b> เพื่อแลกรับ <b>"${itemTitle}"</b> ใช่หรือไม่?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'ยืนยันแลก',
-                cancelButtonText: 'ยกเลิก',
-                confirmButtonColor: '#f59e0b'
+        function filterRequests() {
+            const keyword = (document.getElementById('searchRequestInput')?.value || '').toLowerCase().trim();
+            
+            const filtered = allRequests.filter(r => {
+                const studentName = (allProfilesMap[r.student_id] || '').toLowerCase();
+                const product = allProducts.find(p => p.id === r.item_id);
+                const itemTitle = (product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)').toLowerCase();
+                
+                return studentName.includes(keyword) || itemTitle.includes(keyword);
             });
 
-            if (!isConfirmed) return;
-
-            Swal.fire({ title: 'กำลังดำเนินการ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-            // 1. ตรวจสอบยอด Token ล่าสุดจากตาราง profiles
-            const { data: prof } = await mySupabase.from('profiles').select('*').eq('id', currentStudentId).single();
-            const currentTokens = prof?.tokens ?? prof?.point ?? prof?.points ?? prof?.coin ?? prof?.coins ?? 0;
-
-            if (currentTokens < itemPrice) {
-                Swal.fire({ icon: 'error', title: 'Token ไม่เพียงพอ', text: 'ยอด Token ของคุณไม่เพียงพอสำหรับการแลกสินค้านี้' });
-                return;
-            }
-
-            const newTokens = currentTokens - itemPrice;
-
-            // 2. หัก Token ของนักเรียน
-            let updateResult = await mySupabase.from('profiles').update({ tokens: newTokens }).eq('id', currentStudentId);
-            if (updateResult.error) {
-                await mySupabase.from('profiles').update({ point: newTokens }).eq('id', currentStudentId);
-            }
-
-            // 3. ตัดสต็อกสินค้า
-            const { data: prodData } = await mySupabase.from('shop_items').select('stock').eq('id', itemId).single();
-            if (prodData) {
-                await mySupabase.from('shop_items').update({ stock: Math.max(0, prodData.stock - 1) }).eq('id', itemId);
-            }
-
-            // 4. บันทึกประวัติการแลกลงตาราง redemption_logs (เพื่อให้ฝั่งครูเห็นและเก็บประวัติ)
-            const { error: insertError } = await mySupabase.from('redemption_logs').insert([{
-                student_id: String(currentStudentId),
-                item_id: String(itemId),
-                token_spent: Number(itemPrice),
-                status: 'pending'
-            }]);
-
-            if (insertError) {
-                console.error("Redemption log error:", insertError);
-                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกประวัติการแลกได้: ' + insertError.message });
-                return;
-            }
-
-            studentTokenBalance = newTokens;
-            document.getElementById('navTokenBalance').textContent = `${Number(studentTokenBalance).toLocaleString()} Token`;
-
-            // 5. โหลดประวัติใหม่ทันที
-            await fetchMyRedemptions();
-
-            // 6. อัปเดตการแสดงผลหน้าร้าน
-            const { data: items } = await mySupabase.from('shop_items').select('*').eq('is_active', true).order('token_price', { ascending: true });
-            allShopItems = items || [];
-            renderShopItems();
-
-            Swal.fire({
-                icon: 'success',
-                title: 'แลกของรางวัลสำเร็จ!',
-                text: 'ระบบได้ส่งคำขอไปยังคุณครูเรียบร้อยแล้ว กรุณารอการตรวจสอบและจัดส่งของรางวัล',
-                confirmButtonColor: '#f59e0b'
-            });
+            document.getElementById('filteredCount').textContent = filtered.length;
+            renderRequestsTable(filtered);
         }
 
-        async function openMyRedemptionHistoryModal() {
-            await fetchMyRedemptions(); // โหลดข้อมูลล่าสุดก่อนเปิด Modal
-            const isDark = document.documentElement.classList.contains('dark');
-            let historyHtml = '';
+        function renderRequestsTable(requests) {
+            const tbody = document.getElementById('requestsTableBody');
+            if (requests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-slate-400">ไม่พบรายการคำขอที่ค้นหา</td></tr>`;
+                return;
+            }
 
-            if (myRedemptions.length === 0) {
-                historyHtml = `<div class="py-12 text-center text-slate-400 space-y-2"><i class="fas fa-history text-3xl text-amber-500"></i><p class="text-xs">คุณยังไม่มีประวัติการแลกของรางวัล</p></div>`;
-            } else {
-                historyHtml = `<div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1 text-left">`;
-                myRedemptions.forEach(r => {
-                    const item = allShopItems.find(i => i.id === r.item_id) || { title: 'ของรางวัล (ถูกลบหรือปิดใช้งาน)' };
-                    const dateStr = new Date(r.created_at).toLocaleString('th-TH');
-                    
-                    let statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
-                    if (r.status === 'approved') statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 font-bold text-[10px]">✅ อนุมัติแล้ว</span>';
-                    else if (r.status === 'rejected') statusBadge = '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-500 font-bold text-[10px]">❌ ไม่อนุมัติ</span>';
+            tbody.innerHTML = requests.map(r => {
+                const studentName = allProfilesMap[r.student_id] || 'นักเรียน (ไม่พบชื่อ)';
+                const product = allProducts.find(p => p.id === r.item_id);
+                const itemTitle = product ? product.title : 'ของรางวัล (ถูกลบหรือปิดใช้งาน)';
+                const dateStr = new Date(r.created_at).toLocaleString('th-TH');
+                
+                let statusBadge = '';
+                let actionButtons = '';
 
-                    historyHtml += `
-                        <div class="p-3.5 rounded-2xl bg-white dark:bg-darkinput border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm">
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">${statusBadge}<span class="text-[10px] text-slate-400">${dateStr}</span></div>
-                                <h4 class="font-extrabold text-sm text-slate-900 dark:text-white">${item.title}</h4>
-                                <p class="text-xs text-amber-500 font-bold"><i class="fas fa-coins mr-1"></i> ใช้ไป ${Number(r.token_spent).toLocaleString()} Token</p>
+                if (r.status === 'pending') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px]">⏳ รอดำเนินการ</span>';
+                    actionButtons = `
+                        <button onclick="updateRequestStatus('${r.id}', 'approved')" class="px-2.5 sm:px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 rounded-xl font-bold text-xs">อนุมัติ</button>
+                        <button onclick="updateRequestStatus('${r.id}', 'rejected')" class="px-2.5 sm:px-3 py-1.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 rounded-xl font-bold text-xs">ปฏิเสธ</button>
+                    `;
+                } else if (r.status === 'approved') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">✅ ส่งมอบแล้ว</span>';
+                    actionButtons = '<span class="text-[11px] text-emerald-600 font-bold">ดำเนินการแล้ว</span>';
+                } else if (r.status === 'rejected') {
+                    statusBadge = '<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px]">❌ ปฏิเสธ</span>';
+                    actionButtons = '<span class="text-[11px] text-rose-500 font-bold">ปฏิเสธแล้ว</span>';
+                }
+
+                return `
+                    <tr class="hover:bg-amber-500/5 transition-colors">
+                        <td class="py-3 px-3 sm:p-4 font-mono text-slate-500 text-[11px]">${dateStr}</td>
+                        <td class="py-3 px-3 sm:p-4 font-bold text-slate-900 dark:text-white">${studentName}</td>
+                        <td class="py-3 px-3 sm:p-4 font-semibold">${itemTitle}</td>
+                        <td class="py-3 px-3 sm:p-4 text-center font-bold text-amber-500">${Number(r.token_spent).toLocaleString()} Token</td>
+                        <td class="py-3 px-3 sm:p-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-3 sm:p-4 text-right space-x-1">${actionButtons}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tab) {
+            const isProd = tab === 'products';
+            document.getElementById('tabContentProducts').classList.toggle('hidden', !isProd);
+            document.getElementById('tabContentRequests').classList.toggle('hidden', isProd);
+
+            document.getElementById('tabBtnProducts').className = isProd ? 'px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap' : 'px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap';
+            document.getElementById('tabBtnRequests').className = !isProd ? 'px-3 sm:px-4 py-2 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-2 whitespace-nowrap' : 'px-3 sm:px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap';
+        }
+
+        async function openAddProductModal() {
+            const courseCheckboxHtml = allCoursesList.length > 0 
+                ? allCoursesList.map(c => `
+                    <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                        <input type="checkbox" name="swalCourseCheck" value="${c.id}" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500">
+                        <span class="text-xs font-semibold">${c.title}</span>
+                    </label>
+                  `).join('')
+                : '<div class="text-slate-400 text-xs">ไม่พบรายชื่อคอร์สในระบบ</div>';
+
+            const { value: formValues } = await Swal.fire({
+                title: '🎁 เพิ่มของรางวัลขั้นสูงพร้อมรูปภาพ',
+                html: `
+                    <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
+                            <input type="text" id="swalTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none" placeholder="เช่น ส่วนลดพิเศษ 100 บาท">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">อัปโหลดรูปภาพของรางวัล</label>
+                            <input type="file" id="swalProductImage" accept="image/*" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-500 file:text-white hover:file:bg-amber-600">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+                                <select id="swalCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="discount">🏷️ ส่วนลด</option>
+                                    <option value="cash">💵 เงินสด</option>
+                                    <option value="gift">🎁 ของขวัญ</option>
+                                    <option value="other">✨ อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">รูปแบบการจำกัดสิทธิ์ <span class="text-red-500">*</span></label>
+                                <select id="swalLimitMode" onchange="onLimitModeChange()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="person">👤 จำกัดคนละ X สิทธิ์</option>
+                                    <option value="course">📚 ตามจำนวนคอร์สที่ลง</option>
+                                    <option value="unlimited">♾️ ไม่จำกัดสิทธิ์</option>
+                                </select>
                             </div>
                         </div>
-                    `;
-                });
-                historyHtml += `</div>`;
-            }
 
-            Swal.fire({
-                title: `<span class="text-base font-extrabold text-amber-600 dark:text-amber-400">📜 ประวัติการแลกของรางวัลของคุณ</span>`,
-                html: historyHtml,
-                width: '600px',
-                confirmButtonText: 'ปิดหน้าต่าง',
+                        <div id="swalQuotaContainer">
+                            <label id="swalQuotaLabel" class="block font-bold mb-1">จำนวนสิทธิ์สูงสุดต่อคน <span class="text-red-500">*</span></label>
+                            <input type="number" id="swalMaxPerUser" min="1" value="1" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">เลือกคอร์สที่เข้าเงื่อนไข (เลือกได้หลายคอร์ส / ไม่เลือกคือทุกคอร์ส)</label>
+                            <div class="p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl max-h-32 overflow-y-auto space-y-1">
+                                ${courseCheckboxHtml}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ราคา (Token) <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalPrice" min="1" value="50" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">จำนวนสต็อก <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalStock" min="1" value="10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">เริ่มเปิดขาย</label>
+                                <input type="datetime-local" id="swalStartsAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">หมดเขต</label>
+                                <input type="datetime-local" id="swalExpiresAt" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">รายละเอียดเพิ่มเติม</label>
+                            <textarea id="swalDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="เงื่อนไขหรือรายละเอียดสินค้า..."></textarea>
+                        </div>
+                    </div>
+                `,
+                didOpen: () => {
+                    window.onLimitModeChange = function() {
+                        const mode = document.getElementById('swalLimitMode').value;
+                        const container = document.getElementById('swalQuotaContainer');
+                        const label = document.getElementById('swalQuotaLabel');
+                        
+                        if (mode === 'unlimited') {
+                            container.style.display = 'none';
+                        } else {
+                            container.style.display = 'block';
+                            if (mode === 'person') {
+                                label.textContent = 'จำนวนสิทธิ์สูงสุดที่ 1 คนแลกได้ (สิทธิ์/คน)';
+                            } else if (mode === 'course') {
+                                label.textContent = 'อัตราสิทธิ์แลกได้ต่อ 1 คอร์ส (เช่น 1 คอร์สได้ 1 สิทธิ์)';
+                            }
+                        }
+                    };
+                },
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกเพิ่มสินค้า',
+                cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#f59e0b',
-                background: isDark ? '#090d16' : '#ffffff',
-                color: isDark ? '#f1f5f9' : '#1e293b'
+                preConfirm: async () => {
+                    const title = document.getElementById('swalTitle').value.trim();
+                    const category = document.getElementById('swalCategory').value;
+                    const limit_mode = document.getElementById('swalLimitMode').value;
+                    const token_price = parseInt(document.getElementById('swalPrice').value);
+                    const stock = parseInt(document.getElementById('swalStock').value);
+                    const max_per_user = limit_mode === 'unlimited' ? 999999 : (parseInt(document.getElementById('swalMaxPerUser').value) || 1);
+                    const starts_at_val = document.getElementById('swalStartsAt').value;
+                    const expires_at_val = document.getElementById('swalExpiresAt').value;
+                    const description = document.getElementById('swalDesc').value.trim();
+
+                    const selectedCourses = Array.from(document.querySelectorAll('input[name="swalCourseCheck"]:checked')).map(cb => cb.value);
+
+                    if (!title || !token_price || !stock) {
+                        Swal.showValidationMessage('⚠️ กรุณากรอกข้อมูลสำคัญให้ครบถ้วน');
+                        return false;
+                    }
+
+                    try {
+                        Swal.showLoading();
+                        let imageUrl = null;
+                        const fileInput = document.getElementById('swalProductImage');
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            imageUrl = await uploadShopImage('swalProductImage');
+                        }
+
+                        return { 
+                            productData: {
+                                title, 
+                                category, 
+                                limit_mode,
+                                token_price, 
+                                stock, 
+                                max_per_user,
+                                image_url: imageUrl,
+                                starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
+                                expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                                description, 
+                                is_active: true
+                            },
+                            selectedCourses 
+                        };
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                        return false;
+                    }
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังบันทึกสินค้า...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const { data: newProd, error: prodErr } = await supabaseClient
+                    .from('shop_items')
+                    .insert([formValues.productData])
+                    .select()
+                    .single();
+
+                if (prodErr) {
+                    Swal.fire({ icon: 'error', title: 'เพิ่มไม่สำเร็จ', text: prodErr.message });
+                    return;
+                }
+
+                if (formValues.selectedCourses.length > 0 && newProd) {
+                    const relationInserts = formValues.selectedCourses.map(courseId => ({
+                        item_id: newProd.id,
+                        course_id: courseId
+                    }));
+                    await supabaseClient.from('shop_item_courses').insert(relationInserts);
+                }
+
+                Swal.fire({ icon: 'success', title: 'เพิ่มสินค้าและรูปภาพสำเร็จ!', confirmButtonColor: '#f59e0b' });
+            }
+        }
+
+        async function openEditProductModal(productId) {
+            const product = allProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            const linkedCourseIds = (product.shop_item_courses || []).map(ic => ic.course_id);
+
+            const courseCheckboxHtml = allCoursesList.length > 0 
+                ? allCoursesList.map(c => {
+                    const isChecked = linkedCourseIds.includes(c.id) ? 'checked' : '';
+                    return `
+                        <label class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <input type="checkbox" name="swalEditCourseCheck" value="${c.id}" ${isChecked} class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold">${c.title}</span>
+                        </label>
+                      `;
+                  }).join('')
+                : '<div class="text-slate-400 text-xs">ไม่พบรายชื่อคอร์สในระบบ</div>';
+
+            const formatLocalDateTime = (isoString) => {
+                if (!isoString) return '';
+                const date = new Date(isoString);
+                const tzOffset = date.getTimezoneOffset() * 60000;
+                return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
+            };
+
+            const startsAtFormatted = formatLocalDateTime(product.starts_at);
+            const expiresAtFormatted = formatLocalDateTime(product.expires_at);
+
+            const currentImagePreview = product.image_url 
+                ? `<div class="flex items-center gap-2 mb-2"><img src="${product.image_url}" class="w-12 h-12 object-cover rounded-xl border"><span class="text-[11px] text-slate-500">รูปภาพปัจจุบัน</span></div>`
+                : '';
+
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ แก้ไขข้อมูลของรางวัลและรูปภาพ',
+                html: `
+                    <div class="text-left text-xs space-y-3 max-h-[70vh] overflow-y-auto px-1">
+                        <div>
+                            <label class="block font-bold mb-1">ชื่อของรางวัล <span class="text-red-500">*</span></label>
+                            <input type="text" id="swalEditTitle" value="${product.title || ''}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">เปลี่ยนรูปภาพของรางวัล (อัปโหลดใหม่)</label>
+                            ${currentImagePreview}
+                            <input type="file" id="swalEditProductImage" accept="image/*" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl text-xs font-medium file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">หมวดหมู่ <span class="text-red-500">*</span></label>
+                                <select id="swalEditCategory" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="discount" ${product.category === 'discount' ? 'selected' : ''}>🏷️ ส่วนลด</option>
+                                    <option value="cash" ${product.category === 'cash' ? 'selected' : ''}>💵 เงินสด</option>
+                                    <option value="gift" ${product.category === 'gift' ? 'selected' : ''}>🎁 ของขวัญ</option>
+                                    <option value="other" ${product.category === 'other' ? 'selected' : ''}>✨ อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">รูปแบบการจำกัดสิทธิ์ <span class="text-red-500">*</span></label>
+                                <select id="swalEditLimitMode" onchange="onEditLimitModeChange()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                                    <option value="person" ${product.limit_mode === 'person' ? 'selected' : ''}>👤 จำกัดคนละ X สิทธิ์</option>
+                                    <option value="course" ${product.limit_mode === 'course' ? 'selected' : ''}>📚 ตามจำนวนคอร์สที่ลง</option>
+                                    <option value="unlimited" ${product.limit_mode === 'unlimited' ? 'selected' : ''}>♾️ ไม่จำกัดสิทธิ์</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="swalEditQuotaContainer" style="${product.limit_mode === 'unlimited' ? 'display: none;' : 'display: block;'}">
+                            <label id="swalEditQuotaLabel" class="block font-bold mb-1">จำนวนสิทธิ์สูงสุดต่อคน <span class="text-red-500">*</span></label>
+                            <input type="number" id="swalEditMaxPerUser" min="1" value="${product.max_per_user || 1}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">เลือกคอร์สที่เข้าเงื่อนไข</label>
+                            <div class="p-2 bg-slate-50 dark:bg-slate-800 border rounded-xl max-h-32 overflow-y-auto space-y-1">
+                                ${courseCheckboxHtml}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">ราคา (Token) <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalEditPrice" min="1" value="${product.token_price || 0}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">จำนวนสต็อก <span class="text-red-500">*</span></label>
+                                <input type="number" id="swalEditStock" min="0" value="${product.stock || 0}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold mb-1">เริ่มเปิดขาย</label>
+                                <input type="datetime-local" id="swalEditStartsAt" value="${startsAtFormatted}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                            <div>
+                                <label class="block font-bold mb-1">หมดเขต</label>
+                                <input type="datetime-local" id="swalEditExpiresAt" value="${expiresAtFormatted}" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl font-bold outline-none text-[10px]">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold mb-1">รายละเอียดเพิ่มเติม</label>
+                            <textarea id="swalEditDesc" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border rounded-xl outline-none" placeholder="เงื่อนไขหรือรายละเอียดสินค้า...">${product.description || ''}</textarea>
+                        </div>
+                    </div>
+                `,
+                didOpen: () => {
+                    window.onEditLimitModeChange = function() {
+                        const mode = document.getElementById('swalEditLimitMode').value;
+                        const container = document.getElementById('swalEditQuotaContainer');
+                        const label = document.getElementById('swalEditQuotaLabel');
+                        
+                        if (mode === 'unlimited') {
+                            container.style.display = 'none';
+                        } else {
+                            container.style.display = 'block';
+                            if (mode === 'person') {
+                                label.textContent = 'จำนวนสิทธิ์สูงสุดที่ 1 คนแลกได้ (สิทธิ์/คน)';
+                            } else if (mode === 'course') {
+                                label.textContent = 'อัตราสิทธิ์แลกได้ต่อ 1 คอร์ส (เช่น 1 คอร์สได้ 1 สิทธิ์)';
+                            }
+                        }
+                    };
+                },
+                showCancelButton: true,
+                confirmButtonText: 'บันทึกการแก้ไข',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#0284c7',
+                preConfirm: async () => {
+                    const title = document.getElementById('swalEditTitle').value.trim();
+                    const category = document.getElementById('swalEditCategory').value;
+                    const limit_mode = document.getElementById('swalEditLimitMode').value;
+                    const token_price = parseInt(document.getElementById('swalEditPrice').value);
+                    const stock = parseInt(document.getElementById('swalEditStock').value);
+                    const max_per_user = limit_mode === 'unlimited' ? 999999 : (parseInt(document.getElementById('swalEditMaxPerUser').value) || 1);
+                    const starts_at_val = document.getElementById('swalEditStartsAt').value;
+                    const expires_at_val = document.getElementById('swalEditExpiresAt').value;
+                    const description = document.getElementById('swalEditDesc').value.trim();
+
+                    const selectedCourses = Array.from(document.querySelectorAll('input[name="swalEditCourseCheck"]:checked')).map(cb => cb.value);
+
+                    if (!title || isNaN(token_price) || isNaN(stock)) {
+                        Swal.showValidationMessage('⚠️ กรุณากรอกข้อมูลสำคัญให้ถูกต้องครบถ้วน');
+                        return false;
+                    }
+
+                    try {
+                        Swal.showLoading();
+                        let imageUrl = product.image_url;
+                        const fileInput = document.getElementById('swalEditProductImage');
+                        if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                            imageUrl = await uploadShopImage('swalEditProductImage');
+                        }
+
+                        return { 
+                            productData: {
+                                title, 
+                                category, 
+                                limit_mode,
+                                token_price, 
+                                stock, 
+                                max_per_user,
+                                image_url: imageUrl,
+                                starts_at: starts_at_val ? new Date(starts_at_val).toISOString() : null,
+                                expires_at: expires_at_val ? new Date(expires_at_val).toISOString() : null,
+                                description
+                            },
+                            selectedCourses 
+                        };
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                        return false;
+                    }
+                }
+            });
+
+            if (formValues) {
+                Swal.fire({ title: 'กำลังอัปเดตข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                const { error: updateErr } = await supabaseClient
+                    .from('shop_items')
+                    .update(formValues.productData)
+                    .eq('id', productId);
+
+                if (updateErr) {
+                    Swal.fire({ icon: 'error', title: 'อัปเดตไม่สำเร็จ', text: updateErr.message });
+                    return;
+                }
+
+                await supabaseClient.from('shop_item_courses').delete().eq('item_id', productId);
+
+                if (formValues.selectedCourses.length > 0) {
+                    const relationInserts = formValues.selectedCourses.map(courseId => ({
+                        item_id: productId,
+                        course_id: courseId
+                    }));
+                    await supabaseClient.from('shop_item_courses').insert(relationInserts);
+                }
+
+                Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสินค้าสำเร็จ!', confirmButtonColor: '#0284c7' });
+            }
+        }
+
+        async function toggleProductStatus(id, currentStatus) {
+            await supabaseClient.from('shop_items').update({ is_active: !currentStatus }).eq('id', id);
+        }
+
+        async function deleteProduct(id) {
+            Swal.fire({ title: 'ลบสินค้านี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยันลบ' }).then(async res => {
+                if (res.isConfirmed) {
+                    await supabaseClient.from('shop_item_courses').delete().eq('item_id', id);
+                    await supabaseClient.from('shop_items').delete().eq('id', id);
+                }
             });
         }
 
-        window.addEventListener('DOMContentLoaded', initShopPage);
+        async function updateRequestStatus(reqId, newStatus) {
+            const { error } = await supabaseClient.from('redemption_logs').update({ status: newStatus }).eq('id', reqId);
+            if (!error) {
+                Swal.fire({ icon: 'success', title: 'อัปเดตสถานะสำเร็จ', timer: 1200, showConfirmButton: false });
+            } else {
+                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message });
+            }
+        }
+
+        // 🌟 ตั้งค่า Realtime Subscription
+        function setupRealtimeSubscriptions() {
+            supabaseClient
+                .channel('admin-shop-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_items' }, () => {
+                    loadShopData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shop_item_courses' }, () => {
+                    loadShopData();
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'redemption_logs' }, () => {
+                    loadShopData();
+                })
+                .subscribe();
+        }
+
+        loadShopData();
+        setupRealtimeSubscriptions();
     </script>
 </body>
 </html>
